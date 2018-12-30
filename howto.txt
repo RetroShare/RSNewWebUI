@@ -1,0 +1,24 @@
+- example basic_RS_communication_test.html
+
+   * uses authentication with a hard-coded user+passwd in order to retrieve data
+
+- test RS API with curl:
+
+    $ curl --verbose -u cyril:proutprout233 -H "Content-Type: application/json" http://127.0.0.1:9092/rsPeers/GetRetroshareInvite
+   
+        * Trying 127.0.0.1...
+        * Connected to 127.0.0.1 (127.0.0.1) port 9092 (#0)
+        [...]
+        > Authorization: Basic Y3lyaWw6cHJvdXRwcm91dDIzMw==
+        [...]
+        < Content-Type: text/json
+        < 
+        {
+           "retval": "CQEGAcGcxsBNBFNSZ4sBCAC7RIqGLdM+S [...]
+        }
+
+
+TODO
+====
+   [ ] create a standalone working mithril example not talking to RS
+   [ ] modify it so that it prints some information that is from RS

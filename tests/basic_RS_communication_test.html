@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<head>
+	<title>Retroshare Web Interface</title>
+	<script type="text/javascript">
+	var rsJsonApiUrl = "http://127.0.0.1:9092"
+	function rsJsonApiRequest(path, data, callback)
+	{
+		console.log("rsJsonApiRequest(path, data, callback)", path, data, callback)
+		var xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = function()
+		{
+			if(xhr.readyState === 4)
+			{
+				console.log( path, "callback", xhr.status, xhr.responseText.replace(/\s+/g, " ").
+								substr(0, 60).replace(/\r?\n|\r/g," ") )
+				if(typeof(callback) === "function") callback(xhr.responseText);
+			}
+		}
+		xhr.open('POST', rsJsonApiUrl + path, true);
+		xhr.setRequestHeader("Accept", "application/json");
+		xhr.setRequestHeader("Authorization", "Basic "+btoa("cyril"+":"+"proutprout233"));
+		xhr.send(data);
+	}
+	</script>
+</head>
+<body>
+	<h2>
+	Retroshare Web Interface
+	</h2>
+	<p>
+	This node can help you to connect and find friends within the network.
+	</p>
+
+	<div>
+	<h3>
+	Enter your certificate into the following box and press the submit button.
+	</h3>
+	<textarea rows="30" cols="64" placeholder="Paste your certificate here"
+	id="certificate" maxlength="10000"></textarea>
+	<script type="text/javascript">
+	function clearCert()
+	{
+		document.getElementById("certificate").value = ""
+	}
+	function submitCert()
+	{
+		var jsonCert = { invite: document.getElementById("certificate").value }
+		rsJsonApiRequest("/rsPeers/acceptInvite", JSON.stringify(jsonCert), clearCert)
+	}
+	</script>
+	<button onclick="submitCert()">Submit</button>
+	</div>
+
+	<div>
+	<h3>
+	Copy micheleangiolillo certificate's from the following box and paste
+	it in your node <b>Add friends certificate</b> box.
+	</h3>
+	<textarea rows="30" cols="64"
+		placeholder="Copy micheleangiolillo certificate from here"
+		id="node_certificate" maxlength="10000">
+	</textarea>
+	<script type="text/javascript">
+	function setNodeCertificate(p)
+	{
+		var jsonData = JSON.parse(p)
+		document.getElementById("node_certificate").value = jsonData.retval
+	}
+	rsJsonApiRequest("/rsPeers/GetRetroshareInvite", "", setNodeCertificate)
+	</script>
+	</div>
+</body>
+
