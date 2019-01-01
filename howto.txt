@@ -20,5 +20,8 @@
 
 TODO
 ====
-   [ ] create a standalone working mithril example not talking to RS
-   [ ] modify it so that it prints some information that is from RS
+   [X] create a standalone working mithril example not talking to RS
+   [X] modify it so that it prints some information that is from RS
+   [ ] create a login page that asks for login+passwd to be used in the JSonAPI requests. The page should test the validity
+			of the passwd by requesting some authenticated info and then switch to normal webUI when authentication is a success.
+   [ ] modify the css style to get something nice

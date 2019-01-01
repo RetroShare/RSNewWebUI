@@ -11,9 +11,8 @@ function rsJsonApiRequest(path, data, callback,async)
 	{
 		if(xhr.readyState === 4)
 		{
-			console.log( path, "callback", xhr.status, xhr.responseText.replace(/\s+/g, " ").
-					substr(0, 60).replace(/\r?\n|\r/g," ") )
-				if(typeof(callback) === "function") callback(xhr.responseText);
+			console.log( path, "callback", xhr.status, xhr.responseText.replace(/\s+/g, " ").substr(0, 60).replace(/\r?\n|\r/g," ") )
+			if(typeof(callback) === "function") callback(xhr.responseText);
 		}
 	}
 	xhr.open('POST', rsJsonApiUrl + path, async);
@@ -22,27 +21,16 @@ function rsJsonApiRequest(path, data, callback,async)
 	xhr.send(data);
 }
 
-function rswebui(){
-
-	var node_cert ;
-
-	function setNodeCertificate(p)
-	{
-		var jsonData = JSON.parse(p)
-		node_cert = jsonData.retval
-		//document.write("got cert = "+node_cert)
-	}
-	rsJsonApiRequest("/rsPeers/GetRetroshareInvite", "", setNodeCertificate,false)	// call is synced because we want to return the result
-
-	return node_cert;
-};
-
 module.exports = {
-    init:function(main){
-        console.log("start init ...");
-		  return rswebui();
-    }
-	
+    requestCertificate:function(callback) {
+
+		function setNodeCertificate(p)
+		{
+			var jsonData = JSON.parse(p)
+            callback(jsonData.retval)
+		}
+		rsJsonApiRequest("/rsPeers/GetRetroshareInvite", "", setNodeCertificate,true)	// call is synced because we want to return the result
+	}
 };
 
 
