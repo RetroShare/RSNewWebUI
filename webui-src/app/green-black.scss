@@ -1,11 +1,11 @@
 body {
-    background-color: black;
-    color: lime;
+    background-color: azure;
+    color: black;
     font-family: monospace;
     margin: 0em;
     /*padding: 1.5em;*/
     padding: 2mm;
-    font-size: 1.1em;
+    font-size: 0.9em;
     box-sizing: border-box;
 }
 
@@ -16,7 +16,7 @@ body {
     left:0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.8);
+    background-color: rgba(0.5,0.5,0.5,0.8);
 }
 
 .paddingbox{
@@ -42,21 +42,21 @@ td{
     padding: 0.3em;
     border-style: solid;
     border-width: 0.1em;
-    border-color: lime;
+    border-color: black;
 }
 hr {
-    color: lime;
+    color: black;
 }
 .menu{
     border-style: solid;
-    border-color: lime;
+    border-color: black;
     border-width: 0.1em;
     cursor: pointer;
     padding: 0.0em;
 }
 .btn{
     border-style: solid;
-    border-color: lime;
+    border-color: black;
     border-width: 0.1em;
     cursor: pointer;
     padding: 0.1em;
@@ -64,10 +64,10 @@ hr {
 
 .btn2, .box{
     border-style: solid;
-    /*border-color: lime;*/
-    border-color: limeGreen;
+    /*border-color: black;*/
+    border-color: black;
     /*border-width: 1px;*/
-    border-radius: 3mm;
+    border-radius: 0mm;
     padding: 2mm;
     font-size: 10mm;
     cursor: pointer;
@@ -79,10 +79,10 @@ hr {
 
 .btnSmall{
     border-style: solid;
-    /*border-color: lime;*/
-    border-color: limeGreen;
+    /*border-color: black;*/
+    border-color: black;
     /*border-width: 1px;*/
-    border-radius: 3mm;
+    border-radius: 0mm;
     padding: 1mm;
     font-size: 100%;
 
@@ -112,12 +112,12 @@ hr {
 
 
 input,textarea{
-    color: lime;
+    color: black;
     font-family: monospace;
-    background-color: black;
-    border-color: lime;
+    background-color: azure;
+    border-color: black;
     font-size: 10mm;
-    border-radius: 3mm;
+    border-radius: 0mm;
     border-width: 1mm;
     padding: 2mm;
     margin-bottom: 1mm;
@@ -133,12 +133,12 @@ input:hover{
 }
 
 textarea#txtNewMsg{
-    color: lime;
+    color: black;
     font-family: monospace;
-    background-color: black;
-    border-color: lime;
+    background-color: azure;
+    border-color: black;
     font-size: 100%;
-    border-radius: 3mm;
+    border-radius: 0mm;
     border-width: 1mm;
     padding: 2mm;
     margin-bottom: 0mm;
@@ -152,14 +152,33 @@ textarea#txtNewMsg{
     box-sizing: border-box;
 }
 
+textarea#certificate{
+    color: black;
+    font-family: courrier;
+    background-color: azure;
+    border-color: black;
+    font-size: 100%;
+    border-radius: 0mm;
+    border-width: 1mm;
+    padding: 2mm;
+    margin-bottom: 0mm;
+    margin-right: 1mm;
+	height:110px;
+	resize: none;
+    /* make the button the whole screen width */
+    width: 100%;
+    /*height: 100%;*/
+    /* make the text input fit small screens*/
+    box-sizing: border-box;
+}
 
 input#txtMsgKeyword{
-    color: lime;
+    color: black;
     font-family: monospace;
-    background-color: black;
-    border-color: lime;
+    background-color: azure;
+    border-color: black;
     font-size: 100%;
-    border-radius: 3mm;
+    border-radius: 0mm;
     border-width: 1mm;
     padding: 1mm;
     margin-bottom: 0mm;
