@@ -29,8 +29,46 @@ module.exports = {
 			var jsonData = JSON.parse(p)
             callback(jsonData.retval)
 		}
-		rsJsonApiRequest("/rsPeers/GetRetroshareInvite", "", setNodeCertificate,true)	// call is synced because we want to return the result
-	}
+		rsJsonApiRequest("/rsPeers/GetRetroshareInvite", "", setNodeCertificate,true)
+	},
+
+    requestDownloads:function(callback) {
+
+        var downloads_info = ""
+
+        function displayDLInfo(p)
+        {
+            var jsonData = JSON.parse(p)
+
+            if(jsonData.retval === "false")
+                console.warning("Cannot retrieve info!!");
+
+            downloads_info += jsonData.info.hash + ": size=" + jsonData.info.size + ": progress=" + jsonData.info.avail + "\n";
+        }
+        function requestDLData(hash)
+		{
+            var json_params = {
+                hash: hash,
+                hintflags: 16		// = RS_FILE_HINTS_DOWNLOAD
+            }
+            console.log("requesting DL data for hash: "+hash)
+			rsJsonApiRequest("/rsFiles/FileDetails", JSON.stringify(json_params), displayDLInfo,false)
+        }
+
+        function setDownloads(p)
+        {
+            var jsonData = JSON.parse(p)
+
+            // now for each hash, request the current progress
+
+            jsonData.hashs.forEach(requestDLData);
+
+            // and send back the result
+
+            callback(downloads_info);
+        }
+		rsJsonApiRequest("/rsFiles/FileDownloads", "", setDownloads,true)
+    }
 };
 
 

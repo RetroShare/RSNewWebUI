@@ -42,11 +42,12 @@ linux-* {
 	  WEBUI_SRC_JS += webui-src/app/rswebui.js
 	  WEBUI_SRC_JS += webui-src/app/mithril.js
 	  WEBUI_SRC_JS += webui-src/app/mithril.min.js
+	  WEBUI_SRC_JS += webui-src/app/downloads.js
 
+#	  WEBUI_SRC_JS += webui-src/app/peers.js
 #	  WEBUI_SRC_JS += webui-src/app/main.js
 #	  WEBUI_SRC_JS += webui-src/app/menudef.js
 #	  WEBUI_SRC_JS += webui-src/app/menu.js
-#	  WEBUI_SRC_JS += webui-src/app/peers.js
 #	  WEBUI_SRC_JS += webui-src/app/retroshare.js
 #	  WEBUI_SRC_JS += webui-src/app/accountselect.js
 #	  WEBUI_SRC_JS += webui-src/app/adddownloads.js
@@ -54,7 +55,6 @@ linux-* {
 #	  WEBUI_SRC_JS += webui-src/app/addpeer.js
 #	  WEBUI_SRC_JS += webui-src/app/chat.js
 #	  WEBUI_SRC_JS += webui-src/app/createlogin.js
-#	  WEBUI_SRC_JS += webui-src/app/downloads.js
 #	  WEBUI_SRC_JS += webui-src/app/forums.js
 #	  WEBUI_SRC_JS += webui-src/app/home.js
 #	  WEBUI_SRC_JS += webui-src/app/identities.js

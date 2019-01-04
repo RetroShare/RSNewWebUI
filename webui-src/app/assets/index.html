@@ -12,15 +12,23 @@
 	This is the node's certificate:
 	</h3>
 	<textarea rows="30" cols="64" placeholder="Node certificate should appear here!" id="node_certificate" maxlength="10000"></textarea>
+	<textarea rows="30" cols="64" placeholder="Downloads" id="downloads" maxlength="10000"></textarea>
 
     <script type="text/javascript">
     	function load_cert(cert) {
         	document.getElementById("node_certificate").value = cert
         }
+    	function load_downloads(dls) {
+        	document.getElementById("downloads").value = dls
+        }
         function load_ui(){
             var ui = require("rswebui");
 			ui.requestCertificate(load_cert);
+
+			var dl = require("downloads");
+        	dl.view(load_downloads);
         }
+
     </script>
     <noscript>Sorry but JavaScript is needed here! Please enable it in your browser.</noscript>
     </div>
