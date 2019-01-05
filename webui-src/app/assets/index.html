@@ -22,11 +22,15 @@
         	document.getElementById("downloads").value = dls
         }
         function load_ui(){
-            var ui = require("rswebui");
-			ui.requestCertificate(load_cert);
+            //var ui = require("rswebui");
+			//ui.requestCertificate(load_cert);
 
 			var dl = require("downloads");
-        	dl.view(load_downloads);
+        	//dl.view(load_downloads);
+
+            var m = require("mithril");
+
+			m.mount(document.body,dl);
         }
 
     </script>

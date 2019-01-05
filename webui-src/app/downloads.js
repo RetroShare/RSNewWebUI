@@ -23,74 +23,86 @@ function progressBar(file){
 	m("div[style="
 	    + 'background-color:lime;'
 	    + 'height:100%;'
-	    + 'width:' + (file.transferred  /  file.size * 100)+'%'
+	    + 'width:' + (file.transfered  /  file.size * 100)+'%'
 	    + ']'
 	,"")
 	]);
 };
 
-//function cntrlBtn(file, act) {
-//    return(
-//        m("div.btn",{
-//            onclick: function(){
-//                rs.request("transfers/control_download",{action: act, hash: file.hash});
-//            }
-//        },
-//        act)
-//    )
-//}
+function cntrlBtn(file, act) {
+    return(
+        m("div.btn",{
+            onclick: function(){
+                console.log("Control button pushed");
+                //rs.request("transfers/control_download",{action: act, hash: file.hash});
+            }
+        },
+        act)
+    )
+}
 
 module.exports = {
-    view: function(callback){
-        rs.requestDownloads(callback);
+    oninit: rs.Downloads.load(), 	// means we re-load the list everytime we render
+    view:  function() {
+		var filestreamer_url = "/fstream/";
 
-//        var filestreamer_url = "/fstream/";
-//        if (paths === undefined) {
-//            return m("div", "Downloads ... please wait ...");
-//        }
-//        return m("div", [
-//            m("h2","Downloads (" + paths.length +")"),
-//            m("div.btn2", {
-//                onclick: function(){
-//                    m.route("/downloads/add");
-//                }
-//
-//            m("hr"),
-//            m('table', [
-//                m("tr",[
-//                    m("th","name"),
-//                    m("th","size"),
-//                    m("th","progress"),
-//                    m("th","transfer rate"),
-//                    m("th","status"),
-//                    m("th","progress"),
-//                    m("th","action")
-//                ]),
-//            	paths.map(function (file){
-//            	    var ctrlBtn = m("div","");
-//                    var progress = file.transferred  /  file.size * 100;
-//            	    return m("tr",[
-//            	        m("td",[
-//            	            m("a.filelink",
-//            	                {
-//                        	        target: "blank",
-//                        	        href: filestreamer_url + file.hash + "/" + encodeURIComponent(file.name)
-//                	            },
-//            	                file.name
-//            	            )
-//            	        ]),
-//            	        m("td", makeFriendlyUnit(file.size)),
-//            	        m("td", progress.toPrecision(3) + "%"),
-//            	        m("td", makeFriendlyUnit(file.transfer_rate*1e3)+"/s"),
-//            	        m("td", file.download_status),
-//            	        m("td", progressBar(file)),
-//            	        m("td", [
-//            	            cntrlBtn(file, file.download_status==="paused"?"start":"pause"),
-//            	            cntrlBtn(file, "cancel")]
-//            	        )
-//            	    ])
-//                })
-//	    ])
-//        ]);
-    }
+        var paths = rs.Downloads.list ;	// after that, paths is a list of FileInfo structures
+
+		if (paths === undefined) {
+			return m("div", "Downloads ... please wait ...");
+		}
+
+        console.log("List size=" + rs.Downloads.list.length+"\n");
+        console.log("List [0]=" + rs.Downloads.list[0]+"\n");
+
+		return m("div",  [
+					m("h2","Downloads (" + paths.length +")"),
+				 	m("div.btn2",
+                      {
+					  	 onclick: function(){
+							   m.route("/downloads/add");
+					   		},
+                      }, "add retrohare downloads"),
+
+					   m("hr"),
+					   m('table', [
+							 m("tr",[
+								   m("th","name"),
+								   m("th","size"),
+								   m("th","progress"),
+								   m("th","transfer rate"),
+								   m("th","status"),
+								   m("th","progress"),
+								   m("th","action")
+							   ]),
+							 paths.map(function (fileInfo){
+								 var ctrlBtn = m("div","");
+								 var progress = fileInfo.transfered  /  fileInfo.size * 100;
+
+								 return m("tr",[
+											  m("td",[
+													m("a.filelink",
+													  {
+														  target: "blank",
+														  href: filestreamer_url + fileInfo.hash + "/" + encodeURIComponent(fileInfo.fname)
+													  },
+													  fileInfo.fname
+													  )
+												]),
+											  m("td", makeFriendlyUnit(fileInfo.size)),
+											  m("td", progress.toPrecision(3) + "%"),
+											  m("td", makeFriendlyUnit(fileInfo.tfRate*1024)+"/s"),
+											  m("td", fileInfo.download_status),
+											  m("td", progressBar(fileInfo)),
+											  m("td", [
+													cntrlBtn(fileInfo, fileInfo.download_status==="paused"?"start":"pause"),
+													cntrlBtn(fileInfo, "cancel")]
+												)
+										  ])
+							 })
+						 ])
+				 ]);
+	}
 };
+
+
