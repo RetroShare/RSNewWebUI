@@ -33,8 +33,9 @@ function cntrlBtn(file, act) {
     return(
         m("div.btn",{
             onclick: function(){
-                console.log("Control button pushed");
-                //rs.request("transfers/control_download",{action: act, hash: file.hash});
+                console.log("Control button pushed. Action on file " + file.hash + " is " + act);
+
+                rs.Downloads.control(file.hash,act) ;
             }
         },
         act)
@@ -95,7 +96,7 @@ module.exports = {
 											  m("td", fileInfo.download_status),
 											  m("td", progressBar(fileInfo)),
 											  m("td", [
-													cntrlBtn(fileInfo, fileInfo.download_status==="paused"?"start":"pause"),
+													cntrlBtn(fileInfo, fileInfo.download_status===rs.FT_STATE_PAUSED?"resume":"pause"),
 													cntrlBtn(fileInfo, "cancel")]
 												)
 										  ])

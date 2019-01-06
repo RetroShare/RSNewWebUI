@@ -21,8 +21,26 @@ function rsJsonApiRequest(path, data, callback,async)
 	xhr.send(data);
 }
 
+// These constants are the onces listed in retroshare/rsfiles.h. I would like to make them "members" of Downloads
+// but I dont know how to do this.
+
+var RS_FILE_CTRL_PAUSE		= 0x00000100;
+var RS_FILE_CTRL_START		= 0x00000200;
+var RS_FILE_CTRL_FORCE_CHECK= 0x00000400;
+
+var	FT_STATE_FAILED			= 0x0000 ;
+var	FT_STATE_OKAY			= 0x0001 ;
+var	FT_STATE_WAITING 		= 0x0002 ;
+var	FT_STATE_DOWNLOADING	= 0x0003 ;
+var	FT_STATE_COMPLETE 		= 0x0004 ;
+var	FT_STATE_QUEUED   		= 0x0005 ;
+var	FT_STATE_PAUSED   		= 0x0006 ;
+var	FT_STATE_CHECKING_HASH	= 0x0007 ;
+
 var Downloads = {
     list: [],
+
+    // Load function for files. Populates the "list" array with Objects of type corresponding to rsfiles.h:FileInfo
 
     load: function() {
 		function addDLInfo(p)
@@ -57,6 +75,37 @@ var Downloads = {
 		console.log("requesting downloads...");
 
 		rsJsonApiRequest("/rsFiles/FileDownloads", "", handleHashesList,false)
+    },
+
+    // Control function for files. Hash is the file hash and control_action is the action to perform to be chosen as { "cancel", "pause", "resume" }
+
+    control: function(hash,control_action){
+        var req_action = "" ;				// action requested to jsonapi
+        var json_params = { hash: hash } ;	// params for that action
+
+        switch(control_action)
+        {
+			case "cancel":  req_action = "/rsFiles/FileCancel" ;
+                			break;
+
+            case "pause":   req_action = "/rsFiles/FileControl" ;
+                			json_params.flags = Downloads.RS_FILE_CTRL_PAUSE ;
+                			break ;
+
+            case "resume":  req_action = "/rsFiles/FileControl" ;
+                			json_params.flags = Downloads.RS_FILE_CTRL_START ;
+                			break ;
+
+            case "force_check":  req_action = "/rsFiles/FileControl" ;
+                			json_params.flags = Downloads.RS_FILE_CTRL_FORCE_CHECK ;
+                			break ;
+
+            default:
+                console.log("Unknown action in Downloads.control()");
+                return ;
+        };
+
+		rsJsonApiRequest(req_action, JSON.stringify(json_params),false)
     }
 }
 
