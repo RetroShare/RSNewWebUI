@@ -80,8 +80,8 @@ var Downloads = {
     // Control function for files. Hash is the file hash and control_action is the action to perform to be chosen as { "cancel", "pause", "resume" }
 
     control: function(hash,control_action){
-        var req_action = "" ;				// action requested to jsonapi
-        var json_params = { hash: hash } ;	// params for that action
+        var req_action = "" ;						// action requested to jsonapi
+        var json_params = { hash: hash,flags: 0 } ;	// params for that action
 
         switch(control_action)
         {
@@ -89,15 +89,15 @@ var Downloads = {
                 			break;
 
             case "pause":   req_action = "/rsFiles/FileControl" ;
-                			json_params.flags = Downloads.RS_FILE_CTRL_PAUSE ;
+                			json_params.flags = RS_FILE_CTRL_PAUSE ;
                 			break ;
 
             case "resume":  req_action = "/rsFiles/FileControl" ;
-                			json_params.flags = Downloads.RS_FILE_CTRL_START ;
+                			json_params.flags = RS_FILE_CTRL_START ;
                 			break ;
 
             case "force_check":  req_action = "/rsFiles/FileControl" ;
-                			json_params.flags = Downloads.RS_FILE_CTRL_FORCE_CHECK ;
+                			json_params.flags = RS_FILE_CTRL_FORCE_CHECK ;
                 			break ;
 
             default:
@@ -121,6 +121,19 @@ module.exports = {
 	},
 
     Downloads,
+
+	RS_FILE_CTRL_PAUSE		,
+	RS_FILE_CTRL_START		,
+	RS_FILE_CTRL_FORCE_CHECK,
+
+	FT_STATE_FAILED			,
+	FT_STATE_OKAY			,
+	FT_STATE_WAITING 		,
+	FT_STATE_DOWNLOADING	,
+	FT_STATE_COMPLETE 		,
+	FT_STATE_QUEUED   		,
+	FT_STATE_PAUSED   		,
+	FT_STATE_CHECKING_HASH	,
 };
 
 

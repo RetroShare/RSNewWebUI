@@ -2,6 +2,9 @@
 
    * uses authentication with a hard-coded user+passwd in order to retrieve data
 
+- how to re-compile when adding new API functions:
+	* delete jsonapi_generator/src/*inl and call make again from RS root.
+
 - test RS API with curl:
 
     $ curl --verbose -u cyril:proutprout233 -H "Content-Type: application/json" http://127.0.0.1:9092/rsPeers/GetRetroshareInvite

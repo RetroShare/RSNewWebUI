@@ -44,6 +44,7 @@ function cntrlBtn(file, act) {
 
 module.exports = {
     oninit: rs.Downloads.load(), 	// means we re-load the list everytime we render
+    onload: rs.Downloads.load(), 	// means we re-load the list everytime we render
     view:  function() {
 		var filestreamer_url = "/fstream/";
 
@@ -80,6 +81,7 @@ module.exports = {
 								 var ctrlBtn = m("div","");
 								 var progress = fileInfo.transfered  /  fileInfo.size * 100;
 
+								 console.log("dl status="+fileInfo.downloadStatus + " paused_state="+rs.FT_STATE_PAUSED);
 								 return m("tr",[
 											  m("td",[
 													m("a.filelink",
@@ -96,7 +98,7 @@ module.exports = {
 											  m("td", fileInfo.download_status),
 											  m("td", progressBar(fileInfo)),
 											  m("td", [
-													cntrlBtn(fileInfo, fileInfo.download_status===rs.FT_STATE_PAUSED?"resume":"pause"),
+													cntrlBtn(fileInfo, fileInfo.downloadStatus===rs.FT_STATE_PAUSED?"resume":"pause"),
 													cntrlBtn(fileInfo, "cancel")]
 												)
 										  ])
