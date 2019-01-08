@@ -1,0 +1,110 @@
+Required info
+=============
+
+- compilation of RS:
+
+   * compile RS with JSon api 
+         $ qmake CONFIG="debug rs_jsonapi"
+         $ make
+
+      Make sure JSon API is activated in preferences->JSon API.
+
+   * to update after adding new API functions, 
+         $ \rm jsonapi_generator/src/*inl 
+         $ make
+
+- test RS API with curl:
+
+   * register a login:passwd token preferences
+
+    $ curl --verbose -u login:passwd -H "Content-Type: application/json" http://127.0.0.1:9092/rsPeers/GetRetroshareInvite
+   
+        * Trying 127.0.0.1...
+        * Connected to 127.0.0.1 (127.0.0.1) port 9092 (#0)
+        [...]
+        > Authorization: Basic bG9naW46cGFzc3dkCg== 
+        [...]
+        < Content-Type: text/json
+        < 
+        {
+           "retval": "CQEGAcGcxsBNBFNSZ4sBCAC7RIqGLdM+S [...]
+        }
+
+
+- Existing code base: 
+   * New WebUI: https://github/com/csoler/RSNewWebUI
+
+      Compile using qmake only:
+         $ qmake
+
+      Then open it with 
+         $ firefox webui/index.html
+
+      See tests/basic_RS_communication_test.html:
+
+         * uses authentication with a hard-coded user+passwd in order to retrieve data. Make sure the login/passwd that is used is actually registered in RS.
+           The example should show a "chat server" page with a proper certificate of a RS node in the bottom field.
+
+   * old WebUI, also based on mithril is in retroshare main repository: libresapi/src/webui-src/app. 
+
+Other sources of information:
+   * JSon API documentation: https://github.com/RetroShare/RetroShare/tree/master/jsonapi-generator
+
+
+TODO List
+=========
+
+By order of priority:
+
+================+==========+===========+===========================================================================================================+
+Section         |   ID     |   Status  | What                                                                                                      |
+================+==========+===========+===========================================================================================================+
+Preliminary     |   001    |   Done    | Create a standalone working mithril example not talking to RS, for testing authenticated requests.        |
+                |   002    |   Done    | Modify 001 it so that it prints some information that is from RS                                          |
+----------------+----------+-----------+-----------------------------------------------------------------------------------------------------------+
+WebUI General   |   101    |           | Create a login page that asks for login+passwd to be used in the JSonAPI requests                         |
+                |   102    |           | Create "tab" system to allow different sections of the webUI to be displayed (See previous WebUI)         |
+----------------+----------+-----------+-----------------------------------------------------------------------------------------------------------+
+WebUI RS side   |   201    |           | Update/copy the old WebUI page so that it allows to activate/desactivate the new WebUI                    |
+                |          |           |                                                                                                           | 
+----------------+----------+-----------+-----------------------------------------------------------------------------------------------------------+
+Config          |   301    |           | Create a Config panel with multiple frames to handle as many configuration options as possible            |
+                |   302    |           | Config frame for show node information                                                                    |
+                |   303    |           | Config frame for network settings (Net mode, NAT, DL limits, ports)                                       |
+                |   304    |           | Config frame for reputations in People                                                                    |
+                |   305    |           | Config frame for Files: all options (except edit share)                                                   |
+----------------+----------+-----------+-----------------------------------------------------------------------------------------------------------+
+Downloads       |   401    |           | Make downloads update automatically every second when visible                                             | 
+                |   402    |           | Show more accurate information about file transfers: which chunks are already there, etc.                 |
+----------------+----------+-----------+-----------------------------------------------------------------------------------------------------------+
+Appearance      |   501    |           | Modify the css style to get something more professional                                                   |
+                |          |           |                                                                                                           |
+----------------+----------+-----------+-----------------------------------------------------------------------------------------------------------+
+Files           |   601    |           | Show hierarchy of shared files                                                                            |
+                |   602    |           | Allow to edit file shares (which directory with which permission)                                         |
+                |   603    |           | Display current hashing status (requires auto-update)                                                     |
+                |   604    |           | Allow to edit groups of friend nodes to manage file view permissions                                      |
+----------------+----------+-----------+-----------------------------------------------------------------------------------------------------------+
+On merge        |   701    |           | Disable libresapi, remove old WebUI page                                                                  |
+----------------+----------+-----------+-----------------------------------------------------------------------------------------------------------+
+Release         |   801    |           | Make sure the installer still works with the new WebUI. Test for windows, debian, MacOS                   |
+----------------+----------+-----------+-----------------------------------------------------------------------------------------------------------+
+
+Explanations
+
+   101 - The page should test the validity of the passwd by requesting some authenticated info and then switch to normal webUI when 
+         authentication is a success. We may create a special API handler for that in RS if it is not possible to test authentication success.
+
+         On RS side, the WebUI page should allow to set a login/passwd to access the WebUI and register that login/passwd into JSonAPI module when
+         changed/updated. 
+
+   102 - The old WebUI has such a nice tab system. It's just a matter of adapting it. Do not keep the existing "Login" tab (that handled RS login, 
+         not WebUI authentication) as RS login is handled when launching the software in both GUI and NO-GUI configurations.
+
+   401 - Previous WebUI used to do this, so it's possible. See the previous code and adapt it to the new WebUI.
+   402 - This is mainy a graphical problem: obtain chunk info from rsFiles->FileChunkInfo() and display them with colors.
+
+   501 - The current green look of the WebUI is terrible. Aim for something more professional. Take inspiration from e.g transmission-gtk's WebUI
+         Add a nice background, more compact widgets, better colors, etc.
+
+   
