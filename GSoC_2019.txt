@@ -34,6 +34,9 @@ Required info
 - Existing code base: 
    * New WebUI: https://github/com/csoler/RSNewWebUI
 
+		This is a prototype for the new web interface, that uses the JSon API.  It is extremely preliminary but already solves a few problems including
+		the communication with RS Json api. It is the starting point for this project or at least a working example.
+
       Compile using qmake only:
          $ qmake
 
