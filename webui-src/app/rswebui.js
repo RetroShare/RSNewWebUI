@@ -3,7 +3,12 @@
 var m = require("mithril");
 
 var rsJsonApiUrl = "http://127.0.0.1:9092"
-function rsJsonApiRequest(path, data, callback,async)
+var loginKey = {    
+                    username: "",
+                    passwd: "",
+                };
+
+function rsJsonApiRequest(path, data, callback, async, failCallback)
 {
 	console.log("rsJsonApiRequest(path, data, callback)", path, data, callback)
 		var xhr = new XMLHttpRequest();
@@ -12,13 +17,33 @@ function rsJsonApiRequest(path, data, callback,async)
 		if(xhr.readyState === 4)
 		{
 			console.log( path, "callback", xhr.status, xhr.responseText.replace(/\s+/g, " ").substr(0, 60).replace(/\r?\n|\r/g," ") )
-			if(typeof(callback) === "function") callback(xhr.responseText);
+                        if(xhr.status === 200)
+                        {
+			        if(typeof(callback) === "function") callback(xhr.responseText);
+                        }
+                        else
+                                if(typeof(failCallback) === "function") failCallback(xhr.status);
 		}
 	}
 	xhr.open('POST', rsJsonApiUrl + path, async);
 	xhr.setRequestHeader("Accept", "application/json");
-	xhr.setRequestHeader("Authorization", "Basic "+btoa("cyril"+":"+"proutprout233"));
+	xhr.setRequestHeader("Authorization", "Basic "+btoa(loginKey.username + ":" + loginKey.passwd));
 	xhr.send(data);
+}
+
+function validateLogin(username, password, callback) {
+        loginKey.username = username;
+        loginKey.passwd = password;
+        rsJsonApiRequest("/rsPeers/GetRetroshareInvite",
+                        "",
+                        function() {
+                                callback(true);
+                        },
+                        true,
+                        function() {
+                                callback(false);
+                        },
+        )
 }
 
 // These constants are the onces listed in retroshare/rsfiles.h. I would like to make them "members" of Downloads
@@ -119,6 +144,7 @@ module.exports = {
 		}
 		rsJsonApiRequest("/rsPeers/GetRetroshareInvite", "", setNodeCertificate,true)
 	},
+    validateLogin,
 
     Downloads,
 
