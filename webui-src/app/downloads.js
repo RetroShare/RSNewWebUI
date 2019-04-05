@@ -43,8 +43,8 @@ function cntrlBtn(file, act) {
 }
 
 module.exports = {
-    //oninit: rs.Downloads.load(), 	// means we re-load the list everytime we render
-    //onload: rs.Downloads.load(), 	// means we re-load the list everytime we render
+    oninit: rs.Downloads.load(), 	// means we re-load the list everytime we render
+    onload: rs.Downloads.load(), 	// means we re-load the list everytime we render
     view:  function() {
 		var filestreamer_url = "/fstream/";
 

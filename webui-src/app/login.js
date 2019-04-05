@@ -3,7 +3,7 @@ var rs = require("rswebui");
 
 function loginResponse(isSuccessful) {
         if (isSuccessful) {
-                window.location.href = window.location.href.split("?")[0] + "?/downloads";
+                m.route.set("/downloads");
         }
         else {
                 m.render(document.getElementById("warning"), "Incorrent login/password");

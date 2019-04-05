@@ -6,10 +6,13 @@ var rsJsonApiUrl = "http://127.0.0.1:9092"
 var loginKey = {    
                     username: "",
                     passwd: "",
+                    isSuccessful: false,
                 };
 
 function rsJsonApiRequest(path, data, callback, async, failCallback)
 {
+    if(loginKey.isSuccessful)
+    {
 	console.log("rsJsonApiRequest(path, data, callback)", path, data, callback)
 		var xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function()
@@ -29,21 +32,29 @@ function rsJsonApiRequest(path, data, callback, async, failCallback)
 	xhr.setRequestHeader("Accept", "application/json");
 	xhr.setRequestHeader("Authorization", "Basic "+btoa(loginKey.username + ":" + loginKey.passwd));
 	xhr.send(data);
+    }
 }
 
 function validateLogin(username, password, callback) {
-        loginKey.username = username;
-        loginKey.passwd = password;
-        rsJsonApiRequest("/rsPeers/GetRetroshareInvite",
-                        "",
-                        function() {
-                                callback(true);
-                        },
-                        true,
-                        function() {
-                                callback(false);
-                        },
-        )
+    var xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function() {
+		if(xhr.readyState === 4) {
+
+                    if(xhr.status === 200) {
+                        callback(true);
+                        loginKey.username = username;
+                        loginKey.passwd = password;
+                        loginKey.isSuccessful = true;
+                    }
+                    else
+                        callback(false);
+                    
+		}
+	}
+	xhr.open('POST', rsJsonApiUrl +  "/rsPeers/GetRetroshareInvite", true);
+	xhr.setRequestHeader("Accept", "application/json");
+	xhr.setRequestHeader("Authorization", "Basic "+btoa(username + ":" + password));
+	xhr.send("");
 }
 
 // These constants are the onces listed in retroshare/rsfiles.h. I would like to make them "members" of Downloads
