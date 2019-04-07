@@ -6,13 +6,10 @@ var rsJsonApiUrl = "http://127.0.0.1:9092"
 var loginKey = {    
                     username: "",
                     passwd: "",
-                    isSuccessful: false,
                 };
 
 function rsJsonApiRequest(path, data, callback, async, failCallback)
 {
-    if(loginKey.isSuccessful)
-    {
 	console.log("rsJsonApiRequest(path, data, callback)", path, data, callback)
 		var xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function()
@@ -32,7 +29,6 @@ function rsJsonApiRequest(path, data, callback, async, failCallback)
 	xhr.setRequestHeader("Accept", "application/json");
 	xhr.setRequestHeader("Authorization", "Basic "+btoa(loginKey.username + ":" + loginKey.passwd));
 	xhr.send(data);
-    }
 }
 
 function validateLogin(username, password, callback) {
@@ -41,10 +37,9 @@ function validateLogin(username, password, callback) {
 		if(xhr.readyState === 4) {
 
                     if(xhr.status === 200) {
-                        callback(true);
                         loginKey.username = username;
                         loginKey.passwd = password;
-                        loginKey.isSuccessful = true;
+                        callback(true);
                     }
                     else
                         callback(false);

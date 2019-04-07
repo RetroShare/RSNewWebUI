@@ -26,15 +26,12 @@
 			//ui.requestCertificate(load_cert);
 
                         var login = require("login");
-			var dl = require("downloads");
+			//var dl = require("downloads");
         	//dl.view(load_downloads);
 
             var m = require("mithril");
 
-            m.route(document.body, "/login", {
-                    "/login": login,
-                    "/downloads": dl,
-            })
+            m.mount(document.body, login);
         }
 
     </script>
