@@ -6,52 +6,53 @@ var rsJsonApiUrl = "http://127.0.0.1:9092"
 var loginKey = {    
                     username: "",
                     passwd: "",
+                    isVerified : false,
                 };
 
-function rsJsonApiRequest(path, data, callback, async, failCallback)
-{
-	console.log("rsJsonApiRequest(path, data, callback)", path, data, callback)
-		var xhr = new XMLHttpRequest();
-	xhr.onreadystatechange = function()
-	{
-		if(xhr.readyState === 4)
-		{
-			console.log( path, "callback", xhr.status, xhr.responseText.replace(/\s+/g, " ").substr(0, 60).replace(/\r?\n|\r/g," ") )
-                        if(xhr.status === 200)
-                        {
-			        if(typeof(callback) === "function") callback(xhr.responseText);
-                        }
-                        else
-                                if(typeof(failCallback) === "function") failCallback(xhr.status);
-		}
-	}
-	xhr.open('POST', rsJsonApiUrl + path, async);
-	xhr.setRequestHeader("Accept", "application/json");
-	xhr.setRequestHeader("Authorization", "Basic "+btoa(loginKey.username + ":" + loginKey.passwd));
-	xhr.send(data);
+function rsJsonApiRequest(path, data, callback, async=true, headers={}) {
+    console.log("rsJsonApiRequest(path, data, callback):", path, data, callback);
+    headers["Accept"] = "application/json";
+    if(loginKey.isVerified) {
+        headers["Authorization"] = "Basic "+btoa(loginKey.username+":"+loginKey.passwd);
+    }
+    console.log("log:", "header:", headers, "async:", async, "key:", loginKey);
+    m.request({
+        method: "POST",
+        url: rsJsonApiUrl + path,
+        async: async,
+        extract: (xhr) => {
+            return {status: xhr.status, body: xhr.responseText};
+        },
+        headers: headers,
+        data: data,
+    }).then( (result) => {
+	console.log("request success:", path, "callback", result.status, result.body.replace(/\s+/g, " ").substr(0, 60).replace(/\r?\n|\r/g," ") );
+        if( typeof(callback) === "function") {
+            if(result.status === 200) {
+                callback(result.body, true);
+            } else {
+                callback(result.body, false);
+            }
+        }
+    }).catch((e)=>{console.log("Json request error:",e.message);});
 }
 
 function validateLogin(username, password, callback) {
-    var xhr = new XMLHttpRequest();
-	xhr.onreadystatechange = function() {
-		if(xhr.readyState === 4) {
-
-                    if(xhr.status === 200) {
-                        loginKey.username = username;
-                        loginKey.passwd = password;
-                        callback(true);
-                    }
-                    else
-                        callback(false);
-                    
-		}
-	}
-	xhr.open('POST', rsJsonApiUrl +  "/rsPeers/GetRetroshareInvite", true);
-	xhr.setRequestHeader("Accept", "application/json");
-	xhr.setRequestHeader("Authorization", "Basic "+btoa(username + ":" + password));
-	xhr.send("");
+    function onResponse(body, state) {
+        if (state === true) {
+            loginKey.username = username;
+            loginKey.passwd = password;
+            loginKey.isVerified = true;
+            callback(true);
+        }
+        else {
+            console.log("Login error.");
+            callback(false);
+        }
+    }
+    let loginHeader = {"Authorization": "Basic "+btoa(username+":"+password)};
+    rsJsonApiRequest("/rsPeers/GetRetroshareInvite", {}, onResponse, true, loginHeader);
 }
-
 // These constants are the onces listed in retroshare/rsfiles.h. I would like to make them "members" of Downloads
 // but I dont know how to do this.
 
@@ -93,7 +94,7 @@ var Downloads = {
                 hintflags: 16		// = RS_FILE_HINTS_DOWNLOAD
             }
             console.log("requesting DL data for hash: "+hash)
-			rsJsonApiRequest("/rsFiles/FileDetails", JSON.stringify(json_params), addDLInfo,false)
+			rsJsonApiRequest("/rsFiles/FileDetails", json_params, addDLInfo,false)
         }
 		function handleHashesList(p)
         {
@@ -105,7 +106,7 @@ var Downloads = {
         Downloads.list = [];
 		console.log("requesting downloads...");
 
-		rsJsonApiRequest("/rsFiles/FileDownloads", "", handleHashesList,false)
+		rsJsonApiRequest("/rsFiles/FileDownloads", {}, handleHashesList,false)
     },
 
     // Control function for files. Hash is the file hash and control_action is the action to perform to be chosen as { "cancel", "pause", "resume" }
@@ -136,7 +137,7 @@ var Downloads = {
                 return ;
         };
 
-		rsJsonApiRequest(req_action, JSON.stringify(json_params),false)
+		rsJsonApiRequest(req_action, json_params,null,false)
     }
 }
 
@@ -148,7 +149,7 @@ module.exports = {
 			var jsonData = JSON.parse(p)
             callback(jsonData.retval)
 		}
-		rsJsonApiRequest("/rsPeers/GetRetroshareInvite", "", setNodeCertificate,true)
+		rsJsonApiRequest("/rsPeers/GetRetroshareInvite", {}, setNodeCertificate,true)
 	},
     validateLogin,
 
