@@ -2,57 +2,56 @@
 
 var m = require("mithril");
 
-var rsJsonApiUrl = "http://127.0.0.1:9092"
+const API_URL = "http://127.0.0.1:9092";
 var loginKey = {    
                     username: "",
                     passwd: "",
                     isVerified : false,
                 };
 
+function setKeys(username, password, verified=true) {
+    loginKey.username = username;
+    loginKey.passwd = password;
+    loginKey.isVerified = verified;
+}
+
 function rsJsonApiRequest(path, data, callback, async=true, headers={}) {
+    // retroshare will crash if data is not of object type.
     console.log("rsJsonApiRequest(path, data, callback):", path, data, callback);
     headers["Accept"] = "application/json";
     if(loginKey.isVerified) {
         headers["Authorization"] = "Basic "+btoa(loginKey.username+":"+loginKey.passwd);
     }
-    console.log("log:", "header:", headers, "async:", async, "key:", loginKey);
     m.request({
         method: "POST",
-        url: rsJsonApiUrl + path,
+        url: API_URL + path,
         async: async,
         extract: (xhr) => {
-            return {status: xhr.status, body: xhr.responseText};
+            // empty string is not valid json and fails on parse
+            if(xhr.responseText === '')xhr.responseText = '""';
+            return {
+                status: xhr.status,
+                body: JSON.parse(xhr.responseText),
+            };
         },
         headers: headers,
         data: data,
     }).then( (result) => {
-	console.log("request success:", path, "callback", result.status, result.body.replace(/\s+/g, " ").substr(0, 60).replace(/\r?\n|\r/g," ") );
+	//console.log("request success:", path, "callback", result.status, result.body.replace(/\s+/g, " ").substr(0, 60).replace(/\r?\n|\r/g," ") );
         if( typeof(callback) === "function") {
             if(result.status === 200) {
                 callback(result.body, true);
             } else {
+                loginKey.isVerified = false;
                 callback(result.body, false);
             }
         }
-    }).catch((e)=>{console.log("Json request error:",e.message);});
+    }).catch(function (e) {
+        callback({}, false);
+        console.log('Error sending request: ', e);
+    });
 }
 
-function validateLogin(username, password, callback) {
-    function onResponse(body, state) {
-        if (state === true) {
-            loginKey.username = username;
-            loginKey.passwd = password;
-            loginKey.isVerified = true;
-            callback(true);
-        }
-        else {
-            console.log("Login error.");
-            callback(false);
-        }
-    }
-    let loginHeader = {"Authorization": "Basic "+btoa(username+":"+password)};
-    rsJsonApiRequest("/rsPeers/GetRetroshareInvite", {}, onResponse, true, loginHeader);
-}
 // These constants are the onces listed in retroshare/rsfiles.h. I would like to make them "members" of Downloads
 // but I dont know how to do this.
 
@@ -77,7 +76,7 @@ var Downloads = {
     load: function() {
 		function addDLInfo(p)
         {
-            var jsonData = JSON.parse(p)
+            var jsonData = p;
 
             if(jsonData.retval === "false")
                 console.warning("Cannot retrieve info!!");
@@ -98,7 +97,7 @@ var Downloads = {
         }
 		function handleHashesList(p)
         {
-            var jsonData = JSON.parse(p)
+            var jsonData = p;
 
             // now for each hash, request the current progress
             jsonData.hashs.forEach(requestDLData);
@@ -146,14 +145,15 @@ module.exports = {
 
 		function setNodeCertificate(p)
 		{
-			var jsonData = JSON.parse(p)
+			var jsonData = p;
             callback(jsonData.retval)
 		}
 		rsJsonApiRequest("/rsPeers/GetRetroshareInvite", {}, setNodeCertificate,true)
 	},
-    validateLogin,
 
+    rsJsonApiRequest,
     Downloads,
+    setKeys,
 
 	RS_FILE_CTRL_PAUSE		,
 	RS_FILE_CTRL_START		,
