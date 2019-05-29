@@ -1,6 +1,6 @@
 'use strict';
-var m = require("mithril");
-var rs = require("rswebui");
+var m = require('mithril');
+var rs = require('rswebui');
 
 let onSuccessCallback = function() {};
 
@@ -14,8 +14,10 @@ let loginComponent = {
     view: function() {
         return m('div[id=loginbox]', [
             m('input', {type: 'text', placeholder: 'Username', id: 'uname'}),
-            m('input', {type: 'password', placeholder: 'Password', id: 'passwd'}),
-            m('button', {onclick: verifyLogin, style: 'width:5em;height:2em;'}, 'Login'),
+            m('input',
+              {type: 'password', placeholder: 'Password', id: 'passwd'}),
+            m('button', {onclick: verifyLogin, style: 'width:5em;height:2em;'},
+              'Login'),
             m('p', {id: 'warning', style: 'color:red'}),
         ]);
     }
@@ -26,8 +28,9 @@ let passwd = '';
 
 function verifyLogin() {
     [uname, passwd] = getKeys();
-    let loginHeader = {"Authorization": "Basic "+btoa(uname+":"+passwd)};
-    rs.rsJsonApiRequest('/rsPeers/GetRetroshareInvite', {}, onResponse, true, loginHeader);
+    let loginHeader = {'Authorization': 'Basic ' + btoa(uname + ':' + passwd)};
+    rs.rsJsonApiRequest(
+        '/rsPeers/GetRetroshareInvite', {}, onResponse, true, loginHeader);
 }
 
 function getKeys() {
@@ -37,17 +40,16 @@ function getKeys() {
 }
 
 function onResponse(data, successful) {
-    if(successful) {
+    if (successful) {
         rs.setKeys(uname, passwd);
         onSuccessCallback();
-    }
-    else {
+    } else {
         displayErrorMessage();
     }
 }
 
 function displayErrorMessage() {
-    m.render(document.getElementById("warning"), "Incorrent login/password.");
+    m.render(document.getElementById('warning'), 'Incorrent login/password.');
 }
 
 module.exports = {
