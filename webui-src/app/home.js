@@ -6,16 +6,12 @@ let CERT = '';
 let component = {
     oninit: getCert,
     view: function() {
-        return m('.home-tab', [
-            m('p', 'Your Retroshare certificate(click to copy)'),
-            m('input', {
-                id: 'certificate',
-                type: 'text',
-                readonly: 'true',
+        return m('.tab.tab-home.frame-center', [
+            m('h3', 'Your Retroshare certificate(click to copy).'),
+            m('textarea.field[id=certificate][rows=14][cols=65][placeholder=certificate][readonly]', {
                 onclick: copyToClipboard,
-                style: 'height: 5em;',
             },
-              ''),
+              CERT),
         ]);
     }
 };
@@ -25,7 +21,6 @@ function getCert() {
         if (state === true) {
             console.log('body = ', body);
             CERT = body['retval'];
-            document.getElementById('certificate').value = CERT;
         }
     };
     rs.rsJsonApiRequest('/rsPeers/GetRetroshareInvite', {}, handleCert);

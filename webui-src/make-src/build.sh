@@ -41,9 +41,10 @@ fi
 
 if [ "$2" = "" ]||[ "$2" = "app.css" ]; then
 	echo building app.css
-        cat $src/app/green-black.scss >> $publicdest/app.css
+        #cat $src/app/green-black.scss >> $publicdest/app.css
+        cat $src/app/theme.css >> $publicdest/app.css
 	cat $src/make-src/main.css >> $publicdest/app.css
-	cat $src/make-src/chat.css >> $publicdest/app.css
+	#cat $src/make-src/chat.css >> $publicdest/app.css
 fi
 
 if [ "$2" = "" ]||[ "$2" = "index.html" ]; then

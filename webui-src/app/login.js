@@ -12,13 +12,13 @@ function renderLoginPage(callback) {
 
 let loginComponent = {
     view: function() {
-        return m('div[id=loginbox]', [
-            m('input', {type: 'text', placeholder: 'Username', id: 'uname'}),
-            m('input',
-              {type: 'password', placeholder: 'Password', id: 'passwd'}),
-            m('button', {onclick: verifyLogin, style: 'width:5em;height:2em;'},
+        return m('.frame-center', [
+            m('img.logo[src=../../data/retroshare.svg][alt=retroshare_icon]'),
+            m('input.field[type=text][placeholder=Username][id=uname]'),
+            m('input.field[type=password][placeholder=Password][id=passwd]'),
+            m('button.submit-btn', {onclick: verifyLogin},
               'Login'),
-            m('p', {id: 'warning', style: 'color:red'}),
+            m('p.error[id=error]'),
         ]);
     }
 };
@@ -49,7 +49,7 @@ function onResponse(data, successful) {
 }
 
 function displayErrorMessage() {
-    m.render(document.getElementById('warning'), 'Incorrent login/password.');
+    m.render(document.getElementById('error'), 'Incorrent login/password.');
 }
 
 module.exports = {
