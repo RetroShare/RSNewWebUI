@@ -1,5 +1,53 @@
-var m = require('mithril');
-var rs = require('rswebui');
+let m = require('mithril');
+let rs = require('rswebui');
+
+// These constants are the onces listed in retroshare/rsfiles.h. I would like to
+// make them "members" of Downloads but I dont know how to do this.
+const RS_FILE_CTRL_PAUSE = 0x00000100;
+const RS_FILE_CTRL_START = 0x00000200;
+const RS_FILE_CTRL_FORCE_CHECK = 0x00000400;
+const FT_STATE_FAILED = 0x0000;
+const FT_STATE_OKAY = 0x0001;
+const FT_STATE_WAITING = 0x0002;
+const FT_STATE_DOWNLOADING = 0x0003;
+const FT_STATE_COMPLETE = 0x0004;
+const FT_STATE_QUEUED = 0x0005;
+const FT_STATE_PAUSED = 0x0006;
+const FT_STATE_CHECKING_HASH = 0x0007;
+
+let Downloads = {
+    statusMap: new Map(),
+    hashes: [],
+
+    loadHashes() {
+        rs.rsJsonApiRequest(
+            '/rsFiles/FileDownloads',
+            {},
+            function(d) {
+                Downloads.hashes = d.hashs;
+            },
+        );
+    },
+
+    loadStatus() {
+        Downloads.loadHashes();
+        if(Downloads.hashes.length !== Downloads.statusMap.size)
+            Downloads.statusMap.clear();
+        for (let hash of Downloads.hashes) {
+            let json_params = {
+                hash,
+                hintflags: 16,//RS_FILE_HINTS_DOWNLOAD
+            };
+            rs.rsJsonApiRequest(
+                '/rsFiles/FileDetails',
+                json_params,
+                function(fileStat) {
+                    Downloads.statusMap.set(hash, fileStat.info);
+                },
+            );
+        }
+    },
+};
 
 function makeFriendlyUnit(bytes) {
     if (bytes < 1e3) return bytes.toFixed(1) + 'B';
@@ -9,106 +57,101 @@ function makeFriendlyUnit(bytes) {
     return (bytes / 1e12).toFixed(1) + 'TB';
 }
 
-function progressBar(file) {
-    return m(
-        'div[style=border:5px solid lime;' +
-            'border-radius:3mm;' +
-            'padding:2mm;' +
-            'height:5mm' +
-            ']',
-        [m('div[style=' +
-               'background-color:lime;' +
-               'height:100%;' +
-               'width:' + (file.transfered / file.size * 100) + '%' +
-               ']',
-           '')]);
+function progressBar(rate) {
+    return m('.progressbar[]',
+        {style: {content: rate+'%'}},
+        m('span.progress-status',
+            {style: {width: rate+'%'}},
+        rate + '%')
+    );
 };
 
-function cntrlBtn(file, act) {
-    return m(
-        'div.btn', {
-            onclick: function() {
-                console.log(
-                    'Control button pushed. Action on file ' + file.hash +
-                    ' is ' + act);
+function fileAction(hash, action) {
+    let action_header = '';
+    let json_params = {hash, flags: 0};
+    switch(action) {
+         case 'cancel':
+             req_action = '/rsFiles/FileCancel';
+             break;
 
-                rs.Downloads.control(file.hash, act);
-            }
-        },
-        act);
-}
+         case 'pause':
+            req_action = '/rsFiles/FileControl';
+            json_params.flags = RS_FILE_CTRL_PAUSE;
+            break;
 
-module.exports = {
-    oninit:
-        rs.Downloads.load,  // means we re-load the list everytime we render
-    onload:
-        rs.Downloads.load,  // means we re-load the list everytime we render
+        case 'resume':
+            req_action = '/rsFiles/FileControl';
+            json_params.flags = RS_FILE_CTRL_START;
+            break;
+
+        case 'force_check':
+            req_action = '/rsFiles/FileControl';
+            json_params.flags = RS_FILE_CTRL_FORCE_CHECK;
+            break;
+
+        default:
+            console.log('Unknown action in Downloads.control()');
+            return;
+    };
+    rs.rsJsonApiRequest(action_header, json_params, ()=>{});//false
+};
+
+function actionButton(file, action) {
+    return m('button',
+        {onclick: function() {
+            fileAction(file.hash, action);
+        }},
+    action);
+};
+
+component = {
+    // means we re-load the list everytime we render
+    oninit: Downloads.loadStatus,
+    onload: Downloads.loadStatus,
     view: function() {
-        var filestreamer_url = '/fstream/';
-
-        var paths =
-            rs.Downloads
-                .list;  // after that, paths is a list of FileInfo structures
-
-        if (paths === undefined) {
-            return m('div', 'Downloads ... please wait ...');
-        }
-
-        console.log('List size=' + rs.Downloads.list.length + '\n');
-        console.log('List [0]=' + rs.Downloads.list[0] + '\n');
-
-        return m('div', [
-            m('h2', 'Downloads (' + paths.length + ')'),
-            m('div.btn2', {
-                onclick: function() {
-                    m.route('/downloads/add');
-                },
-            },
-              'add retrohare downloads'),
-
+        return m('div.frame', [
+            m('h3', 'Downloads (' + Downloads.statusMap.size + ')'),
             m('hr'),
             m('table',
               [
                   m('tr',
                     [
-                        m('th', 'name'), m('th', 'size'), m('th', 'progress'),
-                        m('th', 'transfer rate'), m('th', 'status'),
-                        m('th', 'progress'), m('th', 'action')
+                        m('th', 'Name'),
+                        m('th', 'Size'),
+                        m('th', 'Progress'),
+                        m('th', 'Transfer rate'),
+                        m('th', 'Status'),
+                        m('th', 'Progress'),
+                        m('th', 'Action'),
                     ]),
-                  paths.map(function(fileInfo) {
-                      var ctrlBtn = m('div', '');
-                      var progress = fileInfo.transfered / fileInfo.size * 100;
+                  Array.from(Downloads.statusMap, function(fileStatus) {
+                      let info = fileStatus[1];
+                      let progress = info.transfered / info.size * 100;
+                      // Using hash of file as vnode key
+                      return m('tr', {key: fileStatus[0]}, 
+                          [
+                              m('td', info.name),
+                              m('td', makeFriendlyUnit(info.size)),
+                              m('td', progress.toPrecision(3) + '%'),
+                              m('td', makeFriendlyUnit(info.tfRate * 1024) + '/s'),
+                              m('td', info.download_status),
+                              m('td', progressBar(progress)),
+                              m('td',
+                                  [
+                                      actionButton(info, 
+                                          info.downloadStatus === FT_STATE_PAUSED?
+                                          'resume' : 'pause'),
 
-                      console.log(
-                          'dl status=' + fileInfo.downloadStatus +
-                          ' paused_state=' + rs.FT_STATE_PAUSED);
-                      return m('tr', [
-                          m('td', [m('a.filelink', {
-                                target: 'blank',
-                                href: filestreamer_url + fileInfo.hash + '/' +
-                                    encodeURIComponent(fileInfo.fname)
-                            },
-                                     fileInfo.fname)]),
-                          m('td', makeFriendlyUnit(fileInfo.size)),
-                          m('td', progress.toPrecision(3) + '%'),
-                          m('td',
-                            makeFriendlyUnit(fileInfo.tfRate * 1024) + '/s'),
-                          m('td', fileInfo.download_status),
-                          m('td', progressBar(fileInfo)),
-                          m('td',
-                            [
-                                cntrlBtn(
-                                    fileInfo,
-                                    fileInfo.downloadStatus ===
-                                            rs.FT_STATE_PAUSED ?
-                                        'resume' :
-                                        'pause'),
-                                cntrlBtn(fileInfo, 'cancel')
-                            ])
-                      ])
+                                      actionButton(info, 'cancel'),
+                                  ]
+                              ),
+                          ]);
                   })
               ])
         ]);
     },
 };
 
+module.exports = {
+    component,
+};

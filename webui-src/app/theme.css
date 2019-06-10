@@ -37,6 +37,22 @@ button {
     color: red;
 }
 
+.progressbar {
+    width: 100%;
+    background-color: grey;
+    position: relative;
+}.progressbar:before{
+    position: absolute;
+    text-align: center;
+    left: 0;
+    right: 0;
+}.progress-status {
+    display: inline-block;
+    height: 100%;
+    background-color: #3ba4d7;
+    text-align: center;
+}
+
 .tab-container {
     padding: 1em 1em;
     background-color: #333;
