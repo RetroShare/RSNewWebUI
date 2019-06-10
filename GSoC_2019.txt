@@ -65,8 +65,8 @@ Section         |   ID     |   Status  | What                                   
 Preliminary     |   001    |   Done    | Create a standalone working mithril example not talking to RS, for testing authenticated requests.        |
                 |   002    |   Done    | Modify 001 it so that it prints some information that is from RS                                          |
 ----------------+----------+-----------+-----------------------------------------------------------------------------------------------------------+
-WebUI General   |   101    |           | Create a login page that asks for login+passwd to be used in the JSonAPI requests                         |
-                |   102    |           | Create "tab" system to allow different sections of the webUI to be displayed (See previous WebUI)         |
+WebUI General   |   101    |   Done    | Create a login page that asks for login+passwd to be used in the JSonAPI requests                         |
+                |   102    |   Done    | Create "tab" system to allow different sections of the webUI to be displayed (See previous WebUI)         |
 ----------------+----------+-----------+-----------------------------------------------------------------------------------------------------------+
 WebUI RS side   |   201    |           | Update/copy the old WebUI page so that it allows to activate/desactivate the new WebUI                    |
                 |          |           |                                                                                                           | 
