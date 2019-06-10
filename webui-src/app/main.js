@@ -13,7 +13,7 @@ function onSuccess() {
     renderMainStructure();
     m.route(document.getElementById('tab-section'), '/home', {
         '/home': home.component,
-        '/downloads': dl,
+        '/downloads': dl.component,
     });
 }
 
