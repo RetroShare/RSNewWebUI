@@ -19,7 +19,6 @@ let component = {
 function getCert() {
     let handleCert = function(body, state) {
         if (state === true) {
-            console.log('body = ', body);
             CERT = body['retval'];
         }
     };

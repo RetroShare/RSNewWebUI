@@ -90,7 +90,7 @@ function fileAction(hash, action) {
             break;
 
         default:
-            console.log('Unknown action in Downloads.control()');
+            console.error('Unknown action in Downloads.control()');
             return;
     };
     rs.rsJsonApiRequest(action_header, json_params, ()=>{});//false
@@ -104,54 +104,68 @@ function actionButton(file, action) {
     action);
 };
 
-component = {
-    // means we re-load the list everytime we render
-    oninit: Downloads.loadStatus,
-    onload: Downloads.loadStatus,
-    view: function() {
-        return m('div.frame', [
-            m('h3', 'Downloads (' + Downloads.statusMap.size + ')'),
-            m('hr'),
-            m('table',
-              [
-                  m('tr',
-                    [
-                        m('th', 'Name'),
-                        m('th', 'Size'),
-                        m('th', 'Progress'),
-                        m('th', 'Transfer rate'),
-                        m('th', 'Status'),
-                        m('th', 'Progress'),
-                        m('th', 'Action'),
-                    ]),
-                  Array.from(Downloads.statusMap, function(fileStatus) {
-                      let info = fileStatus[1];
-                      let progress = info.transfered / info.size * 100;
-                      // Using hash of file as vnode key
-                      return m('tr', {key: fileStatus[0]}, 
-                          [
-                              m('td', info.name),
-                              m('td', makeFriendlyUnit(info.size)),
-                              m('td', progress.toPrecision(3) + '%'),
-                              m('td', makeFriendlyUnit(info.tfRate * 1024) + '/s'),
-                              m('td', info.download_status),
-                              m('td', progressBar(progress)),
-                              m('td',
-                                  [
-                                      actionButton(info, 
-                                          info.downloadStatus === FT_STATE_PAUSED?
-                                          'resume' : 'pause'),
+let backgroundCallback = function() {
+  this.loadStatus();
+};
+// Bind to Downloads so it doesn't lose scope
+backgroundCallback = backgroundCallback.bind(Downloads);
 
-                                      actionButton(info, 'cancel'),
-                                  ]
-                              ),
-                          ]);
-                  })
-              ])
-        ]);
-    },
+let isComponentActive = function() {
+  if (m.route.get() === '/downloads')
+    return true;
+  else
+    return false;
+}
+
+component = {
+  oninit : function() {
+    rs.setBackgroundTask(backgroundCallback, 5000, isComponentActive);
+  },
+  view : function() {
+    return m('div.frame', [
+      m('h3', 'Downloads (' + Downloads.statusMap.size + ')'), m('hr'),
+      m(
+          'table',
+          [
+            m('tr',
+              [
+                m('th', 'Name'),
+                m('th', 'Size'),
+                m('th', 'Progress'),
+                m('th', 'Transfer rate'),
+                m('th', 'Status'),
+                m('th', 'Progress'),
+                m('th', 'Action'),
+              ]),
+            Array.from(
+                Downloads.statusMap,
+                function(fileStatus) {
+                  let info = fileStatus[1];
+                  let progress = info.transfered / info.size * 100;
+                  // Using hash of file as vnode key
+                  return m('tr', {key : fileStatus[0]}, [
+                    m('td', info.name),
+                    m('td', makeFriendlyUnit(info.size)),
+                    m('td', progress.toPrecision(3) + '%'),
+                    m('td', makeFriendlyUnit(info.tfRate * 1024) + '/s'),
+                    m('td', info.download_status),
+                    m('td', progressBar(progress)),
+                    m('td',
+                      [
+                        actionButton(info,
+                                     info.downloadStatus === FT_STATE_PAUSED
+                                         ? 'resume'
+                                         : 'pause'),
+
+                        actionButton(info, 'cancel'),
+                      ]),
+                  ]);
+                })
+          ])
+    ]);
+  },
 };
 
 module.exports = {
-    component,
+  component,
 };
