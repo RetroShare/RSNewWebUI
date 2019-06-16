@@ -47,7 +47,7 @@ function onResponse(data, successful) {
 }
 
 function displayErrorMessage() {
-  m.render(document.getElementById('error'), 'Incorrent login/password.');
+  m.render(document.getElementById('error'), 'Incorrect login/password.');
 }
 
 module.exports = {

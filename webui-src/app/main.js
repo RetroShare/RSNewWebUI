@@ -1,5 +1,3 @@
-'use strict'
-
 let m = require('mithril');
 let rs = require('rswebui');
 let login = require('login');

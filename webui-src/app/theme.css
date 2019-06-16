@@ -43,6 +43,7 @@ button {
     width: 100%;
     background-color: grey;
     position: relative;
+    text-align: left;
 }.progressbar:before{
     position: absolute;
     text-align: center;
