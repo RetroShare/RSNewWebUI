@@ -5,7 +5,7 @@ let onSuccessCallback = function() {};
 
 function renderLoginPage(callback) {
   // Cannot use mount because vDOM will not let any other mount overrides
-  m.render(document.body, m(loginComponent));
+  m.render(document.getElementById('main'), m(loginComponent));
   onSuccessCallback = callback;
 }
 

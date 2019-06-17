@@ -16,9 +16,7 @@ function onSuccess() {
 }
 
 function renderMainStructure() {
-    // TODO: move the tabs sections to all components,
-    // so that highlighting the active one becomes easier
-    m.render(document.body, [
+    m.render(document.getElementById('main'), [
         m('nav.tab-container',
           [
               m('a.tab-header[href=/home]', {oncreate: m.route.link}, 'Home'),

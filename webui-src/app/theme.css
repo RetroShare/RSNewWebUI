@@ -7,6 +7,13 @@ Context-independent styles
     align-items: center;
 }
 
+nav {
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    width: 100%;
+}
+
 h3 {
 }
 
