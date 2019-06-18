@@ -1,10 +1,15 @@
 /******************************
 Context-independent styles
 ******************************/
+@keyframes fadein {
+    from {opacity: 0;}
+    to   {opacity: 1;}
+}
 .frame-center {
     display: flex;
     flex-direction: column;
     align-items: center;
+    animation: fadein 0.5s;
 }
 
 nav {
@@ -16,7 +21,6 @@ nav {
 
 h3 {
 }
-
 .field {
     background: white;
     text-align: center;
@@ -36,7 +40,7 @@ button {
     border-radius: 5px;
     cursor: pointer;
     font-size: 1.2em;
-    transition: all 0.2s;
+    transition: all 0.5s;
 } button:hover {
     background: #3ba4d7;
     color: white;
@@ -87,7 +91,7 @@ Target specific elements
     padding: 1em 1em;
     text-decoration: none;
     color: white;
-    transition: all 0.2s;
+    transition: all 0.5s;
 } .tab-header:hover {
     background-color: #999;
 } .tab-header:focus {
