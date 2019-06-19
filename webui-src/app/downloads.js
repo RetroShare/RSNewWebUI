@@ -75,21 +75,21 @@ function fileAction(hash, action) {
   let json_params = {hash, flags : 0};
   switch (action) {
   case 'cancel':
-    req_action = '/rsFiles/FileCancel';
+    action_header = '/rsFiles/FileCancel';
     break;
 
   case 'pause':
-    req_action = '/rsFiles/FileControl';
+    action_header = '/rsFiles/FileControl';
     json_params.flags = RS_FILE_CTRL_PAUSE;
     break;
 
   case 'resume':
-    req_action = '/rsFiles/FileControl';
+    action_header = '/rsFiles/FileControl';
     json_params.flags = RS_FILE_CTRL_START;
     break;
 
   case 'force_check':
-    req_action = '/rsFiles/FileControl';
+    action_header = '/rsFiles/FileControl';
     json_params.flags = RS_FILE_CTRL_FORCE_CHECK;
     break;
 

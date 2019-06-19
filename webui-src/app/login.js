@@ -4,7 +4,7 @@ var rs = require('rswebui');
 let onSuccessCallback = function() {};
 
 function renderLoginPage(callback) {
-  // Cannot use mount because vDOM will not let any other mount overrides
+  // Cannot use mount because vDOM will not let any other component overrides
   m.render(document.getElementById('main'), m(loginComponent));
   onSuccessCallback = callback;
 }
