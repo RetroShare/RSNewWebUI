@@ -11,7 +11,7 @@ function renderLoginPage(callback) {
 
 let loginComponent = {
   view : function() {
-    return m('.frame-center', [
+    return m('.tab-section.frame-center', [
       m('img.logo[src=../../data/retroshare.svg][alt=retroshare_icon][width=10%]'),
       m('input.field[type=text][placeholder=Username][id=uname]'),
       m('input.field[type=password][placeholder=Password][id=passwd]'),

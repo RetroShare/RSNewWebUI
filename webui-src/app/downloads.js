@@ -127,7 +127,7 @@ component = {
     rs.setBackgroundTask(backgroundCallback, 5000, isComponentActive);
   },
   view : function() {
-    return m('div.frame-center', [
+    return m('.tab.frame-center', [
       m('h3', 'Downloads (' + Downloads.statusMap.size + ')'), m('hr'),
       m(
           'table',

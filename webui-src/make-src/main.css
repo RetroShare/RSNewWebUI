@@ -3,8 +3,7 @@ html, body, #main {
     height: 100%;
     font-family: Arial, Helvetica, sans-serif;
 }
-
 #main {
-    /*Adjustment to fit floating navbar*/
-    margin-top: 70px;
+    /* To adjust floating navbar height */
+    margin-top: 3em;
 }

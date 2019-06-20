@@ -6,7 +6,7 @@ let CERT = '';
 let component = {
     oninit: getCert,
     view: function() {
-        return m('.tab.tab-home.frame-center', [
+        return m('.tab.frame-center', [
             m('h3', 'Your Retroshare certificate(click to copy).'),
             m('textarea.field[id=certificate][rows=14][cols=65][placeholder=certificate][readonly]', {
                 onclick: copyToClipboard,
