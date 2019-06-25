@@ -10,12 +10,14 @@ function renderLoginPage(callback) {
 }
 
 let loginComponent = {
-  view : function() {
-    return m('.tab-section.frame-center', [
+  view: function() {
+    return m('.tab.frame-center', [
       m('img.logo[src=../../data/retroshare.svg][alt=retroshare_icon][width=10%]'),
       m('input.field[type=text][placeholder=Username][id=uname]'),
       m('input.field[type=password][placeholder=Password][id=passwd]'),
-      m('button.submit-btn', {onclick : verifyLogin}, 'Login'),
+      m('button.submit-btn', {
+        onclick: verifyLogin
+      }, 'Login'),
       m('p.error[id=error]'),
     ]);
   }
@@ -26,19 +28,23 @@ let passwd = '';
 
 function verifyLogin() {
   [uname, passwd] = getKeys();
-  let loginHeader = {'Authorization' : 'Basic ' + btoa(uname + ':' + passwd)};
+  let loginHeader = {
+    'Authorization': 'Basic ' + btoa(uname + ':' + passwd)
+  };
   rs.rsJsonApiRequest('/rsPeers/GetRetroshareInvite', {}, onResponse, true,
-                      loginHeader);
+    loginHeader);
 }
 
 function getKeys() {
-  let uname = document.getElementById('uname').value;
-  let passwd = document.getElementById('passwd').value;
-  return [ uname, passwd ];
+  let uname = document.getElementById('uname')
+    .value;
+  let passwd = document.getElementById('passwd')
+    .value;
+  return [uname, passwd];
 }
 
 function onResponse(data, successful) {
-  if (successful) {
+  if(successful) {
     rs.setKeys(uname, passwd);
     onSuccessCallback();
   } else {
@@ -53,3 +59,4 @@ function displayErrorMessage() {
 module.exports = {
   renderLoginPage,
 }
+

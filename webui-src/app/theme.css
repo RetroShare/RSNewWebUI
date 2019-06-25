@@ -9,6 +9,9 @@ Context-independent styles
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+.tab {
     animation: fadein 0.5s;
 }
 
@@ -58,23 +61,6 @@ button {
     text-align: center;
 }
 
-.sidebar {
-    height: 100%;
-    width: 200px;
-    border-right: 1px solid lightgrey;
-    position: fixed;
-    top: 3em;
-    left: 0;
-    overflow-x: hidden;
-} .sidebar-link {
-    text-decoration: none;
-    padding: 1em;
-    display: block;
-    cursor: pointer;
-}.sidebar-link:hover {
-    background-color: lightgrey;
-}
-
 table {
     padding: 20px;
     table-layout: fixed;
@@ -113,4 +99,26 @@ Target specific elements
 }
 .tab-section {
     text-align: center;
+}
+
+.sidebar {
+    height: 100%;
+    width: 200px;
+    border-right: 1px solid lightgrey;
+    position: fixed;
+    top: 3em;
+    left: 0;
+    overflow-x: hidden;
+} .sidebar-link {
+    text-decoration: none;
+    padding: 1em;
+    display: block;
+    cursor: pointer;
+    border-bottom: 1px solid lightgrey;
+}.sidebar-link:hover {
+    background-color: lightgrey;
+}
+/* Content adjacent to sidebar */
+.node-panel {
+    margin-left: 200px;
 }
