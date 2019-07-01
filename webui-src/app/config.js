@@ -1,22 +1,42 @@
 let m = require('mithril');
 let rs = require('rswebui');
 
-// Stores and resolves all sub-panels in tab
-Panels = {
-  current: '',
-  setCurrent: function(panelName) {
-    this.current = panelName;
-  },
-  currentPanel: function() {
-    return m(Panels[this.current]);
-  },
+function sidebar(links) {
+  return m('.sidebar',
+    Object.keys(links)
+    .map(function(panelName) {
+      return m('a.sidebar-link' + (Panel.active === panelName ? '#selected' : ''), {
+          onclick: function() {
+            Panel.active = panelName;
+          },
+        },
+        panelName);
+    }),
+  );
 };
 
-Panels['general'] = {
+class Panel {
+  static component() {
+    return [
+      sidebar(Panel.list),
+      m(Panel.list[Panel.active]),
+    ];
+  }
+  constructor(name, content) {
+    Panel.list[name] = this;
+    // Turning object itself to a component
+    Object.assign(this, content);
+  }
+};
+Panel.active = '';
+Panel.list = {};
+
+new Panel('General', {
   view: function() {
     return m('.node-panel');
   },
-};
+});
+Panel.active = 'General';
 
 nodeInfo = {
   setData: function(data) {
@@ -24,7 +44,7 @@ nodeInfo = {
   },
 };
 
-Panels['node'] = {
+new Panel('Node', {
   oninit: function() {
     rs.rsJsonApiRequest('/rsConfig/getConfigNetStatus', {}, nodeInfo.setData);
   },
@@ -41,28 +61,12 @@ Panels['node'] = {
       ]),
     ]);
   },
-};
-
-let sidebar = function() {
-  return m('.sidebar', [
-    m('a.sidebar-link', {
-      onclick: function() {
-        Panels.setCurrent('general');
-      },
-    }, 'General'),
-    m('a.sidebar-link', {
-      onclick: function() {
-        Panels.setCurrent('node');
-      },
-    }, 'Node'),
-  ]);
-};
+});
 
 let component = {
   view: function() {
     return m('.tab', [
-      sidebar(),
-      Panels.currentPanel(),
+      Panel.component(),
     ]);
   },
 };
