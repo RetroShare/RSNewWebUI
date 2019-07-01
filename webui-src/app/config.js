@@ -63,6 +63,41 @@ new Panel('Node', {
   },
 });
 
+let servicesInfo = {
+  list: [],
+  setData: function(data) {
+    servicesInfo.list = data.info.mServiceList;
+  },
+};
+
+new Panel('Services', {
+  oninit: function() {
+    rs.rsJsonApiRequest('/rsServiceControl/getOwnServices', {}, servicesInfo.setData);
+  },
+  view: function() {
+    return m('.node-panel', [
+      m('h3', 'My Services'),
+      m('table', [
+        m('tr', [
+          m('th', 'Name'),
+          m('th', 'Type'),
+          m('th', 'Version'),
+        ]),
+        servicesInfo.list.map(function(service) {
+          return m('tr', {
+            key: service.key,
+          }, [
+            m('td', service.value.mServiceName),
+            m('td', service.value.mServiceType),
+            m('td', service.value.mVersionMajor + '.' + service.value.mVersionMinor),
+          ]);
+        }),
+      ]),
+    ]);
+  },
+});
+
+
 let component = {
   view: function() {
     return m('.tab', [
