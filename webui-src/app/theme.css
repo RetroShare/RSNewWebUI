@@ -1,6 +1,10 @@
 /******************************
 General site-wide rules
 ******************************/
+h3 {
+    padding: 10px;
+}
+
 input, textarea {
     background: white;
     text-align: center;
@@ -35,6 +39,14 @@ table {
 } table th {
     background-color: #3ba4d7;
     height: 1em;
+}
+
+ul {
+    list-style-type: none;
+}
+li {
+    border-bottom: 1px solid #ccc;
+    padding: 10px;
 }
 
 @keyframes fadein {
@@ -116,7 +128,9 @@ Target specific elements
     display: block;
     cursor: pointer;
     border-bottom: 1px solid lightgrey;
-}.sidebar-link:hover, #selected {
+}.sidebar-link:hover{
+    background-color: #ccc;
+}.sidebar-link#selected {
     background-color: lightgrey;
 }
 /* Content adjacent to sidebar */
