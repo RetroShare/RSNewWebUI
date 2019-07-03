@@ -31,12 +31,48 @@ class Panel {
 Panel.active = '';
 Panel.list = {};
 
-new Panel('General', {
+function setMaxRates() {
+  let download = document.getElementById('download-limit')
+    .value;
+  let upload = document.getElementById('upload-limit')
+    .value;
+  if(isNaN(download) || isNaN(upload)) {
+    // TODO show proper error
+    return;
+  }
+  rs.rsJsonApiRequest('/rsConfig/SetMaxDataRates', {
+      downKb: Number(download),
+      upKb: Number(upload),
+    },
+    //TODO display success animation
+    () => {},
+  );
+};
+new Panel('Network', {
+  oninit: function() {
+    rs.rsJsonApiRequest('/rsConfig/GetMaxDataRates', {}, function(data) {
+      document.getElementById('download-limit')
+        .value = data.inKb;
+      document.getElementById('upload-limit')
+        .value = data.outKb;
+    });
+  },
+    // TODO show info from UI hover message
   view: function() {
-    return m('.node-panel');
+    return m('.node-panel', [
+      m('h3', 'Network Configuration'),
+      m('ul', [
+        m('li', ['Download limit(KB/s):', m('input#download-limit[type=number][name=download]', {
+          onblur: setMaxRates,
+        })]),
+        m('li', ['Upload limit(KB/s):', m('input#upload-limit[type=number][name=upload]', {
+          onblur: setMaxRates,
+        })]),
+      ])
+    ]);
   },
 });
-Panel.active = 'General';
+Panel.active = 'Network';
 
 nodeInfo = {
   setData: function(data) {
@@ -80,7 +116,7 @@ new Panel('Services', {
       m('table', [
         m('tr', [
           m('th', 'Name'),
-          m('th', 'Type'),
+          m('th', 'ID'),
           m('th', 'Version'),
         ]),
         servicesInfo.list.map(function(service) {
