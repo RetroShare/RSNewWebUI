@@ -4,6 +4,4 @@ html, body, #main {
     font-family: Helvetica, Arial, sans-serif;
 }
 #main {
-    /* To adjust floating navbar height */
-    margin-top: 3em;
 }

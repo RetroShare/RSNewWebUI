@@ -6,27 +6,30 @@ h3 {
 }
 
 input, textarea {
+    box-sizing: border-box;
     background: white;
-    text-align: center;
     font-size: 1.2em;
-    font-weight: 500;
+    font-weight: 400;
+    border: 1px solid #ccc;
     border-radius: 5px;
-    padding: 0.3em;
-    border: 2px solid #3ba4d7;
+    padding: 0.5em;
+} input:focus {
+    border: 1px solid #3ba4d7;
+    box-shadow: inset 0 0 5px #ccc;
 }
 
 button {
-    background: rgb(59, 164, 215);
-    background: white;
-    color: #3ba4d7;
-    border: 1px solid #3ba4d7;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1.2em;
-    transition: all 0.5s;
-} button:hover {
-    background: #3ba4d7;
     color: white;
+    background: #2699ed;
+    font-size: 1.2em;
+    padding: 5px 10px;
+    border: 0;
+    border-radius: 5px;
+    box-shadow: inset -3px -3px 0 #0d69ac;
+    cursor: pointer;
+} button:active {
+    outline: none;
+    box-shadow: inset 3px 3px 0 #0d69ac;
 }
 
 table {
@@ -90,11 +93,14 @@ Target specific sections
 
 /* Login */
 .login-page {
-    background-image: linear-gradient(-45deg, #118fec, #7bccff);
+    background-image: linear-gradient(-45deg, #0e76a7, #7bccff);
     height: 100%;
+    animation: fadein 0.5s;
 }
 .login-container {
-    margin: 0 auto;
+    background-color: white;
+    box-shadow: 3px 3px 5px #444;
+    margin: auto;
     position: relative;
     top: 100px;
     max-width: 30%;
@@ -105,7 +111,6 @@ Target specific sections
     align-items: flex-start;
     flex-direction: column;
     align-items: center;
-    background-color: white;
 }
 .login-container * {
     margin-top: 10px;
