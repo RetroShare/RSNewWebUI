@@ -11,15 +11,16 @@ function renderLoginPage(callback) {
 
 let loginComponent = {
   view: function() {
-    return m('.tab.frame-center', [
-      m('img.logo[src=../../data/retroshare.svg][alt=retroshare_icon][width=10%]'),
-      m('input.field[type=text][placeholder=Username][id=uname]'),
-      m('input.field[type=password][placeholder=Password][id=passwd]'),
-      m('button.submit-btn', {
-        onclick: verifyLogin
-      }, 'Login'),
-      m('p.error[id=error]'),
-    ]);
+    return m('.login-page',
+      m('.login-container', [
+        m('img.logo[src=../../data/retroshare.svg][alt=retroshare_icon][width=30%]'),
+        m('input.field[type=text][placeholder=Username][id=uname]'),
+        m('input.field[type=password][placeholder=Password][id=passwd]'),
+        m('button.submit-btn', {
+          onclick: verifyLogin
+        }, 'Login'),
+        m('p.error[id=error]'),
+      ]));
   }
 };
 

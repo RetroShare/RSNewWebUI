@@ -11,9 +11,8 @@ input, textarea {
     font-size: 1.2em;
     font-weight: 500;
     border-radius: 5px;
-    padding: 0.5em;
+    padding: 0.3em;
     border: 2px solid #3ba4d7;
-    margin-bottom: 1em;
 }
 
 button {
@@ -86,8 +85,31 @@ li {
 }
 
 /******************************
-Target specific elements
+Target specific sections
 ******************************/
+
+/* Login */
+.login-page {
+    background-image: linear-gradient(-45deg, #118fec, #7bccff);
+    height: 100%;
+}
+.login-container {
+    margin: 0 auto;
+    position: relative;
+    top: 100px;
+    max-width: 30%;
+    height: 50%;
+    border-radius: 5px;
+
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
+    background-color: white;
+}
+.login-container * {
+    margin-top: 10px;
+}
 
 /* Navbar */
 .tab-container {
