@@ -91,6 +91,10 @@ li {
 Target specific sections
 ******************************/
 
+#tab-section {
+    margin-top: 3em;
+}
+
 /* Login */
 .login-page {
     background-image: linear-gradient(-45deg, #0e76a7, #7bccff);

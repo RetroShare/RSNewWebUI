@@ -31,9 +31,7 @@ function renderMainStructure() {
           oncreate: m.route.link
         }, 'Config'),
       ]),
-    m('div', {
-      id: 'tab-section'
-    })
+    m('div#tab-section')
   ]);
 };
 
