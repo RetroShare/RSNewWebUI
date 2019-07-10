@@ -5,7 +5,7 @@ function sidebar(links) {
   return m('.sidebar',
     Object.keys(links)
     .map(function(panelName) {
-      return m('a.sidebar-link' + (Panel.active === panelName ? '#selected' : ''), {
+      return m('a.sidebar-link' + (Panel.active === panelName ? '#selected-sidebar-link' : ''), {
           onclick: function() {
             Panel.active = panelName;
           },
@@ -37,14 +37,14 @@ function setMaxRates() {
   let upload = document.getElementById('upload-limit')
     .value;
   if(isNaN(download) || isNaN(upload)) {
-    // TODO show proper error
+    // TODO display error on setting non-numeric value
     return;
   }
   rs.rsJsonApiRequest('/rsConfig/SetMaxDataRates', {
       downKb: Number(download),
       upKb: Number(upload),
     },
-    //TODO display success animation
+    //TODO display success animation(fontawesome)
     () => {},
   );
 };
@@ -57,7 +57,7 @@ new Panel('Network', {
         .value = data.outKb;
     });
   },
-    // TODO show info from UI hover message
+  // TODO show info from UI hover message
   view: function() {
     return m('.node-panel', [
       m('h3', 'Network Configuration'),
@@ -142,6 +142,7 @@ let component = {
   },
 };
 
+new rs.Tab('config', component);
 module.exports = {
   component,
 };

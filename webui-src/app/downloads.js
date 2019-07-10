@@ -16,96 +16,109 @@ const FT_STATE_PAUSED = 0x0006;
 const FT_STATE_CHECKING_HASH = 0x0007;
 
 let Downloads = {
-  statusMap : new Map(),
-  hashes : [],
+  statusMap: new Map(),
+  hashes: [],
 
   loadHashes() {
     rs.rsJsonApiRequest(
-        '/rsFiles/FileDownloads',
-        {},
-        function(d) {
-          Downloads.hashes = d.hashs;
-        },
+      '/rsFiles/FileDownloads', {},
+      function(d) {
+        Downloads.hashes = d.hashs;
+      },
     );
   },
 
   loadStatus() {
     Downloads.loadHashes();
-    if (Downloads.hashes.length !== Downloads.statusMap.size)
+    if(Downloads.hashes.length !== Downloads.statusMap.size)
       Downloads.statusMap.clear();
-    for (let hash of Downloads.hashes) {
+    for(let hash of Downloads.hashes) {
       let json_params = {
         hash,
-        hintflags : 16, // RS_FILE_HINTS_DOWNLOAD
+        hintflags: 16, // RS_FILE_HINTS_DOWNLOAD
       };
       rs.rsJsonApiRequest(
-          '/rsFiles/FileDetails',
-          json_params,
-          function(fileStat) {
-            Downloads.statusMap.set(hash, fileStat.info);
-          },
+        '/rsFiles/FileDetails',
+        json_params,
+        function(fileStat) {
+          Downloads.statusMap.set(hash, fileStat.info);
+        },
       );
     }
   },
 };
 
 function makeFriendlyUnit(bytes) {
-  if (bytes < 1e3)
+  if(bytes < 1e3)
     return bytes.toFixed(1) + 'B';
-  if (bytes < 1e6)
-    return (bytes / 1e3).toFixed(1) + 'kB';
-  if (bytes < 1e9)
-    return (bytes / 1e6).toFixed(1) + 'MB';
-  if (bytes < 1e12)
-    return (bytes / 1e9).toFixed(1) + 'GB';
-  return (bytes / 1e12).toFixed(1) + 'TB';
+  if(bytes < 1e6)
+    return (bytes / 1e3)
+      .toFixed(1) + 'kB';
+  if(bytes < 1e9)
+    return (bytes / 1e6)
+      .toFixed(1) + 'MB';
+  if(bytes < 1e12)
+    return (bytes / 1e9)
+      .toFixed(1) + 'GB';
+  return (bytes / 1e12)
+    .toFixed(1) + 'TB';
 }
 
 function progressBar(rate) {
   console.log('rate: ', rate)
   rate = rate.toPrecision(3);
-  return m('.progressbar[]',
-      {style : {content : rate + '%'}},
-      m('span.progress-status', {style : {width : rate + '%'}}, rate + '%')
+  return m('.progressbar[]', {
+      style: {
+        content: rate + '%'
+      }
+    },
+    m('span.progress-status', {
+      style: {
+        width: rate + '%'
+      }
+    }, rate + '%')
   );
 };
 
 function fileAction(hash, action) {
   let action_header = '';
-  let json_params = {hash, flags : 0};
+  let json_params = {
+    hash,
+    flags: 0
+  };
   switch (action) {
-  case 'cancel':
-    action_header = '/rsFiles/FileCancel';
-    break;
+    case 'cancel':
+      action_header = '/rsFiles/FileCancel';
+      break;
 
-  case 'pause':
-    action_header = '/rsFiles/FileControl';
-    json_params.flags = RS_FILE_CTRL_PAUSE;
-    break;
+    case 'pause':
+      action_header = '/rsFiles/FileControl';
+      json_params.flags = RS_FILE_CTRL_PAUSE;
+      break;
 
-  case 'resume':
-    action_header = '/rsFiles/FileControl';
-    json_params.flags = RS_FILE_CTRL_START;
-    break;
+    case 'resume':
+      action_header = '/rsFiles/FileControl';
+      json_params.flags = RS_FILE_CTRL_START;
+      break;
 
-  case 'force_check':
-    action_header = '/rsFiles/FileControl';
-    json_params.flags = RS_FILE_CTRL_FORCE_CHECK;
-    break;
+    case 'force_check':
+      action_header = '/rsFiles/FileControl';
+      json_params.flags = RS_FILE_CTRL_FORCE_CHECK;
+      break;
 
-  default:
-    console.error('Unknown action in Downloads.control()');
-    return;
+    default:
+      console.error('Unknown action in Downloads.control()');
+      return;
   };
   rs.rsJsonApiRequest(action_header, json_params, () => {}); // false
 };
 
 function actionButton(file, action) {
   return m('button', {
-      onclick : function() {
-        fileAction(file.hash, action); 
+      onclick: function() {
+        fileAction(file.hash, action);
       }
-  },
+    },
     action);
 };
 
@@ -116,59 +129,50 @@ let backgroundCallback = function() {
 backgroundCallback = backgroundCallback.bind(Downloads);
 
 let isComponentActive = function() {
-  if (m.route.get() === '/downloads')
-    return true;
-  else
-    return false;
+  return (m.route.get() === '/downloads');
 }
 
 component = {
-  oninit : function() {
-    rs.setBackgroundTask(backgroundCallback, 5000, isComponentActive);
+  oninit: function() {
+    rs.setBackgroundTask(backgroundCallback, 1000, isComponentActive);
   },
-  view : function() {
+  view: function() {
     return m('.tab.frame-center', [
       m('h3', 'Downloads (' + Downloads.statusMap.size + ')'), m('hr'),
-      m(
-          'table',
-          [
-            m('tr',
-              [
-                m('th', 'Name'),
-                m('th', 'Size'),
-                m('th', 'Transfer rate'),
-                m('th', 'Status'),
-                m('th', 'Progress'),
-                m('th', 'Action'),
-              ]),
-            Array.from(
-                Downloads.statusMap,
-                function(fileStatus) {
-                  let info = fileStatus[1];
-                  let progress = info.transfered / info.size * 100;
-                  // Using hash of file as vnode key
-                  return m('tr', {key : fileStatus[0]}, [
-                    m('td', info.name),
-                    m('td', makeFriendlyUnit(info.size)),
-                    m('td', makeFriendlyUnit(info.tfRate * 1024) + '/s'),
-                    m('td', info.download_status),
-                    m('td', progressBar(progress)),
-                    m('td',
-                      [
-                        actionButton(info,
-                                     info.downloadStatus === FT_STATE_PAUSED
-                                         ? 'resume'
-                                         : 'pause'),
-
-                        actionButton(info, 'cancel'),
-                      ]),
-                  ]);
-                })
-          ])
+      m('table', [
+        m('tr', [
+          m('th', 'Name'),
+          m('th', 'Size'),
+          m('th', 'Transfer rate'),
+          m('th', 'Status'),
+          m('th', 'Progress'),
+          m('th', 'Action'),
+        ]),
+        Array.from(Downloads.statusMap, function(fileStatus) {
+          let info = fileStatus[1];
+          let progress = info.transfered / info.size * 100;
+          // Using hash of file as vnode key
+          return m('tr', {
+            key: fileStatus[0]
+          }, [
+            m('td', info.name),
+            m('td', makeFriendlyUnit(info.size)),
+            m('td', makeFriendlyUnit(info.tfRate * 1024) + '/s'),
+            m('td', info.download_status),
+            m('td', progressBar(progress)),
+            m('td', [
+              actionButton(info, info.downloadStatus === FT_STATE_PAUSED ? 'resume' : 'pause'),
+              actionButton(info, 'cancel'),
+            ]),
+          ]);
+        }),
+      ]),
     ]);
   },
 };
 
+new rs.Tab('downloads', component);
 module.exports = {
   component,
 };
+

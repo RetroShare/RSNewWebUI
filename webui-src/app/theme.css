@@ -51,15 +51,6 @@ li {
     padding: 10px;
 }
 
-@keyframes fadein {
-    from {opacity: 0;}
-    to   {opacity: 1;}
-}
-
-.tab {
-    animation: fadein 0.5s;
-}
-
 .frame-center {
     display: flex;
     flex-direction: column;
@@ -88,10 +79,24 @@ li {
 }
 
 /******************************
+Animations
+******************************/
+
+@keyframes fadein {
+    from {opacity: 0;}
+    to   {opacity: 1;}
+}
+
+.tab {
+    animation: fadein 0.5s;
+}
+
+/******************************
 Target specific sections
 ******************************/
 
-#tab-section {
+/* Margin on top to avoid getting covered by navbar */
+#tab-content {
     margin-top: 3em;
 }
 
@@ -121,7 +126,7 @@ Target specific sections
 }
 
 /* Navbar */
-.tab-container {
+.tab-menu {
     padding: 1em 1em;
     background-color: #333;
     overflow: hidden;
@@ -130,15 +135,15 @@ Target specific sections
     z-index: 1;
     width: 100%;
 }
-.tab-header {
+.tab-menu-item {
     text-align: center;
     padding: 1em 1em;
     text-decoration: none;
     color: white;
     transition: all 0.5s;
-} .tab-header:hover {
+} .tab-menu-item:hover {
     background-color: #999;
-} .tab-header:focus {
+} .tab-menu-item#selected-tab-item {
     background-color: #3ba4d7;
 }
 .tab-section {
@@ -161,7 +166,7 @@ Target specific sections
     border-bottom: 1px solid lightgrey;
 }.sidebar-link:hover{
     background-color: #ccc;
-}.sidebar-link#selected {
+}.sidebar-link#selected-sidebar-link {
     background-color: lightgrey;
 }
 /* Content adjacent to sidebar */

@@ -1,5 +1,6 @@
 let m = require('mithril');
 let login = require('login');
+let rs = require('rswebui');
 
 login.renderLoginPage(onSuccess);
 
@@ -8,16 +9,26 @@ function onSuccess() {
   let dl = require('downloads');
   let config = require('config');
 
-  renderMainStructure();
-  m.route(document.getElementById('tab-section'), '/home', {
-    '/home': home.component,
-    '/downloads': dl.component,
-    '/config': config.component,
-  });
+  rs.Tab.active = 'home';
+  m.route(document.getElementById('main'), '/home', rs.Tab.routeTable);
+  //renderMainStructure();
+  //m.route(document.getElementById('tab-section'), '/home', {
+  //  '/home': home.component,
+  //  '/downloads': dl.component,
+  //  '/config': config.component,
+  //});
 };
 
 function renderMainStructure() {
   m.render(document.getElementById('main'), [
+    rs.Tab.menuBar(),
+  ]);
+};
+
+/*
+function renderMainStructure() {
+  m.render(document.getElementById('main'), [
+      rs.Tab.menuBar(),
     m('nav.tab-container',
       [
         m('a.tab-header[href=/home]', {
@@ -34,4 +45,5 @@ function renderMainStructure() {
     m('div#tab-section')
   ]);
 };
+*/
 

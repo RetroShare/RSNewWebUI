@@ -30,6 +30,7 @@ function copyToClipboard() {
     document.execCommand('copy');
 };
 
+new rs.Tab('home', component);
 module.exports = {
     component,
 };
