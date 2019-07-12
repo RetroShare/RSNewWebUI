@@ -6,12 +6,16 @@ let CERT = '';
 let component = {
     oninit: getCert,
     view: function() {
-        return m('.tab.frame-center', [
-            m('h3', 'Your Retroshare certificate(click to copy).'),
+        return m('.tab-page.fadein', [
+            m('.widget.widget-half', [
+            m('h3', 'Certificate'),
+            m('p', 'Your Retroshare certificate, click to copy'),
+            m('hr'),
             m('textarea.field[id=certificate][rows=14][cols=65][placeholder=certificate][readonly]', {
                 onclick: copyToClipboard,
             },
               CERT),
+            ]),
         ]);
     }
 };
