@@ -48,8 +48,8 @@ if [ "$2" = "" ]||[ "$2" = "app.css" ]; then
 fi
 
 if [ "$2" = "" ]||[ "$2" = "index.html" ]; then
-	echo copy index.html
-	cp $src/app/assets/index.html $publicdest/index.html
+	echo copy assets folder
+        cp -r $src/app/assets/* $publicdest/
 fi
 
 if [ "$2" != "" ]&&[ "$3" != "" ]; then
