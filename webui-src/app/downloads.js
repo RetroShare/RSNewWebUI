@@ -137,8 +137,24 @@ component = {
     rs.setBackgroundTask(backgroundCallback, 1000, isComponentActive);
   },
   view: function() {
-      return m('.tab-page.fadein');
-        /*
+    return m('.tab-page.fadein', [
+      m('.widget', [
+        m('h3', 'Downloads'),
+        m('hr'),
+        Array.from(Downloads.statusMap, function(fileStatus) {
+          let info = fileStatus[1];
+          let progress = info.transfered / info.size * 100;
+          return m('.file-view', [
+            info.name,
+            makeFriendlyUnit(info.size),
+            makeFriendlyUnit(info.tfRate * 1024) + '/s',
+            info.download_status,
+            progressBar(progress),
+          ]);
+        }),
+      ]),
+    ]);
+    /*
     return m('.tab.frame-center', [
       m('h3', 'Downloads (' + Downloads.statusMap.size + ')'), m('hr'),
         m('ul',
