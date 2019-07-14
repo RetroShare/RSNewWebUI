@@ -31,6 +31,13 @@ class Panel {
 Panel.active = '';
 Panel.list = {};
 
+function tooltip(text) {
+  return m('.tooltip', [
+    m('i.fas.fa-info-circle'),
+    m('.tooltiptext', text)
+  ]);
+};
+
 function setMaxRates() {
   let download = document.getElementById('download-limit')
     .value;
@@ -57,22 +64,25 @@ new Panel('Network', {
         .value = data.outKb;
     });
   },
-  // TODO show info from UI hover message
   view: function() {
-    return m('.node-panel', [
+    return m('.node-panel.fadein', [
       m('.widget.widget-half', [
         m('h3', 'Network Configuration'),
         m('hr'),
-        m('ul', [
-          m('li', ['Download limit(KB/s):', m(
-            'input#download-limit[type=number][name=download]', {
-              onblur: setMaxRates,
-            })]),
-          m('li', ['Upload limit(KB/s):', m(
-            'input#upload-limit[type=number][name=upload]', {
-              onblur: setMaxRates,
-            })]),
-        ])
+        m('.grid-2col', [
+          m('p', tooltip(
+            'The download limit covers the whole application. However, in some situations, such as when transfering many files at once, the estimated bandwidth becomes unreliable and the total value reported by Retroshare might exceed that limit.'
+          ), 'Download limit(KB/s):'),
+          m('input#download-limit[type=number][name=download]', {
+            onblur: setMaxRates,
+          }),
+          m('p', tooltip(
+            'The upload limit covers the entire software. Too small an upload limit may eventually block low priority services(forums, channels). A minimum recommended value is 50KB/s.'
+          ), 'Upload limit(KB/s):'),
+          m('input#upload-limit[type=number][name=upload]', {
+            onblur: setMaxRates,
+          }),
+        ]),
       ]),
     ]);
   },
