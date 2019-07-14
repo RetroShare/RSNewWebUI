@@ -75,6 +75,12 @@ function setBackgroundTask(task, interval, checkTaskScope) {
   return taskId;
 };
 
+let navIcon = {
+  'home': 'i.fas.fa-home',
+  'downloads': 'i.fas.fa-folder-open',
+  'config': 'i.fas.fa-cogs',
+};
+
 class Tab {
   constructor(name, content) {
     Tab.componentList[name] = this;
@@ -97,7 +103,8 @@ class Tab {
     return m('nav.tab-menu',
       Object.keys(this.componentList)
       .map(function(tabName) {
-        return m('a.tab-menu-item' + (tabName === Tab.active ? '#selected-tab-item' : '') + '[href=/' + tabName + ']', {
+        return m('a.tab-menu-item' + (tabName === Tab.active ?
+            '#selected-tab-item' : '') + '[href=/' + tabName + ']', {
             oncreate: m.route.link,
             onclick: function() {
               // NOTE: investigate why onclick does not run when clicked on downloads tab
@@ -106,7 +113,7 @@ class Tab {
               Tab.active = tabName;
             },
           },
-          tabName); //TODO add icons
+          [m(navIcon[tabName]), tabName]);
       })
     );
   }

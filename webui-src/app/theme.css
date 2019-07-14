@@ -12,7 +12,7 @@ General site-wide rules
 #tab-content {
     height: 100%;
     /* Margin on top to avoid getting covered by navbar */
-    margin-top: 3em;
+    margin-top: 4em;
     background-color: #eef3f6;
     overflow: auto;
 }
@@ -76,6 +76,8 @@ table {
 }.widget > hr {
     margin-left: 0;
     color: #aaa;
+}.widget .tooltip {
+    float: right;
 }
 .widget-half {
     max-width: 50%;
@@ -100,6 +102,30 @@ table {
     height: 100%;
     background-color: #3ba4d7;
     text-align: center;
+}
+
+.tooltip {
+    color: #333;
+    /*display: inline-block;*/
+    position: relative;
+}
+.tooltiptext {
+    visibility: hidden;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 240px;
+    margin-left: -120px;
+    z-index: 1;
+    color: #ccc;
+    background-color: #333;
+    font-size: 0.9em;
+    text-align: center;
+    padding: 5px 0;
+    border-radius: 5px;
+}.tooltip:hover .tooltiptext {
+    visibility: visible;
+    animation: fadein 0.5s;
 }
 
 /******************************
@@ -150,7 +176,6 @@ Target specific sections
 
 /* Navbar */
 nav.tab-menu {
-    padding: 1em 1em;
     background-color: #333;
     overflow: hidden;
     position: fixed;
@@ -159,16 +184,23 @@ nav.tab-menu {
     border-bottom: 5px solid #3ba4d7; 
     box-shadow: 0 5px 5px #aaa;
 }
-.tab-menu-item {
+a.tab-menu-item {
+    padding: 1em;
     text-align: center;
-    padding: 1em 1em;
     text-decoration: none;
-    color: white;
+    color: #ccc;
+    font-size: 0.9em;
+    /* CSS capitalization is magical! */
+    text-transform: capitalize;
     transition: all 0.5s;
+    /* To vertically stack child nodes */
+    display: inline-flex;
+    flex-direction: column;
 } .tab-menu-item:hover {
     background-color: #999;
 } .tab-menu-item#selected-tab-item {
     background-color: #3ba4d7;
+    color: white;
 }
 
 /* Sidebar from config panel */
