@@ -123,10 +123,33 @@ Tab.active = '';
 Tab.componentList = {};
 Tab.routeTable = {};
 
+function popupAlert(message) {
+  let container = document.getElementById('modal-container');
+  let popup = document.createElement('div');
+  popup.setAttribute('id', 'modal-content');
+  popup.innerHTML =
+    `
+    <button id="modal-cancel-button" class="red">
+        <i class="fas fa-times-circle"></i>
+    </button>
+    <h1><i class="fas fa-info-circle"></i></h1>
+    <p>` + message + `</p>`;
+  container.appendChild(popup);
+  container.style.display = 'block';
+  let removeMessage = function() {
+    popup.remove();
+    container.style.display = 'none';
+  }
+  container.onclick = removeMessage;
+  document.getElementById('modal-cancel-button')
+    .onckick = removeMessage;
+}
+
 module.exports = {
   rsJsonApiRequest,
   setKeys,
   setBackgroundTask,
   Tab,
+  popupAlert,
 };
 

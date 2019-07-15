@@ -134,7 +134,7 @@ function actionButton(file, action) {
         onclick: function() {
           fileAction(file.hash, 'cancel');
         },
-      }, m('i.fas.fa-times'));
+      }, 'Cancel');
   }
 };
 

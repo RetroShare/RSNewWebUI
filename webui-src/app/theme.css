@@ -47,8 +47,8 @@ button {
     box-shadow: inset 3px 3px 0 #0d69ac;
 }
 button.red {
-    background: #f00202;
-    box-shadow: inset -3px -3px 0 #bd0909;
+    background: #bd0909;
+    box-shadow: inset -3px -3px 0 #830000;
 }
 
 table {
@@ -143,6 +143,41 @@ table {
     animation: fadein 0.5s;
 }
 
+#modal-container {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    height: 100%;
+}
+#modal-container {
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+#modal-content {
+    position: absolute;
+    color: #555;
+    width: 40%;
+    height: 40%;
+    transform: translate(60%, 50%);
+    background-color: white;
+    padding: 1em;
+    border-radius: 20px;
+    animation: fadein 0.3s;
+}#modal-content p {
+    font-size: 1.5em;
+}#modal-content button {
+    float: right;
+}
+
+#notification-container {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}#notification-container .notification {
+}
+
 /******************************
 Animations
 ******************************/
@@ -230,7 +265,7 @@ a.tab-menu-item {
     border: 1px solid #ccc;
     margin-top: 2em;
     padding: 1em;
-    animation: swipe-from-left 0.5s;
+    animation: fadein 0.5s;
 }.file-view > p {
     margin: 0.5em;
     font-size: 1.1em;
