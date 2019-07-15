@@ -114,12 +114,28 @@ function fileAction(hash, action) {
 };
 
 function actionButton(file, action) {
-  return m('button', {
-      onclick: function() {
-        fileAction(file.hash, action);
-      }
-    },
-    action);
+  switch (action) {
+    case 'resume':
+      return m('button', {
+        onclick: function() {
+          fileAction(file.hash, 'resume');
+        },
+      }, m('i.fas.fa-play'));
+
+    case 'pause':
+      return m('button', {
+        onclick: function() {
+          fileAction(file.hash, 'pause');
+        },
+      }, m('i.fas.fa-pause'));
+
+    case 'cancel':
+      return m('button.red', {
+        onclick: function() {
+          fileAction(file.hash, 'cancel');
+        },
+      }, m('i.fas.fa-times'));
+  }
 };
 
 let backgroundCallback = function() {
@@ -132,6 +148,7 @@ let isComponentActive = function() {
   return (m.route.get() === '/downloads');
 }
 
+//Downloads.statusMap.set('fa', {fname:'File',transfered:1,size:1000,tfRate:500})
 component = {
   oninit: function() {
     rs.setBackgroundTask(backgroundCallback, 1000, isComponentActive);
@@ -143,13 +160,16 @@ component = {
         m('hr'),
         Array.from(Downloads.statusMap, function(fileStatus) {
           let info = fileStatus[1];
+            console.log(info);
           let progress = info.transfered / info.size * 100;
           return m('.file-view', [
-            info.name,
-            makeFriendlyUnit(info.size),
-            makeFriendlyUnit(info.tfRate * 1024) + '/s',
-            info.download_status,
+            m('p', info.fname),
+            actionButton(info, 'cancel'),
+            actionButton(info, info.downloadStatus ===
+              FT_STATE_PAUSED ? 'resume' : 'pause'),
             progressBar(progress),
+            m('span', makeFriendlyUnit(info.size)),
+            m('span', makeFriendlyUnit(info.tfRate * 1024) + '/s'),
           ]);
         }),
       ]),

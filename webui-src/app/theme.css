@@ -46,6 +46,10 @@ button {
     outline: none;
     box-shadow: inset 3px 3px 0 #0d69ac;
 }
+button.red {
+    background: #f00202;
+    box-shadow: inset -3px -3px 0 #bd0909;
+}
 
 table {
     padding: 20px;
@@ -97,7 +101,7 @@ table {
 .progressbar {
     width: 100%;
     border-radius: 500px;
-    background-color: white;
+    background-color: #eef3f6;
     position: relative;
     text-align: left;
 }.progressbar:before {
@@ -108,8 +112,9 @@ table {
 }.progress-status {
     display: inline-block;
     height: 100%;
+    padding: 5px;
     border-radius: 500px;
-    color: #333;
+    color: #555;
     background-color: #3ba4d7;
     text-align: center;
 }
@@ -148,6 +153,11 @@ Animations
 }
 .fadein {
     animation: fadein 0.5s;
+}
+
+@keyframes swipe-from-left {
+    from { margin-left: 100%; }
+    to { margin-left: 0; }
 }
 
 @keyframes expand-left-border {
@@ -215,11 +225,22 @@ a.tab-menu-item {
 
 /* View for upload/download file information */
 .file-view {
+    width: 90%;
     border-radius: 10px;
     border: 1px solid #ccc;
-    background-color: white;
-    margin-top: 1em;
+    margin-top: 2em;
     padding: 1em;
+    animation: swipe-from-left 0.5s;
+}.file-view > p {
+    margin: 0.5em;
+    font-size: 1.1em;
+}.file-view > span {
+    margin: 0 1em;
+    font-size: 0.9em;
+}.file-view > .progressbar {
+    width: 70%;
+}.file-view button {
+    float: right;
 }
 
 /* Sidebar from config panel */
