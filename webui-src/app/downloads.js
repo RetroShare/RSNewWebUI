@@ -149,7 +149,7 @@ let isComponentActive = function() {
 }
 
 //Downloads.statusMap.set('fa', {fname:'File',transfered:1,size:1000,tfRate:500})
-component = {
+let Component = {
   oninit: function() {
     rs.setBackgroundTask(backgroundCallback, 1000, isComponentActive);
   },
@@ -220,8 +220,5 @@ component = {
   },
 };
 
-new rs.Tab('downloads', component);
-module.exports = {
-  component,
-};
+module.exports = Component;
 

@@ -18,6 +18,10 @@ General site-wide rules
 }
 /* Individual tab pages */
 .tab-page {
+    /* This is required since main content's overflow is hidden
+       and bottom elements will not be entirely visible. */
+    margin-bottom: 200px;
+    animation: fadein 0.5s;
 }
 
 input, textarea {
@@ -232,7 +236,6 @@ Target specific sections
 /* Navbar */
 nav.tab-menu {
     background-color: #333;
-    overflow: hidden;
     position: fixed;
     top: 0;
     width: 100%;
@@ -253,7 +256,7 @@ a.tab-menu-item {
     flex-direction: column;
 } .tab-menu-item:hover {
     background-color: #999;
-} .tab-menu-item#selected-tab-item {
+} .selected-tab-item {
     background-color: #3ba4d7;
     color: white;
 }
@@ -280,21 +283,20 @@ a.tab-menu-item {
 
 /* Sidebar from config panel */
 .sidebar {
-    overflow: hidden;
     position: fixed;
     height: 100%;
     width: 200px;
     background-color: white;
-} .sidebar-link {
+} .sidebar a {
     text-decoration: none;
     padding: 1em;
     cursor: pointer;
     display: block;
     font-size: 0.95em;
     color: #999;
-}.sidebar-link:hover{
+}.sidebar a:hover {
     color: #222;
-}.sidebar-link#selected-sidebar-link {
+}.selected-sidebar-link {
     font-weight: bold;
     color: #222;
     border-left: 5px solid #3ba4d7;
@@ -303,4 +305,5 @@ a.tab-menu-item {
 /* Content adjacent to sidebar */
 .node-panel {
     margin-left: 200px;
+    animation: fadein 0.5s;
 }

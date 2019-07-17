@@ -75,58 +75,14 @@ function setBackgroundTask(task, interval, checkTaskScope) {
   return taskId;
 };
 
-let navIcon = {
-  'home': 'i.fas.fa-home',
-  'downloads': 'i.fas.fa-folder-open',
-  'config': 'i.fas.fa-cogs',
-};
-
-class Tab {
-  constructor(name, content) {
-    Tab.componentList[name] = this;
-    // Overriding view function to add menubar
-    this.mainView = content.view;
-    delete content.view;
-    // Object itself will be passed as mithril component
-    Object.assign(this, content);
-
-    Tab.routeTable['/' + name] = this;
-  }
-  view() {
-    return m('.content', [
-      Tab.menuBar(),
-      m('#tab-content', this.mainView()),
-    ]);
-  }
-
-  static menuBar() {
-    return m('nav.tab-menu',
-      Object.keys(this.componentList)
-      .map(function(tabName) {
-        return m('a.tab-menu-item' + (tabName === Tab.active ?
-            '#selected-tab-item' : '') + '[href=/' + tabName + ']', {
-            oncreate: m.route.link,
-            onclick: function() {
-              // NOTE: investigate why onclick does not run when clicked on downloads tab
-              // NOTE 2: does not run ONLY when clicked before its backgroundtask first returns
-              // Note 3: workaround: not use oncreate, set #! link in href
-              Tab.active = tabName;
-            },
-          },
-          [m(navIcon[tabName]), tabName]);
-      })
-    );
-  }
-}
-// Static class variables are still experimental
-Tab.active = '';
-Tab.componentList = {};
-Tab.routeTable = {};
-
+// There are ways of doing this in m.route but it is probably
+// cleaner and faster when kept outside of the main auto
+// rendering system
 function popupAlert(message) {
   let container = document.getElementById('modal-container');
   let popup = document.createElement('div');
   popup.setAttribute('id', 'modal-content');
+    //TODO use m.render
   popup.innerHTML =
     `
     <button id="modal-cancel-button" class="red">
@@ -149,7 +105,6 @@ module.exports = {
   rsJsonApiRequest,
   setKeys,
   setBackgroundTask,
-  Tab,
   popupAlert,
 };
 
