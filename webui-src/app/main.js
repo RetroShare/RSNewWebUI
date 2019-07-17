@@ -2,48 +2,62 @@ let m = require('mithril');
 let login = require('login');
 let rs = require('rswebui');
 
-login.renderLoginPage(onSuccess);
+
+const navIcon = {
+  home: m('i.fas.fa-home'),
+  downloads: m('i.fas.fa-folder-open'),
+  config: m('i.fas.fa-cogs'),
+};
+
+const navbar = () => {
+  active = 0;
+  return {
+    view: (vnode) => m('nav.tab-menu',
+      Object.keys(vnode.attrs.links)
+      .map((linkName, i) => m('a.tab-menu-item', {
+        href: vnode.attrs.links[linkName],
+        class: active === i ? 'selected-tab-item' : '',
+        oncreate: m.route.link,
+        onclick: () => {
+          active = i
+        },
+      }, [navIcon[linkName], linkName])),
+    ),
+  };
+};
+
+const Layout = () => {
+  return {
+    view: (vnode) => m('.content', [
+      m(navbar, {
+        links: {
+          home: '/home',
+          downloads: '/downloads',
+          config: '/config/network',
+        },
+      }),
+      m('#tab-content', vnode.children),
+    ]),
+  };
+};
 
 function onSuccess() {
   let home = require('home');
   let dl = require('downloads');
-  let config = require('config');
+  let config = require('config_resolver');
 
-  rs.Tab.active = 'home';
-  m.route(document.getElementById('main'), '/home', rs.Tab.routeTable);
-  //renderMainStructure();
-  //m.route(document.getElementById('tab-section'), '/home', {
-  //  '/home': home.component,
-  //  '/downloads': dl.component,
-  //  '/config': config.component,
-  //});
+  m.route(document.getElementById('main'), '/home', {
+    '/home': {
+      render: (v) => m(Layout, m(home))
+    },
+    '/downloads': {
+      render: (v) => m(Layout, m(dl))
+    },
+    '/config/:section': {
+      render: (v) => m(Layout, m(config, v.attrs))
+    },
+  });
 };
 
-function renderMainStructure() {
-  m.render(document.getElementById('main'), [
-    rs.Tab.menuBar(),
-  ]);
-};
-
-/*
-function renderMainStructure() {
-  m.render(document.getElementById('main'), [
-      rs.Tab.menuBar(),
-    m('nav.tab-container',
-      [
-        m('a.tab-header[href=/home]', {
-          oncreate: m.route.link
-        }, 'Home'),
-        m('a.tab-header[href=/downloads]', {
-            oncreate: m.route.link
-          },
-          'Downloads'),
-        m('a.tab-header[href=/config]', {
-          oncreate: m.route.link
-        }, 'Config'),
-      ]),
-    m('div#tab-section')
-  ]);
-};
-*/
+login.renderLoginPage(onSuccess);
 

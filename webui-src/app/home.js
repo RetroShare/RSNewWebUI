@@ -1,9 +1,9 @@
 'use strict';
-var m = require('mithril');
-var rs = require('rswebui');
+let m = require('mithril');
+let rs = require('rswebui');
 
 let CERT = '';
-let component = {
+let Component = {
   oninit: getCert,
   view: function() {
     return m('.tab-page.fadein', [
@@ -35,8 +35,5 @@ function copyToClipboard() {
   document.execCommand('copy');
 };
 
-new rs.Tab('home', component);
-module.exports = {
-  component,
-};
+module.exports = Component;
 

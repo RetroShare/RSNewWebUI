@@ -23,12 +23,15 @@ if [ ! -d  "$publicdest" ]; then
 	mkdir $publicdest
 fi
 
+# For using recursive directory search(requires bash v4+)
+shopt -s globstar
+
 if [ "$2" = "" ]||[ "$2" = "app.js" ]; then
 	echo building app.js
 	echo - copy template.js ...
 	cp $src/make-src/template.js $publicdest/app.js
 
-	for filename in $src/app/*.js; do
+	for filename in $src/app/**/*.js; do
 		fname=$(basename "$filename")
 		fname="${fname%.*}"
 		echo - adding $fname ...
