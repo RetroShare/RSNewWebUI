@@ -24,7 +24,7 @@ General site-wide rules
     animation: fadein 0.5s;
 }
 
-input, textarea {
+input[type=text], input[type=password], input[type=number], textarea {
     box-sizing: border-box;
     background: white;
     font-size: 1.2em;
@@ -32,9 +32,17 @@ input, textarea {
     border: 1px solid #ccc;
     border-radius: 5px;
     padding: 0.5em;
+    /* Disable chromium's focused element hinting*/
+    outline: none;
 } input:focus {
     border: 1px solid #3ba4d7;
     box-shadow: inset 0 0 5px #ccc;
+}input.stretched {
+    width: 90%;
+}input.small {
+    max-width: 70%;
+    font-size: 1em;
+    padding: 0.1em;
 }
 
 button {
@@ -159,7 +167,7 @@ table {
     width: 100%;
     background-color: rgba(0, 0, 0, 0.2);
 }
-#modal-content {
+.modal-content {
     position: absolute;
     color: #555;
     width: 40%;
@@ -169,9 +177,7 @@ table {
     padding: 1em;
     border-radius: 20px;
     animation: fadein 0.3s;
-}#modal-content p {
-    font-size: 1.5em;
-}#modal-content button {
+}.modal-content > button {
     float: right;
 }
 
@@ -220,8 +226,8 @@ Target specific sections
     margin: auto;
     position: relative;
     top: 100px;
-    max-width: 30%;
-    height: 50%;
+    width: 30%;
+    height: 55%;
     border-radius: 5px;
 
     display: flex;
@@ -230,7 +236,9 @@ Target specific sections
     align-items: center;
 }
 .login-container * {
-    margin-top: 10px;
+    margin-top: 15px;
+    /* Not let elements flow out of container */
+    max-width: 100%;
 }
 
 /* Navbar */
@@ -256,7 +264,7 @@ a.tab-menu-item {
     flex-direction: column;
 } .tab-menu-item:hover {
     background-color: #999;
-} .selected-tab-item {
+} .tab-menu-item.selected-tab-item {
     background-color: #3ba4d7;
     color: white;
 }
@@ -289,6 +297,7 @@ a.tab-menu-item {
     background-color: white;
 } .sidebar a {
     text-decoration: none;
+    text-transform: capitalize;
     padding: 1em;
     cursor: pointer;
     display: block;
@@ -296,7 +305,7 @@ a.tab-menu-item {
     color: #999;
 }.sidebar a:hover {
     color: #222;
-}.selected-sidebar-link {
+}.sidebar .selected-sidebar-link {
     font-weight: bold;
     color: #222;
     border-left: 5px solid #3ba4d7;
@@ -306,4 +315,6 @@ a.tab-menu-item {
 .node-panel {
     margin-left: 200px;
     animation: fadein 0.5s;
+}
+.widget-group {
 }
