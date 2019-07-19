@@ -35,6 +35,20 @@ let Certificate = {
 };
 
 const AddFriend = () => {
+  let certificate = '';
+  const loadToInput = (fileListObj) => {
+    const file = fileListObj[0];
+    if(file.type.indexOf('text') !== 0 || file.size === 0) {
+      // TODO handle incorrect file
+      return null;
+    }
+    let reader = new FileReader();
+    reader.onload = (e) => {
+      certificate = e.target.result;
+      m.redraw();
+    }
+    reader.readAsText(file);
+  };
   return {
     oninit: () => {},
     view: (vnode) => m('.widget.widget-half', [
@@ -53,14 +67,77 @@ const AddFriend = () => {
         } : {},
         ondragover: (e) => e.preventDefault(),
         ondrop: (e) => {
+          vnode.state.isDragged = false;
           e.preventDefault();
-          console.log('e:', e)
+          loadToInput(e.target.files || e.dataTransfer.files);
         },
       }, [
-        m('input[type=file][name=certificate]'),
+        m('input[type=file][name=certificate]', {
+          onchange: (e) => {
+            loadToInput(e.target.files || e.dataTransfer.files)
+          }
+        }),
         'Or paste the certificate here',
-        m('textarea[rows=5][style="width: 90%; display: block;"]'),
-        m('button', 'Add'),
+        m('textarea[rows=5][style="width: 90%; display: block;"]', {
+          oninput: (e) => certificate = e.target.value,
+          value: certificate,
+        }),
+        m('button', {
+          onclick: () => {
+            rs.rsJsonApiRequest(
+              '/rsPeers/loadDetailsFromStringCert', {
+                cert: certificate,
+              }, (data) => {
+                if(!data.retval) {
+                  rs.popupMessage([m('h3', 'Error'),
+                    m('hr'),
+                    m('p',
+                      'Not a valid Retroshare certificate.'),
+                  ]);
+                  return null;
+                }
+                let details = data.certDetails;
+                rs.popupMessage([
+                  m('i.fas.fa-user-plus'),
+                  m('h3', 'Make friend'),
+                  m('p', 'Details about your friend'),
+                  m('hr'),
+                  m('ul', [
+                    m('li', 'Name: ' + details.name),
+                    m('li', 'Location: ' + details.location +
+                      '(' + details.id + ')'),
+                    m('li', details.isHiddenNode ?
+                      details.hiddenNodeAddress :
+                      details.extAddr),
+                  ]),
+                  m('button', {
+                    onclick: () =>
+                      rs.rsJsonApiRequest(
+                        '/rsPeers/loadCertificateFromString', {
+                          cert: certificate
+                        },
+                        (data) => {
+                          if(data.retval) {
+                            rs.popupMessage([m('h3',
+                                'successful'), m('hr'),
+                              m('p',
+                                'Successfully added friend.'
+                              ),
+                            ]);
+                          } else {
+                            rs.popupMessage([m('h3',
+                                'Error'), m('hr'),
+                              m('p',
+                                'An error occoured during adding. Friend not added.'
+                              ),
+                            ]);
+                          }
+                        })
+                  }, 'Finish'),
+                ]);
+              });
+          },
+        }, 'Add'),
       ]),
     ])
   }

@@ -86,8 +86,8 @@ function popupMessage(message) {
     m('.modal-content', [
       m('button.red', {
         onclick: () => container.style.display = 'none'
-      }, m('i.fas.fa-info-times-circle')),
-      m(message),
+      }, m('i.fas.fa-times')),
+        message,
     ]));
 }
 
