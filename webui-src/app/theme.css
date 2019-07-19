@@ -27,6 +27,7 @@ General site-wide rules
 input[type=text], input[type=password], input[type=number], textarea {
     box-sizing: border-box;
     background: white;
+    max-width: 100%;
     font-size: 1.2em;
     font-weight: 400;
     border: 1px solid #ccc;
@@ -74,24 +75,27 @@ table {
     height: 1em;
 }
 
-.widget {
-    margin: 1em;
-    padding: 1em;
-    border-radius: 10px;
-    background-color: white;
-}.widget > h3 {
+h3 {
     font-size: 2em;
     font-weight: 100;
     color: #444;
     padding: 0;
     margin: 0;
+}
+hr {
+    margin-left: 0;
+    color: #aaa;
+}
+
+.widget {
+    margin: 1em;
+    padding: 1em;
+    border-radius: 10px;
+    background-color: white;
 }.widget > p {
     margin: 0;
     font-size: 0.9em;
     color: #666;
-}.widget > hr {
-    margin-left: 0;
-    color: #aaa;
 }.widget .tooltip {
     float: right;
 }
@@ -141,7 +145,7 @@ table {
     position: absolute;
     top: 100%;
     left: 50%;
-    width: 240px;
+    min-width: 250px;
     margin-left: -120px;
     z-index: 1;
     color: #ccc;
@@ -176,7 +180,7 @@ table {
     background-color: white;
     padding: 1em;
     border-radius: 20px;
-    animation: fadein 0.3s;
+    animation: fadein 0.5s;
 }.modal-content > button {
     float: right;
 }

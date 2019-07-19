@@ -15,7 +15,9 @@ let loginComponent = {
       m('.login-container', [
         m('img.logo[src=../../data/retroshare.svg][alt=retroshare_icon][width=30%]'),
         m('input.field[type=text][placeholder=Username][id=uname]'),
-        m('input.field[type=password][placeholder=Password][id=passwd]'),
+        m('input.field[type=password][placeholder=Password][id=passwd]',{
+          onchange: verifyLogin,
+        }),
         m('button.submit-btn', {
           onclick: verifyLogin,
         }, 'Login'),
