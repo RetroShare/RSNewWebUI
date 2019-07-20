@@ -26,6 +26,7 @@ let sections = {
   node: require('config_node'),
   services: require('config_services'),
   files: require('config_files'),
+  people: require('config_people'),
 };
 
 const Layout = {
