@@ -148,7 +148,6 @@ let isComponentActive = function() {
   return (m.route.get() === '/downloads');
 }
 
-//Downloads.statusMap.set('fa', {fname:'File',transfered:1,size:1000,tfRate:500})
 let Component = {
   oninit: function() {
     rs.setBackgroundTask(backgroundCallback, 1000, isComponentActive);
@@ -168,8 +167,8 @@ let Component = {
             actionButton(info, info.downloadStatus ===
               FT_STATE_PAUSED ? 'resume' : 'pause'),
             progressBar(progress),
-            m('span', makeFriendlyUnit(info.size)),
-            m('span', makeFriendlyUnit(info.tfRate * 1024) + '/s'),
+            m('span', m('i.fas.fa-file'), makeFriendlyUnit(info.size)),
+            m('span', m('i.fas.fa-arrow-circle-down'), makeFriendlyUnit(info.tfRate * 1024) + '/s'),
           ]);
         }),
       ]),
