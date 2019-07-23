@@ -2,36 +2,30 @@
 let m = require('mithril');
 let rs = require('rswebui');
 
-let CERT = '';
 
-function getCert() {
-  let handleCert = function(body, state) {
-    if(state === true) {
-      CERT = body['retval'];
-    }
+let Certificate = () => {
+  let ownCert = '';
+
+  function copyToClipboard() {
+    document.getElementById('certificate').select();
+    document.execCommand('copy');
   };
-  rs.rsJsonApiRequest('/rsPeers/GetRetroshareInvite', {}, handleCert);
-}
-
-function copyToClipboard() {
-  document.getElementById('certificate').select();
-  document.execCommand('copy');
-};
-
-let Certificate = {
-  oninit: getCert,
-  view: function() {
-    return m('.widget.widget-half', [
-      m('h3', 'Certificate'),
-      m('p', 'Your Retroshare certificate, click to copy'),
-      m('hr'),
-      m(
-        'textarea[id=certificate][rows=14][cols=65][placeholder=certificate][readonly]', {
-          onclick: copyToClipboard,
-        },
-        CERT),
-    ]);
-  },
+  return {
+    oninit: rs.rsJsonApiRequest('/rsPeers/GetRetroshareInvite', {},
+      (data) => ownCert = data.retval),
+    view: function() {
+      return m('.widget.widget-half', [
+        m('h3', 'Certificate'),
+        m('p', 'Your Retroshare certificate, click to copy'),
+        m('hr'),
+        m(
+          'textarea[id=certificate][rows=14][cols=65][placeholder=certificate][readonly]', {
+            onclick: copyToClipboard,
+          },
+          ownCert),
+      ]);
+    },
+  }
 };
 
 const AddFriend = () => {
