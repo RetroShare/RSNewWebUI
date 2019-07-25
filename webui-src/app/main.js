@@ -5,7 +5,7 @@ let rs = require('rswebui');
 
 const navIcon = {
   home: m('i.fas.fa-home'),
-  downloads: m('i.fas.fa-folder-open'),
+  files: m('i.fas.fa-folder-open'),
   config: m('i.fas.fa-cogs'),
 };
 
@@ -32,7 +32,7 @@ const Layout = () => {
       m(navbar, {
         links: {
           home: '/home',
-          downloads: '/downloads',
+          files: '/files',
           config: '/config/network',
         },
       }),
@@ -43,15 +43,15 @@ const Layout = () => {
 
 function onSuccess() {
   let home = require('home');
-  let dl = require('downloads');
+  let files = require('files_resolver');
   let config = require('config_resolver');
 
   m.route(document.getElementById('main'), '/home', {
     '/home': {
       render: (v) => m(Layout, m(home))
     },
-    '/downloads': {
-      render: (v) => m(Layout, m(dl))
+    '/files': {
+      render: (v) => m(Layout, m(files))
     },
     '/config/:section': {
       render: (v) => m(Layout, m(config, v.attrs))

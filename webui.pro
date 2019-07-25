@@ -41,7 +41,6 @@ linux-* {
 	  WEBUI_SRC_JS  = $$WEBUI_SRC_SCRIPT
 	  WEBUI_SRC_JS += webui-src/app/rswebui.js
 	  WEBUI_SRC_JS += webui-src/app/mithril.js
-	  WEBUI_SRC_JS += webui-src/app/downloads.js
 	  WEBUI_SRC_JS += webui-src/app/login.js
 	  WEBUI_SRC_JS += webui-src/app/main.js
 	  WEBUI_SRC_JS += webui-src/app/home.js
@@ -63,6 +62,7 @@ linux-* {
 #	  WEBUI_SRC_JS += webui-src/app/servicecontrol.js
 #	  WEBUI_SRC_JS += webui-src/app/settings.js
 #	  WEBUI_SRC_JS += webui-src/app/waiting.js
+#         WEBUI_SRC_JS += webui-src/app/downloads.js
 
 	  WEBUI_SRC_CSS  = $$WEBUI_SRC_SCRIPT
 	  WEBUI_SRC_CSS += webui-src/app/green-black.scss
