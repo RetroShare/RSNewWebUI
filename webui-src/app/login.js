@@ -13,11 +13,16 @@ let loginComponent = {
   view: function() {
     return m('.login-page',
       m('.login-container', [
-        m('img.logo[src=../../data/retroshare.svg][alt=retroshare_icon][width=30%]'),
-        m('input.field[type=text][placeholder=Username][id=uname][autofocus]'),
-        m('input.field[type=password][placeholder=Password][id=passwd]',{
-          onchange: verifyLogin,
-        }),
+        m(
+          'img.logo[src=../../data/retroshare.svg][alt=retroshare_icon][width=30%]'
+        ),
+        m(
+          'input.field[type=text][placeholder=Username][id=uname][autofocus]'
+        ),
+        m(
+          'input.field[type=password][placeholder=Password][id=passwd]', {
+            onchange: verifyLogin,
+          }),
         m('button.submit-btn', {
           onclick: verifyLogin,
         }, 'Login'),
@@ -31,7 +36,8 @@ function verifyLogin() {
   let loginHeader = {
     'Authorization': 'Basic ' + btoa(uname + ':' + passwd)
   };
-  rs.rsJsonApiRequest('/rsPeers/GetRetroshareInvite', {}, loginHandleWrapper(uname, passwd), true,
+  rs.rsJsonApiRequest('/rsPeers/GetRetroshareInvite', {}, loginHandleWrapper(
+      uname, passwd), true,
     loginHeader);
 };
 
@@ -49,14 +55,14 @@ function loginHandleWrapper(uname, passwd) {
       rs.setKeys(uname, passwd);
       onSuccessCallback();
     } else {
-      displayErrorMessage();
+      displayErrorMessage('Incorrect login/password.');
     }
   };
   return onResponse;
 };
 
-function displayErrorMessage() {
-  m.render(document.getElementById('error'), 'Incorrect login/password.');
+function displayErrorMessage(message) {
+  m.render(document.getElementById('error'), message);
 };
 
 module.exports = {

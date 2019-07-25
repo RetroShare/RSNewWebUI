@@ -19,6 +19,7 @@ function setKeys(username, password, verified = true) {
 function rsJsonApiRequest(path, data, callback, async = true, headers = {}) {
   // Retroshare will crash if data is not of object type.
   data = data || {};
+  callback = callback || (() => {});
   headers['Accept'] = 'application/json';
   if(loginKey.isVerified) {
     headers['Authorization'] =
@@ -46,19 +47,17 @@ function rsJsonApiRequest(path, data, callback, async = true, headers = {}) {
       data: data,
     })
     .then((result) => {
-      if(typeof(callback) === 'function') {
-        if(result.status === 200) {
-          callback(result.body, true);
-        } else {
-          loginKey.isVerified = false;
-          callback(result.body, false);
-        }
+      if(result.status === 200) {
+        callback(result.body, true);
+      } else {
+        loginKey.isVerified = false;
+        callback(result, false);
       }
     })
     .catch(function(e) {
-      callback({}, false);
-      console.error('Error: While sending request for path:', path, 'info:',
-        e);
+      callback(e, false);
+      console.error('Error: While sending request for path:', path,
+        '\ninfo:', e);
     });
 }
 
@@ -87,7 +86,7 @@ function popupMessage(message) {
       m('button.red', {
         onclick: () => container.style.display = 'none'
       }, m('i.fas.fa-times')),
-        message,
+      message,
     ]));
 }
 
