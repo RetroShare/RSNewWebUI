@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/sh
 
 # create webfiles from sources at compile time (works without npm/node.js)
 
