@@ -16,7 +16,9 @@ let Uploads = {
 
   loadStatus() {
     Uploads.loadHashes();
-    Uploads.statusMap.clear();
+    if(Uploads.hashes.length !== Uploads.statusMap.size) {
+      Uploads.statusMap.clear();
+    }
     Uploads.hashes.map(
       (hash) => rs.rsJsonApiRequest(
         '/rsFiles/FileDetails', {

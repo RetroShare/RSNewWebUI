@@ -16,7 +16,10 @@ let Downloads = {
 
   loadStatus() {
     Downloads.loadHashes();
-    Downloads.statusMap.clear();
+      // TODO more comprehensive check
+    if(Downloads.hashes.length !== Downloads.statusMap.size) {
+      Downloads.statusMap.clear();
+    }
     for(let hash of Downloads.hashes) {
       rs.rsJsonApiRequest(
         '/rsFiles/FileDetails', {
@@ -51,7 +54,9 @@ let Component = {
       Array.from(Downloads.statusMap, function(fileStatus) {
         let info = fileStatus[1];
         let progress = info.transfered / info.size * 100;
-        return m('.file-view', [
+        return m('.file-view', {
+          key: info.hash
+        }, [
           m('p', info.fname),
           util.actionButton(info, 'cancel'),
           util.actionButton(info, info.downloadStatus ===

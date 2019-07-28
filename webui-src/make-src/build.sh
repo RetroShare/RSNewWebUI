@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/bin/bash
 
 # create webfiles from sources at compile time (works without npm/node.js)
 
@@ -27,7 +27,7 @@ fi
 shopt -s globstar
 
 if [ "$2" = "" ]||[ "$2" = "app.js" ]; then
-	echo building app.js
+	echo building app.js:
 	echo - copy template.js ...
 	cp $src/make-src/template.js $publicdest/app.js
 
@@ -43,7 +43,7 @@ if [ "$2" = "" ]||[ "$2" = "app.js" ]; then
 fi
 
 if [ "$2" = "" ]||[ "$2" = "app.css" ]; then
-	echo building app.css
+	echo building app.css:
         #cat $src/app/green-black.scss >> $publicdest/app.css
         #cat $src/app/theme.css >> $publicdest/app.css
 	cat $src/make-src/main.css >> $publicdest/app.css
