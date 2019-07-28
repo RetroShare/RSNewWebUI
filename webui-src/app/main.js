@@ -5,6 +5,8 @@ let rs = require('rswebui');
 
 const navIcon = {
   home: m('i.fas.fa-home'),
+  network: m('i.fas.fa-share-alt'),
+  mail: m('i.fas.fa-envelope'),
   files: m('i.fas.fa-folder-open'),
   config: m('i.fas.fa-cogs'),
 };
@@ -32,6 +34,8 @@ const Layout = () => {
       m(navbar, {
         links: {
           home: '/home',
+          network: '/network',
+          mail: '/mail/inbox',
           files: '/files',
           config: '/config/network',
         },
@@ -43,12 +47,20 @@ const Layout = () => {
 
 function onSuccess() {
   let home = require('home');
+  let network = require('network');
+  let mail = require('mail_resolver');
   let files = require('files_resolver');
   let config = require('config_resolver');
 
   m.route(document.getElementById('main'), '/home', {
     '/home': {
       render: (v) => m(Layout, m(home))
+    },
+    '/network': {
+      render: (v) => m(Layout, m(network))
+    },
+    '/mail/:section': {
+      render: (v) => m(Layout, m(mail, v.attrs))
     },
     '/files': {
       render: (v) => m(Layout, m(files))
