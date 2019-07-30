@@ -36,7 +36,7 @@ linux-* {
 	  WEBUI_SRC_SCRIPT = webui-src/make-src/build.sh
 
 	  WEBUI_SRC_HTML   = $$WEBUI_SRC_SCRIPT
-	  WEBUI_SRC_HTML  += webui-src/app/assets/index.html
+	  WEBUI_SRC_HTML  += webui-src/assets/index.html
 
 	  WEBUI_SRC_JS  = $$WEBUI_SRC_SCRIPT
 	  WEBUI_SRC_JS += webui-src/app/rswebui.js
