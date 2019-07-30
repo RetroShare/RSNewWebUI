@@ -47,21 +47,10 @@ const Component = () => {
     view: () => m('.widget', [
       m('h3', 'Uploads'),
       m('hr'),
-      Array.from(Uploads.statusMap, function(fileStatus) {
-        let info = fileStatus[1];
-        let progress = info.transfered / info.size * 100;
-        return m('.file-view', [
-          m('p', info.fname),
-          util.actionButton(info, 'cancel'),
-          util.actionButton(info, info.downloadStatus ===
-            util.FT_STATE_PAUSED ? 'resume' : 'pause'),
-          util.progressBar(progress),
-          m('span', m('i.fas.fa-file'), util.makeFriendlyUnit(
-            info.size)),
-          m('span', m('i.fas.fa-arrow-circle-up'),
-            util.makeFriendlyUnit(info.tfRate * 1024) + '/s'),
-        ]);
-      }),
+      Array.from(Uploads.statusMap,
+        (fileStatus) => m(util.File, {
+          info: fileStatus[1],
+        })),
     ])
   };
 }
