@@ -48,7 +48,7 @@ if [ "$2" = "" ]||[ "$2" = "app.css" ]; then
         #cat $src/app/theme.css >> $publicdest/app.css
 	cat $src/make-src/main.css >> $publicdest/app.css
 	#cat $src/make-src/chat.css >> $publicdest/app.css
-	for filename in $src/app/*.css; do
+	for filename in $src/app/**/*.css; do
 		fname=$(basename "$filename")
 		fname="${fname%.*}"
                 echo - adding $fname ...

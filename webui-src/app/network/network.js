@@ -2,9 +2,32 @@ let m = require('mithril');
 let rs = require('rswebui');
 
 
+const ConfirmRemove = () => {
+  return {
+    view: (vnode) => [m('h3', 'Remove Friend'),
+      m('hr'),
+      m('p', 'Are you sure you want to end connections with this peer?'),
+      m('button', {
+        onclick: () => {
+          rs.rsJsonApiRequest('/rsPeers/removeFriend', {
+            pgpId: vnode.attrs.gpg
+          });
+          m.redraw();
+        }
+      }, 'Confirm'),
+    ],
+  };
+};
+
 const Node = () => {
   return {
+    isOnline: true,
     isExpanded: false,
+
+    oninit: (vnode) => rs.rsJsonApiRequest('/rsPeers/isOnline', {
+      sslId: vnode.attrs.data[0].id,
+    }, (data) => vnode.state.isOnline = data.retval),
+
     view: (vnode) => m('.friend', {
       key: vnode.attrs.data[0].gpg_id
     }, [
@@ -13,6 +36,7 @@ const Node = () => {
         onclick: () => {
           vnode.state.isExpanded = !vnode.state.isExpanded;
           console.log(vnode.attrs.data)
+          console.log(vnode.state)
         },
       }),
       m('i.fas.fa-2x.fa-user-circle'),
@@ -21,13 +45,24 @@ const Node = () => {
         style: "display:" + (vnode.state.isExpanded ? "block" : "none"),
       }, [
         m('.grid-2col', [
-          m('p', 'Last contact:'),
+          m('p', 'Last contacted: '),
           m('p', new Date(vnode.attrs.data[0].lastConnect * 1000).toDateString()),
+          m('p', 'Online: '),
+          m('i.fas', {
+            class: vnode.state.isOnline ? 'fa-check-circle' : 'fa-times-circle'
+          }),
         ]),
         m('h4', 'Locations'),
         vnode.attrs.data.map((loc) => m('.location', [
           m('i.fas.fa-user-tag'), m('span', loc.location),
+          m('p', 'ID: '),
+          m('p', loc.id),
         ])),
+        m('button.red', {
+          onclick: () => rs.popupMessage(m(ConfirmRemove, {
+            gpg: vnode.attrs.data[0].gpg_id
+          }))
+        }, 'Remove friend'),
       ])
     ]),
   };
