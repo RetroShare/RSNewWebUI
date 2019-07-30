@@ -58,7 +58,7 @@ fi
 
 if [ "$2" = "" ]||[ "$2" = "index.html" ]; then
 	echo copy assets folder
-        cp -r $src/app/assets/* $publicdest/
+        cp -r $src/assets/* $publicdest/
 fi
 
 if [ "$2" != "" ]&&[ "$3" != "" ]; then
