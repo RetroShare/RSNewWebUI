@@ -3,8 +3,27 @@ let rs = require('rswebui');
 let util = require('files_util')
 
 
+function setHashDetail(hash, isNew = false) {
+  rs.rsJsonApiRequest(
+    '/rsFiles/FileDetails', {
+      hash,
+      hintflags: 16, // RS_FILE_HINTS_DOWNLOAD
+    },
+    (fileStat) => {
+      if(!fileStat.retval) {
+        console.error('Error: Unknown hash in Downloads: ', hash);
+        return;
+      }
+      fileStat.info.isSearched = (isNew ?
+        true :
+        Downloads.statusMap[hash].isSearched);
+      Downloads.statusMap[hash] = fileStat.info;
+    },
+  );
+}
+
 let Downloads = {
-  statusMap: new Map(),
+  statusMap: {},
   hashes: [],
 
   loadHashes() {
@@ -16,48 +35,51 @@ let Downloads = {
 
   loadStatus() {
     Downloads.loadHashes();
-    // TODO more comprehensive check
-    if(Downloads.hashes.length !== Downloads.statusMap.size) {
-      Downloads.statusMap.clear();
+    let fileKeys = Object.keys(Downloads.statusMap);
+    if(Downloads.hashes.length !== fileKeys.length) {
+      // New file added
+      if(Downloads.hashes.length > fileKeys.length) {
+        let newHashes = util.compareArrays(Downloads.hashes, fileKeys);
+        for(let hash of newHashes) {
+          setHashDetail(hash, true);
+        }
+      }
+      // Existing file removed
+      else {
+        let oldHashes = util.compareArrays(fileKeys, Downloads.hashes);
+        for(let hash of oldHashes) {
+          delete Downloads.statusMap[hash];
+        }
+      }
     }
-    for(let hash of Downloads.hashes) {
-      rs.rsJsonApiRequest(
-        '/rsFiles/FileDetails', {
-          hash,
-          hintflags: 16, // RS_FILE_HINTS_DOWNLOAD
-        },
-        (fileStat) => Downloads.statusMap.set(hash, fileStat.info),
-      );
+    for(let hash in Downloads.statusMap) {
+      setHashDetail(hash);
     }
   },
 };
 
-
-let backgroundCallback = function() {
-  this.loadStatus();
-};
-// Bind to Downloads so it doesn't lose scope
-backgroundCallback = backgroundCallback.bind(Downloads);
-
-let Component = {
-  oninit: () => rs.setBackgroundTask(
-    backgroundCallback,
-    1000,
-    () => {
-      return (m.route.get() === '/files')
-    }
-  ),
-  view: function() {
-    return m('.widget', [
+const Component = () => {
+  return {
+    oninit: () => rs.setBackgroundTask(
+      Downloads.loadStatus,
+      1000,
+      () => {
+        return (m.route.get() === '/files')
+      }
+    ),
+    view: () => m('.widget', [
       m('h3', 'Downloads'),
       m('hr'),
-      Array.from(Downloads.statusMap,
-        (fileStatus) => m(util.File, {
-          info: fileStatus[1],
+      Object.keys(Downloads.statusMap).map(
+        (hash) => m(util.File, {
+          info: Downloads.statusMap[hash]
         })),
-    ]);
-  },
+    ]),
+  };
 };
 
-module.exports = Component;
+module.exports = {
+  Component,
+  list: Downloads.statusMap
+};
 

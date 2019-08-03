@@ -105,9 +105,12 @@ const ProgressBar = () => {
 const File = () => {
   return {
     view: (v) => m('.file-view', {
-      key: v.attrs.info.hash
+      key: v.attrs.info.hash,
+      style: {
+        display: v.attrs.info.isSearched ? "block" : "none",
+      }
     }, [
-      m('p', v.attrs.info.name),
+      m('p', v.attrs.info.fname),
       actionButton(v.attrs.info, 'cancel'),
       actionButton(v.attrs.info,
         v.attrs.info.downloadStatus === FT_STATE_PAUSED ?
@@ -124,6 +127,36 @@ const File = () => {
   }
 };
 
+let searchString = '';
+const SearchBar = () => {
+  return {
+    oninit: (v) => console.log('srst=', searchString),
+    view: (v) =>
+      m('input[type=text][placeholder=search].searchbar', {
+        value: searchString,
+        oninput: (e) => {
+          searchString = e.target.value;
+          for(let hash in v.attrs.list) {
+            if(v.attrs.list[hash].fname.indexOf(searchString) > -1) {
+              v.attrs.list[hash].isSearched = true;
+            } else {
+              v.attrs.list[hash].isSearched = false;
+            }
+          }
+        },
+      }),
+  };
+};
+
+function compareArrays(big, small) {
+  // Use filter on bigger array
+  // Pass `new Set(array_to_compare)` as second param to filter
+  // Source: https://stackoverflow.com/a/40538072/7683374
+  return big.filter(function(val) {
+    return !this.has(val);
+  }, new Set(small));
+};
+
 module.exports = {
   RS_FILE_CTRL_PAUSE,
   RS_FILE_CTRL_START,
@@ -137,5 +170,7 @@ module.exports = {
   FT_STATE_PAUSED,
   FT_STATE_CHECKING_HASH,
   File,
+  SearchBar,
+  compareArrays,
 };
 

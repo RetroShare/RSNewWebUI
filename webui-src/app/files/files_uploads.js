@@ -3,8 +3,27 @@ let rs = require('rswebui');
 let util = require('files_util')
 
 
+function setHashDetail(hash, isNew = false) {
+  rs.rsJsonApiRequest(
+    '/rsFiles/FileDetails', {
+      hash,
+      hintflags: 16, // RS_FILE_HINTS_DOWNLOAD
+    },
+    (fileStat) => {
+      if(!fileStat.retval) {
+        console.error('Error: Unknown hash in Uploads: ', hash);
+        return;
+      }
+      fileStat.info.isSearched = (isNew ?
+        true :
+        Uploads.statusMap[hash].isSearched);
+      Uploads.statusMap[hash] = fileStat.info;
+    },
+  );
+}
+
 let Uploads = {
-  statusMap: new Map(),
+  statusMap: {},
   hashes: [],
 
   loadHashes() {
@@ -16,29 +35,33 @@ let Uploads = {
 
   loadStatus() {
     Uploads.loadHashes();
-    if(Uploads.hashes.length !== Uploads.statusMap.size) {
-      Uploads.statusMap.clear();
+    let fileKeys = Object.keys(Uploads.statusMap);
+    if(Uploads.hashes.length !== fileKeys.length) {
+      // New file added
+      if(Uploads.hashes.length > fileKeys.length) {
+        let newHashes = util.compareArrays(Uploads.hashes, fileKeys);
+        for(let hash of newHashes) {
+          setHashDetail(hash, true);
+        }
+      }
+      // Existing file removed
+      else {
+        let oldHashes = util.compareArrays(fileKeys, Uploads.hashes);
+        for(let hash of oldHashes) {
+          delete Uploads.statusMap[hash];
+        }
+      }
     }
-    Uploads.hashes.map(
-      (hash) => rs.rsJsonApiRequest(
-        '/rsFiles/FileDetails', {
-          hash,
-          hintflags: 16, // RS_FILE_HINTS_DOWNLOAD TODO???
-        },
-        (fileStat) => Uploads.statusMap.set(hash, fileStat.info),
-      ));
+    for(let hash in Uploads.statusMap) {
+      setHashDetail(hash);
+    }
   },
 };
-
-let backgroundCallback = function() {
-  this.loadStatus();
-};
-backgroundCallback = backgroundCallback.bind(Uploads);
 
 const Component = () => {
   return {
     oninit: () => rs.setBackgroundTask(
-      backgroundCallback,
+      Uploads.loadStatus,
       1000,
       () => {
         return (m.route.get() === '/files')
@@ -47,12 +70,16 @@ const Component = () => {
     view: () => m('.widget', [
       m('h3', 'Uploads'),
       m('hr'),
-      Array.from(Uploads.statusMap,
-        (fileStatus) => m(util.File, {
-          info: fileStatus[1],
+      Object.keys(Uploads.statusMap).map(
+        (hash) => m(util.File, {
+          info: Uploads.statusMap[hash]
         })),
-    ])
+    ]),
   };
-}
-module.exports = Component;
+};
+
+module.exports = {
+  Component,
+  list: Uploads.statusMap
+};
 

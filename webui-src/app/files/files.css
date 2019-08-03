@@ -1,0 +1,24 @@
+.file-view {
+    width: 90%;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    margin-top: 2em;
+    padding: 1em;
+    animation: fadein 0.5s;
+}.file-view > p {
+    margin: 0.5em;
+    font-size: 1.1em;
+}.file-view > span {
+    margin: 0 1em;
+    font-size: 0.9em;
+}.file-view > .progressbar {
+    width: 70%;
+}.file-view button {
+    float: right;
+}
+.searchbar {
+    margin: 5px;
+    width: 40%;
+    box-shadow: 0 0 3px #aaa;
+}
+
