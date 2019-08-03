@@ -38,7 +38,7 @@ const Layout = {
 
 module.exports = {
   view: (vnode) => {
-    const tab = vnode.attrs.section;
+    const tab = vnode.attrs.tab;
     return m(Layout, m(sections[tab]));
   },
 };

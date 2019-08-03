@@ -61,11 +61,12 @@ function rsJsonApiRequest(path, data, callback, async = true, headers = {}) {
     });
 }
 
-function setBackgroundTask(task, interval, checkTaskScope) {
+function setBackgroundTask(task, interval, taskInScope) {
   // Always use bound(.bind) function when accsssing outside objects
   // to avoid loss of scope
+  task();
   let taskId = setTimeout(function caller() {
-    if(checkTaskScope()) {
+    if(taskInScope()) {
       task();
       taskId = setTimeout(caller, interval);
     } else {
