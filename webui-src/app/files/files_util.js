@@ -42,17 +42,17 @@ function fileAction(hash, action) {
 
     case 'pause':
       action_header = '/rsFiles/FileControl';
-      json_params.flags = util.RS_FILE_CTRL_PAUSE;
+      json_params.flags = RS_FILE_CTRL_PAUSE;
       break;
 
     case 'resume':
       action_header = '/rsFiles/FileControl';
-      json_params.flags = util.RS_FILE_CTRL_START;
+      json_params.flags = RS_FILE_CTRL_START;
       break;
 
     case 'force_check':
       action_header = '/rsFiles/FileControl';
-      json_params.flags = util.RS_FILE_CTRL_FORCE_CHECK;
+      json_params.flags = RS_FILE_CTRL_FORCE_CHECK;
       break;
 
     default:
@@ -169,6 +169,7 @@ module.exports = {
   FT_STATE_QUEUED,
   FT_STATE_PAUSED,
   FT_STATE_CHECKING_HASH,
+  makeFriendlyUnit,
   File,
   SearchBar,
   compareArrays,

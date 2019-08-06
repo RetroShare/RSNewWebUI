@@ -58,6 +58,42 @@ let Downloads = {
   },
 };
 
+function addFile(url) {
+  // valid url format: retroshare://file?name=...&size=...&hash=...
+  let details = m.parseQueryString(url.split('?')[1]);
+  rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+    fileName: details.name,
+    hash: details.hash,
+    size: details.size,
+  }, (status) => {
+    rs.popupMessage([
+      m('i.fas.fa-file-medical'),
+      m('h3', 'Add new file'),
+      m('hr'),
+      m('p', status ? 'Successfully added file!' :
+        'Error: could not add file'),
+    ]);
+  })
+};
+
+NewFileDialog = () => {
+  let url = '';
+  return {
+    view: () => [
+      m('i.fas.fa-file-medical'),
+      m('h3', 'Add new file'),
+      m('hr'),
+      m('p', 'Enter the file link:'),
+      m('input[type=text][name=fileurl]', {
+        onchange: (e) => url = e.target.value,
+      }),
+      m('button', {
+        onclick: () => addFile(url),
+      }, 'Add'),
+    ],
+  };
+};
+
 const Component = () => {
   return {
     oninit: () => rs.setBackgroundTask(
@@ -70,6 +106,13 @@ const Component = () => {
     view: () => m('.widget', [
       m('h3', 'Downloads'),
       m('hr'),
+      m('button', {
+        onclick: () => rs.popupMessage(m(NewFileDialog)),
+      }, 'Add new file'),
+      m('button', {
+        onclick: () => rs.rsJsonApiRequest(
+          '/rsFiles/FileClearCompleted'),
+      }, 'Clear completed'),
       Object.keys(Downloads.statusMap).map(
         (hash) => m(util.File, {
           info: Downloads.statusMap[hash]

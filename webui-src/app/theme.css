@@ -70,9 +70,15 @@ table {
     width: 100%;
     border-collapse: collapse;
     text-align: center;
+    color: #333;
+    font-size: 1.2em;
 } table th {
-    background-color: #3ba4d7;
-    height: 1em;
+    font-weight: 100;
+    font-size: 1.3em;
+    color: black;
+    border-bottom: 2px solid #eee;
+} table tr {
+    border-bottom: 1px solid #eee;
 }
 
 h3 {
