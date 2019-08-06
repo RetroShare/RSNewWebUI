@@ -16,7 +16,8 @@ function setKeys(username, password, verified = true) {
   loginKey.isVerified = verified;
 }
 
-function rsJsonApiRequest(path, data, callback, async = true, headers = {}) {
+function rsJsonApiRequest(path, data, callback, async = true,
+  headers = {}) {
   // Retroshare will crash if data is not of object type.
   data = data || {};
   callback = callback || (() => {});
@@ -30,7 +31,7 @@ function rsJsonApiRequest(path, data, callback, async = true, headers = {}) {
     '\nHeaders:' + headers);
   // TODO: Properly handle types of fail situtations
   // Eg. Retroshare switched off, wrong path, incorrect data, etc.
-  m.request({
+  return m.request({
       method: 'POST',
       url: API_URL + path,
       async,
