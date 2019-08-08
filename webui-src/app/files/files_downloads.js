@@ -3,7 +3,7 @@ let rs = require('rswebui');
 let util = require('files_util')
 
 
-function setHashDetail(hash, isNew = false) {
+function updateFileDetail(hash, isNew = false) {
   rs.rsJsonApiRequest(
     '/rsFiles/FileDetails', {
       hash,
@@ -41,7 +41,7 @@ let Downloads = {
       if(Downloads.hashes.length > fileKeys.length) {
         let newHashes = util.compareArrays(Downloads.hashes, fileKeys);
         for(let hash of newHashes) {
-          setHashDetail(hash, true);
+          updateFileDetail(hash, true);
         }
       }
       // Existing file removed
@@ -53,7 +53,7 @@ let Downloads = {
       }
     }
     for(let hash in Downloads.statusMap) {
-      setHashDetail(hash);
+      updateFileDetail(hash);
     }
   },
 };
@@ -61,10 +61,11 @@ let Downloads = {
 function addFile(url) {
   // valid url format: retroshare://file?name=...&size=...&hash=...
   let details = m.parseQueryString(url.split('?')[1]);
+  // TODO check for invalid url
   rs.rsJsonApiRequest('/rsFiles/FileRequest', {
     fileName: details.name,
     hash: details.hash,
-    size: details.size,
+    size: Number.parseInt(details.size),
   }, (status) => {
     rs.popupMessage([
       m('i.fas.fa-file-medical'),
