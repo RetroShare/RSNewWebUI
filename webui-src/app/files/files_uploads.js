@@ -3,11 +3,11 @@ let rs = require('rswebui');
 let util = require('files_util')
 
 
-function setHashDetail(hash, isNew = false) {
+function updateFileDetail(hash, isNew = false) {
   rs.rsJsonApiRequest(
     '/rsFiles/FileDetails', {
       hash,
-      hintflags: 16, // RS_FILE_HINTS_DOWNLOAD
+      hintflags: 32, // RS_FILE_HINTS_UPLOAD
     },
     (fileStat) => {
       if(!fileStat.retval) {
@@ -41,7 +41,7 @@ let Uploads = {
       if(Uploads.hashes.length > fileKeys.length) {
         let newHashes = util.compareArrays(Uploads.hashes, fileKeys);
         for(let hash of newHashes) {
-          setHashDetail(hash, true);
+          updateFileDetail(hash, true);
         }
       }
       // Existing file removed
@@ -53,7 +53,7 @@ let Uploads = {
       }
     }
     for(let hash in Uploads.statusMap) {
-      setHashDetail(hash);
+      updateFileDetail(hash);
     }
   },
 };

@@ -27,8 +27,8 @@ function rsJsonApiRequest(path, data, callback, async = true,
       'Basic ' + btoa(loginKey.username + ':' + loginKey.passwd);
   }
 
-  console.info('Sending request: \nPath: ' + path + '\nData: ' + data +
-    '\nHeaders:' + headers);
+  console.info('Sending request: \nPath: ', path, '\nData: ', data,
+    '\nHeaders:', headers);
   // TODO: Properly handle types of fail situtations
   // Eg. Retroshare switched off, wrong path, incorrect data, etc.
   return m.request({
