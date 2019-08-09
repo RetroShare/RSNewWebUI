@@ -16,8 +16,8 @@ function setKeys(username, password, verified = true) {
   loginKey.isVerified = verified;
 }
 
-function rsJsonApiRequest(path, data, callback, async = true,
-  headers = {}) {
+function rsJsonApiRequest(path, data, callback, async = true, headers = {},
+  handleDeserialize, handleSerialize = JSON.stringify) {
   // Retroshare will crash if data is not of object type.
   data = data || {};
   callback = callback || (() => {});
@@ -26,9 +26,11 @@ function rsJsonApiRequest(path, data, callback, async = true,
     headers['Authorization'] =
       'Basic ' + btoa(loginKey.username + ':' + loginKey.passwd);
   }
-
-  console.info('Sending request: \nPath: ', path, '\nData: ', data,
-    '\nHeaders:', headers);
+  //console.info('Sending request: \nPath: ', path, '\nData: ', data,
+  //  '\nHeaders:', headers);
+  // NOTE: After upgrading to mithrilv2, options.extract is no longer required
+  // since the status will become part of return value and then
+  // handleDeserialize can also be simply passed as options.deserialize
   // TODO: Properly handle types of fail situtations
   // Eg. Retroshare switched off, wrong path, incorrect data, etc.
   return m.request({
@@ -39,11 +41,13 @@ function rsJsonApiRequest(path, data, callback, async = true,
         // Empty string is not valid json and fails on parse
         if(xhr.responseText === '')
           xhr.responseText = '""';
+        handleDeserialize = handleDeserialize || JSON.parse;
         return {
           status: xhr.status,
-          body: JSON.parse(xhr.responseText),
+          body: handleDeserialize(xhr.responseText),
         };
       },
+      serialize: handleSerialize,
       headers: headers,
       data: data,
     })
