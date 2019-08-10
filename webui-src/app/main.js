@@ -6,9 +6,10 @@ let rs = require('rswebui');
 const navIcon = {
   home: m('i.fas.fa-home'),
   network: m('i.fas.fa-share-alt'),
-  chat: m('i.fas.fa-share-alt'),
+  chat: m('i.fas.fa-comments'),
   mail: m('i.fas.fa-envelope'),
   files: m('i.fas.fa-folder-open'),
+  channels: m('i.fas.fa-tv'),
   config: m('i.fas.fa-cogs'),
 };
 
@@ -39,6 +40,7 @@ const Layout = () => {
           chat: '/chat',
           mail: '/mail/inbox',
           files: '/files',
+          channels: '/channels',
           config: '/config/network',
         },
       }),
@@ -53,6 +55,7 @@ function onSuccess() {
   let chat = require('chat');
   let mail = require('mail_resolver');
   let files = require('files_resolver');
+  let channels = require('channels');
   let config = require('config_resolver');
 
   m.route(document.getElementById('main'), '/home', {
@@ -73,6 +76,9 @@ function onSuccess() {
     },
     '/files': {
       render: (v) => m(Layout, m(files))
+    },
+    '/channels': {
+      render: (v) => m(Layout, m(channels))
     },
     '/config/:tab': {
       render: (v) => m(Layout, m(config, v.attrs))
