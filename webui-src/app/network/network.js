@@ -6,7 +6,7 @@ const ConfirmRemove = () => {
   return {
     view: (vnode) => [m('h3', 'Remove Friend'),
       m('hr'),
-      m('p', 'Are you sure you want to end connections with this peer?'),
+      m('p', 'Are you sure you want to end connections with this node?'),
       m('button', {
         onclick: () => {
           rs.rsJsonApiRequest('/rsPeers/removeFriend', {
@@ -29,15 +29,12 @@ const Node = () => {
     }, (data) => vnode.state.isOnline = data.retval),
 
     view: (vnode) => m('.friend', {
-      key: vnode.attrs.data[0].gpg_id
+      key: vnode.attrs.data[0].gpg_id,
+      style: "display:" + (vnode.attrs.isSearched ? "block" : "none"),
     }, [
       m('i.fas.fa-angle-right', {
         class: 'fa-rotate-' + (vnode.state.isExpanded ? '90' : '0'),
-        onclick: () => {
-          vnode.state.isExpanded = !vnode.state.isExpanded;
-          console.log(vnode.attrs.data)
-          console.log(vnode.state)
-        },
+        onclick: () => vnode.state.isExpanded = !vnode.state.isExpanded,
       }),
       m('i.fas.fa-2x.fa-user-circle'),
       m('span', vnode.attrs.data[0].name),
@@ -68,8 +65,29 @@ const Node = () => {
   };
 };
 
+let FriendNodes = {};
+
+let searchString = '';
+const SearchBar = () => {
+  return {
+    view: () => m('input[type=text][placeholder=search].searchbar', {
+      value: searchString,
+      oninput: (e) => {
+        searchString = e.target.value.toLowerCase();
+        for(let id in FriendNodes) {
+          if(FriendNodes[id].locations[0].name.toLowerCase().indexOf(
+              searchString) > -1) {
+            FriendNodes[id].isSearched = true;
+          } else {
+            FriendNodes[id].isSearched = false;
+          }
+        }
+      },
+    })
+  };
+};
+
 const Friends = () => {
-  let nodes = {};
   return {
     oninit: () => {
       rs.rsJsonApiRequest(
@@ -83,9 +101,13 @@ const Friends = () => {
               (details) => {
                 // Store nodes obj with gpg id as key
                 // single node can have multiple identities
-                nodes[details.det.gpg_id] === undefined ?
-                  nodes[details.det.gpg_id] = [details.det] :
-                  nodes[details.det.gpg_id].push(details.det);
+                FriendNodes[details.det.gpg_id] === undefined ?
+                  FriendNodes[details.det.gpg_id] = {
+                    locations: [details.det],
+                    isSearched: true
+                  } :
+                  FriendNodes[details.det.gpg_id].locations.push(
+                    details.det);
               })
           );
         });
@@ -93,8 +115,9 @@ const Friends = () => {
     view: () => m('.widget', [
       m('h3', 'Friend nodes'),
       m('hr'),
-      Object.keys(nodes).map((id) => m(Node, {
-        data: nodes[id]
+      Object.keys(FriendNodes).map((id) => m(Node, {
+        data: FriendNodes[id].locations,
+        isSearched: FriendNodes[id].isSearched,
       })),
     ]),
   };
@@ -103,6 +126,7 @@ const Friends = () => {
 const Layout = () => {
   return {
     view: () => m('.tab-page', [
+      m(SearchBar),
       m(Friends),
     ])
   }
