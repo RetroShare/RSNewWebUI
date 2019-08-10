@@ -97,6 +97,7 @@ const SearchBar = () => {
 const Friends = () => {
   return {
     oninit: () => {
+      FriendNodes = {};
       rs.rsJsonApiRequest(
         '/rsPeers/getFriendList', {},
         (friendListIds) => {
