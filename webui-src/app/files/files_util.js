@@ -130,7 +130,6 @@ const File = () => {
 let searchString = '';
 const SearchBar = () => {
   return {
-    oninit: (v) => console.log('srst=', searchString),
     view: (v) =>
       m('input[type=text][placeholder=search].searchbar', {
         value: searchString,
