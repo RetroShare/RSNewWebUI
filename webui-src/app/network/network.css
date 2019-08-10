@@ -3,7 +3,7 @@
     font-size: 1.2em;
     margin: 1em;
     padding: 20px;
-    border-bottom: 1px solid #aaa;
+    border: 1px solid #aaa;
     border-radius: 20px;
 }
 .friend i {
@@ -22,13 +22,15 @@
 }
 
 .friend .location {
+    margin: 5px;
+    border-top: 1px solid #bbb;
     display: grid;
     grid-template-columns: auto auto;
     justify-content: start;
 }
 
 .friend .fa-times-circle {
-    color: #bd0909;
+    color: #555;
 }.friend .fa-check-circle {
     color: green;
 }

@@ -38,13 +38,16 @@ const Node = () => {
       }),
       m('i.fas.fa-2x.fa-user-circle'),
       m('span', vnode.attrs.data[0].name),
+      m('i.fas', {
+        class: vnode.state.isOnline ? 'fa-check-circle' : 'fa-times-circle'
+      }),
       m('.details', {
         style: "display:" + (vnode.state.isExpanded ? "block" : "none"),
       }, [
         m('.grid-2col', [
-          m('p', 'Last contacted: '),
+          m('p', 'Last contacted :'),
           m('p', new Date(vnode.attrs.data[0].lastConnect * 1000).toDateString()),
-          m('p', 'Online: '),
+          m('p', 'Online :'),
           m('i.fas', {
             class: vnode.state.isOnline ? 'fa-check-circle' : 'fa-times-circle'
           }),
@@ -52,14 +55,18 @@ const Node = () => {
         m('h4', 'Locations'),
         vnode.attrs.data.map((loc) => m('.location', [
           m('i.fas.fa-user-tag'), m('span', loc.location),
-          m('p', 'ID: '),
+          m('p', 'ID :'),
           m('p', loc.id),
+          m('p', 'Online :'),
+          m('i.fas', {
+            class: vnode.state.isOnline ? 'fa-check-circle' : 'fa-times-circle'
+          }),
+          m('button.red', {
+            onclick: () => rs.popupMessage(m(ConfirmRemove, {
+              gpg: loc.gpg_id,
+            }))
+          }, 'Remove node'),
         ])),
-        m('button.red', {
-          onclick: () => rs.popupMessage(m(ConfirmRemove, {
-            gpg: vnode.attrs.data[0].gpg_id
-          }))
-        }, 'Remove friend'),
       ])
     ]),
   };
@@ -101,11 +108,12 @@ const Friends = () => {
               (details) => {
                 // Store nodes obj with gpg id as key
                 // single node can have multiple identities
-                FriendNodes[details.det.gpg_id] === undefined ?
+                if(FriendNodes[details.det.gpg_id] === undefined)
                   FriendNodes[details.det.gpg_id] = {
                     locations: [details.det],
                     isSearched: true
-                  } :
+                  }
+                else
                   FriendNodes[details.det.gpg_id].locations.push(
                     details.det);
               })
