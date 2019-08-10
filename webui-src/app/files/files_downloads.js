@@ -58,10 +58,28 @@ let Downloads = {
   },
 };
 
+function InvalidFileMessage() {
+  rs.popupMessage([
+    m('i.fas.fa-file-medical'),
+    m('h3', 'Add new file'),
+    m('hr'),
+    m('p', 'Error: could not add file'),
+  ]);
+}
+
 function addFile(url) {
   // valid url format: retroshare://file?name=...&size=...&hash=...
+  if(!url.startsWith('retroshare://')) {
+    InvalidFileMessage();
+    return;
+  }
   let details = m.parseQueryString(url.split('?')[1]);
-  // TODO check for invalid url
+  if(!details.hasOwnProperty('name') ||
+    !details.hasOwnProperty('size') ||
+    !details.hasOwnProperty('hash')) {
+    InvalidFileMessage();
+    return;
+  }
   rs.rsJsonApiRequest('/rsFiles/FileRequest', {
     fileName: details.name,
     hash: details.hash,
@@ -71,8 +89,7 @@ function addFile(url) {
       m('i.fas.fa-file-medical'),
       m('h3', 'Add new file'),
       m('hr'),
-      m('p', status ? 'Successfully added file!' :
-        'Error: could not add file'),
+      m('p', 'Successfully added file!'),
     ]);
   })
 };
