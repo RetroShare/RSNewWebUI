@@ -39,7 +39,7 @@ const Layout = () => {
           network: '/network',
           chat: '/chat',
           mail: '/mail/inbox',
-          files: '/files',
+          files: '/files/files',
           channels: '/channels',
           config: '/config/network',
         },
@@ -74,8 +74,8 @@ function onSuccess() {
     '/mail/:tab': {
       render: (v) => m(Layout, m(mail, v.attrs))
     },
-    '/files': {
-      render: (v) => m(Layout, m(files))
+    '/files/:tab': {
+      render: (v) => m(Layout, m(files, v.attrs))
     },
     '/channels': {
       render: (v) => m(Layout, m(channels))
