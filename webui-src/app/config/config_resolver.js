@@ -4,11 +4,10 @@ let rs = require('rswebui');
 
 const sidebar = () => {
   let active = 0;
-  const tabs = Object.keys(sections);
   return {
-    view: () => m('.sidebar',
-      tabs.map((panelName, index) => m('a', {
-          href: '/config/' + panelName,
+    view: (v) => m('.sidebar',
+      v.attrs.tabs.map((panelName, index) => m('a', {
+          href: v.attrs.baseRoute + panelName,
           oncreate: m.route.link,
           class: index === active ?
             'selected-sidebar-link' : '',
@@ -31,7 +30,10 @@ let sections = {
 
 const Layout = {
   view: vnode => m('.tab-page', [
-    m(sidebar),
+    m(sidebar, {
+      tabs: Object.keys(sections),
+      baseRoute: '/config/',
+    }),
     m('.node-panel', vnode.children),
   ])
 };
