@@ -127,8 +127,8 @@ const File = () => {
   }
 };
 
-let searchString = '';
 const SearchBar = () => {
+  let searchString = '';
   return {
     view: (v) =>
       m('input[type=text][placeholder=search].searchbar', {
@@ -136,7 +136,8 @@ const SearchBar = () => {
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
           for(let hash in v.attrs.list) {
-            if(v.attrs.list[hash].fname.toLowerCase().indexOf(searchString) > -1) {
+            if(v.attrs.list[hash].fname.toLowerCase().indexOf(
+                searchString) > -1) {
               v.attrs.list[hash].isSearched = true;
             } else {
               v.attrs.list[hash].isSearched = false;

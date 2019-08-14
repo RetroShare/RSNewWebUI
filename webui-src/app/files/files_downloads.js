@@ -56,6 +56,11 @@ let Downloads = {
       updateFileDetail(hash);
     }
   },
+  resetSearch() {
+    for(let hash in Downloads.statusMap) {
+      Downloads.statusMap[hash].isSearched = true;
+    }
+  },
 };
 
 function InvalidFileMessage() {
@@ -114,13 +119,16 @@ NewFileDialog = () => {
 
 const Component = () => {
   return {
-    oninit: () => rs.setBackgroundTask(
-      Downloads.loadStatus,
-      1000,
-      () => {
-        return (m.route.get() === '/files')
-      }
-    ),
+    oninit: () => {
+      rs.setBackgroundTask(
+        Downloads.loadStatus,
+        1000,
+        () => {
+          return (m.route.get() === '/files')
+        }
+      );
+      Downloads.resetSearch();
+    },
     view: () => m('.widget', [
       m('h3', 'Downloads'),
       m('hr'),
