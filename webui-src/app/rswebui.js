@@ -39,12 +39,11 @@ function rsJsonApiRequest(path, data, callback, async = true, headers = {},
       async,
       extract: (xhr) => {
         // Empty string is not valid json and fails on parse
-        if(xhr.responseText === '')
-          xhr.responseText = '""';
+        let response = xhr.responseText || '""';
         handleDeserialize = handleDeserialize || JSON.parse;
         return {
           status: xhr.status,
-          body: handleDeserialize(xhr.responseText),
+          body: handleDeserialize(response),
         };
       },
       serialize: handleSerialize,

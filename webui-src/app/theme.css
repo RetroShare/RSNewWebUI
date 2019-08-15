@@ -46,7 +46,7 @@ input[type=text], input[type=password], input[type=number], textarea {
     padding: 0.1em;
 }input.searchbar {
     display: block;
-    margin: 1em 0 0 1em;
+    margin: 0.9em 0 0 0.9em;
 }
 
 button {
