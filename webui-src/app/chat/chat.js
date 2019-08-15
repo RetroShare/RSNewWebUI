@@ -15,6 +15,7 @@ let ChatRoomsModel = {
     );
   },
   loadSubscribedRooms() {
+    ChatRoomsModel.subscribedRooms = {};
     rs.rsJsonApiRequest('/rsMsgs/getChatLobbyList', {},
       data => data.map(id => {
         rs.rsJsonApiRequest('/rsMsgs/getChatLobbyInfo', {
