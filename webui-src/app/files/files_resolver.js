@@ -4,6 +4,7 @@ let rs = require('rswebui');
 let downloads = require('files_downloads');
 let uploads = require('files_uploads');
 let util = require('files_util');
+let search = require('files_search');
 
 
 const sidebar = () => {
@@ -38,6 +39,7 @@ const MyFiles = () => {
 
 let sections = {
   files: MyFiles,
+  search: search,
 };
 
 const Layout = {
