@@ -124,7 +124,7 @@ const Component = () => {
         Downloads.loadStatus,
         1000,
         () => {
-          return (m.route.get() === '/files')
+          return (m.route.get() === '/files/files')
         }
       );
       Downloads.resetSearch();

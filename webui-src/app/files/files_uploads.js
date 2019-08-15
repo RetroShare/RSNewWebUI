@@ -64,7 +64,7 @@ const Component = () => {
       Uploads.loadStatus,
       1000,
       () => {
-        return (m.route.get() === '/files')
+        return (m.route.get() === '/files/files')
       }
     ),
     view: () => m('.widget', [
