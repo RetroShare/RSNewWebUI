@@ -6,6 +6,7 @@ let rs = require('rswebui');
 const navIcon = {
   home: m('i.fas.fa-home'),
   network: m('i.fas.fa-share-alt'),
+  people: m('i.fas.fa-users'),
   chat: m('i.fas.fa-comments'),
   mail: m('i.fas.fa-envelope'),
   files: m('i.fas.fa-folder-open'),
@@ -37,6 +38,7 @@ const Layout = () => {
         links: {
           home: '/home',
           network: '/network',
+          people: '/people',
           chat: '/chat',
           mail: '/mail/inbox',
           files: '/files/files',
@@ -52,6 +54,7 @@ const Layout = () => {
 function onSuccess() {
   let home = require('home');
   let network = require('network');
+  let people = require('people');
   let chat = require('chat');
   let mail = require('mail_resolver');
   let files = require('files_resolver');
@@ -64,6 +67,9 @@ function onSuccess() {
     },
     '/network': {
       render: (v) => m(Layout, m(network))
+    },
+    '/people': {
+      render: (v) => m(Layout, m(people))
     },
     '/chat': {
       render: (v) => m(Layout, m(chat))
