@@ -1,6 +1,7 @@
 let m = require('mithril');
 let rs = require('rswebui');
 
+let OwnIds = require('people_ownids');
 
 const Contacts = {
   list: [],
@@ -26,6 +27,7 @@ const AllContacts = () => {
 
 const Layout = {
   view: vnode => m('.tab-page', [
+    m(OwnIds),
     m(AllContacts),
   ])
 };
