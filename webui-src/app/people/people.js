@@ -14,7 +14,7 @@ const Contacts = {
 const AllContacts = () => {
   let list = [];
   return {
-    oninit: () => Contacts.loadList(),
+    oninit: Contacts.loadList,
     view: () => m('.widget', [
       m('h3', 'Contacts'),
       m('hr'),

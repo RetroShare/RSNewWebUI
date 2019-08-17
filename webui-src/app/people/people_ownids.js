@@ -20,8 +20,8 @@ const EditIdentity = () => {
       m('i.fas.fa-user-edit'),
       m('h3', 'Edit Identity'),
       m('hr'),
-      m('input[type=text][placeholder=Name]'),
-      m('img'),
+      m('input[type=text][placeholder=Name]',{}),
+      m('canvas'),
       m('button', 'Save'),
     ]
   };
@@ -84,7 +84,7 @@ const Identity = () => {
       ]),
       m('button', {
         onclick: () => rs.popupMessage(m(EditIdentity, {
-          id: details.mId
+          details,
         }))
       }, 'Edit'),
       m('button.red', {
