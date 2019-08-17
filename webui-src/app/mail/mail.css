@@ -1,0 +1,42 @@
+table.mails th {
+}
+/* star */
+table.mails th:nth-child(1) {
+    width: 5%;
+}
+/* attachments */
+table.mails th:nth-child(2) {
+    width: 5%;
+}
+/* subject */
+table.mails th:nth-child(3) {
+    width: 50%;
+    text-align: start;
+}
+/* date */
+table.mails th:nth-child(4) {
+    width: 40%;
+    text-align: start;
+}
+
+/* subject */
+table.mails td:nth-child(3) {
+    text-align: start;
+    /* Truncate text with '...' */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* date */
+table.mails td:nth-child(4) {
+    text-align: start;
+}
+
+table.mails tr.unread {
+    color: black;
+    background-color: #eef3f6;
+}
+
+iframe.msg {
+    border: 0;
+}

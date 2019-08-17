@@ -5,15 +5,17 @@ const util = require('mail_util');
 
 const Layout = () => {
   return {
-    view: (vnode) => [
-      m('.widget', m('table', [
-        m('thead', m('tr', [
-          m('th'),
-        ])),
-        m('tbody', [
-          m('tr')
-        ]),
-      ])),
+    oninit: (v) => {},
+    view: (v) => [
+      m('.widget', [
+        m('h3', 'Inbox'),
+        m('hr'),
+        m(util.Table, m('tbody', v.attrs.list.map(
+          (msg) => m(util.MessageSummary, {
+            details: msg,
+          })
+        ))),
+      ]),
     ]
   };
 };
