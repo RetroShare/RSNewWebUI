@@ -80,6 +80,9 @@ function onSuccess() {
     '/mail/:tab': {
       render: (v) => m(Layout, m(mail, v.attrs))
     },
+    '/mail/:tab/:msgId': {
+      render: (v) => m(Layout, m(mail, v.attrs))
+    },
     '/files/:tab': {
       render: (v) => m(Layout, m(files, v.attrs))
     },

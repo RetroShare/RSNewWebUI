@@ -5,7 +5,6 @@ const util = require('mail_util');
 
 const Layout = () => {
   return {
-    oninit: (v) => {},
     view: (v) => [
       m('.widget', [
         m('h3', 'Inbox'),
@@ -13,6 +12,7 @@ const Layout = () => {
         m(util.Table, m('tbody', v.attrs.list.map(
           (msg) => m(util.MessageSummary, {
             details: msg,
+            category: 'inbox',
           })
         ))),
       ]),

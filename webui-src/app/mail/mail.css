@@ -1,12 +1,12 @@
-table.mails th {
-}
 /* star */
 table.mails th:nth-child(1) {
     width: 5%;
+    color: #fcba03;
 }
 /* attachments */
 table.mails th:nth-child(2) {
     width: 5%;
+    color: grey;
 }
 /* subject */
 table.mails th:nth-child(3) {
@@ -32,6 +32,10 @@ table.mails td:nth-child(4) {
     text-align: start;
 }
 
+table.mails tr:hover {
+    background-color: #eef3f6;
+    cursor: pointer;
+}
 table.mails tr.unread {
     color: black;
     background-color: #eef3f6;
@@ -39,4 +43,6 @@ table.mails tr.unread {
 
 iframe.msg {
     border: 0;
+    width: 100%;
+    height: 450px;
 }

@@ -6,9 +6,9 @@ let util = require('mail_util');
 const Messages = {
   all: [],
   inbox: [],
-  sentbox: [],
+  sent: [],
   outbox: [],
-  draftbox: [],
+  drafts: [],
   load() {
     rs.rsJsonApiRequest('/rsMsgs/getMessageSummaries', {},
       (data) => {
@@ -18,13 +18,13 @@ const Messages = {
         Messages.inbox = Messages.all.filter(
           (msg) => (msg.msgflags & 0x000f) === 0);
         // RS_MSG_SENTBOX
-        Messages.sentbox = Messages.all.filter(
+        Messages.sent = Messages.all.filter(
           (msg) => (msg.msgflags & 0x000f) === 1);
         // RS_MSG_OUTBOX
         Messages.outbox = Messages.all.filter(
           (msg) => (msg.msgflags & 0x000f) === 3);
         // RS_MSG_DRAFTBOX
-        Messages.draftbox = Messages.all.filter(
+        Messages.drafts = Messages.all.filter(
           (msg) => (msg.msgflags & 0x000f) === 5);
       });
   },
@@ -33,6 +33,8 @@ const Messages = {
 let sections = {
   inbox: require('mail_inbox'),
   outbox: require('mail_outbox'),
+  drafts: require('mail_draftbox'),
+  sent: require('mail_sentbox'),
 };
 
 const sidebar = () => {
@@ -68,9 +70,9 @@ module.exports = {
   view: (v) => {
     const tab = v.attrs.tab;
     // TODO: utilize multiple routing params
-    if(tab.startsWith('id=')) {
+    if(v.attrs.hasOwnProperty('msgId')) {
       return m(Layout, m(util.MessageView, {
-        id: v.attrs.tab.slice(3)
+        id: v.attrs.msgId,
       }))
     }
     return m(Layout, m(sections[tab], {
