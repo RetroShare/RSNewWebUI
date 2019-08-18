@@ -1,6 +1,6 @@
-'use strict';
 let m = require('mithril');
 let rs = require('rswebui');
+let widget = require('widgets');
 
 
 let Certificate = () => {
@@ -83,7 +83,7 @@ const AddFriend = () => {
                 cert: certificate,
               }, (data) => {
                 if(!data.retval) {
-                  rs.popupMessage([m('h3', 'Error'),
+                  widget.popupMessage([m('h3', 'Error'),
                     m('hr'),
                     m('p',
                       'Not a valid Retroshare certificate.'),
@@ -91,7 +91,7 @@ const AddFriend = () => {
                   return null;
                 }
                 let details = data.certDetails;
-                rs.popupMessage([
+                widget.popupMessage([
                   m('i.fas.fa-user-plus'),
                   m('h3', 'Make friend'),
                   m('p', 'Details about your friend'),
@@ -112,14 +112,14 @@ const AddFriend = () => {
                         },
                         (data) => {
                           if(data.retval) {
-                            rs.popupMessage([m('h3',
+                            widget.popupMessage([m('h3',
                                 'successful'), m('hr'),
                               m('p',
                                 'Successfully added friend.'
                               ),
                             ]);
                           } else {
-                            rs.popupMessage([m('h3',
+                            widget.popupMessage([m('h3',
                                 'Error'), m('hr'),
                               m('p',
                                 'An error occoured during adding. Friend not added.'

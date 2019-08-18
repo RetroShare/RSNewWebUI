@@ -80,25 +80,9 @@ function setBackgroundTask(task, interval, taskInScope) {
   return taskId;
 };
 
-// There are ways of doing this inside m.route but it is probably
-// cleaner and faster when kept outside of the main auto
-// rendering system
-function popupMessage(message) {
-  const container = document.getElementById('modal-container');
-  container.style.display = 'block';
-  m.render(container,
-    m('.modal-content', [
-      m('button.red', {
-        onclick: () => container.style.display = 'none'
-      }, m('i.fas.fa-times')),
-      message,
-    ]));
-}
-
 module.exports = {
   rsJsonApiRequest,
   setKeys,
   setBackgroundTask,
-  popupMessage,
 };
 

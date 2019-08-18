@@ -1,6 +1,7 @@
 let m = require('mithril');
 let rs = require('rswebui');
 let util = require('files_util')
+let widget = require('widgets');
 
 
 function updateFileDetail(hash, isNew = false) {
@@ -64,7 +65,7 @@ let Downloads = {
 };
 
 function InvalidFileMessage() {
-  rs.popupMessage([
+  widget.popupMessage([
     m('i.fas.fa-file-medical'),
     m('h3', 'Add new file'),
     m('hr'),
@@ -90,7 +91,7 @@ function addFile(url) {
     hash: details.hash,
     size: Number.parseInt(details.size),
   }, (status) => {
-    rs.popupMessage([
+    widget.popupMessage([
       m('i.fas.fa-file-medical'),
       m('h3', 'Add new file'),
       m('hr'),
@@ -133,7 +134,7 @@ const Component = () => {
       m('h3', 'Downloads'),
       m('hr'),
       m('button', {
-        onclick: () => rs.popupMessage(m(NewFileDialog)),
+        onclick: () => widget.popupMessage(m(NewFileDialog)),
       }, 'Add new file'),
       m('button', {
         onclick: () => rs.rsJsonApiRequest(

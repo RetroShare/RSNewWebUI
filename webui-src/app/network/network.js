@@ -1,5 +1,6 @@
 let m = require('mithril');
 let rs = require('rswebui');
+let widget = require('widgets');
 
 
 const ConfirmRemove = () => {
@@ -67,7 +68,7 @@ const Node = () => {
             class: vnode.state.isOnline ? 'fa-check-circle' : 'fa-times-circle'
           }),
           m('button.red', {
-            onclick: () => rs.popupMessage(m(ConfirmRemove, {
+            onclick: () => widget.popupMessage(m(ConfirmRemove, {
               gpg: loc.gpg_id,
             }))
           }, 'Remove node'),

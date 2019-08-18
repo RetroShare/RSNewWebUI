@@ -1,5 +1,6 @@
 let m = require('mithril');
 let rs = require('rswebui');
+let widget = require('widgets');
 
 
 const CreateIdentity = () => {
@@ -39,7 +40,7 @@ const DeleteIdentity = () => {
       m('button', {
         onclick: () => rs.rsJsonApiRequest('/rsIdentity/deleteIdentity', {
           id: v.attrs.id
-        }, () => rs.popupMessage([
+        }, () => widget.popupMessage([
           m('i.fas.fa-user-edit'),
           m('h3', 'Delete Identity: ' + v.attrs.name),
           m('hr'),
@@ -83,12 +84,12 @@ const Identity = () => {
         m('p', new Date(details.mLastUsageTS * 1000).toDateString()),
       ]),
       m('button', {
-        onclick: () => rs.popupMessage(m(EditIdentity, {
+        onclick: () => widget.popupMessage(m(EditIdentity, {
           details,
         }))
       }, 'Edit'),
       m('button.red', {
-        onclick: () => rs.popupMessage(m(DeleteIdentity, {
+        onclick: () => widget.popupMessage(m(DeleteIdentity, {
           id: details.mId,
           name: details.mNickname,
         }))
@@ -111,7 +112,7 @@ const Layout = () => {
       m('h3', 'Own Identities'),
       m('hr'),
       m('button', {
-        onclick: () => rs.popupMessage(m(CreateIdentity)),
+        onclick: () => widget.popupMessage(m(CreateIdentity)),
       }, 'New Identity'),
       ownIds.map(id => m(Identity, {
         id,
