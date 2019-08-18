@@ -21,12 +21,17 @@ const ConfirmRemove = () => {
 
 const Node = () => {
   return {
-    isOnline: true,
+    isOnline: false,
     isExpanded: false,
 
-    oninit: (vnode) => rs.rsJsonApiRequest('/rsPeers/isOnline', {
-      sslId: vnode.attrs.data[0].id,
-    }, (data) => vnode.state.isOnline = data.retval),
+    oninit(v) {
+      v.state.isOnline = false;
+      // check if any one location is online
+      v.attrs.data.map(node => rs.rsJsonApiRequest(
+        '/rsPeers/isOnline', {
+          sslId: node.id
+        }, (data) => data.retval ? v.state.isOnline = true : undefined));
+    },
 
     view: (vnode) => m('.friend', {
       key: vnode.attrs.data[0].gpg_id,
