@@ -40,6 +40,16 @@ table.mails tr.unread {
     color: black;
     background-color: #eef3f6;
 }
+/* hide checkbox */
+input.star-check {
+    display: none;
+}
+/* use label with 'for' to manipulate checkbox */
+input.star-check + label.star-check {
+    color: grey;
+} input.star-check:checked + label.star-check {
+    color: #fcba03;
+}
 
 iframe.msg {
     border: 0;

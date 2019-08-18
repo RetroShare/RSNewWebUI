@@ -6,12 +6,15 @@ const people = require('people_util');
 const MessageSummary = () => {
   let details = {};
   let files = [];
+  let isStarred = undefined;
   return {
     oninit: (v) => rs.rsJsonApiRequest('/rsMsgs/getMessage', {
       msgId: v.attrs.details.msgId,
     }, (data) => {
       details = data.msg;
       files = details.files;
+      v.state.isStarred = (details.msgflags & 0xf00) === 0x200;
+
     }),
     view: (v) => m('tr.msgbody', {
       key: details.msgId,
@@ -21,13 +24,25 @@ const MessageSummary = () => {
         msgId: details.msgId,
       }),
     }, [
-      // TODO: custom checkbox tag
-      m('td', m('i.fas.fa-star', {
-        onclick: () => {
-          console.log('lol')
-        },
-        class: (details.msgflags & 0xf00) === 0x200 ? 'starred' : 'unstarred'
-      })),
+      m('td',
+        m('input.star-check[type=checkbox][id=msg-' + details.msgId +
+          ']', {
+            checked: v.state.isStarred
+          }),
+        // Use label with  [for] to manipulate hidden checkbox
+        m('label.star-check[for=msg-' + details.msgId + ']', {
+          onclick: (e) => {
+            v.state.isStarred = !v.state.isStarred;
+            rs.rsJsonApiRequest('/rsMsgs/MessageStar', {
+              msgId: details.msgId,
+              mark: v.state.isStarred,
+            });
+            // Stop event bubbling, both functions for supporting IE & FF
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          },
+          class: (details.msgflags & 0xf00) === 0x200 ? 'starred' : 'unstarred'
+        }, m('i.fas.fa-star'))),
       m('td', files.length),
       m('td', details.title),
       //m('td', details.rspeerid_srcId == 0 ?
