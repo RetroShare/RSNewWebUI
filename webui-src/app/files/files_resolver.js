@@ -1,29 +1,12 @@
 let m = require('mithril');
 let rs = require('rswebui');
+let widget = require('widgets');
 
 let downloads = require('files_downloads');
 let uploads = require('files_uploads');
 let util = require('files_util');
 let search = require('files_search');
 
-
-const sidebar = () => {
-  let active = 0;
-  return {
-    view: (v) => m('.sidebar',
-      v.attrs.tabs.map((panelName, index) => m('a', {
-          href: v.attrs.baseRoute + panelName,
-          oncreate: m.route.link,
-          class: index === active ?
-            'selected-sidebar-link' : '',
-          onclick: function() {
-            active = index;
-          },
-        },
-        panelName)),
-    ),
-  };
-};
 
 const MyFiles = () => {
   return {
@@ -44,7 +27,7 @@ let sections = {
 
 const Layout = {
   view: (vnode) => m('.tab-page', [
-    m(sidebar, {
+    m(widget.Sidebar, {
       tabs: Object.keys(sections),
       baseRoute: '/files/',
     }),

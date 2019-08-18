@@ -1,6 +1,7 @@
 let m = require('mithril');
 let rs = require('rswebui');
 let util = require('mail_util');
+let widget = require('widgets');
 
 
 const Messages = {
@@ -37,28 +38,10 @@ let sections = {
   sent: require('mail_sentbox'),
 };
 
-const sidebar = () => {
-  let active = 0;
-  return {
-    view: (v) => m('.sidebar',
-      v.attrs.tabs.map((panelName, index) => m('a', {
-          href: v.attrs.baseRoute + panelName,
-          oncreate: m.route.link,
-          class: index === active ?
-            'selected-sidebar-link' : '',
-          onclick: function() {
-            active = index;
-          },
-        },
-        panelName)),
-    ),
-  };
-};
-
 const Layout = {
   oninit: Messages.load,
   view: vnode => m('.tab-page', [
-    m(sidebar, {
+    m(widget.Sidebar, {
       tabs: Object.keys(sections),
       baseRoute: '/mail/',
     }),
