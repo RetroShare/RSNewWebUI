@@ -7,18 +7,24 @@ const MessageSummary = () => {
   let details = {};
   let files = [];
   let isStarred = undefined;
+  let msgStatus = '';
   return {
     oninit: (v) => rs.rsJsonApiRequest('/rsMsgs/getMessage', {
       msgId: v.attrs.details.msgId,
     }, (data) => {
       details = data.msg;
       files = details.files;
-      v.state.isStarred = (details.msgflags & 0xf00) === 0x200;
-
+      isStarred = (details.msgflags & 0xf00) === 0x200;
+      let flag = details.msgflags & 0xf0;
+      if(flag === 0x10 || flag == 0x40) {
+        msgStatus = 'unread';
+      } else {
+        msgStatus = 'read';
+      }
     }),
     view: (v) => m('tr.msgbody', {
       key: details.msgId,
-      class: (details.msgflags & 0xf0) === 0x40 ? 'unread' : 'read',
+      class: msgStatus,
       onclick: () => m.route.set('/mail/:tab/:msgId', {
         tab: v.attrs.category,
         msgId: details.msgId,
