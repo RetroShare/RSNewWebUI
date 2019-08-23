@@ -1,0 +1,13 @@
+.lobby {
+    margin: 10px;
+    border: 1px solid #aaa;
+    border-radius: 20px;
+}.lobby h5 {
+    margin: 20px;
+    font-weight: 100;
+    font-size: 1.2em;
+}.lobby > p {
+    font-size: 0.95em;
+    color: #666;
+    margin-left: 25px;
+}

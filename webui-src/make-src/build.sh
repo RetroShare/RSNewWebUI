@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/bin/bash
 
 # create webfiles from sources at compile time (works without npm/node.js)
 
@@ -23,12 +23,15 @@ if [ ! -d  "$publicdest" ]; then
 	mkdir $publicdest
 fi
 
+# For using recursive directory search(requires bash v4+)
+shopt -s globstar
+
 if [ "$2" = "" ]||[ "$2" = "app.js" ]; then
-	echo building app.js
+	echo building app.js:
 	echo - copy template.js ...
 	cp $src/make-src/template.js $publicdest/app.js
 
-	for filename in $src/app/*.js; do
+	for filename in $src/app/**/*.js; do
 		fname=$(basename "$filename")
 		fname="${fname%.*}"
 		echo - adding $fname ...
@@ -40,15 +43,22 @@ if [ "$2" = "" ]||[ "$2" = "app.js" ]; then
 fi
 
 if [ "$2" = "" ]||[ "$2" = "app.css" ]; then
-	echo building app.css
-        cat $src/app/green-black.scss >> $publicdest/app.css
+	echo building app.css:
+        #cat $src/app/green-black.scss >> $publicdest/app.css
+        #cat $src/app/theme.css >> $publicdest/app.css
 	cat $src/make-src/main.css >> $publicdest/app.css
-	cat $src/make-src/chat.css >> $publicdest/app.css
+	#cat $src/make-src/chat.css >> $publicdest/app.css
+	for filename in $src/app/**/*.css; do
+		fname=$(basename "$filename")
+		fname="${fname%.*}"
+                echo - adding $fname ...
+		cat $filename >> $publicdest/app.css
+        done
 fi
 
 if [ "$2" = "" ]||[ "$2" = "index.html" ]; then
-	echo copy index.html
-	cp $src/app/assets/index.html $publicdest/index.html
+	echo copy assets folder
+        cp -r $src/assets/* $publicdest/
 fi
 
 if [ "$2" != "" ]&&[ "$3" != "" ]; then

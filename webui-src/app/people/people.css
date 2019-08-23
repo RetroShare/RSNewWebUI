@@ -1,0 +1,30 @@
+.identity {
+    color: #444;
+    font-size: 1.1em;
+    margin: 20px;
+    padding: 10px;
+    border: 1px solid #aaa;
+    border-radius: 20px;
+}
+.identity > h4 {
+    margin: 5px;
+    font-size: 1.3em;
+}
+.identity p {
+    margin: 0;
+}
+.identity button {
+    font-size: 0.9em;
+}
+
+img.avatar {
+    float: left;
+    height: 100px;
+}
+
+.identity .details {
+    display: grid;
+    grid-template-columns: 140px auto;
+    grid-row-gap: 5px;
+    justify-content: left;
+}

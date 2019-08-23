@@ -36,16 +36,16 @@ linux-* {
 	  WEBUI_SRC_SCRIPT = webui-src/make-src/build.sh
 
 	  WEBUI_SRC_HTML   = $$WEBUI_SRC_SCRIPT
-	  WEBUI_SRC_HTML  += webui-src/app/assets/index.html
+	  WEBUI_SRC_HTML  += webui-src/assets/index.html
 
 	  WEBUI_SRC_JS  = $$WEBUI_SRC_SCRIPT
 	  WEBUI_SRC_JS += webui-src/app/rswebui.js
 	  WEBUI_SRC_JS += webui-src/app/mithril.js
-	  WEBUI_SRC_JS += webui-src/app/mithril.min.js
-	  WEBUI_SRC_JS += webui-src/app/downloads.js
+	  WEBUI_SRC_JS += webui-src/app/login.js
+	  WEBUI_SRC_JS += webui-src/app/main.js
+	  WEBUI_SRC_JS += webui-src/app/home.js
 
 #	  WEBUI_SRC_JS += webui-src/app/peers.js
-#	  WEBUI_SRC_JS += webui-src/app/main.js
 #	  WEBUI_SRC_JS += webui-src/app/menudef.js
 #	  WEBUI_SRC_JS += webui-src/app/menu.js
 #	  WEBUI_SRC_JS += webui-src/app/retroshare.js
@@ -56,13 +56,13 @@ linux-* {
 #	  WEBUI_SRC_JS += webui-src/app/chat.js
 #	  WEBUI_SRC_JS += webui-src/app/createlogin.js
 #	  WEBUI_SRC_JS += webui-src/app/forums.js
-#	  WEBUI_SRC_JS += webui-src/app/home.js
 #	  WEBUI_SRC_JS += webui-src/app/identities.js
 #	  WEBUI_SRC_JS += webui-src/app/search.js
 #	  WEBUI_SRC_JS += webui-src/app/searchresult.js
 #	  WEBUI_SRC_JS += webui-src/app/servicecontrol.js
 #	  WEBUI_SRC_JS += webui-src/app/settings.js
 #	  WEBUI_SRC_JS += webui-src/app/waiting.js
+#         WEBUI_SRC_JS += webui-src/app/downloads.js
 
 	  WEBUI_SRC_CSS  = $$WEBUI_SRC_SCRIPT
 	  WEBUI_SRC_CSS += webui-src/app/green-black.scss
