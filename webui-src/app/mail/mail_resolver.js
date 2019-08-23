@@ -14,19 +14,14 @@ const Messages = {
     rs.rsJsonApiRequest('/rsMsgs/getMessageSummaries', {},
       (data) => {
         Messages.all = data.msgList
-        // RS_MSG_BOXMASK = 0x000f
-        // RS_MSG_INBOX
         Messages.inbox = Messages.all.filter(
-          (msg) => (msg.msgflags & 0x000f) === 0);
-        // RS_MSG_SENTBOX
+          (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_INBOX);
         Messages.sent = Messages.all.filter(
-          (msg) => (msg.msgflags & 0x000f) === 1);
-        // RS_MSG_OUTBOX
+          (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_SENTBOX);
         Messages.outbox = Messages.all.filter(
-          (msg) => (msg.msgflags & 0x000f) === 3);
-        // RS_MSG_DRAFTBOX
+          (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_OUTBOX);
         Messages.drafts = Messages.all.filter(
-          (msg) => (msg.msgflags & 0x000f) === 5);
+          (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_DRAFTBOX);
       });
   },
 }

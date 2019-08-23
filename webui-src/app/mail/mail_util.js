@@ -2,6 +2,17 @@ const m = require('mithril');
 const rs = require('rswebui');
 const people = require('people_util');
 
+const RS_MSG_BOXMASK = 0x000f;
+
+const RS_MSG_INBOX = 0x00;
+const RS_MSG_SENTBOX = 0x01;
+const RS_MSG_OUTBOX = 0x03;
+const RS_MSG_DRAFTBOX = 0x05;
+
+const RS_MSG_NEW = 0x10;
+const RS_MSG_UNREAD_BY_USER = 0x40;
+const RS_MSG_STAR = 0x200;
+
 
 const MessageSummary = () => {
   let details = {};
@@ -14,9 +25,9 @@ const MessageSummary = () => {
     }, (data) => {
       details = data.msg;
       files = details.files;
-      isStarred = (details.msgflags & 0xf00) === 0x200;
+      isStarred = (details.msgflags & 0xf00) === RS_MSG_STAR;
       let flag = details.msgflags & 0xf0;
-      if(flag === 0x10 || flag == 0x40) {
+      if(flag === RS_MSG_NEW || flag == RS_MSG_UNREAD_BY_USER) {
         msgStatus = 'unread';
       } else {
         msgStatus = 'read';
@@ -47,7 +58,8 @@ const MessageSummary = () => {
             e.stopImmediatePropagation();
             e.preventDefault();
           },
-          class: (details.msgflags & 0xf00) === 0x200 ? 'starred' : 'unstarred'
+          class: (details.msgflags & 0xf00) === RS_MSG_STAR ?
+            'starred' : 'unstarred'
         }, m('i.fas.fa-star'))),
       m('td', files.length),
       m('td', details.title),
@@ -112,5 +124,13 @@ module.exports = {
   MessageSummary,
   MessageView,
   Table,
+  RS_MSG_BOXMASK,
+  RS_MSG_INBOX,
+  RS_MSG_SENTBOX,
+  RS_MSG_OUTBOX,
+  RS_MSG_DRAFTBOX,
+  RS_MSG_NEW,
+  RS_MSG_UNREAD_BY_USER,
+  RS_MSG_STAR,
 };
 
