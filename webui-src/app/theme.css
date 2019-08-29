@@ -240,7 +240,7 @@ Target specific sections
     position: relative;
     top: 100px;
     width: 30%;
-    height: 55%;
+    min-height: 55%;
     border-radius: 5px;
 
     display: flex;
@@ -250,8 +250,8 @@ Target specific sections
 }
 .login-container * {
     margin-top: 15px;
-    /* Not let elements flow out of container */
-    max-width: 100%;
+}.login-container .extra {
+    margin: 0;
 }
 
 /* Navbar */

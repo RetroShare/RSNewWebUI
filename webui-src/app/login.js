@@ -9,57 +9,58 @@ function renderLoginPage(callback) {
   onSuccessCallback = callback;
 };
 
-let loginComponent = {
-  view: function() {
+const loginComponent = {
+  view: () => {
+    let uname = '';
+    let passwd = '';
+    let port = 9092;
+    let advanced = false;
     return m('.login-page',
       m('.login-container', [
         m(
           'img.logo[src=../../data/retroshare.svg][alt=retroshare_icon][width=30%]'
         ),
-        m(
-          'input.field[type=text][placeholder=Username][id=uname][autofocus]'
-        ),
-        m(
-          'input.field[type=password][placeholder=Password][id=passwd]', {
-            onchange: verifyLogin,
+        m('input[type=text][placeholder=Username][autofocus]', {
+          onchange: (e) => uname = e.target.value
+        }),
+        m('input[type=password][placeholder=Password]', {
+          onchange: (e) => { passwd = e.target.value }
+        }),
+        m('.extra', [
+          'Port:',
+          m('input[type=number]', {
+            value: port,
+            oninput: (e) => { port = e.target.value }
           }),
+        ]),
         m('button.submit-btn', {
-          onclick: verifyLogin,
+          onclick: () => verifyLogin(uname, passwd, port),
         }, 'Login'),
         m('p.error[id=error]'),
       ]));
   }
 };
 
-function verifyLogin() {
-  let [uname, passwd] = getKeys();
+function verifyLogin(uname, passwd, port) {
   let loginHeader = {
     'Authorization': 'Basic ' + btoa(uname + ':' + passwd)
   };
-  rs.rsJsonApiRequest('/rsPeers/GetRetroshareInvite', {}, loginHandleWrapper(
-      uname, passwd), true,
+  if(port !== 9092) {
+    rs.setKeys('', '', port, false);
+  }
+  rs.rsJsonApiRequest('/rsPeers/GetRetroshareInvite', {},
+    (data, successful) => {
+      if(successful) {
+        rs.setKeys(uname, passwd);
+        onSuccessCallback();
+      } else {
+        displayErrorMessage('Incorrect login/password.');
+      }
+    },
+    true,
     loginHeader);
 };
 
-function getKeys() {
-  let uname = document.getElementById('uname')
-    .value;
-  let passwd = document.getElementById('passwd')
-    .value;
-  return [uname, passwd];
-};
-
-function loginHandleWrapper(uname, passwd) {
-  let onResponse = function(data, successful) {
-    if(successful) {
-      rs.setKeys(uname, passwd);
-      onSuccessCallback();
-    } else {
-      displayErrorMessage('Incorrect login/password.');
-    }
-  };
-  return onResponse;
-};
 
 function displayErrorMessage(message) {
   m.render(document.getElementById('error'), message);
