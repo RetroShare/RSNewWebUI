@@ -4,6 +4,7 @@ let rs = require('rswebui');
 const RS_FILE_CTRL_PAUSE = 0x00000100;
 const RS_FILE_CTRL_START = 0x00000200;
 const RS_FILE_CTRL_FORCE_CHECK = 0x00000400;
+
 const FT_STATE_FAILED = 0x0000;
 const FT_STATE_OKAY = 0x0001;
 const FT_STATE_WAITING = 0x0002;
@@ -12,6 +13,8 @@ const FT_STATE_COMPLETE = 0x0004;
 const FT_STATE_QUEUED = 0x0005;
 const FT_STATE_PAUSED = 0x0006;
 const FT_STATE_CHECKING_HASH = 0x0007;
+
+const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040
 
 function makeFriendlyUnit(bytes) {
   if(bytes < 1e3)
@@ -169,6 +172,7 @@ module.exports = {
   FT_STATE_QUEUED,
   FT_STATE_PAUSED,
   FT_STATE_CHECKING_HASH,
+  RS_FILE_REQ_ANONYMOUS_ROUTING,
   makeFriendlyUnit,
   File,
   SearchBar,
