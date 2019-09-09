@@ -2,17 +2,19 @@
 
 let m = require('mithril');
 
-const API_URL = 'http://127.0.0.1:9092';
+const API_URL = 'http://127.0.0.1:';
 let loginKey = {
   username: '',
   passwd: '',
   isVerified: false,
+  port: 9092,
 };
 
 // Make this as object property?
-function setKeys(username, password, verified = true) {
+function setKeys(username, password, port = 9092, verified = true) {
   loginKey.username = username;
   loginKey.passwd = password;
+  loginKey.port = port;
   loginKey.isVerified = verified;
 }
 
@@ -35,7 +37,7 @@ function rsJsonApiRequest(path, data, callback, async = true, headers = {},
   // Eg. Retroshare switched off, wrong path, incorrect data, etc.
   return m.request({
       method: 'POST',
-      url: API_URL + path,
+      url: API_URL + loginKey.port + path,
       async,
       extract: (xhr) => {
         // Empty string is not valid json and fails on parse
