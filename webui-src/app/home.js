@@ -4,13 +4,25 @@ let widget = require('widgets');
 
 let Certificate = () => {
   let ownCert = '';
-
-  return {
-    oninit() {
+  let short = false;
+  function loadOwnCert(short) {
+    if (short) {
+      rs.rsJsonApiRequest('/rsPeers/GetShortInvite',
+        {formatRadix: true},
+        data => (ownCert = data.invite),
+      );
+    } else {
       rs.rsJsonApiRequest('/rsPeers/GetRetroshareInvite',
         {},
         data => (ownCert = data.retval),
       );
+    }
+  };
+
+  return {
+    oninit() {
+      // Load long cert by default
+      loadOwnCert(false);
     },
 
     view() {
@@ -31,6 +43,13 @@ let Certificate = () => {
           },
           ownCert,
         ),
+        m('input[type=checkbox]', {
+          checked: short,
+          oninput: e => {
+            short = e.target.checked;
+            loadOwnCert(short);
+          },
+        }), 'Short version',
       ]);
     },
   };
@@ -60,7 +79,8 @@ function confirmAddPrompt(details, cert) {
     m('button',
       {
         onclick: () =>
-          rs.rsJsonApiRequest('/rsPeers/loadCertificateFromString',
+          rs.rsJsonApiRequest(
+            '/rsPeers/loadCertificateFromString',
             {cert},
             data => {
               if (data.retval) {
