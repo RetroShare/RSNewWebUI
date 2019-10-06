@@ -32,14 +32,36 @@ module.exports = {
       .then(() => this.loadSslDetails())
       .then(() => {
         this.sslDetails.map(data => {
-          if (details[data.gpg_id] === undefined) {
-            details[data.gpg_id] = {isSearched: true, locations: [data]};
-            console.log(data);
-          } else {
-            details[data.gpg_id].locations.push(data);
-          }
+          let isOnline = false;
+          rs.rsJsonApiRequest(
+            '/rsPeers/isOnline',
+            {sslId: data.id},
+            stat => (isOnline = stat.retval),
+          ).then(() => {
+            loc = {
+              name: data.location,
+              id: data.id,
+              lastSeen: data.lastConnect,
+              isOnline,
+              gpg_id: data.gpg_id,
+            };
+
+            if (details[data.gpg_id] === undefined) {
+              details[data.gpg_id] = {
+                name: data.name,
+                isSearched: true,
+                isOnline,
+                locations: [loc],
+              };
+            } else {
+              details[data.gpg_id].locations.push(loc);
+            }
+            details[data.gpg_id].isOnline =
+              details[data.gpg_id].isOnline || isOnline;
+
+            this.gpgDetails = details;
+          });
         });
-        this.gpgDetails = details;
       });
   },
 };
