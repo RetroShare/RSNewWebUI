@@ -3,7 +3,6 @@ const rs = require('rswebui');
 const widget = require('widgets');
 const Data = require('network_data');
 
-
 const ConfirmRemove = () => {
   return {
     view: vnode => [
@@ -64,24 +63,39 @@ const Friend = () => {
   return {
     isExpanded: false,
 
-    view: (vnode) => m('.friend', {
-      key: vnode.attrs.id,
-      class: Data.gpgDetails[vnode.attrs.id].isSearched ? "" : "hidden",
-    }, [
-      m('i.fas.fa-angle-right', {
-        class: 'fa-rotate-' + (vnode.state.isExpanded ? '90' : '0'),
-        onclick: () => vnode.state.isExpanded = !vnode.state.isExpanded,
-      }),
-      m('.brief-info',{class:Data.gpgDetails[vnode.attrs.id].isOnline?'online':''},[
-        m('i.fas.fa-2x.fa-user-circle'),
-        m('span', Data.gpgDetails[vnode.attrs.id].name),
-      ]),
-      m('.details', {
-        style: "display:" + (vnode.state.isExpanded ? "block" : "none"),
-      }, [
-        m(Locations, {locations: Data.gpgDetails[vnode.attrs.id].locations}),
-      ])
-    ]),
+    view: vnode =>
+      m(
+        '.friend',
+        {
+          key: vnode.attrs.id,
+          class: Data.gpgDetails[vnode.attrs.id].isSearched ? '' : 'hidden',
+        },
+        [
+          m('i.fas.fa-angle-right', {
+            class: 'fa-rotate-' + (vnode.state.isExpanded ? '90' : '0'),
+            onclick: () => (vnode.state.isExpanded = !vnode.state.isExpanded),
+          }),
+          m(
+            '.brief-info',
+            {class: Data.gpgDetails[vnode.attrs.id].isOnline ? 'online' : ''},
+            [
+              m('i.fas.fa-2x.fa-user-circle'),
+              m('span', Data.gpgDetails[vnode.attrs.id].name),
+            ],
+          ),
+          m(
+            '.details',
+            {
+              style: 'display:' + (vnode.state.isExpanded ? 'block' : 'none'),
+            },
+            [
+              m(Locations, {
+                locations: Data.gpgDetails[vnode.attrs.id].locations,
+              }),
+            ],
+          ),
+        ],
+      ),
   };
 };
 
@@ -111,28 +125,27 @@ const SearchBar = () => {
 
 const FriendsList = () => {
   return {
-    oninit: () => {
+    oninit: () =>{
       Data.refreshGpgDetails();
+      //rs.setBackgroundTask(
+      //  Data.refreshGpgDetails,
+      //  10000,
+      //  () => m.route.get() === '/network',
+      //)
     },
     view: () =>
       m('.widget', [
         m('h3', 'Friend nodes'),
         m('hr'),
-        Object.keys(Data.gpgDetails).map(id =>
-          m(Friend, {id}),
-        ),
+        Object.keys(Data.gpgDetails).map(id => m(Friend, {id})),
       ]),
   };
 };
 
 const Layout = () => {
   return {
-    view: () => m('.tab-page', [
-      m(SearchBar),
-      m(FriendsList),
-    ])
-  }
+    view: () => m('.tab-page', [m(SearchBar), m(FriendsList)]),
+  };
 };
 
 module.exports = Layout;
-
