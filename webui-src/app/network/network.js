@@ -72,11 +72,10 @@ const Friend = () => {
         class: 'fa-rotate-' + (vnode.state.isExpanded ? '90' : '0'),
         onclick: () => vnode.state.isExpanded = !vnode.state.isExpanded,
       }),
-      m('i.fas.fa-2x.fa-user-circle'),
-      m('span', Data.gpgDetails[vnode.attrs.id].name),
-      m('i.fas', {
-        class: Data.gpgDetails[vnode.attrs.id].isOnline ? 'fa-check-circle' : 'fa-times-circle'
-      }),
+      m('.brief-info',{class:Data.gpgDetails[vnode.attrs.id].isOnline?'online':''},[
+        m('i.fas.fa-2x.fa-user-circle'),
+        m('span', Data.gpgDetails[vnode.attrs.id].name),
+      ]),
       m('.details', {
         style: "display:" + (vnode.state.isExpanded ? "block" : "none"),
       }, [

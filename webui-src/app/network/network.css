@@ -23,6 +23,9 @@
 .friend.hidden {
     display: none;
 }
+.friend .brief-info.online {
+    color: green;
+}
 
 .friend .location {
     margin: 5px;
