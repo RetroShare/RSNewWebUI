@@ -1,6 +1,7 @@
 let m = require('mithril');
 let rs = require('rswebui');
 let widget = require('widgets');
+let data = require('network_data');
 
 
 const ConfirmRemove = () => {
@@ -103,36 +104,14 @@ const SearchBar = () => {
 const Friends = () => {
   return {
     oninit: () => {
-      FriendNodes = {};
-      rs.rsJsonApiRequest(
-        '/rsPeers/getFriendList', {},
-        (friendListIds) => {
-          friendListIds.sslIds.map(
-            (sslId) => rs.rsJsonApiRequest(
-              '/rsPeers/getPeerDetails', {
-                sslId
-              },
-              (details) => {
-                // Store nodes obj with gpg id as key
-                // single node can have multiple identities
-                if(FriendNodes[details.det.gpg_id] === undefined)
-                  FriendNodes[details.det.gpg_id] = {
-                    locations: [details.det],
-                    isSearched: true
-                  }
-                else
-                  FriendNodes[details.det.gpg_id].locations.push(
-                    details.det);
-              })
-          );
-        });
+        data.refreshGpgDetails();
     },
     view: () => m('.widget', [
       m('h3', 'Friend nodes'),
       m('hr'),
-      Object.keys(FriendNodes).map((id) => m(Node, {
-        data: FriendNodes[id].locations,
-        isSearched: FriendNodes[id].isSearched,
+      Object.keys(data.gpgDetails).map((id) => m(Node, {
+        data: data.gpgDetails[id].locations,
+        isSearched: data.gpgDetails[id].isSearched,
       })),
     ]),
   };
