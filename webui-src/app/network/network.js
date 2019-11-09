@@ -1,151 +1,151 @@
-let m = require('mithril');
-let rs = require('rswebui');
-let widget = require('widgets');
-
+const m = require('mithril');
+const rs = require('rswebui');
+const widget = require('widgets');
+const Data = require('network_data');
 
 const ConfirmRemove = () => {
   return {
-    view: (vnode) => [m('h3', 'Remove Friend'),
+    view: vnode => [
+      m('h3', 'Remove Friend'),
       m('hr'),
       m('p', 'Are you sure you want to end connections with this node?'),
-      m('button', {
-        onclick: () => {
-          rs.rsJsonApiRequest('/rsPeers/removeFriend', {
-            pgpId: vnode.attrs.gpg
-          });
-          m.redraw();
-        }
-      }, 'Confirm'),
+      m(
+        'button',
+        {
+          onclick: () => {
+            rs.rsJsonApiRequest('/rsPeers/removeFriend', {
+              pgpId: vnode.attrs.gpg_id,
+            });
+            m.redraw();
+          },
+        },
+        'Confirm',
+      ),
     ],
   };
 };
 
-const Node = () => {
+const Locations = () => {
   return {
-    isOnline: false,
-    isExpanded: false,
-
-    oninit(v) {
-      v.state.isOnline = false;
-      // check if any one location is online
-      v.attrs.data.map(node => rs.rsJsonApiRequest(
-        '/rsPeers/isOnline', {
-          sslId: node.id
-        }, (data) => data.retval ? v.state.isOnline = true : undefined));
-    },
-
-    view: (vnode) => m('.friend', {
-      key: vnode.attrs.data[0].gpg_id,
-      style: "display:" + (vnode.attrs.isSearched ? "block" : "none"),
-    }, [
-      m('i.fas.fa-angle-right', {
-        class: 'fa-rotate-' + (vnode.state.isExpanded ? '90' : '0'),
-        onclick: () => vnode.state.isExpanded = !vnode.state.isExpanded,
-      }),
-      m('i.fas.fa-2x.fa-user-circle'),
-      m('span', vnode.attrs.data[0].name),
-      m('i.fas', {
-        class: vnode.state.isOnline ? 'fa-check-circle' : 'fa-times-circle'
-      }),
-      m('.details', {
-        style: "display:" + (vnode.state.isExpanded ? "block" : "none"),
-      }, [
-        m('.grid-2col', [
-          m('p', 'Last contacted :'),
-          m('p', new Date(vnode.attrs.data[0].lastConnect * 1000).toDateString()),
-          m('p', 'Online :'),
-          m('i.fas', {
-            class: vnode.state.isOnline ? 'fa-check-circle' : 'fa-times-circle'
-          }),
-        ]),
-        m('h4', 'Locations'),
-        vnode.attrs.data.map((loc) => m('.location', [
-          m('i.fas.fa-user-tag'), m('span', loc.location),
+    view: v => [
+      m('h4', 'Locations'),
+      v.attrs.locations.map(loc =>
+        m('.location', [
+          m('i.fas.fa-user-tag'),
+          m('span', loc.name),
           m('p', 'ID :'),
           m('p', loc.id),
+          m('p', 'Last contacted :'),
+          m('p', new Date(loc.lastSeen * 1000).toDateString()),
           m('p', 'Online :'),
           m('i.fas', {
-            class: vnode.state.isOnline ? 'fa-check-circle' : 'fa-times-circle'
+            class: loc.isOnline ? 'fa-check-circle' : 'fa-times-circle',
           }),
-          m('button.red', {
-            onclick: () => widget.popupMessage(m(ConfirmRemove, {
-              gpg: loc.gpg_id,
-            }))
-          }, 'Remove node'),
-        ])),
-      ])
-    ]),
+          m(
+            'button.red',
+            {
+              onclick: () =>
+                widget.popupMessage(
+                  m(ConfirmRemove, {
+                    gpg: loc.gpg_id,
+                  }),
+                ),
+            },
+            'Remove node',
+          ),
+        ]),
+      ),
+    ],
   };
 };
 
-let FriendNodes = {};
+const Friend = () => {
+  return {
+    isExpanded: false,
 
-let searchString = '';
+    view: vnode =>
+      m(
+        '.friend',
+        {
+          key: vnode.attrs.id,
+          class: Data.gpgDetails[vnode.attrs.id].isSearched ? '' : 'hidden',
+        },
+        [
+          m('i.fas.fa-angle-right', {
+            class: 'fa-rotate-' + (vnode.state.isExpanded ? '90' : '0'),
+            onclick: () => (vnode.state.isExpanded = !vnode.state.isExpanded),
+          }),
+          m(
+            '.brief-info',
+            {class: Data.gpgDetails[vnode.attrs.id].isOnline ? 'online' : ''},
+            [
+              m('i.fas.fa-2x.fa-user-circle'),
+              m('span', Data.gpgDetails[vnode.attrs.id].name),
+            ],
+          ),
+          m(
+            '.details',
+            {
+              style: 'display:' + (vnode.state.isExpanded ? 'block' : 'none'),
+            },
+            [
+              m(Locations, {
+                locations: Data.gpgDetails[vnode.attrs.id].locations,
+              }),
+            ],
+          ),
+        ],
+      ),
+  };
+};
+
 const SearchBar = () => {
+  let searchString = '';
   return {
-    view: () => m('input[type=text][placeholder=search].searchbar', {
-      value: searchString,
-      oninput: (e) => {
-        searchString = e.target.value.toLowerCase();
-        for(let id in FriendNodes) {
-          if(FriendNodes[id].locations[0].name.toLowerCase().indexOf(
-              searchString) > -1) {
-            FriendNodes[id].isSearched = true;
-          } else {
-            FriendNodes[id].isSearched = false;
+    view: () =>
+      m('input.searchbar', {
+        type: 'text',
+        placeholder: 'search',
+        value: searchString,
+        oninput: e => {
+          searchString = e.target.value.toLowerCase();
+          for (let id in Data.gpgDetails) {
+            if (
+              Data.gpgDetails[id].name.toLowerCase().indexOf(searchString) > -1
+            ) {
+              Data.gpgDetails[id].isSearched = true;
+            } else {
+              Data.gpgDetails[id].isSearched = false;
+            }
           }
-        }
-      },
-    })
+        },
+      }),
   };
 };
 
-const Friends = () => {
+const FriendsList = () => {
   return {
-    oninit: () => {
-      FriendNodes = {};
-      rs.rsJsonApiRequest(
-        '/rsPeers/getFriendList', {},
-        (friendListIds) => {
-          friendListIds.sslIds.map(
-            (sslId) => rs.rsJsonApiRequest(
-              '/rsPeers/getPeerDetails', {
-                sslId
-              },
-              (details) => {
-                // Store nodes obj with gpg id as key
-                // single node can have multiple identities
-                if(FriendNodes[details.det.gpg_id] === undefined)
-                  FriendNodes[details.det.gpg_id] = {
-                    locations: [details.det],
-                    isSearched: true
-                  }
-                else
-                  FriendNodes[details.det.gpg_id].locations.push(
-                    details.det);
-              })
-          );
-        });
+    oninit: () =>{
+      Data.refreshGpgDetails();
+      //rs.setBackgroundTask(
+      //  Data.refreshGpgDetails,
+      //  10000,
+      //  () => m.route.get() === '/network',
+      //)
     },
-    view: () => m('.widget', [
-      m('h3', 'Friend nodes'),
-      m('hr'),
-      Object.keys(FriendNodes).map((id) => m(Node, {
-        data: FriendNodes[id].locations,
-        isSearched: FriendNodes[id].isSearched,
-      })),
-    ]),
+    view: () =>
+      m('.widget', [
+        m('h3', 'Friend nodes'),
+        m('hr'),
+        Object.keys(Data.gpgDetails).map(id => m(Friend, {id})),
+      ]),
   };
 };
 
 const Layout = () => {
   return {
-    view: () => m('.tab-page', [
-      m(SearchBar),
-      m(Friends),
-    ])
-  }
+    view: () => m('.tab-page', [m(SearchBar), m(FriendsList)]),
+  };
 };
 
 module.exports = Layout;
-
