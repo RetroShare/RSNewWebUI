@@ -68,6 +68,7 @@ WEBUI_SRC_CSS += webui-src/app/_reset.scss
 WEBUI_SRC_CSS += webui-src/app/_chat.sass
 WEBUI_SRC_CSS += webui-src/app/main.sass
 
+WEBUI_SRC_DATA += data/retroshare.svg
 
 create_webfiles_html.output = webui/index.html
 create_webfiles_html.input = WEBUI_SRC_HTML
@@ -87,5 +88,6 @@ create_webfiles_css.commands = sh $$_PRO_FILE_PWD_/webui-src/make-src/build.sh $
 create_webfiles_css.variable_out = JUNK
 create_webfiles_css.CONFIG = combine no_link
 
+QMAKE_EXTRA_COMPILERS += create_webfiles_html create_webfiles_js create_webfiles_css 
 
-QMAKE_EXTRA_COMPILERS += create_webfiles_html create_webfiles_js create_webfiles_css
+system(cp -r data webui/)
