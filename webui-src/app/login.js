@@ -18,7 +18,7 @@ const loginComponent = {
     return m('.login-page',
       m('.login-container', [
         m(
-          'img.logo[src=../data/retroshare.svg][alt=retroshare_icon][width=30%]'
+          'img.logo[src=data/retroshare.svg][alt=retroshare_icon][width=30%]'
         ),
         m('input[type=text][placeholder=Username][autofocus]', {
           onchange: (e) => uname = e.target.value
