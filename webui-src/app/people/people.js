@@ -1,7 +1,7 @@
 let m = require('mithril');
 let rs = require('rswebui');
 
-let OwnIds = require('people_ownids');
+let OwnIds = require('people/people_ownids');
 
 const Contacts = {
   list: [],

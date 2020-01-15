@@ -1,6 +1,6 @@
 let m = require('mithril');
 let rs = require('rswebui');
-let util = require('mail_util');
+let util = require('mail/mail_util');
 let widget = require('widgets');
 
 
@@ -27,10 +27,10 @@ const Messages = {
 }
 
 let sections = {
-  inbox: require('mail_inbox'),
-  outbox: require('mail_outbox'),
-  drafts: require('mail_draftbox'),
-  sent: require('mail_sentbox'),
+  inbox: require('mail/mail_inbox'),
+  outbox: require('mail/mail_outbox'),
+  drafts: require('mail/mail_draftbox'),
+  sent: require('mail/mail_sentbox'),
 };
 
 const Layout = {

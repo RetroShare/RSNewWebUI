@@ -2,10 +2,10 @@ let m = require('mithril');
 let rs = require('rswebui');
 let widget = require('widgets');
 
-let downloads = require('files_downloads');
-let uploads = require('files_uploads');
-let util = require('files_util');
-let search = require('files_search');
+let downloads = require('files/files_downloads');
+let uploads = require('files/files_uploads');
+let util = require('files/files_util');
+let search = require('files/files_search');
 
 
 const MyFiles = () => {

@@ -1,6 +1,6 @@
 let m = require('mithril');
 let rs = require('rswebui');
-let util = require('files_util')
+let util = require('files/files_util')
 
 
 function updateFileDetail(hash, isNew = false) {

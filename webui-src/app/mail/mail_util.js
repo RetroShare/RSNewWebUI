@@ -1,6 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
-const people = require('people_util');
+const people = require('people/people_util');
 
 const RS_MSG_BOXMASK = 0x000f;
 
