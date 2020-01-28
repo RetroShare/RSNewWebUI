@@ -4,11 +4,11 @@ let widget = require('widgets');
 
 
 let sections = {
-  network: require('config_network'),
-  node: require('config_node'),
-  services: require('config_services'),
-  files: require('config_files'),
-  people: require('config_people'),
+  network: require('config/config_network'),
+  node: require('config/config_node'),
+  services: require('config/config_services'),
+  files: require('config/config_files'),
+  people: require('config/config_people'),
 };
 
 const Layout = {

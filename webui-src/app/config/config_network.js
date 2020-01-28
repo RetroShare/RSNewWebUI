@@ -1,7 +1,7 @@
 let m = require('mithril');
 let rs = require('rswebui');
 
-let util = require('config_util');
+let util = require('config/config_util');
 
 
 let SetNwMode = () => {

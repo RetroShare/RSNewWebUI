@@ -53,13 +53,13 @@ const Layout = () => {
 
 function onSuccess() {
   let home = require('home');
-  let network = require('network');
-  let people = require('people');
-  let chat = require('chat');
-  let mail = require('mail_resolver');
-  let files = require('files_resolver');
-  let channels = require('channels');
-  let config = require('config_resolver');
+  let network = require('network/network');
+  let people = require('people/people');
+  let chat = require('chat/chat');
+  let mail = require('mail/mail_resolver');
+  let files = require('files/files_resolver');
+  let channels = require('channels/channels');
+  let config = require('config/config_resolver');
 
   m.route(document.getElementById('main'), '/home', {
     '/home': {

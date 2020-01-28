@@ -31,8 +31,9 @@ if [ "$2" = "" ]||[ "$2" = "app.js" ]; then
 	echo - copy template.js ...
 	cp $src/make-src/template.js $publicdest/app.js
 
+        js_source=$src/app/
 	for filename in $src/app/**/*.js; do
-		fname=$(basename "$filename")
+                fname="${filename#$js_source}"
 		fname="${fname%.*}"
 		echo - adding $fname ...
 		echo require.register\(\"$fname\", function\(exports, require, module\) { >> $publicdest/app.js

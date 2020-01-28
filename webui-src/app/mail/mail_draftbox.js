@@ -1,6 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
-const util = require('mail_util');
+const util = require('mail/mail_util');
 
 
 const Layout = () => {
