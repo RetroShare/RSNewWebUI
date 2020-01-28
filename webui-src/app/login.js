@@ -1,19 +1,21 @@
 const m = require('mithril');
 const rs = require('rswebui');
 
-const verifyLogin = function(uname, passwd, port) {
-  let loginHeader = {
+const displayErrorMessage = function(message) {
+  m.render(document.getElementById('error'), message);
+};
+
+const verifyLogin = async function(uname, passwd, port) {
+  const loginHeader = {
     Authorization: 'Basic ' + btoa(uname + ':' + passwd)
   };
-  if (port !== 9092) {
-    rs.setKeys('', '', port, false);
-  }
+  rs.setKeys('', '', port, false);
   rs.rsJsonApiRequest(
     '/rsPeers/GetRetroshareInvite',
     {},
     (data, successful) => {
       if (successful) {
-        rs.setKeys(uname, passwd);
+        rs.setKeys(uname, passwd, port);
         m.route.set('/home');
       } else {
         displayErrorMessage('Incorrect login/password.');
@@ -22,10 +24,6 @@ const verifyLogin = function(uname, passwd, port) {
     true,
     loginHeader
   );
-};
-
-const displayErrorMessage = function(message) {
-  m.render(document.getElementById('error'), message);
 };
 
 const loginComponent = function() {
