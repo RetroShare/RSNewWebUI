@@ -48,7 +48,7 @@ function rsJsonApiRequest(
       },
       serialize: handleSerialize,
       headers: headers,
-      data: data
+      body: data
     })
     .then(result => {
       if (result.status === 200) {
@@ -56,6 +56,7 @@ function rsJsonApiRequest(
       } else {
         loginKey.isVerified = false;
         callback(result, false);
+        m.route.set('/');
       }
       return result;
     })
