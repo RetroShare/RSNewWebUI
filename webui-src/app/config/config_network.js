@@ -29,7 +29,7 @@ let SetNwMode = () => {
 let SetLimits = () => {
   let dlim = undefined;
   let ulim = undefined;
-  let setMaxRates = () => rs.JsonApiRequest('/rsConfig/SetMaxDataRates', {
+  let setMaxRates = () => rs.rsJsonApiRequest('/rsConfig/SetMaxDataRates', {
     downKb: dlim,
     upKb: ulim
   });

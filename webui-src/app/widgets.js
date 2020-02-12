@@ -5,16 +5,11 @@ const Sidebar = () => {
   let active = 0;
   return {
     view: (v) => m('.sidebar',
-      v.attrs.tabs.map((panelName, index) => m('a', {
-          href: v.attrs.baseRoute + panelName,
-          oncreate: m.route.link,
-          class: index === active ?
-            'selected-sidebar-link' : '',
-          onclick: function() {
-            active = index;
-          },
-        },
-        panelName)),
+      v.attrs.tabs.map((panelName, index) => m(m.route.Link, {
+        class: index === active? 'selected-sidebar-link': '',
+        onclick: () => (active = index),
+        href: v.attrs.baseRoute + panelName
+      }, panelName)),
     ),
   };
 };
@@ -32,10 +27,9 @@ function popupMessage(message) {
       }, m('i.fas.fa-times')),
       message,
     ]));
-};
+}
 
 module.exports = {
   Sidebar,
   popupMessage,
 };
-

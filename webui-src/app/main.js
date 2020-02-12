@@ -29,14 +29,12 @@ const navbar = () => {
         'nav.tab-menu',
         Object.keys(vnode.attrs.links).map((linkName, i) =>
           m(
-            'a.tab-menu-item',
+            m.route.Link,
             {
               href: vnode.attrs.links[linkName],
-              class: active === i ? 'selected-tab-item' : '',
-              oncreate: m.route.link,
-              onclick: () => {
-                active = i;
-              }
+              class:
+                (active === i ? 'selected-tab-item' : '') + ' tab-menu-item',
+              onclick: () => (active = i)
             },
             [navIcon[linkName], linkName]
           )
