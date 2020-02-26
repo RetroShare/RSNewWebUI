@@ -50,7 +50,7 @@ let SetLimits = () => {
       m(
         'input[type=number][name=download]', {
           value: dlim,
-          oninput: (e) => dlim = e.target.value,
+          oninput: (e) => dlim = Number(e.target.value),
           onchange: setMaxRates,
         }),
       m('p',
@@ -62,7 +62,7 @@ let SetLimits = () => {
         ), 'Upload limit(KB/s):'),
       m('input[type=number][name=upload]', {
         value: ulim,
-        oninput: (e) => ulim = e.target.value,
+        oninput: (e) => ulim = Number(e.target.value),
         onchange: setMaxRates,
       }),
     ],
