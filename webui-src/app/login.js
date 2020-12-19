@@ -5,10 +5,18 @@ const displayErrorMessage = function(message) {
   m.render(document.getElementById('error'), message);
 };
 
-const verifyLogin = async function(uname, passwd, port, url) {
+const verifyLogin = async function(uname, passwd, port, server) {
   const loginHeader = {
     Authorization: 'Basic ' + btoa(uname + ':' + passwd)
   };
+  if (typeof server !== 'string' || server.indexOf(':') >= 0) {
+    displayErrorMessage("Server incorrect, please enter only ip or name");
+    return;
+  } else if (!server.trim()) {
+    displayErrorMessage("Server missing, please enter ip or name");
+    return;
+  }
+  var url = 'http://' + server.trim() + ":";
   rs.setKeys('', '', port, false, url);
   rs.rsJsonApiRequest(
     '/rsPeers/GetRetroshareInvite',
@@ -77,7 +85,7 @@ function loginComponent() {
             'button.submit-btn',
             {
               id: 'loginBtn',
-              onclick: () => verifyLogin(uname, passwd, port, 'http://' + server+':')
+              onclick: () => verifyLogin(uname, passwd, port, server)
             },
             'Login'
           ),
