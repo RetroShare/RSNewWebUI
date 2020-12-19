@@ -60,14 +60,14 @@ function loginComponent() {
             onchange: e => (passwd = e.target.value),
             onkeyup: e => {if (e.code==='Enter') loginBtn.click();}
           }),
-          m('.extra',[
-            'Url:',
+          m('.extra',
             m('input',{
               type: 'text',
+              placeholder: 'Url',
               value: url,
               oninput: e => (url = e.target.value)
             })
-          ]),
+          ),
           m(
             'button.submit-btn',
             {
