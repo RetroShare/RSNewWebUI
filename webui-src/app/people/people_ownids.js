@@ -132,7 +132,7 @@ const Identity = () => {
           details = data.details;
           // Creating URI during fetch because `details` is uninitialized
           // during view run, due to request being async.
-          avatarURI = data.details.mAvatar.mData.base64 == '' ? '' : 'data:image/png;base64,' + data.details.mAvatar.mData.base64;
+          avatarURI = data.details.mAvatar.mData.base64 === '' ? '' : 'data:image/png;base64,' + data.details.mAvatar.mData.base64;
         },
       ),
     view: v =>
