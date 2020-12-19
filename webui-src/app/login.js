@@ -5,25 +5,21 @@ const displayErrorMessage = function(message) {
   m.render(document.getElementById('error'), message);
 };
 
-const verifyLogin = async function(uname, passwd, port, server) {
+const verifyLogin = async function(uname, passwd, url) {
   const loginHeader = {
     Authorization: 'Basic ' + btoa(uname + ':' + passwd)
   };
-  if (typeof server !== 'string' || server.indexOf(':') >= 0) {
-    displayErrorMessage("Server incorrect, please enter only ip or name");
-    return;
-  } else if (!server.trim()) {
-    displayErrorMessage("Server missing, please enter ip or name");
+  if (!url.trim()) {
+    displayErrorMessage("Server-url is missing, please enter json-api url");
     return;
   }
-  var url = 'http://' + server.trim() + ":";
-  rs.setKeys('', '', port, false, url);
+  rs.setKeys('', '', url, false);
   rs.rsJsonApiRequest(
     '/rsPeers/GetRetroshareInvite',
     {},
     (data, successful) => {
       if (successful) {
-        rs.setKeys(uname, passwd, port, true, url);
+        rs.setKeys(uname, passwd, url);
         m.route.set('/home');
       } else if (data.status == 401) {
         displayErrorMessage('Incorrect login/password.');
@@ -42,8 +38,7 @@ function loginComponent() {
   var urlParams = new URLSearchParams(window.location.search);
   let uname = urlParams.get('Username')||'';
   let passwd = '';
-  let port = Number(urlParams.get('Port') || window.location.protocol==='file:' ? '9092': window.location.port );
-  let server = urlParams.get('Server')|| window.location.protocol==='file:' ? '127.0.0.1' : window.location.hostname;
+  let url = urlParams.get('Url') || window.location.protocol==='file:' ? 'http://127.0.0.1:9092' : window.location.protocol + '//' + window.location.host + window.location.pathname.replace('/index.html','');
   return {
     view: () => {
       return m(
@@ -65,27 +60,19 @@ function loginComponent() {
             onchange: e => (passwd = e.target.value),
             onkeyup: e => {if (e.code==='Enter') loginBtn.click();}
           }),
-          m('.extra', [
-            'Port:',
-            m('input', {
-              type: 'number',
-              value: port,
-              oninput: e => (port = e.target.value)
-            })
-          ]),
           m('.extra',[
-            'Server:',
+            'Url:',
             m('input',{
               type: 'text',
-              value: server,
-              oninput: e => (server = e.target.value)
+              value: url,
+              oninput: e => (url = e.target.value)
             })
           ]),
           m(
             'button.submit-btn',
             {
               id: 'loginBtn',
-              onclick: () => verifyLogin(uname, passwd, port, server)
+              onclick: () => verifyLogin(uname, passwd, url)
             },
             'Login'
           ),
