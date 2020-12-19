@@ -154,9 +154,9 @@ const Identity = () => {
             m('p', 'Owner node ID:'),
             m('p', details.mPgpId),
             m('p', 'Created on:'),
-            m('p', typeof details.mPublishTS =='object' ? new Date(details.mPublishTS.xint64 * 1000).toLocaleString():'undefiend'),
+            m('p', typeof details.mPublishTS ==='object' ? new Date(details.mPublishTS.xint64 * 1000).toLocaleString():'undefiend'),
             m('p', 'Last used:'),
-            m('p', typeof details.mLastUsageTS =='object' ? new Date(details.mLastUsageTS.xint64 * 1000).toLocaleDateString():'undefiend'),
+            m('p', typeof details.mLastUsageTS ==='object' ? new Date(details.mLastUsageTS.xint64 * 1000).toLocaleDateString():'undefiend'),
           ]),
           m(
             'button',

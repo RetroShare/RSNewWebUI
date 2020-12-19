@@ -34,8 +34,8 @@ function loginComponent() {
   var urlParams = new URLSearchParams(window.location.search);
   let uname = urlParams.get('Username')||'';
   let passwd = '';
-  let port = Number(urlParams.get('Port') || window.location.protocol=='file:' ? '9092': window.location.port );
-  let server = urlParams.get('Server')|| window.location.protocol=='file:' ? '127.0.0.1' : window.location.hostname;
+  let port = Number(urlParams.get('Port') || window.location.protocol==='file:' ? '9092': window.location.port );
+  let server = urlParams.get('Server')|| window.location.protocol==='file:' ? '127.0.0.1' : window.location.hostname;
   return {
     view: () => {
       return m(
@@ -45,17 +45,17 @@ function loginComponent() {
             src: '../data/retroshare.svg',
             alt: 'retroshare_icon'
           }),
-          m('input' + (uname == '' ? '[autofocus]':''), {
+          m('input' + (uname === '' ? '[autofocus]':''), {
             type: 'text',
             value: uname,
             placeholder: 'Username',
             onchange: e => (uname = e.target.value)
           }),
-          m('input'+ (uname != '' ? '[autofocus]':''), {
+          m('input'+ (uname !== '' ? '[autofocus]':''), {
             type: 'password',
             placeholder: 'Password',
             onchange: e => (passwd = e.target.value),
-            onkeyup: e => {if (e.code=='Enter') loginBtn.click();}
+            onkeyup: e => {if (e.code==='Enter') loginBtn.click();}
           }),
           m('.extra', [
             'Port:',
