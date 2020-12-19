@@ -132,7 +132,7 @@ const Identity = () => {
           details = data.details;
           // Creating URI during fetch because `details` is uninitialized
           // during view run, due to request being async.
-          avatarURI = 'data:image/png;base64,' + data.details.mAvatar.mData;
+          avatarURI = data.details.mAvatar.mData.base64 == '' ? '' : 'data:image/png;base64,' + data.details.mAvatar.mData.base64;
         },
       ),
     view: v =>
@@ -154,9 +154,9 @@ const Identity = () => {
             m('p', 'Owner node ID:'),
             m('p', details.mPgpId),
             m('p', 'Created on:'),
-            m('p', new Date(details.mPublishTS * 1000).toLocaleString()),
+            m('p', typeof details.mPublishTS =='object' ? new Date(details.mPublishTS.xint64 * 1000).toLocaleString():'undefiend'),
             m('p', 'Last used:'),
-            m('p', new Date(details.mLastUsageTS * 1000).toDateString()),
+            m('p', typeof details.mLastUsageTS =='object' ? new Date(details.mLastUsageTS.xint64 * 1000).toLocaleDateString():'undefiend'),
           ]),
           m(
             'button',

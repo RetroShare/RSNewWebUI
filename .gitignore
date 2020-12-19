@@ -1,3 +1,6 @@
 .qmake.stash
 Makefile
 webui/*
+webui.pro.user
+build.sh
+libwebui.so*

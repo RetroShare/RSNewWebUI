@@ -5,15 +5,17 @@ let loginKey = {
   username: '',
   passwd: '',
   isVerified: false,
-  port: 9092
+  port: 9092,
+  url: API_URL
 };
 
 // Make this as object property?
-function setKeys(username, password, port = 9092, verified = true) {
+function setKeys(username, password, port = 9092, verified = true, url = API_URL) {
   loginKey.username = username;
   loginKey.passwd = password;
   loginKey.port = port;
   loginKey.isVerified = verified;
+  loginKey.url = url;
 }
 
 function rsJsonApiRequest(
@@ -36,13 +38,14 @@ function rsJsonApiRequest(
   return m
     .request({
       method: 'POST',
-      url: API_URL + loginKey.port + path,
+      url: loginKey.url + loginKey.port + path,
       async,
       extract: xhr => {
         // Empty string is not valid json and fails on parse
         let response = xhr.responseText || '""';
         return {
           status: xhr.status,
+          statusText: xhr.statusText,
           body: handleDeserialize(response)
         };
       },
