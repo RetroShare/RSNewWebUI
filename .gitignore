@@ -2,5 +2,3 @@
 Makefile
 webui/*
 webui.pro.user
-build.sh
-libwebui.so*
