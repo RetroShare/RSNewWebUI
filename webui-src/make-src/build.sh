@@ -59,7 +59,13 @@ fi
 
 if [ "$2" = "" ]||[ "$2" = "index.html" ]; then
 	echo copy assets folder
-        cp -r $src/assets/* $publicdest/
+  cp -r $src/assets/* $publicdest/
+fi
+
+if [ "$2" = "" ]||[ "$2" = "../data" ]; then # only for development to restore data folder
+	echo copy data folder
+	mkdir $publicdest/data
+  cp -r $src/../data $publicdest/
 fi
 
 if [ "$2" != "" ]&&[ "$3" != "" ]; then
