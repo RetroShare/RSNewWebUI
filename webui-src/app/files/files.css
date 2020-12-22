@@ -21,6 +21,12 @@
 span > i {
     margin-right: 5px;
 }
+
+.filestat {
+    min-width: 7em;
+    display: inline-block;
+}
+
 .searchbar {
     margin: 5px;
     width: 40%;

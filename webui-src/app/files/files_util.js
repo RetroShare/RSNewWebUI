@@ -32,6 +32,27 @@ function makeFriendlyUnit(bytes) {
     .toFixed(1) + 'TB';
 }
 
+function calcRemainingTime(bytes, rate) {
+    if (rate <=0 || bytes < 1) {
+        return '--';
+    } else {
+        let secs = bytes / rate / 1024;
+        if (secs < 60) {
+            return secs.toFixed() + 's';
+        }
+        let mins = secs / 60; secs = secs - Math.floor(mins) * 60;
+        if (mins < 60) {
+            return mins.toFixed() +'m ' + secs.toFixed() + 's';
+        }
+        let hours = mins / 60; mins = mins -Math.floor(hours) * 60;
+        if (hours < 24) {
+            return hours.toFixed() +'h ' + mins.toFixed() + 'm';
+        }
+        let days = hours / 24; hours = hours - Math.floor(days) * 24;
+        return days.toFixed() + 'd ' + hours.toFixed() + 'h';
+    }
+}
+
 function fileAction(hash, action) {
   let action_header = '';
   let json_params = {
@@ -125,10 +146,12 @@ const File = () => {
         rate: v.attrs.info.transfered.xint64 / v.attrs.info.size.xint64 *
           100,
       }),
-      m('span', m('i.fas.fa-file'), makeFriendlyUnit(
+      m('span.filestat', m('i.fas.fa-file'), makeFriendlyUnit(
         v.attrs.info.size.xint64)),
-      m('span', m('i.fas.fa-arrow-circle-' + v.attrs.direction),
+      m('span.filestat', m('i.fas.fa-arrow-circle-' + v.attrs.direction),
         makeFriendlyUnit(v.attrs.info.tfRate * 1024) + '/s'),
+      m('span.filestat', {title: 'time remaining'}, [ m('i.fas.fa-clock'),
+        calcRemainingTime( v.attrs.info.size.xint64 - v.attrs.info.transfered.xint64, v.attrs.info.tfRate)]),
     ]),
   }
 };
