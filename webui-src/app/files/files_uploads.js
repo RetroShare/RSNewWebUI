@@ -72,7 +72,8 @@ const Component = () => {
       m('hr'),
       Object.keys(Uploads.statusMap).map(
         (hash) => m(util.File, {
-          info: Uploads.statusMap[hash]
+          info: Uploads.statusMap[hash],
+          direction: 'up'
         })),
     ]),
   };

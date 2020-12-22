@@ -127,7 +127,7 @@ const File = () => {
       }),
       m('span', m('i.fas.fa-file'), makeFriendlyUnit(
         v.attrs.info.size.xint64)),
-      m('span', m('i.fas.fa-arrow-circle-down'),
+      m('span', m('i.fas.fa-arrow-circle-' + v.attrs.direction),
         makeFriendlyUnit(v.attrs.info.tfRate * 1024) + '/s'),
     ]),
   }

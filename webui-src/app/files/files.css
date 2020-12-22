@@ -18,6 +18,9 @@
     float: right;
     margin-left: 15px;
 }
+span > i {
+    margin-right: 5px;
+}
 .searchbar {
     margin: 5px;
     width: 40%;

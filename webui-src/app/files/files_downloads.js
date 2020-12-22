@@ -143,7 +143,8 @@ const Component = () => {
       }, 'Clear completed'),
       Object.keys(Downloads.statusMap).map(
         (hash) => m(util.File, {
-          info: Downloads.statusMap[hash]
+          info: Downloads.statusMap[hash],
+          direction: 'down'
         })),
     ]),
   };
