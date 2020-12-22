@@ -5,7 +5,7 @@ const displayErrorMessage = function(message) {
   m.render(document.getElementById('error'), message);
 };
 
-const verifyLogin = async function(uname, passwd, url) {
+const verifyLogin = async function(uname, passwd, url, displayAuthError = true) {
   const loginHeader = {
     Authorization: 'Basic ' + btoa(uname + ':' + passwd)
   };
@@ -21,6 +21,8 @@ const verifyLogin = async function(uname, passwd, url) {
       if (successful) {
         rs.setKeys(uname, passwd, url);
         m.route.set('/home');
+      } else if (data.status == 401 && !displayAuthError) {
+        // skip - Autologon failed
       } else if (data.status == 401) {
         displayErrorMessage('Incorrect login/password.');
       } else if (data.status == 0) {
@@ -37,7 +39,7 @@ const verifyLogin = async function(uname, passwd, url) {
 function loginComponent() {
   var urlParams = new URLSearchParams(window.location.search);
   let uname = urlParams.get('Username')||'webui';
-  let passwd = '';
+  let passwd = urlParams.get('Password') ||'';
   let url = urlParams.get('Url') || window.location.protocol==='file:' ? 'http://127.0.0.1:9092' : window.location.protocol + '//' + window.location.host + window.location.pathname.replace('/index.html','');
   let withOptions = false;
   let logo = () => m('img.logo[width=30%]', {
@@ -55,11 +57,14 @@ function loginComponent() {
                         id: 'password',
                         type: 'password',
                         placeholder: 'Password',
-                        value: passwd,
                         onchange: e => (passwd = e.target.value),
-                        onkeyup: e => {
-                            passwd = e.target.value;
-                            if (e.code==='Enter') loginBtn.click();
+                        onkeydown: e => {
+                            if (e.keyCode===13) {
+                                passwd = e.target.value;
+                                loginBtn.click();
+                                return false;
+                            }
+                            return true;
                         }
                       });
   let inputUrl = () => m('input',{
@@ -81,6 +86,7 @@ function loginComponent() {
 
   let textError = () => m('p.error[id=error]');
   return {
+    oninit: () => verifyLogin(uname, passwd, url, false),
     view: () => {
       return m('.login-page',
         m('.login-container', withOptions
