@@ -119,11 +119,11 @@ const File = () => {
         v.attrs.info.downloadStatus === FT_STATE_PAUSED ?
         'resume' : 'pause'),
       m(ProgressBar, {
-        rate: v.attrs.info.transfered / v.attrs.info.size *
+        rate: v.attrs.info.transfered.xint64 / v.attrs.info.size.xint64 *
           100,
       }),
       m('span', m('i.fas.fa-file'), makeFriendlyUnit(
-        v.attrs.info.size)),
+        v.attrs.info.size.xint64)),
       m('span', m('i.fas.fa-arrow-circle-down'),
         makeFriendlyUnit(v.attrs.info.tfRate * 1024) + '/s'),
     ]),
