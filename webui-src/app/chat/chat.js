@@ -1,6 +1,23 @@
 let m = require('mithril');
 let rs = require('rswebui');
 
+function loadLobbyDetails(id, apply) {
+  rs.rsJsonApiRequest('/rsMsgs/getChatLobbyInfo', {
+      id,
+    },
+    detail => {
+        if (detail.retval) {
+            apply(detail.info);
+        }
+    },
+    true, {},
+    undefined,
+    // Custom serializer NOTE:
+    // Since id represents 64-bit int(see deserializer note below)
+    // Instead of using JSON.stringify, this function directly
+    // creates a json string manually.
+    () => '{"id":' + id + '}')
+ }
 
 let ChatRoomsModel = {
   allRooms: [],
@@ -17,19 +34,7 @@ let ChatRoomsModel = {
   loadSubscribedRooms() {
     ChatRoomsModel.subscribedRooms = {};
     rs.rsJsonApiRequest('/rsMsgs/getChatLobbyList', {},
-      data => data.map(id => {
-        rs.rsJsonApiRequest('/rsMsgs/getChatLobbyInfo', {
-            id,
-          },
-          detail => ChatRoomsModel.subscribedRooms[id] = detail.info,
-          true, {},
-          undefined,
-          // Custom serializer NOTE:
-          // Since id represents 64-bit int(see deserializer note below)
-          // Instead of using JSON.stringify, this function directly
-          // creates a json string manually.
-          () => '{"id":' + id + '}')
-      }),
+      data => data.map(id => loadLobbyDetails(id, info => ChatRoomsModel.subscribedRooms[id] = info)),
       true, {},
       // Custom deserializer NOTE:
       // JS uses double precision numbers of 64 bit. It is equivalent
@@ -42,16 +47,66 @@ let ChatRoomsModel = {
       (response) => response.match(/\d+/g),
     )
   },
+  subscribed(info) {
+    return this.subscribedRooms.hasOwnProperty(info.lobby_id.xstr64);
+  },
 };
+
+let ChatLobbyModel = {
+    currentLobby: {
+        lobby_name: '...',
+    },
+    messages: [],
+    users: [],
+    loadLobby () {
+        loadLobbyDetails(m.route.param('lobby'), detail => {
+            this.currentLobby = detail;
+            rs.rsJsonApiRequest('/rsIdentity/getIdentitiesSummaries', {},
+              userlist => {
+                if (userlist!== undefined) {
+                  var userMap = userlist.ids.reduce((a,c) => {
+                    a[c.mGroupId] = c;
+                    return a;
+                  },{});
+                  var names = detail.gxs_ids.reduce((a,u) => {
+                    var user = userMap[u.key];
+                    return a.concat([user === undefined ? '???' : user.mGroupName])
+                  },[]);
+                  this.users = [];
+                  names.sort((a,b) => a.localeCompare(b));
+                  names.forEach(name =>  this.users = this.users.concat([m('.user',name)]));
+                }
+              },
+            );
+            return this.users;
+        });
+    },
+    sendMessage(msg, onsuccess) {
+        rs.rsJsonApiRequest('/rsmsgs/sendChat', {},
+          () => onsuccess(),
+          true,
+          {},
+          undefined,
+          () => '{"id":{"type": 3,"lobby_id":' + m.route.param('lobby') + '}, "msg":' + JSON.stringify(msg) + '}'
+        )
+    },
+}
 
 const Lobby = () => {
   let info = {};
   return {
     oninit: (v) => info = v.attrs.info,
-    view: (v) => m('.lobby', {
-      key: v.attrs.id
+    view: (v) => m( '.lobby.' + (ChatRoomsModel.subscribed(v.attrs.info) ? 'subscribed':'public'), {
+      key: v.attrs.info.lobby_id.xstr64,
+      onclick: e => {
+        if (ChatRoomsModel.subscribed(v.attrs.info)) {
+          m.route.set('/chat/:lobby', {
+            lobby: v.attrs.info.lobby_id.xstr64
+          });
+        }
+      },
     }, [
-      m('h5', info.lobby_name),
+      m('h5', info.lobby_name === '' ? '<unnamed>' : info.lobby_name),
       m('p', info.lobby_topic),
     ]),
   };
@@ -77,8 +132,8 @@ let PublicLobbies = () => {
     view: () => m('.widget', [
       m('h3', 'Public chat rooms'),
       m('hr'),
-      ChatRoomsModel.allRooms.map(info => m(Lobby, {
-        info,
+      ChatRoomsModel.allRooms.filter(info => !ChatRoomsModel.subscribed(info)).map(info => m(Lobby, {
+            info,
       })),
     ])
   };
@@ -93,9 +148,36 @@ const Layout = () => {
   };
 };
 
+const LayoutSingle = () => {
+  return {
+    oninit: ChatLobbyModel.loadLobby(),
+    view: vnode => m('.tab-page', [
+      m('h3.lobbyName', ChatLobbyModel.currentLobby.lobby_name),
+      m('.messages', 'Nachrichten'),
+      m('.rightbar', ChatLobbyModel.users),
+      m('.chatMessage', {},  m("textarea.chatMsg", {
+          placeholder: 'enter new message and press return to send',
+          onkeydown: e => {
+            if (e.code==='Enter') {
+                var msg = e.target.value;
+                e.target.value = ' sending ... ';
+                ChatLobbyModel.sendMessage(msg, () => e.target.value='');
+                return false;
+            }
+          }
+        })
+      ),
+    ]),
+  };
+};
+
 module.exports = {
   view: (vnode) => {
-    return m(Layout);
-  },
+    if (m.route.param('lobby') === undefined) {
+      return m(Layout);
+    } else {
+       return m(LayoutSingle);
+    }
+  }
 };
 
