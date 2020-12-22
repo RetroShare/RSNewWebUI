@@ -13,8 +13,10 @@
     font-size: 0.9em;
 }.file-view > .progressbar {
     width: 70%;
+    margin-bottom: 5px;
 }.file-view button {
     float: right;
+    margin-left: 15px;
 }
 .searchbar {
     margin: 5px;

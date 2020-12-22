@@ -69,6 +69,7 @@ function actionButton(file, action) {
   switch (action) {
     case 'resume':
       return m('button', {
+        title: 'resume',
         onclick: function() {
           fileAction(file.hash, 'resume');
         },
@@ -76,6 +77,7 @@ function actionButton(file, action) {
 
     case 'pause':
       return m('button', {
+        title: 'pause',
         onclick: function() {
           fileAction(file.hash, 'pause');
         },
@@ -83,10 +85,11 @@ function actionButton(file, action) {
 
     case 'cancel':
       return m('button.red', {
+        title: 'cancel',
         onclick: function() {
           fileAction(file.hash, 'cancel');
         },
-      }, 'Cancel');
+      }, m('i.fas.fa-times'));
   }
 };
 
