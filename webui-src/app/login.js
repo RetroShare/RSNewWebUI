@@ -70,9 +70,9 @@ function loginComponent() {
                        oninput: e => (url = e.target.value)
                      });
 
-  let linkOptions = () => m('a',{
+  let linkOptions = action => m('a',{
                        onclick: e => withOptions=!withOptions,
-                     }, withOptions ? 'hide options' :'show options');
+                     }, action + ' options');
 
   let buttonLogin = () => m('button.submit-btn', {
                       id: 'loginBtn',
@@ -89,13 +89,13 @@ function loginComponent() {
           m(".extra",[m('label','Username:'),m('br'), inputName()]),
           m(".extra",[m('label','Password:'),m('br'), inputPassword()]),
           m(".extra",[m('label','Url:'),m('br'), inputUrl()]),
-          linkOptions(),
+          linkOptions('hide'),
           buttonLogin(),
           textError()
         ] : [
           logo(),
           inputPassword(),
-          linkOptions(),
+          linkOptions('show'),
           buttonLogin(),
           textError()
         ])
