@@ -58,6 +58,10 @@ let Uploads = {
   },
 };
 
+function averageOf(peers){
+   return peers.reduce( (s,e) => s + e.transfered.xint64, 0) / peers.length;
+}
+
 const Component = () => {
   return {
     oninit: () => rs.setBackgroundTask(
@@ -67,15 +71,18 @@ const Component = () => {
         return (m.route.get() === '/files/files')
       }
     ),
-    view: () => m('.widget', [
-      m('h3', 'Uploads'),
+    view: () => (Uploads.hashes.length > 0 ? m('.widget', [
+      m('h3', 'Uploads ('+ Uploads.hashes.length +' files)'),
       m('hr'),
       Object.keys(Uploads.statusMap).map(
-        (hash) => m(util.File, {
+        (hash) => (m(util.File, {
           info: Uploads.statusMap[hash],
-          direction: 'up'
-        })),
-    ]),
+          direction: 'up',
+          transferred: averageOf(Uploads.statusMap[hash].peers),
+          parts: Uploads.statusMap[hash].peers.reduce((a,e) => [...a, e.transfered.xint64], []),
+        }))
+      ),
+    ]) : [])
   };
 };
 

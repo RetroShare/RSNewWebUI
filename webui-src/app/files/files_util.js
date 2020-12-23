@@ -17,19 +17,15 @@ const FT_STATE_CHECKING_HASH = 0x0007;
 const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040
 
 function makeFriendlyUnit(bytes) {
-  if(bytes < 1e3)
-    return bytes.toFixed(1) + 'B';
-  if(bytes < 1e6)
-    return (bytes / 1e3)
-      .toFixed(1) + 'kB';
-  if(bytes < 1e9)
-    return (bytes / 1e6)
-      .toFixed(1) + 'MB';
-  if(bytes < 1e12)
-    return (bytes / 1e9)
-      .toFixed(1) + 'GB';
-  return (bytes / 1e12)
-    .toFixed(1) + 'TB';
+  let cnt = bytes;
+  for (s of ['','k','M','G']) {
+    if (cnt < 1000) {
+        return cnt.toFixed(1) + ' ' + s + 'B';
+    } else {
+       cnt = cnt / 1024;
+    }
+  }
+  return cnt.toFixed(1) + 'TB';
 }
 
 function calcRemainingTime(bytes, rate) {
@@ -138,20 +134,22 @@ const File = () => {
       }
     }, [
       m('p', v.attrs.info.fname),
-      actionButton(v.attrs.info, 'cancel'),
-      actionButton(v.attrs.info,
-        v.attrs.info.downloadStatus === FT_STATE_PAUSED ?
-        'resume' : 'pause'),
+      v.attrs.info.downloadStatus === FT_STATE_COMPLETE ? [] : [
+        actionButton(v.attrs.info, 'cancel'),
+        actionButton(v.attrs.info,
+          v.attrs.info.downloadStatus === FT_STATE_PAUSED ?
+          'resume' : 'pause'),
+      ],
       m(ProgressBar, {
-        rate: v.attrs.info.transfered.xint64 / v.attrs.info.size.xint64 *
-          100,
+        rate: v.attrs.transferred / v.attrs.info.size.xint64 * 100,
       }),
       m('span.filestat', m('i.fas.fa-file'), makeFriendlyUnit(
         v.attrs.info.size.xint64)),
       m('span.filestat', m('i.fas.fa-arrow-circle-' + v.attrs.direction),
         makeFriendlyUnit(v.attrs.info.tfRate * 1024) + '/s'),
       m('span.filestat', {title: 'time remaining'}, [ m('i.fas.fa-clock'),
-        calcRemainingTime( v.attrs.info.size.xint64 - v.attrs.info.transfered.xint64, v.attrs.info.tfRate)]),
+        calcRemainingTime( v.attrs.info.size.xint64 - v.attrs.transferred, v.attrs.info.tfRate)]),
+      m('span.filestat', {title: 'peers'}, [m('i.fas.fa-users'), v.attrs.info.peers.length], v.attrs.parts.reduce((a,e) => [...a, ' - ' + makeFriendlyUnit(e)],[])),
     ]),
   }
 };
