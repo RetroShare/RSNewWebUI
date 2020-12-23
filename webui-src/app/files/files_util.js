@@ -134,12 +134,13 @@ const File = () => {
       }
     }, [
       m('p', v.attrs.info.fname),
-      v.attrs.info.downloadStatus === FT_STATE_COMPLETE ? [] : [
+      (v.attrs.direction === 'up' || v.attrs.info.downloadStatus === FT_STATE_COMPLETE) ? [] : [
         actionButton(v.attrs.info, 'cancel'),
         actionButton(v.attrs.info,
           v.attrs.info.downloadStatus === FT_STATE_PAUSED ?
           'resume' : 'pause'),
       ],
+      v.attrs.direction === 'up' ? [] :
       m(ProgressBar, {
         rate: v.attrs.transferred / v.attrs.info.size.xint64 * 100,
       }),
@@ -147,6 +148,7 @@ const File = () => {
         v.attrs.info.size.xint64)),
       m('span.filestat', m('i.fas.fa-arrow-circle-' + v.attrs.direction),
         makeFriendlyUnit(v.attrs.info.tfRate * 1024) + '/s'),
+      v.attrs.direction === 'up' ? [] :
       m('span.filestat', {title: 'time remaining'}, [ m('i.fas.fa-clock'),
         calcRemainingTime( v.attrs.info.size.xint64 - v.attrs.transferred, v.attrs.info.tfRate)]),
       m('span.filestat', {title: 'peers'}, [m('i.fas.fa-users'), v.attrs.info.peers.length], v.attrs.parts.reduce((a,e) => [...a, ' - ' + makeFriendlyUnit(e)],[])),
