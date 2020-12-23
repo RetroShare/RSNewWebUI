@@ -53,4 +53,8 @@ textarea.chatMsg {
     left: 15px;
     right: 215px;
     bottom: 115px;
+    overflow: auto;
+}
+.message {
+    white-space: pre;
 }

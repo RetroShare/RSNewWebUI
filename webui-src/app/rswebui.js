@@ -89,6 +89,43 @@ function setBackgroundTask(task, interval, taskInScope) {
   }, interval);
   return taskId;
 }
+
+function computeIfMissing(map, key, missing = () => ({})) {
+    if (!map.hasOwnProperty(key)) {
+        map[key] = missing();
+    }
+    return map[key];
+}
+
+function deeperIfExist(map, key, action) {
+    if (map.hasOwnProperty(key))  {
+        action(map[key]);
+    }
+}
+
+let eventQueue = {
+    events: {
+        15: { // Chat-Messages
+          types: {
+            3: chat_id => chat_id.lobby_id.xstr64, // lobby_id
+          },
+          messages: {},
+          chatMessages: (chat_id, owner, action) => deeperIfExist(
+            owner.types,
+            chat_id.type,
+            keyfn =>  action(computeIfMissing(computeIfMissing(owner.messages,chat_id.type), keyfn(chat_id),()=>[]))
+          ),
+          handler: (event,owner) => owner.chatMessages(event.mChatMessage.chat_id, owner, r => {
+            console.info(['adding chat' ,r , event.mChatMessage])
+            r.push(event.mChatMessage);
+            owner.notify(event.mChatMessage);
+          }),
+          notify: () => {},
+        },
+    },
+    handler: event => deeperIfExist(eventQueue.events, event.mType, owner => owner.handler(event, owner)),
+}
+
 /*
   path,
   data = {},
@@ -133,6 +170,7 @@ function startEventQueue(info, loginHeader = {}, displayAuthError = () => {}, di
             } else if(data.hasOwnProperty('event')) {
               data.event.queueSize = currIndex;
               console.info(data.event);
+              eventQueue.handler(data.event);
             }
           }
           if (currIndex > 1e6) { // max 1 MB eventQueue
@@ -150,5 +188,6 @@ module.exports = {
   rsJsonApiRequest,
   setKeys,
   setBackgroundTask,
-  startEventQueue
+  startEventQueue,
+  events: eventQueue.events
 };

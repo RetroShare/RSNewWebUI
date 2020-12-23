@@ -52,6 +52,12 @@ let ChatRoomsModel = {
   },
 };
 
+function printMessage(msg){
+  let text = msg.msg.replaceAll('<br/>','\n').replace(new RegExp('<style[^<]*</style>|<[^>]*>','gm'),'');
+  console.info(text);
+  return m('p.message', text);
+}
+
 let ChatLobbyModel = {
     currentLobby: {
         lobby_name: '...',
@@ -73,6 +79,14 @@ let ChatLobbyModel = {
                     return a.concat([user === undefined ? '???' : user.mGroupName])
                   },[]);
                   this.users = [];
+                  let lobbyid = m.route.param('lobby');
+                  rs.events[15].chatMessages({type:3,lobby_id:{xstr64:lobbyid}},rs.events[15], l => (this.messages = l.map(printMessage)));
+                  rs.events[15].notify = chatMessage => {
+                    if (chatMessage.chat_id.type===3 && chatMessage.chat_id.lobby_id.xstr64 === lobbyid) {
+                        this.messages.push(printMessage(chatMessage));
+                        m.redraw();
+                    }
+                  }
                   names.sort((a,b) => a.localeCompare(b));
                   names.forEach(name =>  this.users = this.users.concat([m('.user',name)]));
                 }
@@ -153,7 +167,7 @@ const LayoutSingle = () => {
     oninit: ChatLobbyModel.loadLobby(),
     view: vnode => m('.tab-page', [
       m('h3.lobbyName', ChatLobbyModel.currentLobby.lobby_name),
-      m('.messages', 'Nachrichten'),
+      m('.messages', ChatLobbyModel.messages),
       m('.rightbar', ChatLobbyModel.users),
       m('.chatMessage', {},  m("textarea.chatMsg", {
           placeholder: 'enter new message and press return to send',
