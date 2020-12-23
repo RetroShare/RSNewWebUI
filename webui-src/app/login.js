@@ -14,26 +14,10 @@ const verifyLogin = async function(uname, passwd, url, displayAuthError = true) 
     return;
   }
   rs.setKeys('', '', url, false);
-  rs.rsJsonApiRequest(
-    '/rsPeers/GetRetroshareInvite',
-    {},
-    (data, successful) => {
-      if (successful) {
-        rs.setKeys(uname, passwd, url);
-        m.route.set('/home');
-      } else if (data.status == 401 && !displayAuthError) {
-        // skip - Autologon failed
-      } else if (data.status == 401) {
-        displayErrorMessage('Incorrect login/password.');
-      } else if (data.status == 0) {
-        displayErrorMessage(['Retroshare-jsonapi not available.',m('br'),'Please fix host and/or port.']);
-      } else {
-        displayErrorMessage('Login failed: HTTP ' + data.status + ' ' + data.statusText);
-      }
-    },
-    true,
-    loginHeader
-  );
+  rs.startEventQueue('login', loginHeader, displayAuthError ?  displayErrorMessage : () => {}, displayErrorMessage, () => {
+    rs.setKeys(uname, passwd, url);
+    m.route.set('/home');
+  });
 };
 
 function loginComponent() {
