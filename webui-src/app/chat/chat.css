@@ -55,6 +55,16 @@ textarea.chatMsg {
     bottom: 115px;
     overflow: auto;
 }
-.message {
+.messagetext {
     white-space: pre;
+    margin-right: 5px;
+}
+
+.message > * {
+    margin-left: 5px;
+}
+
+.username {
+    color: darkgreen;
+    font-weight: bolder;
 }

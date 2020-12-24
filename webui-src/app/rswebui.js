@@ -103,7 +103,7 @@ function deeperIfExist(map, key, action) {
     }
 }
 
-let eventQueue = {
+const eventQueue = {
     events: {
         15: { // Chat-Messages
           types: {
@@ -124,6 +124,28 @@ let eventQueue = {
         },
     },
     handler: event => deeperIfExist(eventQueue.events, event.mType, owner => owner.handler(event, owner)),
+}
+
+const userList = {
+    users: [],
+    userMap: {},
+    loadUsers: () => {
+      rsJsonApiRequest('/rsIdentity/getIdentitiesSummaries', {},
+        list=> {
+          if (list!== undefined) {
+            console.info('loading ' + list.ids.length + ' users ...');
+            userList.users=list.ids;
+            userList.userMap = list.ids.reduce((a,c) => {
+              a[c.mGroupId] = c.mGroupName;
+              return a;
+            }, {});
+          }
+        }
+      );
+    },
+    username: id => {
+       return userList.userMap[id]||id;
+    }
 }
 
 /*
@@ -154,7 +176,6 @@ function startEventQueue(info, loginHeader = {}, displayAuthError = () => {}, di
       let lastIndex = 0;
       xhr.onprogress = ev => {
         let currIndex = xhr.responseText.length;
-        let registered = false;
         if (currIndex > lastIndex) {
           let parts = xhr.responseText.substring(lastIndex,currIndex);
           lastIndex=currIndex;
@@ -166,7 +187,6 @@ function startEventQueue(info, loginHeader = {}, displayAuthError = () => {}, di
               } else {
                 displayErrorMessage(info + ' failed: [' + data.retval.errorCategory + '] ' + data.retval.errorMessage);
               }
-              registered = true;
             } else if(data.hasOwnProperty('event')) {
               data.event.queueSize = currIndex;
               console.info(data.event);
@@ -184,10 +204,18 @@ function startEventQueue(info, loginHeader = {}, displayAuthError = () => {}, di
   );
 }
 
+function logon(loginHeader, displayAuthError, displayErrorMessage, successful){
+  startEventQueue('login', loginHeader, displayAuthError, displayErrorMessage, () => {
+    successful();
+    userList.loadUsers();
+  });
+}
+
 module.exports = {
   rsJsonApiRequest,
   setKeys,
   setBackgroundTask,
-  startEventQueue,
-  events: eventQueue.events
+  logon,
+  events: eventQueue.events,
+  userList
 };

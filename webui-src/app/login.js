@@ -14,7 +14,7 @@ const verifyLogin = async function(uname, passwd, url, displayAuthError = true) 
     return;
   }
   rs.setKeys('', '', url, false);
-  rs.startEventQueue('login', loginHeader, displayAuthError ?  displayErrorMessage : () => {}, displayErrorMessage, () => {
+  rs.logon(loginHeader, displayAuthError ?  displayErrorMessage : () => {}, displayErrorMessage, () => {
     rs.setKeys(uname, passwd, url);
     m.route.set('/home');
   });
