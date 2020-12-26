@@ -13,9 +13,20 @@
     font-size: 0.9em;
 }.file-view > .progressbar {
     width: 70%;
+    margin-bottom: 5px;
 }.file-view button {
     float: right;
+    margin-left: 15px;
 }
+span > i {
+    margin-right: 5px;
+}
+
+.filestat {
+    min-width: 7em;
+    display: inline-block;
+}
+
 .searchbar {
     margin: 5px;
     width: 40%;

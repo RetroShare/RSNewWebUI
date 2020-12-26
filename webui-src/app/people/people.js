@@ -3,26 +3,19 @@ let rs = require('rswebui');
 
 let OwnIds = require('people/people_ownids');
 
-const Contacts = {
-  list: [],
-  loadList() {
-    rs.rsJsonApiRequest('/rsIdentity/getIdentitiesSummaries', {},
-      (data) => Contacts.list = data.ids);
+const AllContacts = {
+  oninit: () => {
   },
-};
-
-const AllContacts = () => {
-  let list = [];
-  return {
-    oninit: Contacts.loadList,
-    view: () => m('.widget', [
-      m('h3', 'Contacts'),
-      m('hr'),
-      Contacts.list.map((id) => m('.id', {
+  view: () => {
+    let list = [...rs.userList.users];
+    list.sort((a,b) => a.mGroupName.localeCompare(b.mGroupName));
+    return m('.widget', [
+      m('h3', 'Contacts'), m('hr'),
+      list.map((id) => m('.id', {
         key: id.mGroupId
       }, id.mGroupName))
-    ]),
-  };
+    ]);
+  },
 };
 
 const Layout = {

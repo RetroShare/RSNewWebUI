@@ -17,19 +17,36 @@ const FT_STATE_CHECKING_HASH = 0x0007;
 const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040
 
 function makeFriendlyUnit(bytes) {
-  if(bytes < 1e3)
-    return bytes.toFixed(1) + 'B';
-  if(bytes < 1e6)
-    return (bytes / 1e3)
-      .toFixed(1) + 'kB';
-  if(bytes < 1e9)
-    return (bytes / 1e6)
-      .toFixed(1) + 'MB';
-  if(bytes < 1e12)
-    return (bytes / 1e9)
-      .toFixed(1) + 'GB';
-  return (bytes / 1e12)
-    .toFixed(1) + 'TB';
+  let cnt = bytes;
+  for (s of ['','k','M','G']) {
+    if (cnt < 1000) {
+        return cnt.toFixed(1) + ' ' + s + 'B';
+    } else {
+       cnt = cnt / 1024;
+    }
+  }
+  return cnt.toFixed(1) + 'TB';
+}
+
+function calcRemainingTime(bytes, rate) {
+    if (rate <=0 || bytes < 1) {
+        return '--';
+    } else {
+        let secs = bytes / rate / 1024;
+        if (secs < 60) {
+            return secs.toFixed() + 's';
+        }
+        let mins = secs / 60; secs = secs - Math.floor(mins) * 60;
+        if (mins < 60) {
+            return mins.toFixed() +'m ' + secs.toFixed() + 's';
+        }
+        let hours = mins / 60; mins = mins -Math.floor(hours) * 60;
+        if (hours < 24) {
+            return hours.toFixed() +'h ' + mins.toFixed() + 'm';
+        }
+        let days = hours / 24; hours = hours - Math.floor(days) * 24;
+        return days.toFixed() + 'd ' + hours.toFixed() + 'h';
+    }
 }
 
 function fileAction(hash, action) {
@@ -69,6 +86,7 @@ function actionButton(file, action) {
   switch (action) {
     case 'resume':
       return m('button', {
+        title: 'resume',
         onclick: function() {
           fileAction(file.hash, 'resume');
         },
@@ -76,6 +94,7 @@ function actionButton(file, action) {
 
     case 'pause':
       return m('button', {
+        title: 'pause',
         onclick: function() {
           fileAction(file.hash, 'pause');
         },
@@ -83,10 +102,11 @@ function actionButton(file, action) {
 
     case 'cancel':
       return m('button.red', {
+        title: 'cancel',
         onclick: function() {
           fileAction(file.hash, 'cancel');
         },
-      }, 'Cancel');
+      }, m('i.fas.fa-times'));
   }
 };
 
@@ -114,18 +134,24 @@ const File = () => {
       }
     }, [
       m('p', v.attrs.info.fname),
-      actionButton(v.attrs.info, 'cancel'),
-      actionButton(v.attrs.info,
-        v.attrs.info.downloadStatus === FT_STATE_PAUSED ?
-        'resume' : 'pause'),
+      (v.attrs.direction === 'up' || v.attrs.info.downloadStatus === FT_STATE_COMPLETE) ? [] : [
+        actionButton(v.attrs.info, 'cancel'),
+        actionButton(v.attrs.info,
+          v.attrs.info.downloadStatus === FT_STATE_PAUSED ?
+          'resume' : 'pause'),
+      ],
+      v.attrs.direction === 'up' ? [] :
       m(ProgressBar, {
-        rate: v.attrs.info.transfered / v.attrs.info.size *
-          100,
+        rate: v.attrs.transferred / v.attrs.info.size.xint64 * 100,
       }),
-      m('span', m('i.fas.fa-file'), makeFriendlyUnit(
-        v.attrs.info.size)),
-      m('span', m('i.fas.fa-arrow-circle-down'),
+      m('span.filestat', m('i.fas.fa-file'), makeFriendlyUnit(
+        v.attrs.info.size.xint64)),
+      m('span.filestat', m('i.fas.fa-arrow-circle-' + v.attrs.direction),
         makeFriendlyUnit(v.attrs.info.tfRate * 1024) + '/s'),
+      v.attrs.direction === 'up' ? [] :
+      m('span.filestat', {title: 'time remaining'}, [ m('i.fas.fa-clock'),
+        calcRemainingTime( v.attrs.info.size.xint64 - v.attrs.transferred, v.attrs.info.tfRate)]),
+      m('span.filestat', {title: 'peers'}, [m('i.fas.fa-users'), v.attrs.info.peers.length], v.attrs.parts.reduce((a,e) => [...a, ' - ' + makeFriendlyUnit(e)],[])),
     ]),
   }
 };

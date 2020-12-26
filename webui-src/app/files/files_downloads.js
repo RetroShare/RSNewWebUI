@@ -132,7 +132,7 @@ const Component = () => {
       Downloads.resetSearch();
     },
     view: () => m('.widget', [
-      m('h3', 'Downloads'),
+      m('h3', 'Downloads (' + Downloads.hashes.length  +' files)'),
       m('hr'),
       m('button', {
         onclick: () => widget.popupMessage(m(NewFileDialog)),
@@ -143,7 +143,10 @@ const Component = () => {
       }, 'Clear completed'),
       Object.keys(Downloads.statusMap).map(
         (hash) => m(util.File, {
-          info: Downloads.statusMap[hash]
+          info: Downloads.statusMap[hash],
+          direction: 'down',
+          transferred: Downloads.statusMap[hash].transfered.xint64,
+          parts: [],
         })),
     ]),
   };

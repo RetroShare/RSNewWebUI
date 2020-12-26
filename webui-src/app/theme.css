@@ -240,7 +240,7 @@ Target specific sections
     position: relative;
     top: 100px;
     width: 30%;
-    min-height: 55%;
+    min-height: 35%;
     border-radius: 5px;
 
     display: flex;
@@ -248,10 +248,25 @@ Target specific sections
     flex-direction: column;
     align-items: center;
 }
+
+.extra > label, .extra > br, .extra > input  {
+    margin-bottom: 0;
+}
+
 .login-container * {
+    margin-bottom: 15px;
+}
+.login-container > img {
     margin-top: 15px;
-}.login-container .extra {
+    margin-bottom: 30px;
+}
+
+.login-container extra {
     margin: 0;
+}
+.login-container > a {
+    text-decoration: underline;
+    cursor: pointer;
 }
 
 /* Navbar */

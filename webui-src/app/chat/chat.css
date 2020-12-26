@@ -11,3 +11,60 @@
     color: #666;
     margin-left: 25px;
 }
+.lobby.subscribed:hover {
+    cursor: pointer;
+}
+.rightbar {
+    position: absolute;
+    width: 185px;
+    background-color: white;
+    overflow: auto;
+    top: 130px;
+    bottom: 15px;
+    right: 15px;
+}
+
+.user {
+    padding: 5px;
+}
+
+.lobbyName {
+    padding: 15px;
+}
+
+.chatMessage {
+    position: absolute;
+    background-color: white;
+    height: 85px;
+    bottom: 15px;
+    right: 215px;
+    left: 15px;
+}
+
+textarea.chatMsg {
+    height: 100%;
+    width: 100%;
+}
+
+.messages {
+    position: absolute;
+    background-color: white;
+    top: 130px;
+    left: 15px;
+    right: 215px;
+    bottom: 115px;
+    overflow: auto;
+}
+.messagetext {
+    white-space: pre;
+    margin-right: 5px;
+}
+
+.message > * {
+    margin-left: 5px;
+}
+
+.username {
+    color: darkgreen;
+    font-weight: bolder;
+}
