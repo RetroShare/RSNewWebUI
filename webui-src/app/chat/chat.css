@@ -2,18 +2,61 @@
     margin: 10px;
     border: 1px solid #aaa;
     border-radius: 20px;
-}.lobby h5 {
+}
+
+.lobby .mainname {
     margin: 20px;
     font-weight: 100;
     font-size: 1.2em;
-}.lobby > p {
-    font-size: 0.95em;
-    color: #666;
-    margin-left: 25px;
 }
-.lobby.subscribed:hover {
+
+.topic {
+    color: #666;
+}
+
+.lobby > .topic {
+    font-size: 0.95em;
+    margin-left: 25px;
+    margin-bottom: 5px;
+}
+
+.lefttitle {
+    margin-top: 15px;
+    margin-bottom: 0;
+    font-weight: 100;
+    font-size: 1.2em;
+}
+
+.leftname {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding:5px;
+    font-weight: 100;
+    font-size: 1em;
+}
+
+.leftlobby > .topic {
+    font-size: 0.75em;
+    margin-left: 15px;
+    margin-bottom: 5px;
+}
+
+.subscribed {
     cursor: pointer;
 }
+
+.leftlobby {
+    border: 1px solid #aaa;
+    border-radius: 10px;
+    margin-top: 5px;
+    background-color: white;
+}
+
+.leftlobby.selected-lobby {
+    color: white;
+    background-color: #3ba4d7;
+}
+
 .rightbar {
     position: absolute;
     width: 185px;
@@ -32,25 +75,20 @@
     padding: 15px;
 }
 
-.chatMessage {
+.lobbies {
     position: absolute;
-    background-color: white;
-    height: 85px;
+    width: 185px;
+    left:15px ;
     bottom: 15px;
-    right: 215px;
-    left: 15px;
-}
-
-textarea.chatMsg {
-    height: 100%;
-    width: 100%;
+    top: 130px;
+    overflow:auto;
 }
 
 .messages {
     position: absolute;
     background-color: white;
     top: 130px;
-    left: 15px;
+    left: 215px;
     right: 215px;
     bottom: 115px;
     overflow: auto;
@@ -67,4 +105,18 @@ textarea.chatMsg {
 .username {
     color: darkgreen;
     font-weight: bolder;
+}
+
+.chatMessage {
+    position: absolute;
+    background-color: white;
+    height: 85px;
+    bottom: 15px;
+    right: 215px;
+    left: 215px;
+}
+
+textarea.chatMsg {
+    height: 100%;
+    width: 100%;
 }

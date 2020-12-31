@@ -60,6 +60,9 @@ Usage
 -----
 Go to `RsNewWebUI/webui/` and open the `index.html` file in your browser.
 
+### References:
+* Mithril: https://mithril.js.org/hyperscript.html
+
 Contributing
 ------------
 ### Bug Reports & Feature requests

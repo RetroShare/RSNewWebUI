@@ -21,6 +21,7 @@ function loadLobbyDetails(id, apply) {
 
 let ChatRoomsModel = {
   allRooms: [],
+  knownSubscrIds:[], // to exclude subscribed from public rooms (subscribedRooms filled to late)
   subscribedRooms: {},
   loadPublicRooms() {
     // TODO: this doesn't preserve id of rooms,
@@ -32,23 +33,28 @@ let ChatRoomsModel = {
     );
   },
   loadSubscribedRooms() {
-    ChatRoomsModel.subscribedRooms = {};
+    // ChatRoomsModel.subscribedRooms = {};
     rs.rsJsonApiRequest('/rsMsgs/getChatLobbyList', {},
-      data => data.map(id => loadLobbyDetails(id, info => ChatRoomsModel.subscribedRooms[id] = info)),
+      data => {
+        ChatRoomsModel.knownSubscrIds = data;
+        let rooms = {};
+        data.map(id => loadLobbyDetails(id, info => rooms[id] = info));
+        ChatRoomsModel.subscribedRooms = rooms;
+      },
       true, {},
       // Custom deserializer NOTE:
       // JS uses double precision numbers of 64 bit. It is equivalent
       // to 53 bits of precision. All large precision ints will
       // get truncated to an approximation.
       // This API uses Cpp-style 64 bits for `id`.
-      // Instead of parsing using JSON.parse, this funciton manually
+      // Instead of parsing using JSON.parse, this function manually
       // extracts all numbers and stores them as strings
       // Note the g flag. The match will return an array of strings
       (response) => response.match(/\d+/g),
     )
   },
   subscribed(info) {
-    return this.subscribedRooms.hasOwnProperty(info.lobby_id.xstr64);
+    return this.knownSubscrIds.includes(info.lobby_id.xstr64);
   },
 };
 
@@ -69,10 +75,10 @@ const ChatLobbyModel = {
     chatId(action) {
         return {type:3,lobby_id:{xstr64:m.route.param('lobby')}};
     },
-    loadLobby () {
-        loadLobbyDetails(m.route.param('lobby'), detail => {
+    loadLobby (currentlobbyid) {
+        loadLobbyDetails(currentlobbyid, detail => {
             this.currentLobby = detail;
-            let lobbyid = m.route.param('lobby');
+            let lobbyid = currentlobbyid;
             // apply existing messages to current lobby view
             rs.events[15].chatMessages(this.chatId(),rs.events[15], l => (this.messages = l.map(printMessage)));
             // register for chatEvents for future messages
@@ -108,37 +114,50 @@ const ChatLobbyModel = {
             () => '{"id":{"type": 3,"lobby_id":' + m.route.param('lobby') + '}, "msg":' + JSON.stringify(msg) + '}'
         );
     },
+    selected(info, selName, defaultName) {
+        let currid = (ChatLobbyModel.currentLobby.lobby_id || {xstr64: m.route.param('lobby')}).xstr64
+        return ((info.lobby_id.xstr64 === currid) ? selName : '') + defaultName;
+    },
+    switchToEvent(info) {
+        return () => {
+            ChatLobbyModel.currentLobby = info;
+            m.route.set('/chat/:lobby', { lobby: info.lobby_id.xstr64 });
+            ChatLobbyModel.loadLobby(info.lobby_id.xstr64); // update
+        };
+    }
 }
 
 const Lobby = () => {
   let info = {};
+  let tagname = '';
+  let onclick = e => {};
+  let lobbytagname = '';
   return {
-    oninit: (v) => info = v.attrs.info,
-    view: (v) => m( '.lobby.' + (ChatRoomsModel.subscribed(v.attrs.info) ? 'subscribed':'public'), {
-      key: v.attrs.info.lobby_id.xstr64,
-      onclick: e => {
-        if (ChatRoomsModel.subscribed(v.attrs.info)) {
-          m.route.set('/chat/:lobby', {
-            lobby: v.attrs.info.lobby_id.xstr64
-          });
-        }
-      },
+    oninit: (v) => {
+        info = v.attrs.info;
+        tagname = v.attrs.tagname;
+        onclick = v.attrs.onclick || (e => {});
+        lobbytagname= v.attrs.lobbytagname || 'h5.mainname';
+    },
+    view: v => {
+      return m(ChatLobbyModel.selected(info, '.selected-lobby', tagname), {
+      key: info.lobby_id.xstr64,
+      onclick: onclick,
     }, [
-      m('h5', info.lobby_name === '' ? '<unnamed>' : info.lobby_name),
-      m('p', info.lobby_topic),
-    ]),
+      m(lobbytagname,info.lobby_name === '' ? '<unnamed>' : info.lobby_name),
+      m('.topic', info.lobby_topic),
+    ]);
+    },
   };
 };
 
 const SubscribedLobbies = () => {
-  lobbies = [];
   return {
-    oninit: (v) => ChatRoomsModel.loadSubscribedRooms(),
     view: () => m('.widget', [
       m('h3', 'Subscribed chat rooms'),
       m('hr'),
       Object.values(ChatRoomsModel.subscribedRooms).map(info => m(Lobby, {
-        info
+        info, tagname:'.lobby.subscribed', onclick: e => m.route.set('/chat/:lobby', { lobby: info.lobby_id.xstr64 })
       })),
     ]),
   };
@@ -146,12 +165,11 @@ const SubscribedLobbies = () => {
 
 const PublicLobbies = () => {
   return {
-    oninit: () => ChatRoomsModel.loadPublicRooms(),
     view: () => m('.widget', [
       m('h3', 'Public chat rooms'),
       m('hr'),
       ChatRoomsModel.allRooms.filter(info => !ChatRoomsModel.subscribed(info)).map(info => m(Lobby, {
-            info,
+            info, tagname:'.lobby.public',
       })),
     ])
   };
@@ -159,6 +177,10 @@ const PublicLobbies = () => {
 
 const Layout = () => {
   return {
+    oninit: () => {
+        ChatRoomsModel.loadSubscribedRooms();
+        ChatRoomsModel.loadPublicRooms();
+    },
     view: vnode => m('.tab-page', [
       m(SubscribedLobbies),
       m(PublicLobbies),
@@ -166,11 +188,51 @@ const Layout = () => {
   };
 };
 
+const LobbyList = () => {
+    let rooms= [];
+    let tagname= '';
+    let lobbytagname= '';
+    let onclick = (info => (() => {}));
+    return {
+      oninit: vnode => {
+        rooms = vnode.attrs.rooms;
+        tagname = vnode.attrs.tagname;
+        lobbytagname= vnode.attrs.lobbytagname;
+        onclick=vnode.attrs.onclick||(() => (() => {}));
+      },
+      view: vnode => rooms.map(info => m(Lobby, {
+            info,
+            tagname: tagname,
+            lobbytagname,
+            onclick: onclick(info),
+        })),
+    };
+}
+
 const LayoutSingle = () => {
   return {
-    oninit: ChatLobbyModel.loadLobby(),
+    oninit: () => {
+      ChatRoomsModel.loadSubscribedRooms();
+      ChatRoomsModel.loadPublicRooms();
+      ChatLobbyModel.loadLobby(m.route.param('lobby'));
+    },
     view: vnode => m('.tab-page', [
       m('h3.lobbyName', ChatLobbyModel.currentLobby.lobby_name),
+      m('.lobbies',
+        m('h5.lefttitle', 'subscribed:'),
+        m('hr'),
+        m(LobbyList, {
+          rooms: Object.values(ChatRoomsModel.subscribedRooms),
+          tagname: '.leftlobby.subscribed',
+          lobbytagname:'h5.leftname',
+          onclick: ChatLobbyModel.switchToEvent,
+        }),
+        m('h5.lefttitle', 'public:'),
+        m('hr'),
+        Object.values(ChatRoomsModel.allRooms).filter(info => !ChatRoomsModel.subscribed(info)).map(info => m(Lobby, {
+          info, tagname: '.leftlobby.public', lobbytagname:'h5.leftname',
+        })),
+      ),
       m('.messages', ChatLobbyModel.messages),
       m('.rightbar', ChatLobbyModel.users),
       m('.chatMessage', {},  m("textarea.chatMsg", {
