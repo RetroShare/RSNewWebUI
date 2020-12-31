@@ -19,6 +19,16 @@ function loadLobbyDetails(id, apply) {
     () => '{"id":' + id + '}')
  }
 
+ function sortLobbies(lobbies){
+   if (lobbies === undefined){
+     return lobbies; // fallback on reload page in browser
+   } else {
+     let list= [...lobbies];
+     list.sort((a,b) => a.lobby_name.localeCompare(b.lobby_name));
+     return list;
+   }
+ }
+
 let ChatRoomsModel = {
   allRooms: [],
   knownSubscrIds:[], // to exclude subscribed from public rooms (subscribedRooms filled to late)
@@ -28,29 +38,28 @@ let ChatRoomsModel = {
     // use regex on response to extract ids.
     rs.rsJsonApiRequest('/rsMsgs/getListOfNearbyChatLobbies', {},
       data => {
-        ChatRoomsModel.allRooms = data.public_lobbies;
+        ChatRoomsModel.allRooms = sortLobbies(data.public_lobbies);
       },
     );
   },
   loadSubscribedRooms() {
     // ChatRoomsModel.subscribedRooms = {};
     rs.rsJsonApiRequest('/rsMsgs/getChatLobbyList', {},
-      data => {
-        ChatRoomsModel.knownSubscrIds = data;
-        let rooms = {};
-        data.map(id => loadLobbyDetails(id, info => rooms[id] = info));
-        ChatRoomsModel.subscribedRooms = rooms;
-      },
-      true, {},
-      // Custom deserializer NOTE:
       // JS uses double precision numbers of 64 bit. It is equivalent
       // to 53 bits of precision. All large precision ints will
       // get truncated to an approximation.
       // This API uses Cpp-style 64 bits for `id`.
-      // Instead of parsing using JSON.parse, this function manually
-      // extracts all numbers and stores them as strings
-      // Note the g flag. The match will return an array of strings
-      (response) => response.match(/\d+/g),
+      data => {
+        let ids = data.cl_list.map(lid => lid.xstr64);
+        ChatRoomsModel.knownSubscrIds = ids;
+        let rooms = {};
+        ids.map(id => loadLobbyDetails(id, info => {
+          rooms[id]= info;
+          if (Object.keys(rooms).length===ids.length) {
+            ChatRoomsModel.subscribedRooms = rooms;
+          }
+        }));
+      },
     )
   },
   subscribed(info) {
@@ -156,7 +165,7 @@ const SubscribedLobbies = () => {
     view: () => m('.widget', [
       m('h3', 'Subscribed chat rooms'),
       m('hr'),
-      Object.values(ChatRoomsModel.subscribedRooms).map(info => m(Lobby, {
+      sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)).map(info => m(Lobby, {
         info, tagname:'.lobby.subscribed', onclick: e => m.route.set('/chat/:lobby', { lobby: info.lobby_id.xstr64 })
       })),
     ]),
@@ -222,7 +231,7 @@ const LayoutSingle = () => {
         m('h5.lefttitle', 'subscribed:'),
         m('hr'),
         m(LobbyList, {
-          rooms: Object.values(ChatRoomsModel.subscribedRooms),
+          rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)),
           tagname: '.leftlobby.subscribed',
           lobbytagname:'h5.leftname',
           onclick: ChatLobbyModel.switchToEvent,
