@@ -9,6 +9,7 @@ const mail = require('mail/mail_resolver');
 const files = require('files/files_resolver');
 const channels = require('channels/channels');
 const config = require('config/config_resolver');
+const rs = require('rswebui');
 
 const navIcon = {
   home: m('i.fas.fa-home'),
@@ -23,12 +24,14 @@ const navIcon = {
 
 const navbar = () => {
   let active = 0;
-  return {
+  let named = {};
+  rs.navbar = {
     view: vnode =>
       m(
         'nav.tab-menu',
-        Object.keys(vnode.attrs.links).map((linkName, i) =>
-          m(
+        Object.keys(vnode.attrs.links).map((linkName, i) => {
+          named[linkName] = i;
+          return m(
             m.route.Link,
             {
               href: vnode.attrs.links[linkName],
@@ -37,10 +40,12 @@ const navbar = () => {
               onclick: () => (active = i)
             },
             [navIcon[linkName], linkName]
-          )
-        )
-      )
+          );
+        })
+      ),
+    switchTo: name => active = named[name],
   };
+  return rs.navbar;
 };
 
 const Layout = () => {
@@ -77,11 +82,14 @@ m.route(document.getElementById('main'), '/', {
   '/people': {
     render: () => m(Layout, m(people))
   },
-  '/chat': {
-    render: () => m(Layout, m(chat))
+  '/chat/:lobby/:subaction': {
+    render: v => m(Layout, m(chat, v.attrs))
   },
   '/chat/:lobby': {
     render: v => m(Layout, m(chat, v.attrs))
+  },
+  '/chat': {
+    render: () => m(Layout, m(chat))
   },
   '/mail/:tab': {
     render: v => m(Layout, m(mail, v.attrs))

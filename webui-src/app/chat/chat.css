@@ -94,7 +94,7 @@
     overflow: auto;
 }
 .messagetext {
-    white-space: pre;
+    white-space: break-spaces;
     margin-right: 5px;
 }
 
@@ -119,4 +119,15 @@
 textarea.chatMsg {
     height: 100%;
     width: 100%;
+}
+
+.chatatchar {
+    margin-left: 0.2em;
+    margin-right: 0.2em;
+    color: silver;
+}
+
+.setupicon {
+    margin-left: 1em;
+    cursor: pointer;
 }

@@ -20,6 +20,7 @@
 img.avatar {
     float: left;
     height: 100px;
+    margin-right: 0.3em;
 }
 
 .identity .details {
@@ -27,4 +28,13 @@ img.avatar {
     grid-template-columns: 140px auto;
     grid-row-gap: 5px;
     justify-content: left;
+}
+
+.counter{
+    margin-left: 0.5em;
+}
+.chatInit{
+    margin-left: 0.5em;
+    color: green;
+    cursor: pointer;
 }

@@ -1,6 +1,7 @@
 let m = require('mithril');
 let rs = require('rswebui');
 let widget = require('widgets');
+let people_util = require('people/people_util')
 
 const CreateIdentity = () => {
   // TODO: set user avatar
@@ -120,7 +121,7 @@ const DeleteIdentity = () => {
 
 const Identity = () => {
   let details = {};
-  let avatarURI = '';
+  let avatarURI = ()=> [];
   return {
     oninit: v =>
       rs.rsJsonApiRequest(
@@ -132,7 +133,9 @@ const Identity = () => {
           details = data.details;
           // Creating URI during fetch because `details` is uninitialized
           // during view run, due to request being async.
-          avatarURI = data.details.mAvatar.mData.base64 === '' ? '' : 'data:image/png;base64,' + data.details.mAvatar.mData.base64;
+          avatarURI = data.details.mAvatar.mData.base64 === '' ? () => [] : () => m('img.avatar', {
+            src: 'data:image/png;base64,' + data.details.mAvatar.mData.base64,
+          });
         },
       ),
     view: v =>
@@ -142,10 +145,8 @@ const Identity = () => {
           key: details.mId,
         },
         [
-          m('img.avatar', {
-            src: avatarURI,
-          }),
           m('h4', details.mNickname),
+          avatarURI(),
           m('.details', [
             m('p', 'ID:'),
             m('p', details.mId),
@@ -190,23 +191,11 @@ const Identity = () => {
 
 const Layout = () => {
   let ownIds = [];
-  let pseudonIds = [];
   return {
-    oninit: () => {
-      rs.rsJsonApiRequest(
-        '/rsIdentity/getOwnSignedIds',
-        {},
-        data => (ownIds = data.ids),
-      );
-      rs.rsJsonApiRequest(
-        '/rsIdentity/getOwnPseudonimousIds',
-        {},
-        data => (pseudonIds = data.ids),
-      );
-    },
+    oninit: () => people_util.ownIds(data => ownIds = data),
     view: () =>
       m('.widget', [
-        m('h3', 'Own Identities'),
+        m('h3', 'Own Identities', m('span.counter',['(',ownIds.length,')'])),
         m('hr'),
         m(
           'button',
@@ -216,11 +205,6 @@ const Layout = () => {
           'New Identity',
         ),
         ownIds.map(id =>
-          m(Identity, {
-            id,
-          }),
-        ),
-        pseudonIds.map(id =>
           m(Identity, {
             id,
           }),
