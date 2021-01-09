@@ -295,7 +295,9 @@ const LayoutSingle = () => {
 };
 
 const LayoutSetup = () => {
+  let ownIds = [];
   return {
+    oninit: () => people_util.ownIds(data => ownIds = data),
     view: vnode => m('.tab-page', [
       LobbyName(),
       m('.lobbies',
@@ -303,17 +305,23 @@ const LayoutSetup = () => {
         PublicLeftLobbies(),
       ),
       m('.setup', [
-        m('.chatMessage', {},  m("textarea.chatMsg", {
-          placeholder: 'enter new message and press return to send',
-          onkeydown: e => {
-            if (e.code==='Enter') {
-              var msg = e.target.value;
-              e.target.value = ' sending ... ';
-              ChatLobbyModel.sendMessage(msg, () => e.target.value='');
-              return false;
+        m('.selectidentity','Select identity to use'),
+        ownIds.map(nick => m(
+          '.identity',
+          {
+            onclick:() => {
+              rs.rsJsonApiRequest(
+                '/rsMsgs/setIdentityForChatLobby',
+                {},
+                () => m.route.set('/chat/:lobby_id',{lobby_id: m.route.param('lobby')}),
+                true,
+                {},
+                JSON.parse,
+                ()=> '{lobby_id:' + m.route.param('lobby') + ',nick:"' + nick + '"}');
             }
-          }
-        })),
+          },
+          rs.userList.username(nick),
+        )),
       ]),
     ]),
   };
