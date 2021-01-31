@@ -52,7 +52,7 @@
     background-color: white;
 }
 
-.leftlobby.selected-lobby {
+.leftlobby.selected-lobby, .selectedidentity {
     color: white;
     background-color: #3ba4d7;
 }
@@ -84,15 +84,19 @@
     overflow:auto;
 }
 
-.messages {
+.messages, .setup {
     position: absolute;
     background-color: white;
     top: 130px;
     left: 215px;
     right: 215px;
-    bottom: 115px;
     overflow: auto;
 }
+
+.messages {
+    bottom: 115px;
+}
+
 .messagetext {
     white-space: break-spaces;
     margin-right: 5px;
@@ -130,4 +134,17 @@ textarea.chatMsg {
 .setupicon {
     margin-left: 1em;
     cursor: pointer;
+}
+
+.selectidentity {
+    margin: 15px;
+    font-size: 1.2em;
+}
+
+.setup > .identity {
+    cursor: pointer;
+}
+
+.setup {
+    bottom: 15px;
 }

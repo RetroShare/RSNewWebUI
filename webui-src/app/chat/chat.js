@@ -305,9 +305,9 @@ const LayoutSetup = () => {
         PublicLeftLobbies(),
       ),
       m('.setup', [
-        m('.selectidentity','Select identity to use'),
+        m('h5.selectidentity','Select identity to use'),
         ownIds.map(nick => m(
-          '.identity',
+          '.identity' + (ChatLobbyModel.currentLobby.gxs_id === nick ? '.selectedidentity' : ''),
           {
             onclick:() => {
               rs.rsJsonApiRequest(
