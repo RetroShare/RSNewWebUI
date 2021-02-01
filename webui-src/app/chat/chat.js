@@ -317,7 +317,7 @@ const LayoutSetup = () => {
                 true,
                 {},
                 JSON.parse,
-                ()=> '{lobby_id:' + m.route.param('lobby') + ',nick:"' + nick + '"}');
+                ()=> '{"lobby_id":' + m.route.param('lobby') + ',"nick":"' + nick + '"}');
             }
           },
           rs.userList.username(nick),
