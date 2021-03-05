@@ -130,7 +130,7 @@ const eventQueue = {
               };
             },
             handler: (event,owner) => owner.chatMessages(event.mChatMessage.chat_id, owner, r => {
-                console.info(['adding chat' ,r , event.mChatMessage]);
+                console.info('adding chat' ,r , event.mChatMessage);
                 r.push(event.mChatMessage);
                 owner.notify(event.mChatMessage);
             }),
@@ -142,7 +142,7 @@ const eventQueue = {
     },
     handler: event => {
         if (!deeperIfExist(eventQueue.events, event.mType, owner => owner.handler(event, owner))) {
-            console.info(event);
+            console.info('unhandled event', event);
         };
     },
 }

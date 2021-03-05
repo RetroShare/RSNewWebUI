@@ -45,7 +45,7 @@ let ChatRoomsModel = {
       data => ChatRoomsModel.allRooms = sortLobbies(data.public_lobbies),
     );
   },
-  loadSubscribedRooms() {
+  loadSubscribedRooms(after = null) {
     // ChatRoomsModel.subscribedRooms = {};
     rs.rsJsonApiRequest('/rsMsgs/getChatLobbyList', {},
       // JS uses double precision numbers of 64 bit. It is equivalent
@@ -64,6 +64,9 @@ let ChatRoomsModel = {
             ChatRoomsModel.subscribedRooms = rooms;
           }
         }));
+        if (after != null) {
+            after()
+        }
       },
     )
   },
@@ -77,14 +80,60 @@ const ChatLobbyModel = {
         lobby_name: '...',
     },
     lobby_user: '...',
+    isSubscribed: false,
     messages: [],
     users: [],
+    setupAction: (lobby_id, nick) => {},
+    setIdentity(lobby_id, nick) {
+        rs.rsJsonApiRequest(
+            '/rsMsgs/setIdentityForChatLobby',
+            {},
+            () => m.route.set('/chat/:lobby_id',{lobby_id: lobby_id}),
+            true,
+            {},
+            JSON.parse,
+            ()=> '{"lobby_id":' + lobby_id + ',"nick":"' + nick + '"}'
+        );
+    },
+    enterPublicLobby(lobby_id, nick) {
+        console.info('joinVisibleChatLobby', nick, '@', lobby_id)
+        rs.rsJsonApiRequest(
+            '/rsMsgs/joinVisibleChatLobby',
+            {},
+            () => {
+                loadLobbyDetails(lobby_id, info => {
+                    ChatRoomsModel.subscribedRooms[lobby_id]= info;
+                    ChatRoomsModel.loadSubscribedRooms(() => {
+                        m.route.set('/chat/:lobby', { lobby: info.lobby_id.xstr64 });
+                    })
+                });
+            },
+            true,
+            {},
+            JSON.parse,
+            ()=> '{"lobby_id":' + lobby_id + ',"own_id":"' + nick + '"}'
+        );
+    },
+    unsubscribeChatLobby(lobby_id, follow) {
+        console.info('unsubscribe lobby', lobby_id)
+        rs.rsJsonApiRequest(
+            '/rsMsgs/unsubscribeChatLobby',
+            {},
+            () => ChatRoomsModel.loadSubscribedRooms(follow),
+            true,
+            {},
+            JSON.parse,
+            () => '{"lobby_id":' + lobby_id + '}'
+        )
+    },
     chatId(action) {
         return {type:3,lobby_id:{xstr64:m.route.param('lobby')}};
     },
     loadLobby (currentlobbyid) {
         loadLobbyDetails(currentlobbyid, detail => {
+            this.setupAction= this.setIdentity;
             this.currentLobby = detail;
+            this.isSubscribed = true;
             this.lobby_user = rs.userList.username(detail.gxs_id) || '???';
             let lobbyid = currentlobbyid;
             // apply existing messages to current lobby view
@@ -103,6 +152,20 @@ const ChatLobbyModel = {
             names.forEach(name =>  this.users = this.users.concat([m('.user',name)]));
             return this.users;
         });
+    },
+    loadPublicLobby (currentlobbyid) {
+        console.info('loadPublicLobby ChatRoomsModel:',ChatRoomsModel);
+        this.setupAction= this.enterPublicLobby;
+        this.isSubscribed = false;
+        ChatRoomsModel.allRooms.forEach(it => {
+            if (it.lobby_id.xstr64 === currentlobbyid) {
+                this.currentLobby = it;
+                this.lobby_user = '???';
+                this.lobbyid = currentlobbyid;
+            }
+        })
+        this.users = [];
+        return this.users;
     },
     sendMessage(msg, onsuccess) {
         rs.rsJsonApiRequest('/rsmsgs/sendChat', {},
@@ -132,6 +195,12 @@ const ChatLobbyModel = {
             m.route.set('/chat/:lobby', { lobby: info.lobby_id.xstr64 });
             ChatLobbyModel.loadLobby(info.lobby_id.xstr64); // update
         };
+    },
+    setupEvent(info) {
+        return () => {
+            m.route.set('/chat/:lobby/setup', { lobby: info.lobby_id.xstr64 });
+            ChatLobbyModel.loadPublicLobby(info.lobby_id.xstr64); // update
+        };
     }
 }
 
@@ -149,12 +218,12 @@ const Message = () => {
   let username = ''; // username to display (later may be linked)
   return {
     oninit: vnode => {
-      console.info(vnode);
+      console.info('chat Message',vnode);
       msg = vnode.attrs;
       datetime = new Date(msg.sendTime * 1000).toLocaleTimeString();
       username = rs.userList.username(msg.lobby_peer_gxs_id);
       text = msg.msg.replaceAll('<br/>','\n').replace(new RegExp('<style[^<]*</style>|<[^>]*>','gm'),'');
-      console.info(text);
+      console.info('chat Text', text);
     },
     view: () => m('.message', m('span.datetime', datetime), m('span.username', username), m('span.messagetext', text))
   };
@@ -221,7 +290,7 @@ const SubscribedLobbies = () => (
     m(LobbyList, {
       rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)),
       tagname:'.lobby.subscribed',
-      onclick: info => (e => m.route.set('/chat/:lobby', { lobby: info.lobby_id.xstr64 })),
+      onclick: ChatLobbyModel.switchToEvent,
     }),
   ])
 );
@@ -232,6 +301,7 @@ const PublicLeftLobbies = () => [
     rooms: Object.values(ChatRoomsModel.allRooms).filter(info => !ChatRoomsModel.subscribed(info)),
     tagname: '.leftlobby.public',
     lobbytagname: 'h5.leftname',
+    onclick: ChatLobbyModel.setupEvent,
   }),
 ];
 
@@ -241,22 +311,35 @@ const PublicLobbies = () => {
     m(LobbyList, {
       rooms: ChatRoomsModel.allRooms.filter(info => !ChatRoomsModel.subscribed(info)),
       tagname: '.lobby.public',
+      onclick: ChatLobbyModel.setupEvent,
     }),
   ])
 };
 
 const LobbyName = () => {
   return m('h3.lobbyName',
-    m('span.chatusername',ChatLobbyModel.lobby_user),
-    m('span.chatatchar','@'),
+    ChatLobbyModel.isSubscribed ? [
+      m('span.chatusername',ChatLobbyModel.lobby_user),
+      m('span.chatatchar','@'),
+    ] : [],
     m('span.chatlobbyname',ChatLobbyModel.currentLobby.lobby_name),
-    m('i.fas.fa-cog.setupicon', {
-      title: 'configure lobby',
-      onclick:() => m.route.set('/chat/:lobby/:subaction', {
-        lobby: m.route.param('lobby'),
-        subaction: 'setup'
-      }, true)
-    })
+    m.route.param('subaction') !== 'setup' ? [
+      m('i.fas.fa-cog.setupicon', {
+        title: 'configure lobby',
+        onclick:() => m.route.set('/chat/:lobby/:subaction', {
+          lobby: m.route.param('lobby'),
+          subaction: 'setup'
+        }, true)
+      })
+    ] : [],
+    ChatLobbyModel.isSubscribed ? [
+      m('i.fas.fa-sign-out-alt.leaveicon', {
+        title: 'leaving lobby',
+        onclick:() => ChatLobbyModel.unsubscribeChatLobby(m.route.param('lobby'), () => {
+          m.route.set('/chat', null, true);
+        })
+      })
+    ] : []
   );
 };
 
@@ -309,16 +392,7 @@ const LayoutSetup = () => {
         ownIds.map(nick => m(
           '.identity' + (ChatLobbyModel.currentLobby.gxs_id === nick ? '.selectedidentity' : ''),
           {
-            onclick:() => {
-              rs.rsJsonApiRequest(
-                '/rsMsgs/setIdentityForChatLobby',
-                {},
-                () => m.route.set('/chat/:lobby_id',{lobby_id: m.route.param('lobby')}),
-                true,
-                {},
-                JSON.parse,
-                ()=> '{"lobby_id":' + m.route.param('lobby') + ',"nick":"' + nick + '"}');
-            }
+            onclick: () => ChatLobbyModel.setupAction(m.route.param('lobby'), nick)
           },
           rs.userList.username(nick),
         )),
@@ -377,4 +451,3 @@ module.exports = {
     }
   }
 };
-

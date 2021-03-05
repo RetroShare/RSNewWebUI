@@ -41,7 +41,7 @@
     margin-bottom: 5px;
 }
 
-.subscribed {
+.subscribed, .public {
     cursor: pointer;
 }
 
@@ -134,6 +134,12 @@ textarea.chatMsg {
 .setupicon {
     margin-left: 1em;
     cursor: pointer;
+}
+
+.leaveicon {
+    margin-left: 1em;
+    cursor: pointer;
+    color: #d40000;
 }
 
 .selectidentity {
