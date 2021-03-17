@@ -24,26 +24,23 @@ const navIcon = {
 
 const navbar = () => {
   let active = 0;
-  let named = {};
   rs.navbar = {
     view: vnode =>
       m(
         'nav.tab-menu',
         Object.keys(vnode.attrs.links).map((linkName, i) => {
-          named[linkName] = i;
+          let active = m.route.get().split('/')[1] === linkName
           return m(
             m.route.Link,
             {
               href: vnode.attrs.links[linkName],
-              class:
-                (active === i ? 'selected-tab-item' : '') + ' tab-menu-item',
+              class: (active  ? 'selected-tab-item' : '') + ' tab-menu-item',
               onclick: () => (active = i)
             },
             [navIcon[linkName], linkName]
           );
         })
       ),
-    switchTo: name => active = named[name],
   };
   return rs.navbar;
 };

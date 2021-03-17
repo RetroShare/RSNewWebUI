@@ -33,6 +33,13 @@ img.avatar {
 .counter{
     margin-left: 0.5em;
 }
+.counter:before {
+    content: "(";
+}
+.counter:after {
+    content: ")";
+}
+
 .chatInit{
     margin-left: 0.5em;
     color: green;

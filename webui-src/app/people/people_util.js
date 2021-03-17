@@ -19,7 +19,7 @@ function getInfo(id) {
     return 'name';
 }
 
-function sort(list) {
+function sortUsers(list) {
   if (list!== undefined) {
     let result = [...list];
     result.sort((a,b) => a.mGroupName.localeCompare(b.mGroupName));
@@ -47,11 +47,20 @@ function ownIds(consumer = list => {}, onlySigned = false) {
   });
 }
 
+function createAvatarURI(avatar) {
+  return avatar.mData.base64 === '' ? {
+    view: () => []
+  } :  {
+    view: () =>  m('img.avatar', { src: 'data:image/png;base64,' + avatar.mData.base64 })
+  }
+}
+
 
 module.exports = {
   getInfo,
-  sort,
+  sortUsers,
   sortIds,
-  ownIds
+  ownIds,
+  createAvatarURI
 };
 

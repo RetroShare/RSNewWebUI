@@ -121,7 +121,9 @@ const DeleteIdentity = () => {
 
 const Identity = () => {
   let details = {};
-  let avatarURI = ()=> [];
+  let avatarURI = {
+    view: () => []
+  }
   return {
     oninit: v =>
       rs.rsJsonApiRequest(
@@ -130,12 +132,10 @@ const Identity = () => {
           id: v.attrs.id,
         },
         data => {
-          details = data.details;
+          details = data.details
           // Creating URI during fetch because `details` is uninitialized
           // during view run, due to request being async.
-          avatarURI = data.details.mAvatar.mData.base64 === '' ? () => [] : () => m('img.avatar', {
-            src: 'data:image/png;base64,' + data.details.mAvatar.mData.base64,
-          });
+          avatarURI = people_util.createAvatarURI(data.details.mAvatar)
         },
       ),
     view: v =>
@@ -146,7 +146,7 @@ const Identity = () => {
         },
         [
           m('h4', details.mNickname),
-          avatarURI(),
+          m(avatarURI),
           m('.details', [
             m('p', 'ID:'),
             m('p', details.mId),
@@ -195,7 +195,7 @@ const Layout = () => {
     oninit: () => people_util.ownIds(data => ownIds = data),
     view: () =>
       m('.widget', [
-        m('h3', 'Own Identities', m('span.counter',['(',ownIds.length,')'])),
+        m('h3', 'Own Identities', m('span.counter', ownIds.length)),
         m('hr'),
         m(
           'button',

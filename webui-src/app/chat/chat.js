@@ -23,13 +23,12 @@ function loadLobbyDetails(id, apply) {
  }
 
  function sortLobbies(lobbies){
-   if (lobbies === undefined){
-     return lobbies; // fallback on reload page in browser
-   } else {
+   if (lobbies !== undefined){
      let list= [...lobbies];
      list.sort((a,b) => a.lobby_name.localeCompare(b.lobby_name));
      return list;
    }
+   // return lobbies; // fallback on reload page in browser, keep undefiend
  }
 
  // ***************************** models ***********************************
@@ -240,14 +239,14 @@ const Lobby = () => {
         info = v.attrs.info;
         tagname = v.attrs.tagname;
         onclick = v.attrs.onclick || (e => {});
-        lobbytagname= v.attrs.lobbytagname || 'h5.mainname';
+        lobbytagname= v.attrs.lobbytagname || 'mainname';
     },
     view: v => {
       return m(ChatLobbyModel.selected(info, '.selected-lobby', tagname), {
       key: info.lobby_id.xstr64,
       onclick: onclick,
     }, [
-      m(lobbytagname,info.lobby_name === '' ? '<unnamed>' : info.lobby_name),
+      m('h5', {class: lobbytagname},info.lobby_name === '' ? '<unnamed>' : info.lobby_name),
       m('.topic', info.lobby_topic),
     ]);
     },
@@ -279,7 +278,7 @@ const SubscribedLeftLobbies = () => [
   m(LobbyList, {
     rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)),
     tagname: '.leftlobby.subscribed',
-    lobbytagname:'h5.leftname',
+    lobbytagname:'leftname',
     onclick: ChatLobbyModel.switchToEvent,
   })
 ];
@@ -300,7 +299,7 @@ const PublicLeftLobbies = () => [
   m(LobbyList, {
     rooms: Object.values(ChatRoomsModel.allRooms).filter(info => !ChatRoomsModel.subscribed(info)),
     tagname: '.leftlobby.public',
-    lobbytagname: 'h5.leftname',
+    lobbytagname: 'leftname',
     onclick: ChatLobbyModel.setupEvent,
   }),
 ];
@@ -345,10 +344,14 @@ const LobbyName = () => {
 
 // ***************************** Page Layouts ******************************
 
-const Layout = () => m('.tab-page', [
-  SubscribedLobbies(),
-  PublicLobbies(),
-]);
+const Layout = () => {
+  return {
+    view: () => m('.tab-page', [
+      SubscribedLobbies(),
+      PublicLobbies(),
+    ])
+  }
+};
 
 const LayoutSingle = () => {
   return {
@@ -414,7 +417,7 @@ const LayoutCreateDistant = () => {
   return {
     oninit: () => people_util.ownIds(data => ownIds = data),
     view: vnode => m('.tab-page', [
-      m('.setup', [
+      m('.createDistantChat', [
         'choose identitiy to chat with ',
         rs.userList.username(m.route.param('lobby')),
         ownIds.map(id => m('.identity', {
@@ -441,7 +444,7 @@ module.exports = {
   },
   view: (vnode) => {
     if (m.route.param('lobby') === undefined) {
-      return Layout();
+      return m(Layout);
     } else if (m.route.param('subaction') === 'setup') {
       return m(LayoutSetup);
     } else if (m.route.param('subaction') === 'createdistantchat') {

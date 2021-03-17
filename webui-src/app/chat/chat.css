@@ -154,3 +154,7 @@ textarea.chatMsg {
 .setup {
     bottom: 15px;
 }
+
+.createDistantChat {
+    margin-top: 1em;
+}
