@@ -23,8 +23,7 @@ const navIcon = {
 };
 
 const navbar = () => {
-  let active = 0;
-  rs.navbar = {
+  return {
     view: vnode =>
       m(
         'nav.tab-menu',
@@ -35,14 +34,12 @@ const navbar = () => {
             {
               href: vnode.attrs.links[linkName],
               class: (active  ? 'selected-tab-item' : '') + ' tab-menu-item',
-              onclick: () => (active = i)
             },
             [navIcon[linkName], linkName]
           );
         })
       ),
-  };
-  return rs.navbar;
+  }
 };
 
 const Layout = () => {

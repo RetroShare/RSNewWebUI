@@ -8,8 +8,6 @@ let loginKey = {
   url: API_URL
 };
 
-let navbar = {};
-
 // Make this as object property?
 function setKeys(username, password, url = API_URL, verified = true) {
   loginKey.username = username;
@@ -238,5 +236,4 @@ module.exports = {
   logon,
   events: eventQueue.events,
   userList,
-  navbar
 };

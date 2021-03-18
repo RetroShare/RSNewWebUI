@@ -163,8 +163,7 @@ const ChatLobbyModel = {
                 this.lobbyid = currentlobbyid;
             }
         })
-        this.users = [];
-        return this.users;
+        this.users = []
     },
     sendMessage(msg, onsuccess) {
         rs.rsJsonApiRequest('/rsmsgs/sendChat', {},
@@ -328,14 +327,14 @@ const LobbyName = () => {
         onclick:() => m.route.set('/chat/:lobby/:subaction', {
           lobby: m.route.param('lobby'),
           subaction: 'setup'
-        }, true)
+        }, { replace: true })
       })
     ] : [],
     ChatLobbyModel.isSubscribed ? [
       m('i.fas.fa-sign-out-alt.leaveicon', {
         title: 'leaving lobby',
         onclick:() => ChatLobbyModel.unsubscribeChatLobby(m.route.param('lobby'), () => {
-          m.route.set('/chat', null, true);
+          m.route.set('/chat', null, { replace: true });
         })
       })
     ] : []
