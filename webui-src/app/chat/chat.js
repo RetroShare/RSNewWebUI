@@ -252,56 +252,63 @@ const Lobby = () => {
   };
 };
 
-const LobbyList = () => {
-    return {
-      view: vnode => {
-        rooms = vnode.attrs.rooms;
-        tagname = vnode.attrs.tagname;
-        lobbytagname= vnode.attrs.lobbytagname;
-        onclick=vnode.attrs.onclick||(() => null);
-        return [
-          m('hr'),
-          rooms.map(info => m(Lobby, {
-            info,
-            tagname: tagname,
-            lobbytagname,
-            onclick: onclick(info),
-          }))
-        ];
-      },
-    };
+const LobbyList = {
+  view(vnode) {
+    let tagname = vnode.attrs.tagname
+    let lobbytagname = vnode.attrs.lobbytagname
+    let onclick = vnode.attrs.onclick||(() => null)
+    return [
+      m('hr'),
+      vnode.attrs.rooms.map(info => m(Lobby, {
+        info,
+        tagname,
+        lobbytagname,
+        onclick: onclick(info),
+      }))
+    ];
+  },
 }
 
-const SubscribedLeftLobbies = () => [
-  m('h5.lefttitle', 'subscribed:'),
-  m(LobbyList, {
-    rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)),
-    tagname: '.leftlobby.subscribed',
-    lobbytagname:'leftname',
-    onclick: ChatLobbyModel.switchToEvent,
-  })
-];
+const SubscribedLeftLobbies = {
+  view() {
+    return [
+      m('h5.lefttitle', 'subscribed:'),
+      m(LobbyList, {
+        rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)),
+        tagname: '.leftlobby.subscribed',
+        lobbytagname:'leftname',
+        onclick: ChatLobbyModel.switchToEvent,
+      })
+    ]
+  }
+};
 
-const SubscribedLobbies = () => (
-  m('.widget', [
-    m('h3', 'Subscribed chat rooms'),
-    m(LobbyList, {
-      rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)),
-      tagname:'.lobby.subscribed',
-      onclick: ChatLobbyModel.switchToEvent,
-    }),
-  ])
-);
+const SubscribedLobbies = {
+  view() {
+    return m('.widget', [
+      m('h3', 'Subscribed chat rooms'),
+      m(LobbyList, {
+        rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)),
+        tagname:'.lobby.subscribed',
+        onclick: ChatLobbyModel.switchToEvent,
+      }),
+    ])
+  }
+}
 
-const PublicLeftLobbies = () => [
-  m('h5.lefttitle', 'public:'),
-  m(LobbyList, {
-    rooms: Object.values(ChatRoomsModel.allRooms).filter(info => !ChatRoomsModel.subscribed(info)),
-    tagname: '.leftlobby.public',
-    lobbytagname: 'leftname',
-    onclick: ChatLobbyModel.setupEvent,
-  }),
-];
+const PublicLeftLobbies = {
+  view() {
+    return [
+      m('h5.lefttitle', 'public:'),
+      m(LobbyList, {
+        rooms: Object.values(ChatRoomsModel.allRooms).filter(info => !ChatRoomsModel.subscribed(info)),
+        tagname: '.leftlobby.public',
+        lobbytagname: 'leftname',
+        onclick: ChatLobbyModel.setupEvent,
+      }),
+    ]
+  }
+}
 
 const PublicLobbies = () => {
   return m('.widget', [
@@ -346,7 +353,7 @@ const LobbyName = () => {
 const Layout = () => {
   return {
     view: () => m('.tab-page', [
-      SubscribedLobbies(),
+      m(SubscribedLobbies),
       PublicLobbies(),
     ])
   }
@@ -358,8 +365,8 @@ const LayoutSingle = () => {
     view: vnode => m('.tab-page', [
       LobbyName(),
       m('.lobbies',
-        SubscribedLeftLobbies(),
-        PublicLeftLobbies(),
+        m(SubscribedLeftLobbies),
+        m(PublicLeftLobbies),
       ),
       m('.messages', ChatLobbyModel.messages),
       m('.rightbar', ChatLobbyModel.users),
@@ -386,8 +393,8 @@ const LayoutSetup = () => {
     view: vnode => m('.tab-page', [
       LobbyName(),
       m('.lobbies',
-        SubscribedLeftLobbies(),
-        PublicLeftLobbies(),
+        m(SubscribedLeftLobbies),
+        m(PublicLeftLobbies),
       ),
       m('.setup', [
         m('h5.selectidentity','Select identity to use'),
