@@ -100,52 +100,71 @@ function computeIfMissing(map, key, missing = () => ({})) {
 function deeperIfExist(map, key, action) {
     if (map.hasOwnProperty(key))  {
         action(map[key]);
+        return true;
+    } else {
+        return false;
     }
 }
 
 const eventQueue = {
     events: {
         15: { // Chat-Messages
-          types: {
-            3: chat_id => chat_id.lobby_id.xstr64, // lobby_id
-          },
-          messages: {},
-          chatMessages: (chat_id, owner, action) => deeperIfExist(
-            owner.types,
-            chat_id.type,
-            keyfn =>  action(computeIfMissing(computeIfMissing(owner.messages,chat_id.type), keyfn(chat_id),()=>[]))
-          ),
-          handler: (event,owner) => owner.chatMessages(event.mChatMessage.chat_id, owner, r => {
-            console.info(['adding chat' ,r , event.mChatMessage])
-            r.push(event.mChatMessage);
-            owner.notify(event.mChatMessage);
-          }),
-          notify: () => {},
+            types: {
+//                #define RS_CHAT_TYPE_PUBLIC  1
+//                #define RS_CHAT_TYPE_PRIVATE 2
+                2: chat_id => chat_id.distant_chat_id, // distant chat (initiate? -> todo accept)
+//                #define RS_CHAT_TYPE_LOBBY   3
+                3: chat_id => chat_id.lobby_id.xstr64, // lobby_id
+//                #define RS_CHAT_TYPE_DISTANT 4
+            },
+            messages: {},
+            chatMessages: (chat_id, owner, action) => {
+              if (!deeperIfExist(
+                owner.types,
+                chat_id.type,
+                keyfn =>  action(computeIfMissing(computeIfMissing(owner.messages,chat_id.type), keyfn(chat_id),()=>[]))
+              )) {
+                console.info('unknown chat event', chat_id);
+              };
+            },
+            handler: (event,owner) => owner.chatMessages(event.mChatMessage.chat_id, owner, r => {
+                console.info('adding chat' ,r , event.mChatMessage);
+                r.push(event.mChatMessage);
+                owner.notify(event.mChatMessage);
+            }),
+            notify: () => {},
         },
+        8: { // Circles (ignore in the meantime)
+            handler: (event,owner) => {},
+        }
     },
-    handler: event => deeperIfExist(eventQueue.events, event.mType, owner => owner.handler(event, owner)),
+    handler: event => {
+        if (!deeperIfExist(eventQueue.events, event.mType, owner => owner.handler(event, owner))) {
+            console.info('unhandled event', event);
+        };
+    },
 }
 
 const userList = {
-    users: [],
-    userMap: {},
-    loadUsers: () => {
-      rsJsonApiRequest('/rsIdentity/getIdentitiesSummaries', {},
-        list=> {
-          if (list!== undefined) {
-            console.info('loading ' + list.ids.length + ' users ...');
-            userList.users=list.ids;
-            userList.userMap = list.ids.reduce((a,c) => {
-              a[c.mGroupId] = c.mGroupName;
-              return a;
-            }, {});
-          }
+  users: [],
+  userMap: {},
+  loadUsers: () => {
+    rsJsonApiRequest('/rsIdentity/getIdentitiesSummaries', {},
+      list=> {
+        if (list!== undefined) {
+          console.info('loading ' + list.ids.length + ' users ...');
+          userList.users=list.ids;
+          userList.userMap = list.ids.reduce((a,c) => {
+            a[c.mGroupId] = c.mGroupName;
+            return a;
+          }, {});
         }
-      );
-    },
-    username: id => {
-       return userList.userMap[id]||id;
-    }
+      }
+    );
+  },
+  username: id => {
+   return userList.userMap[id]||id;
+  },
 }
 
 /*
@@ -189,11 +208,10 @@ function startEventQueue(info, loginHeader = {}, displayAuthError = () => {}, di
               }
             } else if(data.hasOwnProperty('event')) {
               data.event.queueSize = currIndex;
-              console.info(data.event);
               eventQueue.handler(data.event);
             }
           }
-          if (currIndex > 1e6) { // max 1 MB eventQueue
+          if (currIndex > 1e5) { // max 100 kB eventQueue
             startEventQueue('restart queue');
             xhr.abort();
           }
@@ -217,5 +235,5 @@ module.exports = {
   setBackgroundTask,
   logon,
   events: eventQueue.events,
-  userList
+  userList,
 };
