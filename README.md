@@ -54,7 +54,11 @@ sh build.sh
 ```
 
 ##### On Windows:
-Execute the `build.bat` file in `webui-src\make-src\`.
+```bash
+cd webui-src\make-src\
+./build.bat
+```
+
 
 Usage
 -----
