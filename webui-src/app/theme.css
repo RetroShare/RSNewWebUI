@@ -4,201 +4,218 @@ General site-wide rules
 
 /* Main base div for tabs used by m.route */
 .content {
-    height: 100%;
-    overflow: hidden;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Main tab content */
 #tab-content {
-    height: 100%;
-    /* Margin on top to avoid getting covered by navbar */
-    margin-top: 4em;
-    background-color: #eef3f6;
-    overflow: auto;
+  height: 100%;
+  /* Margin on top to avoid getting covered by navbar */
+  margin-top: 4em;
+  background-color: #eef3f6;
+  overflow: auto;
 }
 /* Individual tab pages */
 .tab-page {
-    /* This is required since main content's overflow is hidden
+  /* This is required since main content's overflow is hidden
        and bottom elements will not be entirely visible. */
-    margin-bottom: 200px;
-    animation: fadein 0.5s;
+  margin-bottom: 200px;
+  animation: fadein 0.5s;
 }
 
-input[type=text], input[type=password], input[type=number], textarea {
-    box-sizing: border-box;
-    background: white;
-    max-width: 100%;
-    font-size: 1.2em;
-    font-weight: 400;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 0.5em;
-    /* Disable chromium's focused element hinting*/
-    outline: none;
-} input:focus {
-    border: 1px solid #3ba4d7;
-    box-shadow: inset 0 0 5px #ccc;
-}input.stretched {
-    width: 90%;
-}input.small {
-    max-width: 70%;
-    font-size: 1em;
-    padding: 0.1em;
-}input.searchbar {
-    display: block;
-    margin: 0.9em 0 0 0.9em;
+input[type="text"],
+input[type="password"],
+input[type="number"],
+textarea {
+  box-sizing: border-box;
+  background: white;
+  max-width: 100%;
+  font-size: 1.2em;
+  font-weight: 400;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 0.5em;
+  /* Disable chromium's focused element hinting*/
+  outline: none;
+}
+input:focus {
+  border: 1px solid #3ba4d7;
+  box-shadow: inset 0 0 5px #ccc;
+}
+input.stretched {
+  width: 90%;
+}
+input.small {
+  max-width: 70%;
+  font-size: 1em;
+  padding: 0.1em;
+}
+input.searchbar {
+  display: block;
+  margin: 0.9em 0 0 0.9em;
 }
 
 button {
-    color: white;
-    background: #2699ed;
-    font-size: 1.2em;
-    padding: 5px 10px;
-    border: 0;
-    border-radius: 5px;
-    box-shadow: inset -3px -3px 0 #0d69ac;
-    cursor: pointer;
-} button:active {
-    outline: none;
-    box-shadow: inset 3px 3px 0 #0d69ac;
+  color: white;
+  background: #2699ed;
+  font-size: 1.2em;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 5px;
+  box-shadow: inset -3px -3px 0 #0d69ac;
+  cursor: pointer;
+}
+button:active {
+  outline: none;
+  box-shadow: inset 3px 3px 0 #0d69ac;
 }
 button.red {
-    background: #bd0909;
-    box-shadow: inset -3px -3px 0 #830000;
+  background: #bd0909;
+  box-shadow: inset -3px -3px 0 #830000;
 }
 
 table {
-    padding: 20px;
-    table-layout: fixed;
-    width: 100%;
-    border-collapse: collapse;
-    text-align: center;
-    color: #333;
-    font-size: 1.2em;
-} table th {
-    font-weight: 100;
-    font-size: 1.3em;
-    color: black;
-    border-bottom: 2px solid #eee;
-} table tr {
-    border-bottom: 1px solid #eee;
+  padding: 20px;
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  color: #333;
+  font-size: 1.2em;
+}
+table th {
+  font-weight: 100;
+  font-size: 1.3em;
+  color: black;
+  border-bottom: 2px solid #eee;
+}
+table tr {
+  border-bottom: 1px solid #eee;
 }
 
 h3 {
-    font-size: 2em;
-    font-weight: 100;
-    color: #444;
-    padding: 0;
-    margin: 0;
+  font-size: 2em;
+  font-weight: 100;
+  color: #444;
+  padding: 0;
+  margin: 0;
 }
 hr {
-    margin-left: 0;
-    color: #aaa;
+  margin-left: 0;
+  color: #aaa;
 }
 
 .widget {
-    margin: 1em;
-    padding: 1em;
-    border-radius: 10px;
-    background-color: white;
-}.widget > p {
-    margin: 0;
-    font-size: 0.9em;
-    color: #666;
-}.widget .tooltip {
-    float: right;
+  margin: 1em;
+  padding: 1em;
+  border-radius: 10px;
+  background-color: white;
+}
+.widget > p {
+  margin: 0;
+  font-size: 0.9em;
+  color: #666;
+}
+.widget .tooltip {
+  float: right;
 }
 .widget-half {
-    max-width: 50%;
+  max-width: 50%;
 }
 
 .grid-2col {
-    display: grid;
-    grid-template-columns: auto auto;
-    grid-row-gap: 16px;
-    justify-content: start;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-row-gap: 16px;
+  justify-content: start;
 }
 
 .error {
-    color: red;
+  color: red;
 }
 
 .progressbar {
-    width: 100%;
-    border-radius: 500px;
-    background-color: #eef3f6;
-    position: relative;
-    text-align: left;
-}.progressbar:before {
-    position: absolute;
-    text-align: center;
-    left: 0;
-    right: 0;
-}.progress-status {
-    display: inline-block;
-    height: 100%;
-    padding: 5px;
-    border-radius: 500px;
-    color: #000;
-    background-color: #3ba4d7;
-    text-align: center;
+  width: 100%;
+  border-radius: 500px;
+  background-color: #eef3f6;
+  position: relative;
+  text-align: left;
+}
+.progressbar:before {
+  position: absolute;
+  text-align: center;
+  left: 0;
+  right: 0;
+}
+.progress-status {
+  display: inline-block;
+  height: 100%;
+  padding: 5px;
+  border-radius: 500px;
+  color: #000;
+  background-color: #3ba4d7;
+  text-align: center;
 }
 
 .tooltip {
-    color: #333;
-    /*display: inline-block;*/
-    position: relative;
+  color: #333;
+  /*display: inline-block;*/
+  position: relative;
 }
 .tooltiptext {
-    visibility: hidden;
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    min-width: 250px;
-    margin-left: -120px;
-    z-index: 1;
-    color: #ccc;
-    background-color: #333;
-    font-size: 0.9em;
-    text-align: center;
-    padding: 5px 0;
-    border-radius: 5px;
-}.tooltip:hover .tooltiptext {
-    visibility: visible;
-    animation: fadein 0.5s;
+  visibility: hidden;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  min-width: 250px;
+  margin-left: -120px;
+  z-index: 1;
+  color: #ccc;
+  background-color: #333;
+  font-size: 0.9em;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 5px;
+}
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  animation: fadein 0.5s;
 }
 
 #modal-container {
-    display: none;
-    position: fixed;
-    z-index: 1;
-    height: 100%;
+  display: none;
+  position: fixed;
+  z-index: 1;
+  height: 100%;
 }
 #modal-container {
-    top: 0;
-    left: 0;
-    width: 100%;
-    background-color: rgba(0, 0, 0, 0.2);
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.2);
 }
 .modal-content {
-    position: absolute;
-    color: #555;
-    width: 40%;
-    height: 40%;
-    transform: translate(60%, 50%);
-    background-color: white;
-    padding: 1em;
-    border-radius: 20px;
-    animation: fadein 0.5s;
-}.modal-content > button {
-    float: right;
+  position: absolute;
+  color: #555;
+  width: 40%;
+  height: 40%;
+  transform: translate(60%, 50%);
+  background-color: white;
+  padding: 1em;
+  border-radius: 20px;
+  animation: fadein 0.5s;
+}
+.modal-content > button {
+  float: right;
 }
 
 #notification-container {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-}#notification-container .notification {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+#notification-container .notification {
 }
 
 /******************************
@@ -206,21 +223,33 @@ Animations
 ******************************/
 
 @keyframes fadein {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .fadein {
-    animation: fadein 0.5s;
+  animation: fadein 0.5s;
 }
 
 @keyframes swipe-from-left {
-    from { margin-left: 100%; }
-    to { margin-left: 0; }
+  from {
+    margin-left: 100%;
+  }
+  to {
+    margin-left: 0;
+  }
 }
 
 @keyframes expand-left-border {
-    from { border-left: 0; }
-    to   { border-left: 5px solid #3ba4d7; }
+  from {
+    border-left: 0;
+  }
+  to {
+    border-left: 5px solid #3ba4d7;
+  }
 }
 
 /******************************
@@ -229,99 +258,106 @@ Target specific sections
 
 /* Login */
 .login-page {
-    background-image: linear-gradient(-45deg, #0e76a7, #7bccff);
-    height: 100%;
-    animation: fadein 0.5s;
+  background-image: linear-gradient(-45deg, #0e76a7, #7bccff);
+  height: 100%;
+  animation: fadein 0.5s;
 }
 .login-container {
-    background-color: white;
-    box-shadow: 3px 3px 5px #444;
-    margin: auto;
-    position: relative;
-    top: 100px;
-    width: 30%;
-    min-height: 35%;
-    border-radius: 5px;
+  background-color: white;
+  box-shadow: 3px 3px 5px #444;
+  margin: auto;
+  position: relative;
+  top: 100px;
+  max-width: 400px;
+  max-height: 500px;
+  border-radius: 5px;
 
-    display: flex;
-    align-items: flex-start;
-    flex-direction: column;
-    align-items: center;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
 }
 
-.extra > label, .extra > br, .extra > input  {
-    margin-bottom: 0;
+.extra > label,
+.extra > br,
+.extra > input {
+  margin-bottom: 0;
 }
 
 .login-container * {
-    margin-bottom: 15px;
+  margin-bottom: 15px;
 }
 .login-container > img {
-    margin-top: 15px;
-    margin-bottom: 30px;
+  margin-top: 15px;
+  margin-bottom: 30px;
 }
 
 .login-container extra {
-    margin: 0;
+  margin: 0;
 }
 .login-container > a {
-    text-decoration: underline;
-    cursor: pointer;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 /* Navbar */
 nav.tab-menu {
-    background-color: #333;
-    position: fixed;
-    top: 0;
-    width: 100%;
-    border-bottom: 5px solid #3ba4d7; 
-    box-shadow: 0 5px 5px #aaa;
+  background-color: #333;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  border-bottom: 5px solid #3ba4d7;
+  box-shadow: 0 5px 5px #aaa;
 }
 a.tab-menu-item {
-    padding: 1em;
-    text-align: center;
-    text-decoration: none;
-    color: #ccc;
-    font-size: 0.9em;
-    /* CSS capitalization is magical! */
-    text-transform: capitalize;
-    transition: all 0.5s;
-    /* To vertically stack child nodes */
-    display: inline-flex;
-    flex-direction: column;
-} .tab-menu-item:hover {
-    background-color: #999;
-} .tab-menu-item.selected-tab-item {
-    background-color: #3ba4d7;
-    color: white;
+  padding: 1em;
+  text-align: center;
+  text-decoration: none;
+  color: #ccc;
+  font-size: 0.9em;
+  /* CSS capitalization is magical! */
+  text-transform: capitalize;
+  transition: all 0.5s;
+  /* To vertically stack child nodes */
+  display: inline-flex;
+  flex-direction: column;
+}
+.tab-menu-item:hover {
+  background-color: #999;
+}
+.tab-menu-item.selected-tab-item {
+  background-color: #3ba4d7;
+  color: white;
 }
 
 .sidebar {
-    position: fixed;
-    height: 100%;
-    width: 200px;
-    background-color: white;
-} .sidebar a {
-    text-decoration: none;
-    text-transform: capitalize;
-    padding: 1em;
-    cursor: pointer;
-    display: block;
-    font-size: 0.95em;
-    color: #999;
-}.sidebar a:hover {
-    color: #222;
-}.sidebar .selected-sidebar-link {
-    font-weight: bold;
-    color: #222;
-    border-left: 5px solid #3ba4d7;
-    animation: expand-left-border 0.1s;
+  position: fixed;
+  height: 100%;
+  width: 200px;
+  background-color: white;
+}
+.sidebar a {
+  text-decoration: none;
+  text-transform: capitalize;
+  padding: 1em;
+  cursor: pointer;
+  display: block;
+  font-size: 0.95em;
+  color: #999;
+}
+.sidebar a:hover {
+  color: #222;
+}
+.sidebar .selected-sidebar-link {
+  font-weight: bold;
+  color: #222;
+  border-left: 5px solid #3ba4d7;
+  animation: expand-left-border 0.1s;
 }
 /* Content adjacent to sidebar */
 .node-panel {
-    margin-left: 200px;
-    animation: fadein 0.5s;
+  margin-left: 200px;
+  animation: fadein 0.5s;
 }
 .widget-group {
 }
