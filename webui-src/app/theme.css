@@ -130,6 +130,9 @@ hr {
   grid-row-gap: 16px;
   justify-content: start;
 }
+.grid-2col input[type="checkbox"] {
+  margin-top: 20px;
+}
 
 .error {
   color: red;
