@@ -154,9 +154,9 @@ const FriendsList = () => {
           console.log(id);
           if (online == "online" && Data.gpgDetails[id].isOnline)
             return m(Friend, {id});
-          if (online == "Offline" && !Data.gpgDetails[id].isOnline)
+          if (online == "offline" && !Data.gpgDetails[id].isOnline)
             return m(Friend, {id});
-          // return m(Friend, {id});
+          
         }),
       ]),
   };
