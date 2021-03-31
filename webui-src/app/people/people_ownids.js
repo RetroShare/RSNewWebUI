@@ -1,6 +1,9 @@
-let m = require("mithril");
-let rs = require("rswebui");
-let widget = require("widgets");
+
+let m = require('mithril');
+let rs = require('rswebui');
+let widget = require('widgets');
+let people_util = require('people/people_util')
+
 
 const CreateIdentity = () => {
   // TODO: set user avatar
@@ -123,24 +126,25 @@ const DeleteIdentity = () => {
 
 const Identity = () => {
   let details = {};
-  let avatarURI = "";
+
+  let avatarURI = {
+    view: () => []
+  }
+
   return {
     oninit: (v) =>
-      rs.rsJsonApiRequest(
-        "/rsIdentity/getIdDetails",
-        {
-          id: v.attrs.id,
-        },
-        (data) => {
-          details = data.details;
-          // Creating URI during fetch because `details` is uninitialized
-          // during view run, due to request being async.
-          avatarURI =
-            data.details.mAvatar.mData.base64 === ""
-              ? ""
-              : "data:image/png;base64," + data.details.mAvatar.mData.base64;
-        }
-      ),
+    rs.rsJsonApiRequest(
+      '/rsIdentity/getIdDetails',
+      {
+        id: v.attrs.id,
+      },
+      data => {
+        details = data.details
+        // Creating URI during fetch because `details` is uninitialized
+        // during view run, due to request being async.
+        avatarURI = people_util.createAvatarURI(data.details.mAvatar)
+      },
+    ),
     view: (v) =>
       m(
         ".identity",
@@ -148,33 +152,21 @@ const Identity = () => {
           key: details.mId,
         },
         [
-          m("img.avatar", {
-            src: avatarURI,
-          }),
-          m("h4", details.mNickname),
-          m(".details", [
-            m("p", "ID:"),
-            m("p", details.mId),
-            m("p", "Type:"),
-            m("p", details.mFlags === 14 ? "Signed ID" : "Anonymous ID"),
-            m("p", "Owner node ID:"),
-            m("p", details.mPgpId),
-            m("p", "Created on:"),
-            m(
-              "p",
-              typeof details.mPublishTS === "object"
-                ? new Date(details.mPublishTS.xint64 * 1000).toLocaleString()
-                : "undefiend"
-            ),
-            m("p", "Last used:"),
-            m(
-              "p",
-              typeof details.mLastUsageTS === "object"
-                ? new Date(
-                    details.mLastUsageTS.xint64 * 1000
-                  ).toLocaleDateString()
-                : "undefiend"
-            ),
+
+          m('h4', details.mNickname),
+          m(avatarURI),
+          m('.details', [
+            m('p', 'ID:'),
+            m('p', details.mId),
+            m('p', 'Type:'),
+            m('p', details.mFlags === 14 ? 'Signed ID' : 'Anonymous ID'),
+            m('p', 'Owner node ID:'),
+            m('p', details.mPgpId),
+            m('p', 'Created on:'),
+            m('p', typeof details.mPublishTS ==='object' ? new Date(details.mPublishTS.xint64 * 1000).toLocaleString():'undefiend'),
+            m('p', 'Last used:'),
+            m('p', typeof details.mLastUsageTS ==='object' ? new Date(details.mLastUsageTS.xint64 * 1000).toLocaleDateString():'undefiend'),
+
           ]),
           m(
             "button",
@@ -208,24 +200,14 @@ const Identity = () => {
 
 const Layout = () => {
   let ownIds = [];
-  let pseudonIds = [];
   return {
-    oninit: () => {
-      rs.rsJsonApiRequest(
-        "/rsIdentity/getOwnSignedIds",
-        {},
-        (data) => (ownIds = data.ids)
-      );
-      rs.rsJsonApiRequest(
-        "/rsIdentity/getOwnPseudonimousIds",
-        {},
-        (data) => (pseudonIds = data.ids)
-      );
-    },
+
+    oninit: () => people_util.ownIds(data => ownIds = data),
     view: () =>
-      m(".widget", [
-        m("h3", "Own Identities"),
-        m("hr"),
+      m('.widget', [
+        m('h3', 'Own Identities', m('span.counter', ownIds.length)),
+        m('hr'),
+
         m(
           "button",
           {
@@ -238,11 +220,7 @@ const Layout = () => {
             id,
           })
         ),
-        pseudonIds.map((id) =>
-          m(Identity, {
-            id,
-          })
-        ),
+
       ]),
   };
 };

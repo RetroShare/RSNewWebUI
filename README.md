@@ -64,6 +64,11 @@ Usage
 -----
 Go to `RsNewWebUI/webui/` and open the `index.html` file in your browser.
 
+References
+----------
+* [mithril](https://mithril.js.org/hyperscript.html)
+* list files with @jsonapi in libretroshare/src/retroshare of [retroshare](https://github.com/RetroShare/RetroShare): `grep -c "@jsonapi" *.h|grep -v ":0"`
+
 Contributing
 ------------
 ### Bug Reports & Feature requests
