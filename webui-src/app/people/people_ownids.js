@@ -1,71 +1,74 @@
-let m = require('mithril');
-let rs = require('rswebui');
-let widget = require('widgets');
+let m = require("mithril");
+let rs = require("rswebui");
+let widget = require("widgets");
 
 const CreateIdentity = () => {
   // TODO: set user avatar
-  let name = '',
-    pgpPassword = '',
+  let name = "",
+    pgpPassword = "",
     pseudonimous = false;
   return {
     view: () => [
-      m('i.fas.fa-user-plus'),
-      m('h3', 'Create new Identity'),
-      m('hr'),
-      m('input[type=text][placeholder=Name]', {
+      m("i.fas.fa-user-plus"),
+      m("h3", "Create new Identity"),
+      m("hr"),
+      m("input[type=text][placeholder=Name]", {
         value: name,
-        oninput: e => (name = e.target.value),
+        oninput: (e) => (name = e.target.value),
       }),
-      'Type:',
+      "Type:",
       m(
-        'select',
+        "select",
         {
           value: pseudonimous,
-          oninput: e => (type = e.target.value),
+          oninput: (e) => {
+            if (e.target.value == "false") pseudonimous = false;
+            else pseudonimous = true;
+          },
         },
         [
-          m('option[value=false]', 'Linked to your Profile'),
-          m('option[value=true]', 'Pseudonymous'),
-        ],
+          m("option[value=false]", "Linked to your Profile"),
+          m("option[value=true]", "Pseudonymous"),
+        ]
       ),
-      m('br'),
-      m('input[type=password][placeholder=Retroshare Passphrase]', {
+      m("br"),
+      m("input[type=password][placeholder=Retroshare Passphrase]", {
         value: pgpPassword,
-        oninput: e => (pgpPassword = e.target.value),
+        oninput: (e) => (pgpPassword = e.target.value),
       }),
       m(
-        'p',
-        'You can have one or more identities. ' +
-          'They are used when you chat in lobbies, ' +
-          'forums and channel comments. ' +
-          'They act as the destination for distant chat and ' +
-          'the Retroshare distant mail system.',
+        "p",
+        "You can have one or more identities. " +
+          "They are used when you chat in lobbies, " +
+          "forums and channel comments. " +
+          "They act as the destination for distant chat and " +
+          "the Retroshare distant mail system."
       ),
       m(
-        'button',
+        "button",
         {
           onclick: () =>
             rs.rsJsonApiRequest(
-              '/rsIdentity/createIdentity',
+              "/rsIdentity/createIdentity",
               {
                 name,
                 pseudonimous,
                 pgpPassword,
               },
-              data => {
+              (data) => {
                 const message = data.retval
-                  ? 'Successfully created identity.'
-                  : 'An error occured while creating identity.';
+                  ? "Successfully created identity."
+                  : "An error occured while creating identity.";
                 widget.popupMessage([
-                  m('h3', 'Create new Identity'),
-                  m('hr'),
+                  m("h3", "Create new Identity"),
+                  m("hr"),
                   message,
                 ]);
                 m.redraw();
-              },
+              }
             ),
         },
-        'Create',
+        "Create"
       ),
     ],
   };
@@ -74,45 +77,45 @@ const CreateIdentity = () => {
 const EditIdentity = () => {
   return {
     view: () => [
-      m('i.fas.fa-user-edit'),
-      m('h3', 'Edit Identity'),
-      m('hr'),
-      m('input[type=text][placeholder=Name]', {}),
-      m('canvas'),
-      m('button', 'Save'),
+      m("i.fas.fa-user-edit"),
+      m("h3", "Edit Identity"),
+      m("hr"),
+      m("input[type=text][placeholder=Name]", {}),
+      m("canvas"),
+      m("button", "Save"),
     ],
   };
 };
 
 const DeleteIdentity = () => {
   return {
-    view: v => [
-      m('i.fas.fa-user-times'),
-      m('h3', 'Delete Identity: ' + v.attrs.name),
-      m('hr'),
+    view: (v) => [
+      m("i.fas.fa-user-times"),
+      m("h3", "Delete Identity: " + v.attrs.name),
+      m("hr"),
       m(
-        'p',
-        'Are you sure you want to delete this Identity? It cannot be undone',
+        "p",
+        "Are you sure you want to delete this Identity? It cannot be undone"
       ),
       m(
-        'button',
+        "button",
         {
           onclick: () =>
             rs.rsJsonApiRequest(
-              '/rsIdentity/deleteIdentity',
+              "/rsIdentity/deleteIdentity",
               {
                 id: v.attrs.id,
               },
               () =>
                 widget.popupMessage([
-                  m('i.fas.fa-user-edit'),
-                  m('h3', 'Delete Identity: ' + v.attrs.name),
-                  m('hr'),
-                  m('p', 'Identity Deleted successfuly.'),
-                ]),
+                  m("i.fas.fa-user-edit"),
+                  m("h3", "Delete Identity: " + v.attrs.name),
+                  m("hr"),
+                  m("p", "Identity Deleted successfuly."),
+                ])
             ),
         },
-        'Confirm',
+        "Confirm"
       ),
     ],
   };
@@ -120,70 +123,85 @@ const DeleteIdentity = () => {
 
 const Identity = () => {
   let details = {};
-  let avatarURI = '';
+  let avatarURI = "";
   return {
-    oninit: v =>
+    oninit: (v) =>
       rs.rsJsonApiRequest(
-        '/rsIdentity/getIdDetails',
+        "/rsIdentity/getIdDetails",
         {
           id: v.attrs.id,
         },
-        data => {
+        (data) => {
           details = data.details;
           // Creating URI during fetch because `details` is uninitialized
           // during view run, due to request being async.
-          avatarURI = data.details.mAvatar.mData.base64 === '' ? '' : 'data:image/png;base64,' + data.details.mAvatar.mData.base64;
-        },
+          avatarURI =
+            data.details.mAvatar.mData.base64 === ""
+              ? ""
+              : "data:image/png;base64," + data.details.mAvatar.mData.base64;
+        }
       ),
-    view: v =>
+    view: (v) =>
       m(
-        '.identity',
+        ".identity",
         {
           key: details.mId,
         },
         [
-          m('img.avatar', {
+          m("img.avatar", {
             src: avatarURI,
           }),
-          m('h4', details.mNickname),
-          m('.details', [
-            m('p', 'ID:'),
-            m('p', details.mId),
-            m('p', 'Type:'),
-            m('p', details.mFlags === 14 ? 'Signed ID' : 'Anonymous ID'),
-            m('p', 'Owner node ID:'),
-            m('p', details.mPgpId),
-            m('p', 'Created on:'),
-            m('p', typeof details.mPublishTS ==='object' ? new Date(details.mPublishTS.xint64 * 1000).toLocaleString():'undefiend'),
-            m('p', 'Last used:'),
-            m('p', typeof details.mLastUsageTS ==='object' ? new Date(details.mLastUsageTS.xint64 * 1000).toLocaleDateString():'undefiend'),
+          m("h4", details.mNickname),
+          m(".details", [
+            m("p", "ID:"),
+            m("p", details.mId),
+            m("p", "Type:"),
+            m("p", details.mFlags === 14 ? "Signed ID" : "Anonymous ID"),
+            m("p", "Owner node ID:"),
+            m("p", details.mPgpId),
+            m("p", "Created on:"),
+            m(
+              "p",
+              typeof details.mPublishTS === "object"
+                ? new Date(details.mPublishTS.xint64 * 1000).toLocaleString()
+                : "undefiend"
+            ),
+            m("p", "Last used:"),
+            m(
+              "p",
+              typeof details.mLastUsageTS === "object"
+                ? new Date(
+                    details.mLastUsageTS.xint64 * 1000
+                  ).toLocaleDateString()
+                : "undefiend"
+            ),
           ]),
           m(
-            'button',
+            "button",
             {
               onclick: () =>
                 widget.popupMessage(
                   m(EditIdentity, {
                     details,
-                  }),
+                  })
                 ),
             },
-            'Edit',
+            "Edit"
           ),
           m(
-            'button.red',
+            "button.red",
             {
               onclick: () =>
                 widget.popupMessage(
                   m(DeleteIdentity, {
                     id: details.mId,
                     name: details.mNickname,
-                  }),
+                  })
                 ),
             },
-            'Delete',
+            "Delete"
           ),
-        ],
+        ]
       ),
   };
 };
@@ -194,36 +212,36 @@ const Layout = () => {
   return {
     oninit: () => {
       rs.rsJsonApiRequest(
-        '/rsIdentity/getOwnSignedIds',
+        "/rsIdentity/getOwnSignedIds",
         {},
-        data => (ownIds = data.ids),
+        (data) => (ownIds = data.ids)
       );
       rs.rsJsonApiRequest(
-        '/rsIdentity/getOwnPseudonimousIds',
+        "/rsIdentity/getOwnPseudonimousIds",
         {},
-        data => (pseudonIds = data.ids),
+        (data) => (pseudonIds = data.ids)
       );
     },
     view: () =>
-      m('.widget', [
-        m('h3', 'Own Identities'),
-        m('hr'),
+      m(".widget", [
+        m("h3", "Own Identities"),
+        m("hr"),
         m(
-          'button',
+          "button",
           {
             onclick: () => widget.popupMessage(m(CreateIdentity)),
           },
-          'New Identity',
+          "New Identity"
         ),
-        ownIds.map(id =>
+        ownIds.map((id) =>
           m(Identity, {
             id,
-          }),
+          })
         ),
-        pseudonIds.map(id =>
+        pseudonIds.map((id) =>
           m(Identity, {
             id,
-          }),
+          })
         ),
       ]),
   };
