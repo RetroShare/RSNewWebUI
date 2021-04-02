@@ -215,7 +215,7 @@ const DeleteIdentity = () => {
       m("hr"),
       m(
         "p",
-        "Are you sure you want to delete this Identity? It cannot be undone"
+        "Are you sure you want to delete this Identity? It cannot be restore"
       ),
       m(
         "button",
