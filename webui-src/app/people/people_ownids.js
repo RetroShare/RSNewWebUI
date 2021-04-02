@@ -2,6 +2,10 @@ let m = require("mithril");
 let rs = require("rswebui");
 let widget = require("widgets");
 let people_util = require("people/people_util");
+function checksudo(data) {
+  if (data === "0000000000000000") return true;
+  return false;
+}
 
 const CreateIdentity = () => {
   // TODO: set user avatar
@@ -337,7 +341,7 @@ const Layout = () => {
         m(
           "button",
           {
-            onclick: () => widget.popupMessage(m(CreateIdentity)),
+            onclick: () => widget.popupMessage(m(CreateIdentity, {})),
           },
           "New Identity"
         ),
