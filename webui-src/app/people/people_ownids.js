@@ -9,7 +9,7 @@ const CreateIdentity = () => {
     pgpPassword = "",
     pseudonimous = false;
   return {
-    view: () => [
+    view: (v) => [
       m("i.fas.fa-user-plus"),
       m("h3", "Create new Identity"),
       m("hr"),
@@ -48,26 +48,67 @@ const CreateIdentity = () => {
       m(
         "button",
         {
-          onclick: () =>
-            rs.rsJsonApiRequest(
-              "/rsIdentity/createIdentity",
-              {
-                name,
-                pseudonimous,
-                pgpPassword,
-              },
-              (data) => {
-                const message = data.retval
-                  ? "Successfully created identity."
-                  : "An error occured while creating identity.";
-                widget.popupMessage([
-                  m("h3", "Create new Identity"),
-                  m("hr"),
-                  message,
-                ]);
-                m.redraw();
-              }
-            ),
+          onclick: () => {
+            if (pseudonimous == false) {
+              let paraphase = "";
+              widget.popupMessage([
+                m("i.fas.fa-user-edit"),
+                m("h3", "Enter your passpharse"),
+                m("hr"),
+
+                m("input[type=password][placeholder=Passpharse]", {
+                  style: "margin-top:50px;width:80%",
+                  oninput: (e) => {
+                    paraphase = e.target.value;
+                  },
+                }),
+                m(
+                  "button",
+                  {
+                    style: "margin-top:160px;",
+                    onclick: () =>
+                      rs.rsJsonApiRequest(
+                        "/rsIdentity/createIdentity",
+                        {
+                          name,
+                          pseudonimous,
+                          paraphase,
+                        },
+                        (data) => {
+                          const message = data.retval
+                            ? "Successfully created identity."
+                            : "An error occured while creating identity.";
+                          widget.popupMessage([
+                            m("h3", "Create new Identity"),
+                            m("hr"),
+                            message,
+                          ]);
+                        }
+                      ),
+                  },
+                  "Save"
+                ),
+              ]);
+            } else
+              rs.rsJsonApiRequest(
+                "/rsIdentity/createIdentity",
+                {
+                  name,
+                  pseudonimous,
+                  pgpPassword,
+                },
+                (data) => {
+                  const message = data.retval
+                    ? "Successfully created identity."
+                    : "An error occured while creating identity.";
+                  widget.popupMessage([
+                    m("h3", "Create new Identity"),
+                    m("hr"),
+                    message,
+                  ]);
+                }
+              );
+          },
         },
         "Create"
       ),
@@ -76,46 +117,89 @@ const CreateIdentity = () => {
 };
 
 const EditIdentity = () => {
-  let name = "",
+  let name = "";
   return {
     view: (v) => [
-     
       m("i.fas.fa-user-edit"),
       m("h3", "Edit Identity"),
       m("hr"),
       m("input[type=text][placeholder=Name]", {
         value: name,
         oninput: (e) => {
-          console.log(v.attrs.details);
-          name = e.target.value;},
+          name = e.target.value;
+        },
       }),
       m("canvas"),
       m(
         "button",
         {
-          onclick: () =>
-          rs.rsJsonApiRequest(
-            "/rsIdentity/createIdentity",
-            {
-              id: v.attrs.details.mId,
-              name:name,
-              avatar:v.attrs.details.mAvatar,
-              pseudonimous:v.attrs.details.pseudonimous
-
-              
-            },
-            (data) => {
-              const message = data.retval
-                ? "Successfully Updated identity."
-                : "An error occured while updating  identity.";
+          onclick: () => {
+            if (!checksudo(v.attrs.details.mPgpId)) {
+              console.log(v.attrs.details.mPgpId);
+              let paraphase = "";
               widget.popupMessage([
-                m("h3", "Update Identity"),
+                m("i.fas.fa-user-edit"),
+                m("h3", "Enter your passpharse"),
                 m("hr"),
-                message,
+
+                m("input[type=password][placeholder=Passpharse]", {
+                  style: "margin-top:50px;width:80%",
+                  oninput: (e) => {
+                    paraphase = e.target.value;
+                  },
+                }),
+                m(
+                  "button",
+                  {
+                    style: "margin-top:160px;",
+                    onclick: () =>
+                      rs.rsJsonApiRequest(
+                        "/rsIdentity/updateIdentity",
+                        {
+                          id: v.attrs.details.mId,
+                          name: name,
+                          //avatar: v.attrs.details.mAvatar.mData.base64,
+                          pseudonimous: checksudo(v.attrs.details.mPgpId),
+                          pgpPassword: paraphase,
+                        },
+                        (data) => {
+                          const message = data.retval
+                            ? "Successfully Updated identity."
+                            : "An error occured while updating  identity.";
+                          widget.popupMessage([
+                            m("h3", "Create new Identity"),
+                            m("hr"),
+                            message,
+                          ]);
+                        }
+                      ),
+                  },
+                  "Save"
+                ),
               ]);
-              m.redraw();
+            } else {
+              rs.rsJsonApiRequest(
+                "/rsIdentity/updateIdentity",
+                {
+                  id: v.attrs.details.mId,
+                  name: name,
+                  //avatar: v.attrs.details.mAvatar.mData.base64,
+                  pseudonimous: checksudo(v.attrs.details.mPgpId),
+                },
+                (data) => {
+                  const message = data.retval
+                    ? "Successfully Updated identity."
+                    : "An error occured while updating  identity.";
+                  widget.popupMessage([
+                    m("h3", "Update Identity"),
+                    m("hr"),
+                    message,
+                  ]);
+                  m.redraw();
+                }
+              );
             }
-          ),
+          },
         },
         "Save"
       ),
