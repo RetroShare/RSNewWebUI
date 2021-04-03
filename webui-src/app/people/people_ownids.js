@@ -10,9 +10,18 @@ function checksudo(data) {
 const CreateIdentity = () => {
   // TODO: set user avatar
   let name = "",
+    id = "",
     pgpPassword = "",
     pseudonimous = false;
   return {
+    oninit: (v) =>
+      rs.rsJsonApiRequest("/rsIdentity/getOwnSignedIds", {}, (owns) => {
+        if (owns.ids.length > 0) {
+          console.log(owns.ids);
+          id = owns.ids[0];
+          console.log(id);
+        }
+      }),
     view: (v) => [
       m("i.fas.fa-user-plus"),
       m("h3", "Create new Identity"),
@@ -74,9 +83,11 @@ const CreateIdentity = () => {
                       rs.rsJsonApiRequest(
                         "/rsIdentity/createIdentity",
                         {
-                          name,
-                          pseudonimous,
-                          paraphase,
+                          id: id,
+                          name: name,
+                          //avatar: v.attrs.details.mAvatar.mData.base64,
+                          pseudonimous: pseudonimous,
+                          pgpPassword: paraphase,
                         },
                         (data) => {
                           const message = data.retval
@@ -90,7 +101,7 @@ const CreateIdentity = () => {
                         }
                       ),
                   },
-                  "Save"
+                  "Enter"
                 ),
               ]);
             } else
@@ -178,7 +189,7 @@ const EditIdentity = () => {
                         }
                       ),
                   },
-                  "Save"
+                  "Enter"
                 ),
               ]);
             } else {
