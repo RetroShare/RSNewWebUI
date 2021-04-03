@@ -14,14 +14,6 @@ const CreateIdentity = () => {
     pgpPassword = "",
     pseudonimous = false;
   return {
-    oninit: (v) =>
-      rs.rsJsonApiRequest("/rsIdentity/getOwnSignedIds", {}, (owns) => {
-        if (owns.ids.length > 0) {
-          console.log(owns.ids);
-          id = owns.ids[0];
-          console.log(id);
-        }
-      }),
     view: (v) => [
       m("i.fas.fa-user-plus"),
       m("h3", "Create new Identity"),
@@ -79,27 +71,39 @@ const CreateIdentity = () => {
                   "button",
                   {
                     style: "margin-top:160px;",
-                    onclick: () =>
+                    onclick: () => {
                       rs.rsJsonApiRequest(
-                        "/rsIdentity/createIdentity",
-                        {
-                          id: id,
-                          name: name,
-                          //avatar: v.attrs.details.mAvatar.mData.base64,
-                          pseudonimous: pseudonimous,
-                          pgpPassword: paraphase,
-                        },
-                        (data) => {
-                          const message = data.retval
-                            ? "Successfully created identity."
-                            : "An error occured while creating identity.";
-                          widget.popupMessage([
-                            m("h3", "Create new Identity"),
-                            m("hr"),
-                            message,
-                          ]);
+                        "/rsIdentity/getOwnSignedIds",
+                        {},
+                        (owns) => {
+                          if (owns.ids.length > 0) {
+                            console.log(owns.ids);
+                            id = owns.ids[0];
+                            console.log(id);
+                          }
+                          rs.rsJsonApiRequest(
+                            "/rsIdentity/createIdentity",
+                            {
+                              id: id,
+                              name: name,
+                              //avatar: v.attrs.details.mAvatar.mData.base64,
+                              pseudonimous: pseudonimous,
+                              pgpPassword: paraphase,
+                            },
+                            (data) => {
+                              const message = data.retval
+                                ? "Successfully created identity."
+                                : "An error occured while creating identity.";
+                              widget.popupMessage([
+                                m("h3", "Create new Identity"),
+                                m("hr"),
+                                message,
+                              ]);
+                            }
+                          );
                         }
-                      ),
+                      );
+                    },
                   },
                   "Enter"
                 ),
