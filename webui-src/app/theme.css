@@ -191,21 +191,21 @@ hr {
   position: fixed;
   z-index: 1;
   height: 100%;
-}
-#modal-container {
   top: 0;
   left: 0;
   width: 100%;
   background-color: rgba(0, 0, 0, 0.2);
 }
+
 .modal-content {
   position: absolute;
   color: #555;
   width: 40%;
-  height: 40%;
+  /*height: 40%;*/
+  min-height: 250px;
   transform: translate(60%, 50%);
   background-color: white;
-  padding: 1em;
+  padding: 2em;
   border-radius: 20px;
   animation: fadein 0.5s;
 }

@@ -2,6 +2,7 @@ let m = require("mithril");
 let rs = require("rswebui");
 let widget = require("widgets");
 let people_util = require("people/people_util");
+
 function checksudo(data) {
   if (data === "0000000000000000") return true;
   return false;
@@ -22,19 +23,28 @@ const CreateIdentity = () => {
         value: name,
         oninput: (e) => (name = e.target.value),
       }),
-      "Type:",
       m(
-        "select",
+        "div",
         {
-          value: pseudonimous,
-          oninput: (e) => {
-            if (e.target.value == "false") pseudonimous = false;
-            else pseudonimous = true;
-          },
+          style: "display:inline; margin-left:5px;",
         },
         [
-          m("option[value=false]", "Linked to your Profile"),
-          m("option[value=true]", "Pseudonymous"),
+          "Type:",
+          m(
+            "select",
+            {
+              value: pseudonimous,
+              style: "border:1px solid black",
+              oninput: (e) => {
+                if (e.target.value == "false") pseudonimous = false;
+                else pseudonimous = true;
+              },
+            },
+            [
+              m("option[value=false]", "Linked to your Profile"),
+              m("option[value=true]", "Pseudonymous"),
+            ]
+          ),
         ]
       ),
       m("br"),
