@@ -3,11 +3,6 @@ let rs = require("rswebui");
 let widget = require("widgets");
 let people_util = require("people/people_util");
 
-function checksudo(data) {
-  if (data === "0000000000000000") return true;
-  return false;
-}
-
 const SignedIdentiy = () => {
   let passphase = "";
   let id = "";
@@ -28,40 +23,37 @@ const SignedIdentiy = () => {
         {
           style: "margin-top:160px;",
           onclick: () => {
-            new Promise(function (resolve, reject) {
-              rs.rsJsonApiRequest("/rsIdentity/getOwnSignedIds", {}, (owns) => {
-                owns.ids.length > 0 ? resolve(owns.ids[0]) : resolve(id);
-              });
-            })
-              .then(function (result) {
-                return new Promise((resolve, reject) => {
-                  if (result === "") resolve(false);
+            rs.rsJsonApiRequest("/rsIdentity/getOwnSignedIds", {}, (owns) => {
+              console.log(owns.ids[0]);
+              console.log(v.attrs.name);
 
-                  rs.rsJsonApiRequest(
+              owns.ids.length > 0
+                ? rs.rsJsonApiRequest(
                     "/rsIdentity/createIdentity",
                     {
-                      id: result,
+                      id: owns.ids[0],
                       name: v.attrs.name,
-                      //avatar: v.attrs.details.mAvatar.mData.base64,
-                      pseudonimous: v.attrs.pseudonimous,
+                      pseudonimous: false,
                       pgpPassword: passphase,
                     },
                     (data) => {
-                      resolve(data.retval);
+                      const message = data.retval
+                        ? "Successfully created identity."
+                        : "An error occured while creating identity.";
+                      console.log(message);
+                      widget.popupMessage([
+                        m("h3", "Create new Identity"),
+                        m("hr"),
+                        message,
+                      ]);
                     }
-                  );
-                });
-              })
-              .then(function (result) {
-                const message = result
-                  ? "Successfully created identity."
-                  : "An error occured while creating identity.";
-                widget.popupMessage([
-                  m("h3", "Create new Identity"),
-                  m("hr"),
-                  message,
-                ]);
-              });
+                  )
+                : widget.popupMessage([
+                    m("h3", "Create new Identity"),
+                    m("hr"),
+                    "An error occured while creating identity.",
+                  ]);
+            });
           },
         },
         "Enter"
@@ -97,7 +89,7 @@ const CreateIdentity = () => {
               value: pseudonimous,
               style: "border:1px solid black",
               oninput: (e) => {
-                pseudonimous = e.target.value === "true" ? true : false;
+                pseudonimous = e.target.value === "true";
                 console.log(pseudonimous);
               },
             },
@@ -126,9 +118,7 @@ const CreateIdentity = () => {
         {
           onclick: () => {
             !pseudonimous
-              ? widget.popupMessage(
-                  m(SignedIdentiy, {name: name, pseudonimous: pseudonimous})
-                )
+              ? widget.popupMessage(m(SignedIdentiy, {name: name}))
               : rs.rsJsonApiRequest(
                   "/rsIdentity/createIdentity",
                   {
@@ -179,7 +169,7 @@ const SignedEditIdentity = () => {
               {
                 id: v.attrs.details.mId,
                 name: v.attrs.name,
-                pseudonimous: checksudo(v.attrs.details.mPgpId),
+                pseudonimous: false,
                 pgpPassword: passphase,
               },
               (data) => {
@@ -218,7 +208,7 @@ const EditIdentity = () => {
         "button",
         {
           onclick: () => {
-            !checksudo(v.attrs.details.mPgpId)
+            people_util.checksudo(v.attrs.details.mPgpId)
               ? widget.popupMessage([
                   m(SignedEditIdentity, {
                     name: name,
@@ -231,7 +221,7 @@ const EditIdentity = () => {
                     id: v.attrs.details.mId,
                     name: name,
                     //avatar: v.attrs.details.mAvatar.mData.base64,
-                    pseudonimous: checksudo(v.attrs.details.mPgpId),
+                    pseudonimous: true,
                   },
                   (data) => {
                     const message = data.retval
