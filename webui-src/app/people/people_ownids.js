@@ -208,7 +208,7 @@ const EditIdentity = () => {
         "button",
         {
           onclick: () => {
-            people_util.checksudo(v.attrs.details.mPgpId)
+            !people_util.checksudo(v.attrs.details.mPgpId)
               ? widget.popupMessage([
                   m(SignedEditIdentity, {
                     name: name,
