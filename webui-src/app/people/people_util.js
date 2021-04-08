@@ -77,4 +77,5 @@ module.exports = {
   sortIds,
   ownIds,
   createAvatarURI,
+  checksudo
 };
