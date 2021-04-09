@@ -124,7 +124,6 @@ const SearchBar = () => {
 };
 
 const FriendsList = () => {
-  let online = "online";
   return {
     oninit: () => {
       Data.refreshGpgDetails();
@@ -136,28 +135,17 @@ const FriendsList = () => {
     },
     view: () =>
       m(".widget", [
-        m(".sort", {}, [
-          m("span", "Friends Node"),
-          m(
-            "select",
-            {
-              oninput: (e) => (online = e.target.value),
-              value: online,
-              onchange: online,
-            },
-            [m("option", "online"), m("option", "offline")]
-          ),
-        ]),
-
+        m("h3", "Friend nodes"),
         m("hr"),
-        Object.keys(Data.gpgDetails).map((id) => {
-          console.log(id);
-          if (online == "online" && Data.gpgDetails[id].isOnline)
+
+        Object.entries(Data.gpgDetails)
+          .sort((a, b) => {
+            return a[1].isOnline === b[1].isOnline ? 0 : a[1].isOnline ? -1 : 1;
+          })
+          .map((item) => {
+            id = item[0];
             return m(Friend, {id});
-          if (online == "offline" && !Data.gpgDetails[id].isOnline)
-            return m(Friend, {id});
-          
-        }),
+          }),
       ]),
   };
 };
