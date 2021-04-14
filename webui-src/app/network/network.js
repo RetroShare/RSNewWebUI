@@ -138,7 +138,15 @@ const FriendsList = () => {
       m(".widget", [
         m("h3", "Friend nodes"),
         m("hr"),
-        Object.keys(Data.gpgDetails).map((id) => m(Friend, {id})),
+
+        Object.entries(Data.gpgDetails)
+          .sort((a, b) => {
+            return a[1].isOnline === b[1].isOnline ? 0 : a[1].isOnline ? -1 : 1;
+          })
+          .map((item) => {
+            id = item[0];
+            return m(Friend, {id});
+          }),
       ]),
   };
 };

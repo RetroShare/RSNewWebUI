@@ -5,7 +5,7 @@ let people_util = require("people/people_util");
 
 const SignedIdentiy = () => {
   let passphase = "";
-  let id = "";
+
   return {
     view: (v) => [
       m("i.fas.fa-user-edit"),
@@ -64,8 +64,6 @@ const SignedIdentiy = () => {
 const CreateIdentity = () => {
   // TODO: set user avatar
   let name = "",
-    id = "",
-    pgpPassword = "",
     pseudonimous = false;
   return {
     view: (v) => [
@@ -101,10 +99,7 @@ const CreateIdentity = () => {
         ]
       ),
       m("br"),
-      m("input[type=password][placeholder=Retroshare Passphrase]", {
-        value: pgpPassword,
-        oninput: (e) => (pgpPassword = e.target.value),
-      }),
+
       m(
         "p",
         "You can have one or more identities. " +
@@ -124,7 +119,6 @@ const CreateIdentity = () => {
                   {
                     name,
                     pseudonimous,
-                    pgpPassword,
                   },
                   (data) => {
                     const message = data.retval
@@ -232,7 +226,6 @@ const EditIdentity = () => {
                       m("hr"),
                       message,
                     ]);
-                    m.redraw();
                   }
                 );
           },
@@ -269,8 +262,6 @@ const DeleteIdentity = () => {
                   m("hr"),
                   m("p", "Identity Deleted successfuly."),
                 ]);
-
-                m.redraw();
               }
             ),
         },
