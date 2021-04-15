@@ -34,6 +34,11 @@
   grid-template-columns: auto auto;
   justify-content: start;
 }
+.friend .brief-info {
+  display: flex;
+  align-items: center;
+  justify-self: start;
+}
 
 .friend .fa-times-circle {
   color: #555;

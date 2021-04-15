@@ -31,8 +31,8 @@ const Locations = () => {
       m("h4", "Locations"),
       v.attrs.locations.map((loc) =>
         m(".location", [
-          m("i.fas.fa-user-tag"),
-          m("span", loc.name),
+          m("i.fas.fa-user-tag", {style: "margin-top:3px"}),
+          m("span", {style: "margin-top:1px"}, loc.name),
           m("p", "ID :"),
           m("p", loc.id),
           m("p", "Last contacted :"),
@@ -73,6 +73,7 @@ const Friend = () => {
         [
           m("i.fas.fa-angle-right", {
             class: "fa-rotate-" + (vnode.state.isExpanded ? "90" : "0"),
+            style: "margin-top:12px",
             onclick: () => (vnode.state.isExpanded = !vnode.state.isExpanded),
           }),
           m(
