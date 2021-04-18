@@ -1,37 +1,36 @@
-let m = require('mithril');
-let rs = require('rswebui');
-let util = require('files/files_util')
-
+const m = require('mithril');
+const rs = require('rswebui');
 
 let matchString = '';
 const SearchBar = () => {
   return {
-    view: () => m('input[type=text][placeholder=search]', {
-      value: matchString,
-      oninput: (e) => matchString = e.target.value,
-      onchange: (e) => {
-        console.log('searching for string: ', matchString);
-        //let source = new EventSource(
-        //  'http://127.0.0.1:9092/rsFiles/turtleSearchRequest', {
-        //    withCredentials: true
-        //  });
-        rs.rsJsonApiRequest('/rsfiles/turtleSearchRequest', {
-          matchString
-        }, (data, stat) => {
-          console.log('got: ', stat, ' data: ', data);
-        })
-      },
-    }),
+    view: () =>
+      m('input[type=text][placeholder=search]', {
+        value: matchString,
+        oninput: (e) => (matchString = e.target.value),
+        onchange: (e) => {
+          console.log('searching for string: ', matchString);
+          // let source = new EventSource(
+          //  'http://127.0.0.1:9092/rsFiles/turtleSearchRequest', {
+          //    withCredentials: true
+          //  });
+          rs.rsJsonApiRequest(
+            '/rsfiles/turtleSearchRequest',
+            {
+              matchString,
+            },
+            (data, stat) => {
+              console.log('got: ', stat, ' data: ', data);
+            }
+          );
+        },
+      }),
   };
 };
 
 const Layout = () => {
   return {
-    view: vnode => m('.widget', [
-      m('h3', 'Search'),
-      m('hr'),
-      m(SearchBar),
-    ]),
+    view: (vnode) => m('.widget', [m('h3', 'Search'), m('hr'), m(SearchBar)]),
   };
 };
 
@@ -40,4 +39,3 @@ module.exports = {
     return m(Layout);
   },
 };
-

@@ -1,12 +1,10 @@
-let m = require('mithril');
-let rs = require('rswebui');
-let widget = require('widgets');
+const m = require('mithril');
+const widget = require('widgets');
 
-let downloads = require('files/files_downloads');
-let uploads = require('files/files_uploads');
-let util = require('files/files_util');
-let search = require('files/files_search');
-
+const downloads = require('files/files_downloads');
+const uploads = require('files/files_uploads');
+const util = require('files/files_util');
+const search = require('files/files_search');
 
 const MyFiles = () => {
   return {
@@ -20,19 +18,20 @@ const MyFiles = () => {
   };
 };
 
-let sections = {
+const sections = {
   files: MyFiles,
-  search: search,
+  search,
 };
 
 const Layout = {
-  view: (vnode) => m('.tab-page', [
-    m(widget.Sidebar, {
-      tabs: Object.keys(sections),
-      baseRoute: '/files/',
-    }),
-    m('.node-panel', vnode.children),
-  ]),
+  view: (vnode) =>
+    m('.tab-page', [
+      m(widget.Sidebar, {
+        tabs: Object.keys(sections),
+        baseRoute: '/files/',
+      }),
+      m('.node-panel', vnode.children),
+    ]),
 };
 
 module.exports = {
@@ -41,4 +40,3 @@ module.exports = {
     return m(Layout, m(sections[tab]));
   },
 };
-

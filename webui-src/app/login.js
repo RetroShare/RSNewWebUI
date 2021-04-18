@@ -1,97 +1,120 @@
 const m = require('mithril');
 const rs = require('rswebui');
 
-const displayErrorMessage = function(message) {
+const displayErrorMessage = function (message) {
   m.render(document.getElementById('error'), message);
 };
 
-const verifyLogin = async function(uname, passwd, url, displayAuthError = true) {
+const verifyLogin = async function (uname, passwd, url, displayAuthError = true) {
   const loginHeader = {
-    Authorization: 'Basic ' + btoa(uname + ':' + passwd)
+    Authorization: 'Basic ' + btoa(uname + ':' + passwd),
   };
   if (!url.trim()) {
-    displayErrorMessage("Server-url is missing, please enter json-api url");
+    displayErrorMessage('Server-url is missing, please enter json-api url');
     return;
   }
   rs.setKeys('', '', url, false);
-  rs.logon(loginHeader, displayAuthError ?  displayErrorMessage : () => {}, displayErrorMessage, () => {
-    rs.setKeys(uname, passwd, url);
-    m.route.set('/home');
-  });
+  rs.logon(
+    loginHeader,
+    displayAuthError ? displayErrorMessage : () => {},
+    displayErrorMessage,
+    () => {
+      rs.setKeys(uname, passwd, url);
+      m.route.set('/home');
+    }
+  );
 };
 
 function loginComponent() {
-  var urlParams = new URLSearchParams(window.location.search);
-  let uname = urlParams.get('Username')||'webui';
-  let passwd = urlParams.get('Password') ||'';
-  let url = urlParams.get('Url') || window.location.protocol==='file:' ? 'http://127.0.0.1:9092' : window.location.protocol + '//' + window.location.host + window.location.pathname.replace('/index.html','');
+  const urlParams = new URLSearchParams(window.location.search);
+  let uname = urlParams.get('Username') || 'webui';
+  let passwd = urlParams.get('Password') || '';
+  let url =
+    urlParams.get('Url') || window.location.protocol === 'file:'
+      ? 'http://127.0.0.1:9092'
+      : window.location.protocol +
+        '//' +
+        window.location.host +
+        window.location.pathname.replace('/index.html', '');
   let withOptions = false;
-  let logo = () => m('img.logo[width=30%]', {
-                         src: '../data/retroshare.svg',
-                         alt: 'retroshare_icon'
-                       });
-  let inputName = () => m('input', {
-                        id: 'username',
-                        type: 'text',
-                        value: uname,
-                        placeholder: 'Username',
-                        onchange: e => (uname = e.target.value)
-                      });
-  let inputPassword = () => m('input[autofocus]', {
-                        id: 'password',
-                        type: 'password',
-                        placeholder: 'Password',
-                        onchange: e => (passwd = e.target.value),
-                        onkeydown: e => {
-                            if (e.keyCode===13) {
-                                passwd = e.target.value;
-                                loginBtn.click();
-                                return false;
-                            }
-                            return true;
-                        }
-                      });
-  let inputUrl = () => m('input',{
-                       id: 'url',
-                       type: 'text',
-                       placeholder: 'Url',
-                       value: url,
-                       oninput: e => (url = e.target.value)
-                     });
+  const logo = () =>
+    m('img.logo[width=30%]', {
+      src: '../data/retroshare.svg',
+      alt: 'retroshare_icon',
+    });
+  const inputName = () =>
+    m('input', {
+      id: 'username',
+      type: 'text',
+      value: uname,
+      placeholder: 'Username',
+      onchange: (e) => (uname = e.target.value),
+    });
+  const buttonLogin = () =>
+    m(
+      'button.submit-btn',
+      {
+        id: 'loginBtn',
+        onclick: () => verifyLogin(uname, passwd, url),
+      },
+      'Login'
+    );
+  const inputPassword = () =>
+    m('input[autofocus]', {
+      id: 'password',
+      type: 'password',
+      placeholder: 'Password',
+      onchange: (e) => (passwd = e.target.value),
+      onkeydown: (e) => {
+        if (e.keyCode === 13) {
+          passwd = e.target.value;
+          buttonLogin().click();
+          return false;
+        }
+        return true;
+      },
+    });
+  const inputUrl = () =>
+    m('input', {
+      id: 'url',
+      type: 'text',
+      placeholder: 'Url',
+      value: url,
+      oninput: (e) => (url = e.target.value),
+    });
 
-  let linkOptions = action => m('a',{
-                       onclick: e => withOptions=!withOptions,
-                     }, action + ' options');
+  const linkOptions = (action) =>
+    m(
+      'a',
+      {
+        onclick: (e) => (withOptions = !withOptions),
+      },
+      action + ' options'
+    );
 
-  let buttonLogin = () => m('button.submit-btn', {
-                      id: 'loginBtn',
-                      onclick: () => verifyLogin(uname, passwd, url)
-                    }, 'Login');
-
-  let textError = () => m('p.error[id=error]');
+  const textError = () => m('p.error[id=error]');
   return {
     oninit: () => verifyLogin(uname, passwd, url, false),
     view: () => {
-      return m('.login-page',
-        m('.login-container', withOptions
-        ? [
-          logo(),
-          m(".extra",[m('label','Username:'),m('br'), inputName()]),
-          m(".extra",[m('label','Password:'),m('br'), inputPassword()]),
-          m(".extra",[m('label','Url:'),m('br'), inputUrl()]),
-          linkOptions('hide'),
-          buttonLogin(),
-          textError()
-        ] : [
-          logo(),
-          inputPassword(),
-          linkOptions('show'),
-          buttonLogin(),
-          textError()
-        ])
+      return m(
+        '.login-page',
+        m(
+          '.login-container',
+          withOptions
+            ? [
+                logo(),
+                m('.extra', [m('label', 'Username:'), m('br'), inputName()]),
+                m('.extra', [m('label', 'Password:'), m('br'), inputPassword()]),
+                m('.extra', [m('label', 'Url:'), m('br'), inputUrl()]),
+                linkOptions('hide'),
+                buttonLogin(),
+                textError(),
+              ]
+            : [logo(), inputPassword(), linkOptions('show'), buttonLogin(), textError()]
+        )
       );
-    }
+    },
   };
-};
+}
 
 module.exports = loginComponent;

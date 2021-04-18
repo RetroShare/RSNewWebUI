@@ -1,34 +1,38 @@
-let m = require('mithril');
-let rs = require('rswebui');
+const m = require('mithril');
+const rs = require('rswebui');
 
-let OwnIds = require('people/people_ownids');
-let people_util = require('people/people_util')
+const peopleOwnIds = require('people/people_ownids');
+const peopleUtil = require('people/people_util');
 
 const AllContacts = {
-  oninit: () => {
-  },
+  oninit: () => {},
   view: () => {
-    let list = people_util.sortUsers(rs.userList.users);
+    const list = peopleUtil.sortUsers(rs.userList.users);
     return m('.widget', [
-      m('h3', 'Contacts', m('span.counter',list.length)), m('hr'),
-      list.map((id) => m('.id', {
-        key: id.mGroupId,
-        title: 'ID: ' + id.mGroupId,
-      }, id.mGroupName, m('i.chatInit.fa.fa-comment-medical', {
-        title: 'start distant chat with ' + id.mGroupName + ' (' + id.mGroupId + ')',
-        onclick: () => {
-          m.route.set('/chat/:userid/createdistantchat',{userid:id.mGroupId});
-        },
-      })))
+      m('h3', 'Contacts', m('span.counter', list.length)),
+      m('hr'),
+      list.map((id) =>
+        m(
+          '.id',
+          {
+            key: id.mGroupId,
+            title: 'ID: ' + id.mGroupId,
+          },
+          id.mGroupName,
+          m('i.chatInit.fa.fa-comment-medical', {
+            title: 'start distant chat with ' + id.mGroupName + ' (' + id.mGroupId + ')',
+            onclick: () => {
+              m.route.set('/chat/:userid/createdistantchat', { userid: id.mGroupId });
+            },
+          })
+        )
+      ),
     ]);
   },
 };
 
 const Layout = {
-  view: vnode => m('.tab-page', [
-    m(OwnIds),
-    m(AllContacts),
-  ])
+  view: (vnode) => m('.tab-page', [m(peopleOwnIds), m(AllContacts)]),
 };
 
 module.exports = {
@@ -36,4 +40,3 @@ module.exports = {
     return m(Layout);
   },
 };
-
