@@ -53,12 +53,12 @@
             "args": "none",
             "caughtErrors": "none",
             "ignoreRestSiblings": true,
-            "vars": "all",
+            "vars": "all"
+        }],
         "no-use-before-define": ["warn", { "functions": true, "classes": false }],
         "object-shorthand": "error",
         "prefer-const": ["error", { "destructuring": "all" }],
         "semi-style": ["warn", "last"],
         "spaced-comment": ["warn", "always"]
-    }]
     }
 }
