@@ -1,34 +1,35 @@
 let m = require("mithril");
 let rs = require("rswebui");
 
-function getInfo(id) {
-  let name = "";
-  let imageURI = "";
-  rs.rsJsonApiRequest(
-    "/rsIdentity/getIdentitiesInfo",
-    {
-      id,
-    },
-    function (data) {
-      console.log("data: ", data.idsInfo);
-      //name = data.details.mNickname
-      //imageURI = data.details.mAvatar.mData;
-    }
-  );
-  //return m('.profile-detail', [
-  //m('img[src=data:image/png;base64,' + imageURI + ']'),
-  //  name//,
-  //]);
-  return "name";
-}
-
 function checksudo(id) {
   return id === "0000000000000000";
 }
 
+function contactlist(list) {
+  let result = [];
+  if (list !== undefined) {
+    list.map((id) => {
+      id.isSearched = true;
+      rs.rsJsonApiRequest(
+        "/rsIdentity/isARegularContact",
+        {id: id.mGroupId},
+        (data) => {
+          if (data.retval) result.push(id);
+          console.log(data);
+        }
+      );
+    });
+  }
+  return result;
+}
+
 function sortUsers(list) {
   if (list !== undefined) {
-    let result = [...list];
+    let result = [];
+    list.map((id) => {
+      id.isSearched = true;
+      result.push(id);
+    });
     result.sort((a, b) => a.mGroupName.localeCompare(b.mGroupName));
     return result;
   }
@@ -38,6 +39,7 @@ function sortUsers(list) {
 function sortIds(list) {
   if (list !== undefined) {
     let result = [...list];
+
     result.sort((a, b) =>
       rs.userList.username(a).localeCompare(rs.userList.username(b))
     );
@@ -72,10 +74,10 @@ function createAvatarURI(avatar) {
 }
 
 module.exports = {
-  getInfo,
   sortUsers,
   sortIds,
   ownIds,
   createAvatarURI,
-  checksudo
+  checksudo,
+  contactlist,
 };

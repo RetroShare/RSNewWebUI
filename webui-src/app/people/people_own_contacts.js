@@ -77,7 +77,7 @@ const AllContacts = () => {
   let list;
   return {
     oninit: () => {
-      list = people_util.sortUsers(rs.userList.users);
+      list = people_util.contactlist(rs.userList.users);
     },
     view: () => {
       return m(".widget", [

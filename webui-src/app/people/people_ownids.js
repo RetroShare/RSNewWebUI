@@ -363,7 +363,6 @@ const Layout = () => {
       m(".widget", [
         m("h3", "Own Identities", m("span.counter", ownIds.length)),
         m("hr"),
-
         m(
           "button",
           {
