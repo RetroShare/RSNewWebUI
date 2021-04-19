@@ -84,6 +84,37 @@ const ChatRoomsModel = {
   },
 };
 
+/**
+ * Message displays a single Chat-Message<br>
+ * currently removes formatting and in consequence inline links
+ * msg: Message to Display
+ */
+const Message = () => {
+  let msg = null; // message to display
+  let text = ''; // extracted text to display
+  let datetime = ''; // date time to display
+  let username = ''; // username to display (later may be linked)
+  return {
+    oninit: (vnode) => {
+      console.info('chat Message', vnode);
+      msg = vnode.attrs;
+      datetime = new Date(msg.sendTime * 1000).toLocaleTimeString();
+      username = rs.userList.username(msg.lobby_peer_gxs_id);
+      text = msg.msg
+        .replaceAll('<br/>', '\n')
+        .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
+      console.info('chat Text', text);
+    },
+    view: () =>
+      m(
+        '.message',
+        m('span.datetime', datetime),
+        m('span.username', username),
+        m('span.messagetext', text)
+      ),
+  };
+};
+
 const ChatLobbyModel = {
   currentLobby: {
     lobby_name: '...',
@@ -230,37 +261,6 @@ const ChatLobbyModel = {
 };
 
 // ************************* views ****************************
-
-/**
- * Message displays a single Chat-Message<br>
- * currently removes formatting and in consequence inline links
- * msg: Message to Display
- */
-const Message = () => {
-  let msg = null; // message to display
-  let text = ''; // extracted text to display
-  let datetime = ''; // date time to display
-  let username = ''; // username to display (later may be linked)
-  return {
-    oninit: (vnode) => {
-      console.info('chat Message', vnode);
-      msg = vnode.attrs;
-      datetime = new Date(msg.sendTime * 1000).toLocaleTimeString();
-      username = rs.userList.username(msg.lobby_peer_gxs_id);
-      text = msg.msg
-        .replaceAll('<br/>', '\n')
-        .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
-      console.info('chat Text', text);
-    },
-    view: () =>
-      m(
-        '.message',
-        m('span.datetime', datetime),
-        m('span.username', username),
-        m('span.messagetext', text)
-      ),
-  };
-};
 
 const Lobby = () => {
   let info = {};

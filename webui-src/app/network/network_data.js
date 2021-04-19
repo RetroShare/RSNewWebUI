@@ -1,10 +1,5 @@
 const rs = require('rswebui');
 
-const Data = {
-  gpgDetails: {},
-  refreshGpgDetails,
-};
-
 async function refreshIds() {
   let sslIds = [];
   await rs.rsJsonApiRequest('/rsPeers/getFriendList', {}, (data) => (sslIds = data.sslIds));
@@ -22,7 +17,7 @@ async function loadSslDetails() {
   return sslDetails;
 }
 
-async function refreshGpgDetails() {
+async function freshGpgDetails() {
   const details = {};
   const sslDetails = await loadSslDetails();
   await Promise.all(
@@ -57,7 +52,14 @@ async function refreshGpgDetails() {
         });
     })
   );
-  Data.gpgDetails = details;
+  return details;
 }
+
+const Data = {
+  gpgDetails: {},
+  refreshGpgDetails() {
+    Data.gpgDetails = freshGpgDetails();
+  },
+};
 
 module.exports = Data;
