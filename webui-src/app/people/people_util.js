@@ -1,23 +1,19 @@
-let m = require("mithril");
-let rs = require("rswebui");
+const m = require('mithril');
+const rs = require('rswebui');
 
 function checksudo(id) {
-  return id === "0000000000000000";
+  return id === '0000000000000000';
 }
 
 function contactlist(list) {
-  let result = [];
+  const result = [];
   if (list !== undefined) {
     list.map((id) => {
       id.isSearched = true;
-      rs.rsJsonApiRequest(
-        "/rsIdentity/isARegularContact",
-        {id: id.mGroupId},
-        (data) => {
-          if (data.retval) result.push(id);
-          console.log(data);
-        }
-      );
+      rs.rsJsonApiRequest('/rsIdentity/isARegularContact', { id: id.mGroupId }, (data) => {
+        if (data.retval) result.push(id);
+        console.log(data);
+      });
     });
   }
   return result;
@@ -25,7 +21,7 @@ function contactlist(list) {
 
 function sortUsers(list) {
   if (list !== undefined) {
-    let result = [];
+    const result = [];
     list.map((id) => {
       id.isSearched = true;
       result.push(id);
@@ -38,22 +34,20 @@ function sortUsers(list) {
 
 function sortIds(list) {
   if (list !== undefined) {
-    let result = [...list];
+    const result = [...list];
 
-    result.sort((a, b) =>
-      rs.userList.username(a).localeCompare(rs.userList.username(b))
-    );
+    result.sort((a, b) => rs.userList.username(a).localeCompare(rs.userList.username(b)));
     return result;
   }
   return list;
 }
 
 function ownIds(consumer = (list) => {}, onlySigned = false) {
-  rs.rsJsonApiRequest("/rsIdentity/getOwnSignedIds", {}, (owns) => {
+  rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {}, (owns) => {
     if (onlySigned) {
       consumer(sortIds(owns.ids));
     } else {
-      rs.rsJsonApiRequest("/rsIdentity/getOwnPseudonimousIds", {}, (pseudo) =>
+      rs.rsJsonApiRequest('/rsIdentity/getOwnPseudonimousIds', {}, (pseudo) =>
         consumer(sortIds(pseudo.ids.concat(owns.ids)))
       );
     }
@@ -61,14 +55,14 @@ function ownIds(consumer = (list) => {}, onlySigned = false) {
 }
 
 function createAvatarURI(avatar) {
-  return avatar.mData.base64 === ""
+  return avatar.mData.base64 === ''
     ? {
         view: () => [],
       }
     : {
         view: () =>
-          m("img.avatar", {
-            src: "data:image/png;base64," + avatar.mData.base64,
+          m('img.avatar', {
+            src: 'data:image/png;base64,' + avatar.mData.base64,
           }),
       };
 }

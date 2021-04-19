@@ -1,39 +1,38 @@
-const m = require("mithril");
+const m = require('mithril');
 
-const login = require("login");
-const home = require("home");
-const network = require("network/network");
-const people = require("people/people_resolver");
-const chat = require("chat/chat");
-const mail = require("mail/mail_resolver");
-const files = require("files/files_resolver");
-const channels = require("channels/channels");
-const config = require("config/config_resolver");
-const rs = require("rswebui");
+const login = require('login');
+const home = require('home');
+const network = require('network/network');
+const people = require('people/people_resolver');
+const chat = require('chat/chat');
+const mail = require('mail/mail_resolver');
+const files = require('files/files_resolver');
+const channels = require('channels/channels');
+const config = require('config/config_resolver');
 
 const navIcon = {
-  home: m("i.fas.fa-home"),
-  network: m("i.fas.fa-share-alt"),
-  people: m("i.fas.fa-users"),
-  chat: m("i.fas.fa-comments"),
-  mail: m("i.fas.fa-envelope"),
-  files: m("i.fas.fa-folder-open"),
-  channels: m("i.fas.fa-tv"),
-  config: m("i.fas.fa-cogs"),
+  home: m('i.fas.fa-home'),
+  network: m('i.fas.fa-share-alt'),
+  people: m('i.fas.fa-users'),
+  chat: m('i.fas.fa-comments'),
+  mail: m('i.fas.fa-envelope'),
+  files: m('i.fas.fa-folder-open'),
+  channels: m('i.fas.fa-tv'),
+  config: m('i.fas.fa-cogs'),
 };
 
 const navbar = () => {
   return {
     view: (vnode) =>
       m(
-        "nav.tab-menu",
+        'nav.tab-menu',
         Object.keys(vnode.attrs.links).map((linkName, i) => {
-          let active = m.route.get().split("/")[1] === linkName;
+          const active = m.route.get().split('/')[1] === linkName;
           return m(
             m.route.Link,
             {
               href: vnode.attrs.links[linkName],
-              class: (active ? "selected-tab-item" : "") + " tab-menu-item",
+              class: (active ? 'selected-tab-item' : '') + ' tab-menu-item',
             },
             [navIcon[linkName], linkName]
           );
@@ -45,59 +44,59 @@ const navbar = () => {
 const Layout = () => {
   return {
     view: (vnode) =>
-      m(".content", [
+      m('.content', [
         m(navbar, {
           links: {
-            home: "/home",
-            network: "/network",
-            people: "/people/OwnIdentity",
-            chat: "/chat",
-            mail: "/mail/inbox",
-            files: "/files/files",
-            channels: "/channels",
-            config: "/config/network",
+            home: '/home',
+            network: '/network',
+            people: '/people/OwnIdentity',
+            chat: '/chat',
+            mail: '/mail/inbox',
+            files: '/files/files',
+            channels: '/channels',
+            config: '/config/network',
           },
         }),
-        m("#tab-content", vnode.children),
+        m('#tab-content', vnode.children),
       ]),
   };
 };
 
-m.route(document.getElementById("main"), "/", {
-  "/": {
+m.route(document.getElementById('main'), '/', {
+  '/': {
     render: () => m(login),
   },
-  "/home": {
+  '/home': {
     render: () => m(Layout, m(home)),
   },
-  "/network": {
+  '/network': {
     render: () => m(Layout, m(network)),
   },
-  "/people/:tab": {
+  '/people/:tab': {
     render: (v) => m(Layout, m(people, v.attrs)),
   },
-  "/chat/:lobby/:subaction": {
+  '/chat/:lobby/:subaction': {
     render: (v) => m(Layout, m(chat, v.attrs)),
   },
-  "/chat/:lobby": {
+  '/chat/:lobby': {
     render: (v) => m(Layout, m(chat, v.attrs)),
   },
-  "/chat": {
+  '/chat': {
     render: () => m(Layout, m(chat)),
   },
-  "/mail/:tab": {
+  '/mail/:tab': {
     render: (v) => m(Layout, m(mail, v.attrs)),
   },
-  "/mail/:tab/:msgId": {
+  '/mail/:tab/:msgId': {
     render: (v) => m(Layout, m(mail, v.attrs)),
   },
-  "/files/:tab": {
+  '/files/:tab': {
     render: (v) => m(Layout, m(files, v.attrs)),
   },
-  "/channels": {
+  '/channels': {
     render: () => m(Layout, m(channels)),
   },
-  "/config/:tab": {
+  '/config/:tab': {
     render: (v) => m(Layout, m(config, v.attrs)),
   },
 });

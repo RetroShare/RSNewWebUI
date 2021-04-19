@@ -1,6 +1,6 @@
-let m = require("mithril");
-let rs = require("rswebui");
-let people_util = require("people/people_util");
+const m = require('mithril');
+const rs = require('rswebui');
+const peopleUtil = require('people/people_util');
 
 const contactInfo = () => {
   let details = {};
@@ -12,7 +12,7 @@ const contactInfo = () => {
   return {
     oninit: (v) =>
       rs.rsJsonApiRequest(
-        "/rsIdentity/getIdDetails",
+        '/rsIdentity/getIdDetails',
         {
           id: v.attrs.id.mGroupId,
         },
@@ -20,54 +20,52 @@ const contactInfo = () => {
           details = data.details;
           // Creating URI during fetch because `details` is uninitialized
           // during view run, due to request being async.
-          avatarURI = people_util.createAvatarURI(data.details.mAvatar);
+          avatarURI = peopleUtil.createAvatarURI(data.details.mAvatar);
         }
       ),
     view: (v) =>
       m(
-        ".identity",
+        '.identity',
         {
           key: details.mId,
-          style: "display:" + (v.attrs.id.isSearched ? "block" : "none"),
+          style: 'display:' + (v.attrs.id.isSearched ? 'block' : 'none'),
         },
         [
-          m("h4", details.mNickname),
+          m('h4', details.mNickname),
           m(avatarURI),
-          m(".details", [
-            m("p", "ID:"),
-            m("p", details.mId),
-            m("p", "Type:"),
-            m("p", details.mFlags === 14 ? "Signed ID" : "Anonymous ID"),
-            m("p", "Owner node ID:"),
-            m("p", details.mPgpId),
-            m("p", "Created on:"),
+          m('.details', [
+            m('p', 'ID:'),
+            m('p', details.mId),
+            m('p', 'Type:'),
+            m('p', details.mFlags === 14 ? 'Signed ID' : 'Anonymous ID'),
+            m('p', 'Owner node ID:'),
+            m('p', details.mPgpId),
+            m('p', 'Created on:'),
             m(
-              "p",
-              typeof details.mPublishTS === "object"
+              'p',
+              typeof details.mPublishTS === 'object'
                 ? new Date(details.mPublishTS.xint64 * 1000).toLocaleString()
-                : "undefiend"
+                : 'undefiend'
             ),
-            m("p", "Last used:"),
+            m('p', 'Last used:'),
             m(
-              "p",
-              typeof details.mLastUsageTS === "object"
-                ? new Date(
-                    details.mLastUsageTS.xint64 * 1000
-                  ).toLocaleDateString()
-                : "undefiend"
+              'p',
+              typeof details.mLastUsageTS === 'object'
+                ? new Date(details.mLastUsageTS.xint64 * 1000).toLocaleDateString()
+                : 'undefiend'
             ),
           ]),
           m(
-            "button",
+            'button',
             {
               onclick: () =>
-                m.route.set("/chat/:userid/createdistantchat", {
+                m.route.set('/chat/:userid/createdistantchat', {
                   userid: v.attrs.id.mGroupId,
                 }),
             },
-            "Chat"
+            'Chat'
           ),
-          m("button.red", {}, "Mail"),
+          m('button.red', {}, 'Mail'),
         ]
       ),
   };
@@ -77,25 +75,25 @@ const AllContacts = () => {
   let list;
   return {
     oninit: () => {
-      list = people_util.sortUsers(rs.userList.users);
+      list = peopleUtil.sortUsers(rs.userList.users);
     },
     view: () => {
-      return m(".widget", [
-        m("h3", "Contacts", m("span.counter", list.length)),
-        m("hr"),
-        list.map((id) => m(contactInfo, {id})),
+      return m('.widget', [
+        m('h3', 'Contacts', m('span.counter', list.length)),
+        m('hr'),
+        list.map((id) => m(contactInfo, { id })),
       ]);
     },
   };
 };
 const SearchBar = () => {
-  let searchString = "";
+  let searchString = '';
 
   return {
     view: () =>
-      m("input.searchbar", {
-        type: "text",
-        placeholder: "search",
+      m('input.searchbar', {
+        type: 'text',
+        placeholder: 'search',
         value: searchString,
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
@@ -113,7 +111,7 @@ const SearchBar = () => {
 };
 
 const Layout = {
-  view: (vnode) => m(".tab-page", [m(SearchBar), m(AllContacts)]),
+  view: (vnode) => m('.tab-page', [m(SearchBar), m(AllContacts)]),
 };
 
 module.exports = {

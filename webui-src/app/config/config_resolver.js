@@ -1,9 +1,8 @@
-let m = require('mithril');
-let rs = require('rswebui');
-let widget = require('widgets');
+const m = require('mithril');
 
+const widget = require('widgets');
 
-let sections = {
+const sections = {
   network: require('config/config_network'),
   node: require('config/config_node'),
   services: require('config/config_services'),
@@ -12,13 +11,14 @@ let sections = {
 };
 
 const Layout = {
-  view: vnode => m('.tab-page', [
-    m(widget.Sidebar, {
-      tabs: Object.keys(sections),
-      baseRoute: '/config/',
-    }),
-    m('.node-panel', vnode.children),
-  ])
+  view: (vnode) =>
+    m('.tab-page', [
+      m(widget.Sidebar, {
+        tabs: Object.keys(sections),
+        baseRoute: '/config/',
+      }),
+      m('.node-panel', vnode.children),
+    ]),
 };
 
 module.exports = {
@@ -27,4 +27,3 @@ module.exports = {
     return m(Layout, m(sections[tab]));
   },
 };
-

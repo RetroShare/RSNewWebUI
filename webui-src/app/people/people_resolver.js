@@ -1,8 +1,7 @@
-let m = require('mithril');
-let rs = require('rswebui');
-let widget = require('widgets');
+const m = require('mithril');
+const widget = require('widgets');
 
-let sections = {
+const sections = {
   OwnIdentity: require('people/people_ownids'),
   MyContacts: require('people/people_own_contacts'),
   All: require('people/people'),
