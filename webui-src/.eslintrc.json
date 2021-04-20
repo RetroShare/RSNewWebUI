@@ -17,10 +17,6 @@
     },
     "ignorePatterns": ["mithril.js", "assets/*", "make-src/*"],
     "rules": {
-        "indent": [
-            "error",
-            2
-        ],
         "linebreak-style": [
             "error",
             "unix"
