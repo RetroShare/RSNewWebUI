@@ -3,15 +3,15 @@ const rs = require('rswebui');
 
 const Node = () => {
   const nodeInfo = {
-    setData: function (data) {
+    setData(data) {
       Object.assign(nodeInfo, data.status);
     },
   };
   return {
-    oninit: function () {
+    oninit() {
       rs.rsJsonApiRequest('/rsConfig/getConfigNetStatus', {}, nodeInfo.setData);
     },
-    view: function () {
+    view() {
       return [
         m('.widget.widget-half', [
           m('h3', 'Public Information'),

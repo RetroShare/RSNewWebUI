@@ -21,7 +21,7 @@ const MyFiles = () => {
 
 const sections = {
   files: MyFiles,
-  search: search,
+  search,
 };
 
 const Layout = {

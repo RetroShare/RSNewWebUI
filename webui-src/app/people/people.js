@@ -1,5 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
+
 const peopleUtil = require('people/people_util');
 
 const contactInfo = () => {

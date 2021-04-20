@@ -1,27 +1,7 @@
-/* eslint-disable no-prototype-builtins */
-/* eslint-disable no-use-before-define */
 const m = require('mithril');
 const rs = require('rswebui');
 const util = require('files/files_util');
 const widget = require('widgets');
-
-function updateFileDetail(hash, isNew = false) {
-  rs.rsJsonApiRequest(
-    '/rsFiles/FileDetails',
-    {
-      hash,
-      hintflags: 16, // RS_FILE_HINTS_DOWNLOAD
-    },
-    (fileStat) => {
-      if (!fileStat.retval) {
-        console.error('Error: Unknown hash in Downloads: ', hash);
-        return;
-      }
-      fileStat.info.isSearched = isNew ? true : Downloads.statusMap[hash].isSearched;
-      Downloads.statusMap[hash] = fileStat.info;
-    }
-  );
-}
 
 const Downloads = {
   statusMap: {},
@@ -39,7 +19,7 @@ const Downloads = {
       if (Downloads.hashes.length > fileKeys.length) {
         const newHashes = util.compareArrays(Downloads.hashes, fileKeys);
         for (const hash of newHashes) {
-          updateFileDetail(hash, true);
+          Downloads.updateFileDetail(hash, true);
         }
       }
       // Existing file removed
@@ -51,13 +31,30 @@ const Downloads = {
       }
     }
     for (const hash in Downloads.statusMap) {
-      updateFileDetail(hash);
+      Downloads.updateFileDetail(hash);
     }
   },
   resetSearch() {
     for (const hash in Downloads.statusMap) {
       Downloads.statusMap[hash].isSearched = true;
     }
+  },
+  updateFileDetail(hash, isNew = false) {
+    rs.rsJsonApiRequest(
+      '/rsFiles/FileDetails',
+      {
+        hash,
+        hintflags: 16, // RS_FILE_HINTS_DOWNLOAD
+      },
+      (fileStat) => {
+        if (!fileStat.retval) {
+          console.error('Error: Unknown hash in Downloads: ', hash);
+          return;
+        }
+        fileStat.info.isSearched = isNew ? true : Downloads.statusMap[hash].isSearched;
+        Downloads.statusMap[hash] = fileStat.info;
+      }
+    );
   },
 };
 
@@ -78,9 +75,9 @@ function addFile(url) {
   }
   const details = m.parseQueryString(url.split('?')[1]);
   if (
-    !details.hasOwnProperty('name') ||
-    !details.hasOwnProperty('size') ||
-    !details.hasOwnProperty('hash')
+    !Object.prototype.hasOwnProperty.call(details, 'name') ||
+    !Object.prototype.hasOwnProperty.call(details, 'size') ||
+    !Object.prototype.hasOwnProperty.call(details, 'hash')
   ) {
     InvalidFileMessage();
     return;

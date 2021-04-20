@@ -72,6 +72,7 @@ m.route(document.getElementById('main'), '/', {
   '/network': {
     render: () => m(Layout, m(network)),
   },
+
   '/people/:tab': {
     render: (v) => m(Layout, m(people, v.attrs)),
   },

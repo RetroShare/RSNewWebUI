@@ -1,6 +1,5 @@
 const m = require('mithril');
 const rs = require('rswebui');
-// const util = require('files/files_util');
 
 let matchString = '';
 const SearchBar = () => {

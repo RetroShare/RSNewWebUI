@@ -109,7 +109,7 @@ const CreateIdentity = () => {
         {
           onclick: () => {
             !pseudonimous
-              ? widget.popupMessage(m(SignedIdentiy, { name: name }))
+              ? widget.popupMessage(m(SignedIdentiy, { name }))
               : rs.rsJsonApiRequest(
                   '/rsIdentity/createIdentity',
                   {
@@ -193,7 +193,7 @@ const EditIdentity = () => {
             !peopleUtil.checksudo(v.attrs.details.mPgpId)
               ? widget.popupMessage([
                   m(SignedEditIdentity, {
-                    name: name,
+                    name,
                     details: v.attrs.details,
                   }),
                 ])
@@ -201,7 +201,8 @@ const EditIdentity = () => {
                   '/rsIdentity/updateIdentity',
                   {
                     id: v.attrs.details.mId,
-                    name: name,
+
+                    name,
 
                     // avatar: v.attrs.details.mAvatar.mData.base64,
                     pseudonimous: true,
@@ -311,7 +312,7 @@ const Identity = () => {
               onclick: () =>
                 widget.popupMessage(
                   m(EditIdentity, {
-                    details: details,
+                    details,
                   })
                 ),
             },
@@ -343,6 +344,7 @@ const Layout = () => {
       m('.widget', [
         m('h3', 'Own Identities', m('span.counter', ownIds.length)),
         m('hr'),
+
         m(
           'button',
           {

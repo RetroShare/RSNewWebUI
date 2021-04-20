@@ -50,9 +50,10 @@ function rsJsonApiRequest(
         };
       },
       serialize: handleSerialize,
-      headers: headers,
+      headers,
       body: data,
-      config: config,
+
+      config,
     })
     .then((result) => {
       if (result.status === 200) {
@@ -87,14 +88,14 @@ function setBackgroundTask(task, interval, taskInScope) {
 }
 
 function computeIfMissing(map, key, missing = () => ({})) {
-  if (!map.hasOwnProperty(key)) {
+  if (!Object.prototype.hasOwnProperty.call(map, key)) {
     map[key] = missing();
   }
   return map[key];
 }
 
 function deeperIfExist(map, key, action) {
-  if (map.hasOwnProperty(key)) {
+  if (Object.prototype.hasOwnProperty.call(map, key)) {
     action(map[key]);
     return true;
   } else {
@@ -109,25 +110,27 @@ const eventQueue = {
       types: {
         //                #define RS_CHAT_TYPE_PUBLIC  1
         //                #define RS_CHAT_TYPE_PRIVATE 2
-        2: (chat_id) => chat_id.distant_chat_id, // distant chat (initiate? -> todo accept)
+
+        2: (chatId) => chatId.distant_chat_id, // distant chat (initiate? -> todo accept)
         //                #define RS_CHAT_TYPE_LOBBY   3
-        3: (chat_id) => chat_id.lobby_id.xstr64, // lobby_id
+        3: (chatId) => chatId.lobby_id.xstr64, // lobby_id
         //                #define RS_CHAT_TYPE_DISTANT 4
       },
       messages: {},
-      chatMessages: (chat_id, owner, action) => {
+      chatMessages: (chatId, owner, action) => {
         if (
-          !deeperIfExist(owner.types, chat_id.type, (keyfn) =>
+          !deeperIfExist(owner.types, chatId.type, (keyfn) =>
             action(
               computeIfMissing(
-                computeIfMissing(owner.messages, chat_id.type),
-                keyfn(chat_id),
+                computeIfMissing(owner.messages, chatId.type),
+                keyfn(chatId),
+
                 () => []
               )
             )
           )
         ) {
-          console.info('unknown chat event', chat_id);
+          console.info('unknown chat event', chatId);
         }
       },
       handler: (event, owner) =>
@@ -222,7 +225,7 @@ function startEventQueue(
             .filter((e) => e.startsWith('data: {'))
             .map((e) => e.substr(6))
             .map(JSON.parse)) {
-            if (data.hasOwnProperty('retval')) {
+            if (Object.prototype.hasOwnProperty.call(data, 'retval')) {
               console.info(
                 info + ' [' + data.retval.errorCategory + '] ' + data.retval.errorMessage
               );
@@ -233,7 +236,7 @@ function startEventQueue(
                   info + ' failed: [' + data.retval.errorCategory + '] ' + data.retval.errorMessage
                 );
               }
-            } else if (data.hasOwnProperty('event')) {
+            } else if (Object.prototype.hasOwnProperty.call(data, 'event')) {
               data.event.queueSize = currIndex;
               eventQueue.handler(data.event);
             }

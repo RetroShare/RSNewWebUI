@@ -26,6 +26,7 @@ function sortUsers(list) {
       id.isSearched = true;
       result.push(id);
     });
+
     result.sort((a, b) => a.mGroupName.localeCompare(b.mGroupName));
     return result;
   }
@@ -73,5 +74,6 @@ module.exports = {
   ownIds,
   createAvatarURI,
   checksudo,
+
   contactlist,
 };

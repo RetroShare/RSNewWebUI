@@ -3,7 +3,8 @@ const rs = require('rswebui');
 
 const servicesInfo = {
   list: [],
-  setData: function (data) {
+
+  setData(data) {
     servicesInfo.list = data.info.mServiceList;
   },
 };
@@ -50,10 +51,10 @@ const Service = () => {
 };
 
 const MyServices = {
-  oninit: function () {
+  oninit() {
     rs.rsJsonApiRequest('/rsServiceControl/getOwnServices', {}, servicesInfo.setData);
   },
-  view: function () {
+  view() {
     return m('.widget', [
       m('h3', 'My Services'),
       m('hr'),

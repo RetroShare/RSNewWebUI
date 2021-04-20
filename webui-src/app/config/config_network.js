@@ -1,12 +1,15 @@
 const m = require('mithril');
 const rs = require('rswebui');
 
-const util = require('config/config_util');
+const util = require('config/config_util'); // for future use
 
-/* const SetNwMode = () => {
-  mode = undefined;
-  sslId = undefined;
-  setMode = () => rs.rsJsonApiRequest('/');
+/* eslint-disable no-unused-vars */
+
+const SetNwMode = () => {
+  let mode = undefined;
+  let sslId = undefined;
+  const setMode = () => rs.rsJsonApiRequest('/');
+
   return {
     oninit: util.getSslId().then((val) => {
       sslId = val;
@@ -27,7 +30,7 @@ const util = require('config/config_util');
       ),
     ],
   };
-};*/
+};
 
 const SetLimits = () => {
   let dlim = undefined;
@@ -123,7 +126,12 @@ const Component = () => {
       m('.widget.widget-half', [
         m('h3', 'Network Configuration'),
         m('hr'),
-        m('.grid-2col', [m(SetLimits), m(SetOpMode)]),
+
+        m('.grid-2col', [
+          m(SetLimits),
+          m(SetOpMode),
+          // m(SetNwMode),
+        ]),
       ]),
   };
 };

@@ -51,8 +51,8 @@ module.exports = {
   view: (v) => {
     const tab = v.attrs.tab;
     // TODO: utilize multiple routing params
-    // eslint-disable-next-line no-prototype-builtins
-    if (v.attrs.hasOwnProperty('msgId')) {
+
+    if (Object.prototype.hasOwnProperty.call(v.attrs, 'msgId')) {
       return m(
         Layout,
         m(util.MessageView, {

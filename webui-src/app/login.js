@@ -50,6 +50,16 @@ function loginComponent() {
       placeholder: 'Username',
       onchange: (e) => (uname = e.target.value),
     });
+  const buttonLogin = () =>
+    m(
+      'button.submit-btn',
+      {
+        id: 'loginBtn',
+        onclick: () => verifyLogin(uname, passwd, url),
+      },
+      'Login'
+    );
+
   const inputPassword = () =>
     m('input[autofocus]', {
       id: 'password',
@@ -59,8 +69,9 @@ function loginComponent() {
       onkeydown: (e) => {
         if (e.keyCode === 13) {
           passwd = e.target.value;
-          // eslint-disable-next-line no-undef
-          loginBtn.click();
+
+          buttonLogin().click();
+
           return false;
         }
         return true;
@@ -79,19 +90,9 @@ function loginComponent() {
     m(
       'a',
       {
-        onclick: () => (withOptions = !withOptions),
+        onclick: (e) => (withOptions = !withOptions),
       },
       action + ' options'
-    );
-
-  const buttonLogin = () =>
-    m(
-      'button.submit-btn',
-      {
-        id: 'loginBtn',
-        onclick: () => verifyLogin(uname, passwd, url),
-      },
-      'Login'
     );
 
   const textError = () => m('p.error[id=error]');

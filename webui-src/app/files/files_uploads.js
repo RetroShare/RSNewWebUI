@@ -1,25 +1,6 @@
-/* eslint-disable no-use-before-define */
 const m = require('mithril');
 const rs = require('rswebui');
 const util = require('files/files_util');
-
-function updateFileDetail(hash, isNew = false) {
-  rs.rsJsonApiRequest(
-    '/rsFiles/FileDetails',
-    {
-      hash,
-      hintflags: 32, // RS_FILE_HINTS_UPLOAD
-    },
-    (fileStat) => {
-      if (!fileStat.retval) {
-        console.error('Error: Unknown hash in Uploads: ', hash);
-        return;
-      }
-      fileStat.info.isSearched = isNew ? true : Uploads.statusMap[hash].isSearched;
-      Uploads.statusMap[hash] = fileStat.info;
-    }
-  );
-}
 
 const Uploads = {
   statusMap: {},
@@ -37,7 +18,7 @@ const Uploads = {
       if (Uploads.hashes.length > fileKeys.length) {
         const newHashes = util.compareArrays(Uploads.hashes, fileKeys);
         for (const hash of newHashes) {
-          updateFileDetail(hash, true);
+          Uploads.updateFileDetail(hash, true);
         }
       }
       // Existing file removed
@@ -49,8 +30,25 @@ const Uploads = {
       }
     }
     for (const hash in Uploads.statusMap) {
-      updateFileDetail(hash);
+      Uploads.updateFileDetail(hash);
     }
+  },
+  updateFileDetail(hash, isNew = false) {
+    rs.rsJsonApiRequest(
+      '/rsFiles/FileDetails',
+      {
+        hash,
+        hintflags: 32, // RS_FILE_HINTS_UPLOAD
+      },
+      (fileStat) => {
+        if (!fileStat.retval) {
+          console.error('Error: Unknown hash in Uploads: ', hash);
+          return;
+        }
+        fileStat.info.isSearched = isNew ? true : Uploads.statusMap[hash].isSearched;
+        Uploads.statusMap[hash] = fileStat.info;
+      }
+    );
   },
 };
 

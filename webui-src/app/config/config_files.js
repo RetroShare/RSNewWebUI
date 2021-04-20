@@ -24,7 +24,8 @@ const SharedDirectories = () => {
 const DownloadDirectory = () => {
   let dlDir = '';
   const setDir = () => {
-    // const path = document.getElementById('dl-dir-input').value;
+    // const path = document.getElementById('dl-dir-input').value; // unused?
+
     rs.rsJsonApiRequest(
       'rsFiles/setDownloadDirectory',
       {
@@ -53,7 +54,8 @@ const DownloadDirectory = () => {
 const PartialsDirectory = () => {
   let partialsDir = '';
   const setDir = () => {
-    // const path = document.getElementById('partial-dir-input').value;
+    // const path = document.getElementById('partial-dir-input').value; // unused?
+
     rs.rsJsonApiRequest(
       'rsFiles/setPartialsDirectory',
       {

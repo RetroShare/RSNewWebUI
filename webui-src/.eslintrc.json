@@ -49,7 +49,7 @@
       }
     ],
     "no-use-before-define": ["warn", { "functions": true, "classes": false }],
-    "object-shorthand": "off",
+    "object-shorthand": "error",
     "prefer-const": ["error", { "destructuring": "all" }],
     "semi-style": ["warn", "last"],
     "spaced-comment": ["warn", "always"]

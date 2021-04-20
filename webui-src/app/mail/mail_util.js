@@ -15,7 +15,7 @@ const RS_MSG_STAR = 0x200;
 const MessageSummary = () => {
   let details = {};
   let files = [];
-  // let isStarred = undefined;
+  let isStarred = undefined;
   let msgStatus = '';
   return {
     oninit: (v) =>
@@ -27,7 +27,9 @@ const MessageSummary = () => {
         (data) => {
           details = data.msg;
           files = details.files;
-          // isStarred = (details.msgflags & 0xf00) === RS_MSG_STAR;
+
+          isStarred = (details.msgflags & 0xf00) === RS_MSG_STAR;
+
           const flag = details.msgflags & 0xf0;
           if (flag === RS_MSG_NEW || flag === RS_MSG_UNREAD_BY_USER) {
             msgStatus = 'unread';
@@ -52,17 +54,17 @@ const MessageSummary = () => {
           m(
             'td',
             m('input.star-check[type=checkbox][id=msg-' + details.msgId + ']', {
-              checked: v.state.isStarred,
+              checked: isStarred,
             }),
             // Use label with  [for] to manipulate hidden checkbox
             m(
               'label.star-check[for=msg-' + details.msgId + ']',
               {
                 onclick: (e) => {
-                  v.state.isStarred = !v.state.isStarred;
+                  isStarred = !isStarred;
                   rs.rsJsonApiRequest('/rsMsgs/MessageStar', {
                     msgId: details.msgId,
-                    mark: v.state.isStarred,
+                    mark: isStarred,
                   });
                   // Stop event bubbling, both functions for supporting IE & FF
                   e.stopImmediatePropagation();
@@ -77,7 +79,8 @@ const MessageSummary = () => {
           m('td', details.title),
           // m('td', details.rspeerid_srcId == 0 ?
           //  '[Notification]' :
-          //  people.getInfo(details.rspeerid_srcId)),
+          //  peopleUtils.getInfo(details.rspeerid_srcId)), // getInfo previously uses "/rsIdentity/getIdentitiesInfo"
+
           m('td', new Date(details.ts * 1000).toLocaleString()),
         ]
       ),
