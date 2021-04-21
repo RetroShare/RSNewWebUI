@@ -37,8 +37,7 @@ async function refreshGpgDetails() {
           (stat) => (isOnline = stat.retval)
         )
         .then(() => {
-          // eslint-disable-next-line prefer-const
-          let loc = {
+          const loc = {
             name: data.location,
             id: data.id,
             lastSeen: data.lastConnect,

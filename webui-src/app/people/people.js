@@ -3,12 +3,20 @@ const rs = require('rswebui');
 
 const peopleUtil = require('people/people_util');
 
+const UserAvatar = () => ({
+  view: (v) => {
+    const imageURI = v.attrs.avatar;
+    console.log(imageURI);
+    return imageURI === undefined || imageURI.mData.base64 === ''
+      ? []
+      : m('img.avatar', {
+          src: 'data:image/png;base64,' + imageURI.mData.base64,
+        });
+  },
+});
+
 const contactInfo = () => {
   let details = {};
-
-  let avatarURI = {
-    view: () => [],
-  };
 
   return {
     oninit: (v) =>
@@ -19,9 +27,6 @@ const contactInfo = () => {
         },
         (data) => {
           details = data.details;
-          // Creating URI during fetch because `details` is uninitialized
-          // during view run, due to request being async.
-          avatarURI = peopleUtil.createAvatarURI(data.details.mAvatar);
         }
       ),
     view: (v) =>
@@ -33,7 +38,7 @@ const contactInfo = () => {
         },
         [
           m('h4', details.mNickname),
-          m(avatarURI),
+          m(UserAvatar, { avatar: details.mAvatar }),
           m('.details', [
             m('p', 'ID:'),
             m('p', details.mId),
@@ -73,11 +78,8 @@ const contactInfo = () => {
 };
 
 const AllContacts = () => {
-  let list;
+  const list = peopleUtil.sortUsers(rs.userList.users);
   return {
-    oninit: () => {
-      list = peopleUtil.sortUsers(rs.userList.users);
-    },
     view: () => {
       return m('.widget', [
         m('h3', 'Contacts', m('span.counter', list.length)),

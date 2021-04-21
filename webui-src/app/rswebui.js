@@ -1,5 +1,4 @@
-/* eslint-disable camelcase */
-/* eslint-disable no-prototype-builtins */
+
 const m = require('mithril');
 
 const API_URL = 'http://127.0.0.1:9092';

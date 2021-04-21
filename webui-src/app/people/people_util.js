@@ -1,4 +1,3 @@
-const m = require('mithril');
 const rs = require('rswebui');
 
 function checksudo(id) {
@@ -55,25 +54,10 @@ function ownIds(consumer = (list) => {}, onlySigned = false) {
   });
 }
 
-function createAvatarURI(avatar) {
-  return avatar.mData.base64 === ''
-    ? {
-        view: () => [],
-      }
-    : {
-        view: () =>
-          m('img.avatar', {
-            src: 'data:image/png;base64,' + avatar.mData.base64,
-          }),
-      };
-}
-
 module.exports = {
   sortUsers,
   sortIds,
   ownIds,
-  createAvatarURI,
   checksudo,
-
   contactlist,
 };

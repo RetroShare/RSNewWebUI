@@ -254,12 +254,20 @@ const DeleteIdentity = () => {
   };
 };
 
+const UserAvatar = () => ({
+  view: (v) => {
+    const imageURI = v.attrs.avatar;
+    console.log(imageURI);
+    return imageURI === undefined || imageURI.mData.base64 === ''
+      ? []
+      : m('img.avatar', {
+          src: 'data:image/png;base64,' + imageURI.mData.base64,
+        });
+  },
+});
+
 const Identity = () => {
   let details = {};
-
-  let avatarURI = {
-    view: () => [],
-  };
 
   return {
     oninit: (v) =>
@@ -270,9 +278,6 @@ const Identity = () => {
         },
         (data) => {
           details = data.details;
-          // Creating URI during fetch because `details` is uninitialized
-          // during view run, due to request being async.
-          avatarURI = peopleUtil.createAvatarURI(data.details.mAvatar);
         }
       ),
     view: (v) =>
@@ -283,7 +288,7 @@ const Identity = () => {
         },
         [
           m('h4', details.mNickname),
-          m(avatarURI),
+          m(UserAvatar, { avatar: details.mAvatar }),
           m('.details', [
             m('p', 'ID:'),
             m('p', details.mId),
