@@ -1,8 +1,20 @@
 const rs = require('rswebui');
-
+const m = require('mithril');
 function checksudo(id) {
   return id === '0000000000000000';
 }
+
+const UserAvatar = () => ({
+  view: (v) => {
+    const imageURI = v.attrs.avatar;
+    console.log(imageURI);
+    return imageURI === undefined || imageURI.mData.base64 === ''
+      ? []
+      : m('img.avatar', {
+          src: 'data:image/png;base64,' + imageURI.mData.base64,
+        });
+  },
+});
 
 function contactlist(list) {
   const result = [];
@@ -59,5 +71,6 @@ module.exports = {
   sortIds,
   ownIds,
   checksudo,
+  UserAvatar,
   contactlist,
 };

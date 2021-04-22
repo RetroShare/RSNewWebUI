@@ -2,18 +2,6 @@ const m = require('mithril');
 const rs = require('rswebui');
 const peopleUtil = require('people/people_util');
 
-const UserAvatar = () => ({
-  view: (v) => {
-    const imageURI = v.attrs.avatar;
-    console.log(imageURI);
-    return imageURI === undefined || imageURI.mData.base64 === ''
-      ? []
-      : m('img.avatar', {
-          src: 'data:image/png;base64,' + imageURI.mData.base64,
-        });
-  },
-});
-
 const contactInfo = () => {
   let details = {};
 
@@ -37,7 +25,7 @@ const contactInfo = () => {
         },
         [
           m('h4', details.mNickname),
-          m(UserAvatar, { avatar: details.mAvatar }),
+          m(peopleUtil.UserAvatar, { avatar: details.mAvatar }),
           m('.details', [
             m('p', 'ID:'),
             m('p', details.mId),
@@ -81,7 +69,7 @@ const AllContacts = () => {
   return {
     view: () => {
       return m('.widget', [
-        m('h3', 'Contacts', m('span.counter', list.length)),
+        m('h3', 'MyContacts', m('span.counter', list.length)),
         m('hr'),
         list.map((id) => m(contactInfo, { id })),
       ]);

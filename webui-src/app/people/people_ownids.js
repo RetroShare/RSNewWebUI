@@ -254,18 +254,6 @@ const DeleteIdentity = () => {
   };
 };
 
-const UserAvatar = () => ({
-  view: (v) => {
-    const imageURI = v.attrs.avatar;
-    console.log(imageURI);
-    return imageURI === undefined || imageURI.mData.base64 === ''
-      ? []
-      : m('img.avatar', {
-          src: 'data:image/png;base64,' + imageURI.mData.base64,
-        });
-  },
-});
-
 const Identity = () => {
   let details = {};
 
@@ -288,7 +276,7 @@ const Identity = () => {
         },
         [
           m('h4', details.mNickname),
-          m(UserAvatar, { avatar: details.mAvatar }),
+          m(peopleUtil.UserAvatar, { avatar: details.mAvatar }),
           m('.details', [
             m('p', 'ID:'),
             m('p', details.mId),

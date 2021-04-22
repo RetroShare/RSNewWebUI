@@ -1,12 +1,5 @@
 const rs = require('rswebui');
 
-const Data = {
-  gpgDetails: {},
-
-  // eslint-disable-next-line no-use-before-define
-  refreshGpgDetails,
-};
-
 async function refreshIds() {
   let sslIds = [];
   await rs.rsJsonApiRequest('/rsPeers/getFriendList', {}, (data) => (sslIds = data.sslIds));
@@ -24,7 +17,10 @@ async function loadSslDetails() {
   return sslDetails;
 }
 
-async function refreshGpgDetails() {
+const Data = {
+  gpgDetails: {},
+};
+Data.refreshGpgDetails = async function () {
   const details = {};
   const sslDetails = await loadSslDetails();
   await Promise.all(
@@ -37,7 +33,8 @@ async function refreshGpgDetails() {
           (stat) => (isOnline = stat.retval)
         )
         .then(() => {
-          const loc = {
+          // eslint-disable-next-line prefer-const
+          let loc = {
             name: data.location,
             id: data.id,
             lastSeen: data.lastConnect,
@@ -60,6 +57,5 @@ async function refreshGpgDetails() {
     })
   );
   Data.gpgDetails = details;
-}
-
+};
 module.exports = Data;
