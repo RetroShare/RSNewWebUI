@@ -279,6 +279,7 @@ const Lobby = () => {
         ChatLobbyModel.selected(info, '.selected-lobby', tagname),
         {
           key: info.lobby_id.xstr64,
+
           onclick,
         },
         [

@@ -1,4 +1,5 @@
 const m = require('mithril');
+
 const util = require('mail/mail_util');
 
 const Layout = () => {

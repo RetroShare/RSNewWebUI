@@ -92,6 +92,7 @@ function actionButton(file, action) {
         'button',
         {
           title: 'resume',
+
           onclick() {
             fileAction(file.hash, 'resume');
           },
@@ -104,6 +105,7 @@ function actionButton(file, action) {
         'button',
         {
           title: 'pause',
+
           onclick() {
             fileAction(file.hash, 'pause');
           },
@@ -116,6 +118,7 @@ function actionButton(file, action) {
         'button.red',
         {
           title: 'cancel',
+
           onclick() {
             fileAction(file.hash, 'cancel');
           },

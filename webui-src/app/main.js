@@ -3,7 +3,7 @@ const m = require('mithril');
 const login = require('login');
 const home = require('home');
 const network = require('network/network');
-const people = require('people/people');
+const people = require('people/people_resolver');
 const chat = require('chat/chat');
 const mail = require('mail/mail_resolver');
 const files = require('files/files_resolver');
@@ -49,7 +49,7 @@ const Layout = () => {
           links: {
             home: '/home',
             network: '/network',
-            people: '/people',
+            people: '/people/OwnIdentity',
             chat: '/chat',
             mail: '/mail/inbox',
             files: '/files/files',
@@ -72,8 +72,9 @@ m.route(document.getElementById('main'), '/', {
   '/network': {
     render: () => m(Layout, m(network)),
   },
-  '/people': {
-    render: () => m(Layout, m(people)),
+
+  '/people/:tab': {
+    render: (v) => m(Layout, m(people, v.attrs)),
   },
   '/chat/:lobby/:subaction': {
     render: (v) => m(Layout, m(chat, v.attrs)),

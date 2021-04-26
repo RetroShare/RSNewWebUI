@@ -59,6 +59,7 @@ function loginComponent() {
       },
       'Login'
     );
+
   const inputPassword = () =>
     m('input[autofocus]', {
       id: 'password',
@@ -68,7 +69,9 @@ function loginComponent() {
       onkeydown: (e) => {
         if (e.keyCode === 13) {
           passwd = e.target.value;
+
           buttonLogin().click();
+
           return false;
         }
         return true;

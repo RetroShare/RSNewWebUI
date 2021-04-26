@@ -3,10 +3,13 @@ const rs = require('rswebui');
 
 const util = require('config/config_util'); // for future use
 
-/* eslint-disable no-unused-vars */ const SetNwMode = () => {
+/* eslint-disable no-unused-vars */
+
+const SetNwMode = () => {
   let mode = undefined;
   let sslId = undefined;
   const setMode = () => rs.rsJsonApiRequest('/');
+
   return {
     oninit: util.getSslId().then((val) => {
       sslId = val;
@@ -123,6 +126,7 @@ const Component = () => {
       m('.widget.widget-half', [
         m('h3', 'Network Configuration'),
         m('hr'),
+
         m('.grid-2col', [
           m(SetLimits),
           m(SetOpMode),

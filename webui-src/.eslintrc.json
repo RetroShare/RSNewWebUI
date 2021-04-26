@@ -1,60 +1,57 @@
 {
-    "root": true,
-    "env": {
-        "browser": true,
-        "commonjs": true,
-        "es6": true
-    },
-    "extends": "eslint:recommended",
-    "globals": {
-        "Atomics": "readonly",
-        "SharedArrayBuffer": "readonly",
-        "window": "readonly",
-        "document": "readonly"
-    },
-    "parserOptions": {
-        "ecmaVersion": 2018
-    },
-    "ignorePatterns": ["mithril.js", "assets/*", "make-src/*"],
-    "rules": {
-        "linebreak-style": [
-            "error",
-            "unix"
-        ],
-        "quotes": [
-            "error",
-            "single"
-        ],
-        "semi": [
-            "error",
-            "always"
-        ],
-        "arrow-spacing": ["error", { "before": true, "after": true }],
-        "arrow-parens": ["error", "always"],
-        "comma-style": ["error", "last"],
-        "comma-spacing": ["error", { "before": false, "after": true }],
-        "camelcase": ["error", {
-            "allow": ["^UNSAFE_"],
-            "properties": "never",
-            "ignoreGlobals": true
-        }],
-        "eol-last": "error",
-        "eqeqeq": ["error", "always", { "null": "ignore" }],
-        "no-irregular-whitespace": ["error"],
-        "no-trailing-spaces": ["error"],
-        "no-unexpected-multiline": ["error"],
-        "no-unreachable": ["error"],
-        "no-var": "warn",
-        "no-unused-vars": ["error", {
-            "args": "none",
-            "caughtErrors": "none",
-            "ignoreRestSiblings": true,
-            "vars": "all"
-        }],
-        "no-use-before-define": ["warn", { "functions": true, "classes": false }],
-        "object-shorthand": "error",
-        "prefer-const": ["error", { "destructuring": "all" }],
-        "semi-style": ["warn", "last"],
-        "spaced-comment": ["warn", "always"]
-    }
+  "root": true,
+  "env": {
+    "browser": true,
+    "commonjs": true,
+    "es6": true
+  },
+  "extends": "eslint:recommended",
+  "globals": {
+    "Atomics": "readonly",
+    "SharedArrayBuffer": "readonly",
+    "window": "readonly",
+    "document": "readonly"
+  },
+  "parserOptions": {
+    "ecmaVersion": 2018
+  },
+  "ignorePatterns": ["mithril.js", "assets/*", "make-src/*"],
+  "rules": {
+    "linebreak-style": ["off", "unix"],
+    "quotes": ["error", "single"],
+    "semi": ["error", "always"],
+    "arrow-spacing": ["error", { "before": true, "after": true }],
+    "arrow-parens": ["error", "always"],
+    "comma-style": ["error", "last"],
+    "comma-spacing": ["error", { "before": false, "after": true }],
+    "camelcase": [
+      "error",
+      {
+        "allow": ["^UNSAFE_"],
+        "properties": "never",
+        "ignoreGlobals": true
+      }
+    ],
+    "eol-last": "error",
+    "eqeqeq": ["error", "always", { "null": "ignore" }],
+    "no-irregular-whitespace": ["error"],
+    "no-trailing-spaces": ["error"],
+    "no-unexpected-multiline": ["error"],
+    "no-unreachable": ["error"],
+    "no-var": "warn",
+    "no-unused-vars": [
+      "error",
+      {
+        "args": "none",
+        "caughtErrors": "none",
+        "ignoreRestSiblings": true,
+        "vars": "all"
+      }
+    ],
+    "no-use-before-define": ["warn", { "functions": true, "classes": false }],
+    "object-shorthand": "error",
+    "prefer-const": ["error", { "destructuring": "all" }],
+    "semi-style": ["warn", "last"],
+    "spaced-comment": ["warn", "always"]
+  }
 }

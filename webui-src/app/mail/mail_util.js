@@ -27,7 +27,9 @@ const MessageSummary = () => {
         (data) => {
           details = data.msg;
           files = details.files;
+
           isStarred = (details.msgflags & 0xf00) === RS_MSG_STAR;
+
           const flag = details.msgflags & 0xf0;
           if (flag === RS_MSG_NEW || flag === RS_MSG_UNREAD_BY_USER) {
             msgStatus = 'unread';
@@ -78,6 +80,7 @@ const MessageSummary = () => {
           // m('td', details.rspeerid_srcId == 0 ?
           //  '[Notification]' :
           //  peopleUtils.getInfo(details.rspeerid_srcId)), // getInfo previously uses "/rsIdentity/getIdentitiesInfo"
+
           m('td', new Date(details.ts * 1000).toLocaleString()),
         ]
       ),

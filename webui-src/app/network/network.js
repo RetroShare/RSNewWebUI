@@ -122,11 +122,6 @@ const FriendsList = () => {
   return {
     oninit: () => {
       Data.refreshGpgDetails();
-      // rs.setBackgroundTask(
-      //  Data.refreshGpgDetails,
-      //  10000,
-      //  () => m.route.get() === '/network',
-      // )
     },
     view: () =>
       m('.widget', [

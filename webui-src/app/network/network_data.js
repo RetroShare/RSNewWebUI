@@ -17,7 +17,10 @@ async function loadSslDetails() {
   return sslDetails;
 }
 
-async function freshGpgDetails() {
+const Data = {
+  gpgDetails: {},
+};
+Data.refreshGpgDetails = async function () {
   const details = {};
   const sslDetails = await loadSslDetails();
   await Promise.all(
@@ -52,14 +55,6 @@ async function freshGpgDetails() {
         });
     })
   );
-  return details;
-}
-
-const Data = {
-  gpgDetails: {},
-  refreshGpgDetails() {
-    Data.gpgDetails = freshGpgDetails();
-  },
+  Data.gpgDetails = details;
 };
-
 module.exports = Data;

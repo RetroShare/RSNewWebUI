@@ -201,7 +201,9 @@ const EditIdentity = () => {
                   '/rsIdentity/updateIdentity',
                   {
                     id: v.attrs.details.mId,
+
                     name,
+
                     // avatar: v.attrs.details.mAvatar.mData.base64,
                     pseudonimous: true,
                   },
@@ -255,10 +257,6 @@ const DeleteIdentity = () => {
 const Identity = () => {
   let details = {};
 
-  let avatarURI = {
-    view: () => [],
-  };
-
   return {
     oninit: (v) =>
       rs.rsJsonApiRequest(
@@ -268,9 +266,6 @@ const Identity = () => {
         },
         (data) => {
           details = data.details;
-          // Creating URI during fetch because `details` is uninitialized
-          // during view run, due to request being async.
-          avatarURI = peopleUtil.createAvatarURI(data.details.mAvatar);
         }
       ),
     view: (v) =>
@@ -281,7 +276,7 @@ const Identity = () => {
         },
         [
           m('h4', details.mNickname),
-          m(avatarURI),
+          m(peopleUtil.UserAvatar, { avatar: details.mAvatar }),
           m('.details', [
             m('p', 'ID:'),
             m('p', details.mId),

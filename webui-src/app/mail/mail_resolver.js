@@ -51,6 +51,7 @@ module.exports = {
   view: (v) => {
     const tab = v.attrs.tab;
     // TODO: utilize multiple routing params
+
     if (Object.prototype.hasOwnProperty.call(v.attrs, 'msgId')) {
       return m(
         Layout,

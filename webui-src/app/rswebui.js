@@ -1,3 +1,4 @@
+
 const m = require('mithril');
 
 const API_URL = 'http://127.0.0.1:9092';
@@ -50,6 +51,7 @@ function rsJsonApiRequest(
       serialize: handleSerialize,
       headers,
       body: data,
+
       config,
     })
     .then((result) => {
@@ -107,6 +109,7 @@ const eventQueue = {
       types: {
         //                #define RS_CHAT_TYPE_PUBLIC  1
         //                #define RS_CHAT_TYPE_PRIVATE 2
+
         2: (chatId) => chatId.distant_chat_id, // distant chat (initiate? -> todo accept)
         //                #define RS_CHAT_TYPE_LOBBY   3
         3: (chatId) => chatId.lobby_id.xstr64, // lobby_id
@@ -120,6 +123,7 @@ const eventQueue = {
               computeIfMissing(
                 computeIfMissing(owner.messages, chatId.type),
                 keyfn(chatId),
+
                 () => []
               )
             )

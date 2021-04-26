@@ -3,6 +3,7 @@ const rs = require('rswebui');
 
 const servicesInfo = {
   list: [],
+
   setData(data) {
     servicesInfo.list = data.info.mServiceList;
   },

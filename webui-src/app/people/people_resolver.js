@@ -1,13 +1,10 @@
 const m = require('mithril');
-
 const widget = require('widgets');
 
 const sections = {
-  network: require('config/config_network'),
-  node: require('config/config_node'),
-  services: require('config/config_services'),
-  files: require('config/config_files'),
-  people: require('config/config_people'),
+  OwnIdentity: require('people/people_ownids'),
+  MyContacts: require('people/people_own_contacts'),
+  All: require('people/people'),
 };
 
 const Layout = {
@@ -15,7 +12,7 @@ const Layout = {
     m('.tab-page', [
       m(widget.Sidebar, {
         tabs: Object.keys(sections),
-        baseRoute: '/config/',
+        baseRoute: '/people/',
       }),
       m('.node-panel', vnode.children),
     ]),
