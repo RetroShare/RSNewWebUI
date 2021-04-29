@@ -71,6 +71,19 @@ References
 
 Contributing
 ------------
+### Preparing code
+Install `prettier` and `eslint` (required for linting & formatting code):
+```sh
+npm install -g prettier eslint
+```
+Next, run the following in the `webui-src` directory:
+
+To run the linter: `eslint app`
+
+To run the formatter: `prettier -c app`
+
+Linting and formatting can also be done with editor/IDE plugins.
+
 ### Bug Reports & Feature requests
 Please create an [issue](https://github.com/Retroshare/RsNewWebUI/issues) concisely describing the bug you faced, or the feature you would like to see implemented.
 

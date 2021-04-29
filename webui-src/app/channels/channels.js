@@ -1,28 +1,20 @@
-let m = require('mithril');
-let rs = require('rswebui');
+const m = require('mithril');
 
-
-let Channel = () => {
+const Channel = () => {
   return {
     view: () => m('.channel'),
   };
 };
 
-let MyChannels = () => {
+const MyChannels = () => {
   return {
-    view: () => m('.widget', [
-      m('h3', 'My channels'),
-      m('hr'),
-      m(Channel),
-    ])
+    view: () => m('.widget', [m('h3', 'My channels'), m('hr'), m(Channel)]),
   };
 };
 
 const Layout = () => {
   return {
-    view: vnode => m('.tab-page', [
-      m(MyChannels),
-    ]),
+    view: (vnode) => m('.tab-page', [m(MyChannels)]),
   };
 };
 
@@ -31,4 +23,3 @@ module.exports = {
     return m(Layout);
   },
 };
-

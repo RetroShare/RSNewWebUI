@@ -1,16 +1,23 @@
-let m = require('mithril');
-
+const m = require('mithril');
 
 const Sidebar = () => {
   let active = 0;
   return {
-    view: (v) => m('.sidebar',
-      v.attrs.tabs.map((panelName, index) => m(m.route.Link, {
-        class: index === active? 'selected-sidebar-link': '',
-        onclick: () => (active = index),
-        href: v.attrs.baseRoute + panelName
-      }, panelName)),
-    ),
+    view: (v) =>
+      m(
+        '.sidebar',
+        v.attrs.tabs.map((panelName, index) =>
+          m(
+            m.route.Link,
+            {
+              class: index === active ? 'selected-sidebar-link' : '',
+              onclick: () => (active = index),
+              href: v.attrs.baseRoute + panelName,
+            },
+            panelName
+          )
+        )
+      ),
   };
 };
 
@@ -20,13 +27,19 @@ const Sidebar = () => {
 function popupMessage(message) {
   const container = document.getElementById('modal-container');
   container.style.display = 'block';
-  m.render(container,
+  m.render(
+    container,
     m('.modal-content', [
-      m('button.red', {
-        onclick: () => container.style.display = 'none'
-      }, m('i.fas.fa-times')),
+      m(
+        'button.red',
+        {
+          onclick: () => (container.style.display = 'none'),
+        },
+        m('i.fas.fa-times')
+      ),
       message,
-    ]));
+    ])
+  );
 }
 
 module.exports = {
