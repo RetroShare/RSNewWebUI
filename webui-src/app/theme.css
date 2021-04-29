@@ -12,7 +12,7 @@ General site-wide rules
 #tab-content {
   height: 100%;
   /* Margin on top to avoid getting covered by navbar */
-  margin-top: 4em;
+  padding-top: 4em;
   background-color: #eef3f6;
   overflow: auto;
 }
@@ -302,12 +302,20 @@ Target specific sections
 
 /* Navbar */
 nav.tab-menu {
+  border-right: 5px solid #3ba4d7;
   background-color: #333;
-  position: fixed;
-  top: 0;
-  width: 100%;
   border-bottom: 5px solid #3ba4d7;
   box-shadow: 0 5px 5px #aaa;
+  list-style: none;
+  padding: 0;
+  margin-left: 0;
+  float: left;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  padding-top: 2rem;
+  margin-right: 0rem;
 }
 a.tab-menu-item {
   padding: 1em;
@@ -324,10 +332,14 @@ a.tab-menu-item {
 }
 .tab-menu-item:hover {
   background-color: #999;
+  width: -webkit-fill-available;
+}
 }
 .tab-menu-item.selected-tab-item {
   background-color: #3ba4d7;
   color: white;
+  width: -webkit-fill-available;
+}
 }
 
 .sidebar {
