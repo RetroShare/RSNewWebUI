@@ -337,19 +337,18 @@ a.tab-menu-item {
   background-color: #999;
   width: -webkit-fill-available;
 }
-}
+
 .tab-menu-item.selected-tab-item {
   background-color: #3ba4d7;
   color: white;
   width: -webkit-fill-available;
 }
-}
 
 .sidebar {
-  position: fixed;
   height: 100%;
   width: 200px;
   background-color: white;
+  display: -webkit-box;
 }
 .sidebar a {
   text-decoration: none;
