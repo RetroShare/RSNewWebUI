@@ -123,7 +123,9 @@ hr {
 .widget-half {
   max-width: 50%;
 }
-
+.widget-2{
+  margin-top: -12rem;
+}
 .grid-2col {
   display: grid;
   grid-template-columns: auto auto;
@@ -345,10 +347,8 @@ a.tab-menu-item {
 }
 
 .sidebar {
-  height: 100%;
-  width: 200px;
-  background-color: white;
-  display: -webkit-box;
+    display: inline-block;
+    margin-top: 3rem;
 }
 .sidebar a {
   text-decoration: none;
