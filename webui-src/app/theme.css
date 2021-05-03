@@ -24,9 +24,9 @@ General site-wide rules
   animation: fadein 0.5s;
 }
 
-input[type="text"],
-input[type="password"],
-input[type="number"],
+input[type='text'],
+input[type='password'],
+input[type='number'],
 textarea {
   box-sizing: border-box;
   background: white;
@@ -130,7 +130,7 @@ hr {
   grid-row-gap: 16px;
   justify-content: start;
 }
-.grid-2col input[type="checkbox"] {
+.grid-2col input[type='checkbox'] {
   margin-top: 20px;
 }
 

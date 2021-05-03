@@ -1,47 +1,47 @@
 .identity {
-    color: #444;
-    font-size: 1.1em;
-    margin: 20px;
-    padding: 10px;
-    border: 1px solid #aaa;
-    border-radius: 20px;
+  color: #444;
+  font-size: 1.1em;
+  margin: 20px;
+  padding: 10px;
+  border: 1px solid #aaa;
+  border-radius: 20px;
 }
 .identity > h4 {
-    margin: 5px;
-    font-size: 1.3em;
+  margin: 5px;
+  font-size: 1.3em;
 }
 .identity p {
-    margin: 0;
+  margin: 0;
 }
 .identity button {
-    font-size: 0.9em;
+  font-size: 0.9em;
 }
 
 img.avatar {
-    float: left;
-    height: 100px;
-    margin-right: 0.3em;
+  float: left;
+  height: 100px;
+  margin-right: 0.3em;
 }
 
 .identity .details {
-    display: grid;
-    grid-template-columns: 140px auto;
-    grid-row-gap: 5px;
-    justify-content: left;
+  display: grid;
+  grid-template-columns: 140px auto;
+  grid-row-gap: 5px;
+  justify-content: left;
 }
 
-.counter{
-    margin-left: 0.5em;
+.counter {
+  margin-left: 0.5em;
 }
 .counter:before {
-    content: "(";
+  content: '(';
 }
 .counter:after {
-    content: ")";
+  content: ')';
 }
 
-.chatInit{
-    margin-left: 0.5em;
-    color: green;
-    cursor: pointer;
+.chatInit {
+  margin-left: 0.5em;
+  color: green;
+  cursor: pointer;
 }

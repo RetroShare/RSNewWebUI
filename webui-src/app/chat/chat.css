@@ -1,160 +1,163 @@
 .lobby {
-    margin: 10px;
-    border: 1px solid #aaa;
-    border-radius: 20px;
+  margin: 10px;
+  border: 1px solid #aaa;
+  border-radius: 20px;
 }
 
 .lobby .mainname {
-    margin: 20px;
-    font-weight: 100;
-    font-size: 1.2em;
+  margin: 20px;
+  font-weight: 100;
+  font-size: 1.2em;
 }
 
 .topic {
-    color: #666;
+  color: #666;
 }
 
 .lobby > .topic {
-    font-size: 0.95em;
-    margin-left: 25px;
-    margin-bottom: 5px;
+  font-size: 0.95em;
+  margin-left: 25px;
+  margin-bottom: 5px;
 }
 
 .lefttitle {
-    margin-top: 15px;
-    margin-bottom: 0;
-    font-weight: 100;
-    font-size: 1.2em;
+  margin-top: 15px;
+  margin-bottom: 0;
+  font-weight: 100;
+  font-size: 1.2em;
 }
 
 .leftname {
-    margin-top: 5px;
-    margin-bottom: 5px;
-    padding:5px;
-    font-weight: 100;
-    font-size: 1em;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding: 5px;
+  font-weight: 100;
+  font-size: 1em;
 }
 
 .leftlobby > .topic {
-    font-size: 0.75em;
-    margin-left: 15px;
-    margin-bottom: 5px;
+  font-size: 0.75em;
+  margin-left: 15px;
+  margin-bottom: 5px;
 }
 
-.subscribed, .public {
-    cursor: pointer;
+.subscribed,
+.public {
+  cursor: pointer;
 }
 
 .leftlobby {
-    border: 1px solid #aaa;
-    border-radius: 10px;
-    margin-top: 5px;
-    background-color: white;
+  border: 1px solid #aaa;
+  border-radius: 10px;
+  margin-top: 5px;
+  background-color: white;
 }
 
-.leftlobby.selected-lobby, .selectedidentity {
-    color: white;
-    background-color: #3ba4d7;
+.leftlobby.selected-lobby,
+.selectedidentity {
+  color: white;
+  background-color: #3ba4d7;
 }
 
 .rightbar {
-    position: absolute;
-    width: 185px;
-    background-color: white;
-    overflow: auto;
-    top: 130px;
-    bottom: 15px;
-    right: 15px;
+  position: absolute;
+  width: 185px;
+  background-color: white;
+  overflow: auto;
+  top: 130px;
+  bottom: 15px;
+  right: 15px;
 }
 
 .user {
-    padding: 5px;
+  padding: 5px;
 }
 
 .lobbyName {
-    padding: 15px;
+  padding: 15px;
 }
 
 .lobbies {
-    position: absolute;
-    width: 185px;
-    left:15px ;
-    bottom: 15px;
-    top: 130px;
-    overflow:auto;
+  position: absolute;
+  width: 185px;
+  left: 15px;
+  bottom: 15px;
+  top: 130px;
+  overflow: auto;
 }
 
-.messages, .setup {
-    position: absolute;
-    background-color: white;
-    top: 130px;
-    left: 215px;
-    right: 215px;
-    overflow: auto;
+.messages,
+.setup {
+  position: absolute;
+  background-color: white;
+  top: 130px;
+  left: 215px;
+  right: 215px;
+  overflow: auto;
 }
 
 .messages {
-    bottom: 115px;
+  bottom: 115px;
 }
 
 .messagetext {
-    white-space: break-spaces;
-    margin-right: 5px;
+  white-space: break-spaces;
+  margin-right: 5px;
 }
 
 .message > * {
-    margin-left: 5px;
+  margin-left: 5px;
 }
 
 .username {
-    color: darkgreen;
-    font-weight: bolder;
+  color: darkgreen;
+  font-weight: bolder;
 }
 
 .chatMessage {
-    position: absolute;
-    background-color: white;
-    height: 85px;
-    bottom: 15px;
-    right: 215px;
-    left: 215px;
+  position: absolute;
+  background-color: white;
+  height: 85px;
+  bottom: 15px;
+  right: 215px;
+  left: 215px;
 }
 
 textarea.chatMsg {
-    height: 100%;
-    width: 100%;
+  height: 100%;
+  width: 100%;
 }
 
 .chatatchar {
-    margin-left: 0.2em;
-    margin-right: 0.2em;
-    color: silver;
+  margin-left: 0.2em;
+  margin-right: 0.2em;
+  color: silver;
 }
 
 .setupicon {
-    margin-left: 1em;
-    cursor: pointer;
+  margin-left: 1em;
+  cursor: pointer;
 }
 
 .leaveicon {
-    margin-left: 1em;
-    cursor: pointer;
-    color: #d40000;
+  margin-left: 1em;
+  cursor: pointer;
+  color: #d40000;
 }
 
 .selectidentity {
-    margin: 15px;
-    font-size: 1.2em;
+  margin: 15px;
+  font-size: 1.2em;
 }
 
 .setup > .identity {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .setup {
-    bottom: 15px;
+  bottom: 15px;
 }
 
 .createDistantChat {
-    margin-top: 1em;
+  margin-top: 1em;
 }
