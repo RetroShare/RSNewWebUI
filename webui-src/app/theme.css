@@ -309,17 +309,12 @@ Target specific sections
 nav.tab-menu {
   border-right: 5px solid #3ba4d7;
   background-color: #333;
-  border-bottom: 5px solid #3ba4d7;
   box-shadow: 0 5px 5px #aaa;
-  list-style: none;
-  padding: 0;
-  margin-left: 0;
   float: left;
   display: flex;
   flex-direction: column;
   align-items: center;
   height: 100%;
-  padding-top: 2rem;
   margin-right: 0rem;
 }
 a.tab-menu-item {
