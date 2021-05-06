@@ -11,8 +11,6 @@ General site-wide rules
 /* Main tab content */
 #tab-content {
   height: 100%;
-  /* Margin on top to avoid getting covered by navbar */
-  padding-top: 4em;
   background-color: #eef3f6;
   overflow: auto;
 }
@@ -123,9 +121,7 @@ hr {
 .widget-half {
   max-width: 50%;
 }
-.widget-2{
-  margin-top: -12rem;
-}
+
 .grid-2col {
   display: grid;
   grid-template-columns: auto auto;
@@ -317,6 +313,10 @@ nav.tab-menu {
   height: 100%;
   margin-right: 0rem;
 }
+.tab-menu-item
+{
+  width: 4.3rem;
+}
 a.tab-menu-item {
   padding: 1em;
   text-align: center;
@@ -332,13 +332,12 @@ a.tab-menu-item {
 }
 .tab-menu-item:hover {
   background-color: #999;
-  width: -webkit-fill-available;
+ 
 }
 
 .tab-menu-item.selected-tab-item {
   background-color: #3ba4d7;
-  color: white;
-  width: -webkit-fill-available;
+
 }
 
 .sidebar {
@@ -371,5 +370,4 @@ a.tab-menu-item {
   margin-left: 200px;
   animation: fadein 0.5s;
 }
-.widget-group {
-}
+

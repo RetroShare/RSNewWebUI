@@ -75,12 +75,13 @@
 
 .lobbyName {
   padding: 15px;
+  margin-top: 2rem;
 }
 
 .lobbies {
   position: absolute;
   width: 185px;
-  left: 15px;
+  left: 115px;
   bottom: 15px;
   top: 130px;
   overflow: auto;
@@ -91,7 +92,7 @@
   position: absolute;
   background-color: white;
   top: 130px;
-  left: 215px;
+  left: 328px;
   right: 215px;
   overflow: auto;
 }
