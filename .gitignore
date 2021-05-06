@@ -2,4 +2,4 @@
 Makefile
 webui/*
 webui.pro.user
-libwebui.so*
+
