@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.       #
 ################################################################################
 
-TEMPLATE = lib
+TEMPLATE = app
 CONFIG -= qt
 
 webui_files.path = "$${DATA_DIR}/webui"
