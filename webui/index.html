@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>RetroShare</title>
+    <link rel="stylesheet" href="app.css">
+    <link rel="stylesheet" href="css/fontawesome.css">
+    <link rel="stylesheet" href="css/solid.css">
+    <link href="/data/retroshare.svg" rel="icon" data-n-head="true" type="image/svg">
+    <script src="app.js"></script>
+</head>
+<body onload="load_ui();">
+    <div id="main">
+	<h3>
+	Javascript not found!
+	</h3>
+    <script type="text/javascript">
+        function load_ui(){
+            var main = require('main');
+        }
+    </script>
+    <noscript>Sorry but JavaScript is needed here! Please enable it in your browser.</noscript>
+    </div>
+    <div id="notification-container"></div>
+    <div id="modal-container"></div>
+</body>
+</html>

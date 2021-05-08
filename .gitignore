@@ -1,4 +1,3 @@
 .qmake.stash
 Makefile
-webui/*
 webui.pro.user

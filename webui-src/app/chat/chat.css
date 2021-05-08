@@ -81,7 +81,7 @@
 .lobbies {
   position: absolute;
   width: 185px;
-  left: 115px;
+  left: 138px;
   bottom: 15px;
   top: 130px;
   overflow: auto;
@@ -121,7 +121,7 @@
   height: 85px;
   bottom: 15px;
   right: 215px;
-  left: 215px;
+  left: 323px;
 }
 
 textarea.chatMsg {
