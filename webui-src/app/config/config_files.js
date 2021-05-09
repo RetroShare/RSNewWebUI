@@ -9,7 +9,7 @@ const SharedDirectories = () => {
       rs.rsJsonApiRequest('/rsFiles/getSharedDirectories', {}, (data) => (directories = data.dirs));
     },
     view: (vnode) =>
-      m('.widget', [
+      m('.widget .widget-2', [
         m('h3', 'Shared Directories'),
         m('hr'),
         directories.map((dir) =>

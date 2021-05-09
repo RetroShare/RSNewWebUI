@@ -123,7 +123,7 @@ Low traffic: 10% standard traffic and TODO: pause all file transfers\n`
 const Component = () => {
   return {
     view: () =>
-      m('.widget.widget-half', [
+      m('.widget.widget-half .widget-2', [
         m('h3', 'Network Configuration'),
         m('hr'),
 

@@ -133,7 +133,7 @@ const Component = () => {
       Downloads.resetSearch();
     },
     view: () =>
-      m('.widget', [
+      m('.widget .widget-2', [
         m('h3', 'Downloads (' + Downloads.hashes.length + ' files)'),
         m('hr'),
         m(
