@@ -2,54 +2,198 @@ const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
 
+const retrosemitext = () => {
+  return {
+    view() {
+      return m(
+        '.retrotext',
+        {
+          style: 'font-weight:500;font-size:2.4rem',
+        },
+        [
+          m(
+            'span',
+            {
+              style: 'color: #3ba4d7',
+            },
+            'RETRO'
+          ),
+          'SHARE',
+        ]
+      );
+    },
+  };
+};
+const retroshareText = () => {
+  return {
+    view() {
+      return m('.retroshareText', [m(retrosemitext), m('b', 'secure connection for everyone')]);
+    },
+  };
+};
+
+const logo = () => {
+  return {
+    view() {
+      return m('.logo', [
+        m('img.logo[width=20%][height=10%]', {
+          src: '../data/retroshare.svg',
+          alt: 'retroshare_icon',
+        }),
+        m(retroshareText),
+      ]);
+    },
+  };
+};
+
+const webhelpConfirm = () => {
+  return {
+    view: () => [
+      m('h3', 'Confirmation'),
+      m('hr'),
+      m('p', 'Do you want this link to be handled by your system?'),
+      m('p', 'https://retrosharedocs.readthedocs.io/en/latest/'),
+      m('p', 'Make sure this link has not been forged to drag you to a malicious website.'),
+      m(
+        'button',
+        {
+          onclick: () => {
+            window.open('https://retrosharedocs.readthedocs.io/en/latest/');
+          },
+        },
+        'Ok'
+      ),
+    ],
+  };
+};
+
+const webhelp = () => {
+  return {
+    view() {
+      return m(
+        '.webhelp',
+        {
+          onclick: () => {
+            widget.popupMessage(m(webhelpConfirm));
+          },
+        },
+        [
+          m('i.fas .fa-globe-europe', { style: 'color:green' }),
+          m('p', { style: 'border-width:1px' }, 'Open Web Help'),
+        ]
+      );
+    },
+  };
+};
+const ConfirmCopied = () => {
+  return {
+    view: () => [
+      m('h3', 'Copy to Clipboard'),
+      m('hr'),
+      m(
+        'p',
+        'Your Retroshare ID is copied to Clipboard, paste and send it to your friend via email or some other way'
+      ),
+      m('button', {}, 'Ok'),
+    ],
+  };
+};
+
+const retroshareId = () => {
+  return {
+    view(v) {
+      return m('.retroshareID', [
+        m('i.fas .fa-copy', {
+          style: 'color: #3ba4d7;margin-right:3px',
+          onclick: () => {
+            document.getElementById('retroId').select();
+            document.execCommand('copy');
+            widget.popupMessage(m(ConfirmCopied));
+          },
+        }),
+
+        m(
+          'textarea[readonly] .textArea',
+          {
+            id: 'retroId',
+            rows: 1,
+            cols: v.attrs.ownCert.substring(31).length + 2,
+            placeholder: 'certificate',
+          },
+          v.attrs.ownCert.substring(31)
+        ),
+        m('i.fas .fa-share-alt', { style: 'color: #3ba4d7' }),
+      ]);
+    },
+  };
+};
+
 const Certificate = () => {
   let ownCert = '';
-  let short = false;
-  function loadOwnCert(short) {
-    if (short) {
-      rs.rsJsonApiRequest(
-        '/rsPeers/GetShortInvite',
-        { formatRadix: true },
-        (data) => (ownCert = data.invite)
-      );
-    } else {
-      rs.rsJsonApiRequest('/rsPeers/GetRetroshareInvite', {}, (data) => (ownCert = data.retval));
-    }
+  function loadOwnCert() {
+    rs.rsJsonApiRequest(
+      '/rsPeers/GetShortInvite',
+      { formatRadix: true },
+      (data) => (ownCert = data.invite)
+    );
   }
 
   return {
     oninit() {
       // Load long cert by default
-      loadOwnCert(false);
+      loadOwnCert();
     },
 
     view() {
-      return m('.widget.widget-half', [
-        m('h3', 'Certificate'),
-        m('p', 'Your Retroshare certificate, click to copy'),
-        m('hr'),
+      return m('.certificate ', [
+        m(logo),
         m(
-          'textarea[readonly]',
+          'p',
           {
-            id: 'certificate',
-            rows: 14,
-            cols: 65,
-            placeholder: 'certificate',
+            style: 'margin-top:25px;font-size:1.1rem;font-weight:500;',
+          },
+          'Open Source cross-platform,'
+        ),
+        m(
+          'p',
+          {
+            style: 'margin:0;padding:0; margin-top:5px;font-size:1.1rem;',
+          },
+          'private and secure decentralized communication platform'
+        ),
+        m(
+          'p',
+          {
+            style: 'margin-top:80px;color: #3ba4d7;font-size:1.1rem;font-weight:600;',
+          },
+          'This is your Retroshare ID. Copy and share with your friends!'
+        ),
+        m(retroshareId, { ownCert }),
+        m(
+          'p',
+          {
+            style: 'margin-bottom:5px;margin-top:40px;font-size:1.1rem',
+          },
+          'Did you receive a Retroshare ID from your friend ?'
+        ),
+        m(
+          'button',
+          {
             onclick: () => {
-              document.getElementById('certificate').select();
-              document.execCommand('copy');
+              widget.popupMessage(m(AddFriend));
             },
           },
-          ownCert
+          'Add Friend'
         ),
-        m('input[type=checkbox]', {
-          checked: short,
-          oninput: (e) => {
-            short = e.target.checked;
-            loadOwnCert(short);
+        m(
+          'p',
+          {
+            style: 'margin-bottom:5px;margin-top:40px;font-size:1.1rem',
           },
-        }),
-        'Short version',
+          'Do you need help with Retoshare ?'
+        ),
+
+        m(webhelp),
       ]);
     },
   };
@@ -124,7 +268,7 @@ const AddFriend = () => {
 
   return {
     view: (vnode) =>
-      m('.widget.widget-half', [
+      m('.widget', [
         m('h3', 'Add friend'),
         m(
           'p',
@@ -180,7 +324,7 @@ const AddFriend = () => {
 
 const Layout = () => {
   return {
-    view: () => m('.tab-page', [m(Certificate), m(AddFriend)]),
+    view: () => m('.tab-page ', [m(Certificate)]),
   };
 };
 
