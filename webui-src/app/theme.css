@@ -339,8 +339,10 @@ a.tab-menu-item {
   color: white;
 }
 .sidebar {
-    display: inline-block;
-    margin-top: 3rem;
+  position: fixed;
+  height: 100%;
+  width: 200px;
+  background-color: white;
 }
 .sidebar a {
   text-decoration: none;
@@ -360,15 +362,13 @@ a.tab-menu-item {
   border-left: 5px solid #3ba4d7;
   animation: expand-left-border 0.1s;
 }
-.widget-2{
-  margin-top: -12rem;
-}
+
 /* Content adjacent to sidebar */
 .node-panel {
   margin-left: 200px;
   animation: fadein 0.5s;
 }
 
-i.fas{
+i.sidenav-icon {
   padding-right: 1rem;
 }

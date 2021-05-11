@@ -679,7 +679,7 @@ const SharedDirectories = () => {
       rs.rsJsonApiRequest('/rsFiles/getSharedDirectories', {}, (data) => (directories = data.dirs));
     },
     view: (vnode) =>
-      m('.widget .widget-2', [
+      m('.widget .', [
         m('h3', 'Shared Directories'),
         m('hr'),
         directories.map((dir) =>
@@ -946,7 +946,7 @@ Low traffic: 10% standard traffic and TODO: pause all file transfers\n`
 const Component = () => {
   return {
     view: () =>
-      m('.widget.widget-half.widget-2', [
+      m('.widget.widget-half.', [
         m('h3', 'Network Configuration'),
         m('hr'),
 
@@ -978,7 +978,7 @@ const Node = () => {
     },
     view() {
       return [
-        m('.widget.widget-half .widget-2', [
+        m('.widget.widget-half .', [
           m('h3', 'Public Information'),
           m('hr'),
           m('ul', [
@@ -1020,7 +1020,7 @@ const Reputation = () => {
       );
     },
     view: (vnode) =>
-      m('.widget .widget-2', [
+      m('.widget .', [
         m('h3', 'Reputation'),
         m('hr'),
         m('.grid-2col', [
@@ -1155,7 +1155,7 @@ const MyServices = {
     rs.rsJsonApiRequest('/rsServiceControl/getOwnServices', {}, servicesInfo.setData);
   },
   view() {
-    return m('.widget .widget-2', [
+    return m('.widget .', [
       m('h3', 'My Services'),
       m('hr'),
       m('table', [
@@ -1339,7 +1339,7 @@ const Component = () => {
       Downloads.resetSearch();
     },
     view: () =>
-      m('.widget .widget-2', [
+      m('.widget .', [
         m('h3', 'Downloads (' + Downloads.hashes.length + ' files)'),
         m('hr'),
         m(
@@ -2136,7 +2136,7 @@ const util = require('mail/mail_util');
 const Layout = () => {
   return {
     view: (v) => [
-      m('.widget .widget-2', [
+      m('.widget .', [
         m('h3', 'Drafts'),
         m('hr'),
         m(
@@ -2166,7 +2166,7 @@ const util = require('mail/mail_util');
 const Layout = () => {
   return {
     view: (v) => [
-      m('.widget.widget-2', [
+      m('.widget.', [
         m('h3', 'Inbox'),
         m('hr'),
         m(
@@ -2196,7 +2196,7 @@ const util = require('mail/mail_util');
 const Layout = () => {
   return {
     view: (v) => [
-      m('.widget .widget-2', [
+      m('.widget .', [
         m('h3', 'Outbox'),
         m('hr'),
         m(
@@ -2300,7 +2300,7 @@ const util = require('mail/mail_util');
 const Layout = () => {
   return {
     view: (v) => [
-      m('.widget .widget-2', [
+      m('.widget .', [
         m('h3', 'Sent'),
         m('hr'),
         m(
@@ -2511,14 +2511,14 @@ const channels = require('channels/channels');
 const config = require('config/config_resolver');
 
 const navIcon = {
-  home: m('i.fas.fa-home'),
-  network: m('i.fas.fa-share-alt'),
-  people: m('i.fas.fa-users'),
-  chat: m('i.fas.fa-comments'),
-  mail: m('i.fas.fa-envelope'),
-  files: m('i.fas.fa-folder-open'),
-  channels: m('i.fas.fa-tv'),
-  config: m('i.fas.fa-cogs'),
+  home: m('i.fas.fa-home.sidenav-icon'),
+  network: m('i.fas.fa-share-alt.sidenav-icon'),
+  people: m('i.fas.fa-users.sidenav-icon'),
+  chat: m('i.fas.fa-comments.sidenav-icon'),
+  mail: m('i.fas.fa-envelope.sidenav-icon'),
+  files: m('i.fas.fa-folder-open.sidenav-icon'),
+  channels: m('i.fas.fa-tv.sidenav-icon'),
+  config: m('i.fas.fa-cogs.sidenav-icon'),
 };
 
 const navbar = () => {
@@ -5348,7 +5348,7 @@ const Layout = {
         tabs: Object.keys(sections),
         baseRoute: '/people/',
       }),
-      m('.node-panel .widget-2', vnode.children),
+      m('.node-panel .', vnode.children),
     ]),
 };
 

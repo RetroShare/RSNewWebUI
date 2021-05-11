@@ -11,14 +11,14 @@ const channels = require('channels/channels');
 const config = require('config/config_resolver');
 
 const navIcon = {
-  home: m('i.fas.fa-home'),
-  network: m('i.fas.fa-share-alt'),
-  people: m('i.fas.fa-users'),
-  chat: m('i.fas.fa-comments'),
-  mail: m('i.fas.fa-envelope'),
-  files: m('i.fas.fa-folder-open'),
-  channels: m('i.fas.fa-tv'),
-  config: m('i.fas.fa-cogs'),
+  home: m('i.fas.fa-home.sidenav-icon'),
+  network: m('i.fas.fa-share-alt.sidenav-icon'),
+  people: m('i.fas.fa-users.sidenav-icon'),
+  chat: m('i.fas.fa-comments.sidenav-icon'),
+  mail: m('i.fas.fa-envelope.sidenav-icon'),
+  files: m('i.fas.fa-folder-open.sidenav-icon'),
+  channels: m('i.fas.fa-tv.sidenav-icon'),
+  config: m('i.fas.fa-cogs.sidenav-icon'),
 };
 
 const navbar = () => {

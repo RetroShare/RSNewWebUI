@@ -14,7 +14,7 @@ const Layout = {
         tabs: Object.keys(sections),
         baseRoute: '/people/',
       }),
-      m('.node-panel .widget-2', vnode.children),
+      m('.node-panel .', vnode.children),
     ]),
 };
 

@@ -94,7 +94,7 @@ html, body, #main {
   overflow: auto;
 }
 
-i.fas{
+i.sidenav-icon {
   padding-right: 1rem;
 }
 
@@ -489,9 +489,6 @@ hr {
 .widget-half {
   max-width: 50%;
 }
-.widget-2{
-  margin-top: -12rem;
-}
 .grid-2col {
   display: grid;
   grid-template-columns: auto auto;
@@ -711,8 +708,10 @@ a.tab-menu-item {
 }
 
 .sidebar{
-  display: inline-block;
-  margin-top: 3rem;
+  position: fixed;
+  height: 100%;
+  width: 200px;
+  background-color: white;
 }
 
 .sidebar a {

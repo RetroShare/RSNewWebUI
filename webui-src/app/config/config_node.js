@@ -13,7 +13,7 @@ const Node = () => {
     },
     view() {
       return [
-        m('.widget.widget-half .widget-2', [
+        m('.widget.widget-half .', [
           m('h3', 'Public Information'),
           m('hr'),
           m('ul', [
