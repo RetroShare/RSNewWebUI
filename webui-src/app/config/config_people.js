@@ -18,7 +18,7 @@ const Reputation = () => {
       );
     },
     view: (vnode) =>
-      m('.widget .', [
+      m('.widget', [
         m('h3', 'Reputation'),
         m('hr'),
         m('.grid-2col', [

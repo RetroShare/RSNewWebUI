@@ -4,7 +4,7 @@ const util = require('mail/mail_util');
 const Layout = () => {
   return {
     view: (v) => [
-      m('.widget .', [
+      m('.widget', [
         m('h3', 'Inbox'),
         m('hr'),
         m(
