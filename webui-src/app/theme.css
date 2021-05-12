@@ -11,8 +11,6 @@ General site-wide rules
 /* Main tab content */
 #tab-content {
   height: 100%;
-  /* Margin on top to avoid getting covered by navbar */
-  margin-top: 4em;
   background-color: #eef3f6;
   overflow: auto;
 }
@@ -305,34 +303,41 @@ Target specific sections
 
 /* Navbar */
 nav.tab-menu {
+  border-right: 5px solid #3ba4d7;
   background-color: #333;
-  position: fixed;
-  top: 0;
-  width: 100%;
-  border-bottom: 5px solid #3ba4d7;
   box-shadow: 0 5px 5px #aaa;
+  float: left;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  margin-right: 0rem;
+}
+.tab-menu-item
+{
+  width: 6rem;
 }
 a.tab-menu-item {
   padding: 1em;
   text-align: center;
   text-decoration: none;
   color: #ccc;
-  font-size: 0.9em;
+  font-size: 1em;
   /* CSS capitalization is magical! */
   text-transform: capitalize;
   transition: all 0.5s;
   /* To vertically stack child nodes */
   display: inline-flex;
-  flex-direction: column;
+  flex-direction: row;
 }
 .tab-menu-item:hover {
   background-color: #999;
 }
+
 .tab-menu-item.selected-tab-item {
   background-color: #3ba4d7;
   color: white;
 }
-
 .sidebar {
   position: fixed;
   height: 100%;
@@ -357,10 +362,13 @@ a.tab-menu-item {
   border-left: 5px solid #3ba4d7;
   animation: expand-left-border 0.1s;
 }
+
 /* Content adjacent to sidebar */
 .node-panel {
   margin-left: 200px;
   animation: fadein 0.5s;
 }
-.widget-group {
+
+i.sidenav-icon {
+  padding-right: 1rem;
 }

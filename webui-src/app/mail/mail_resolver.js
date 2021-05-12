@@ -63,7 +63,7 @@ module.exports = {
     return m(
       Layout,
       m(sections[tab], {
-        list: Messages[tab],
+        list: Messages[tab].reverse(),
       })
     );
   },
