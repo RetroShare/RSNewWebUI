@@ -121,7 +121,61 @@ hr {
 .widget-half {
   max-width: 50%;
 }
+.certificate {
+  margin: auto;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+.certificate > p {
+  margin: 0;
+  padding: 0;
+}
+.textArea {
+  box-sizing: none;
+  background: transparent;
+  font-size: 1.1rem;
+  border-radius: 5px;
+  border: none;
+}
 
+.logo {
+  display: flex;
+  max-width: 500px;
+  justify-content: center;
+  align-items: center;
+}
+.retroshareText > h3 {
+  margin-right: 3px;
+}
+.webhelp {
+  background: whitesmoke;
+  font-size: 0.8rem;
+
+  border-radius: 5px;
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  color: black;
+  border-radius: 5px;
+  border: 1px solid black;
+  padding: 0px 10px;
+}
+.webhelp > i {
+  margin-right: 1.2px;
+  font-size: 1.2rem;
+}
+.webhelp > p {
+  font-weight: 600;
+}
+.retroshareID {
+  display: flex;
+  justify-self: start;
+  align-items: center;
+  font-size: 1.2rem;
+}
 .grid-2col {
   display: grid;
   grid-template-columns: auto auto;
