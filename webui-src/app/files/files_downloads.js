@@ -89,7 +89,7 @@ function addFile(url) {
       hash: details.hash,
 
       flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
-      size: Number.parseInt(details.size),
+      size: details.size,
     },
     (status) => {
       widget.popupMessage([
