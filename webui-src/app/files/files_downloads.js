@@ -84,7 +84,14 @@ function addFile(url) {
   }
   rs.rsJsonApiRequest(
     '/rsFiles/FileRequest',
-    {},
+    {
+      fileName: details.name,
+      hash: details.hash,
+      flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
+      size: {
+        xstr64: details.size,
+      },
+    },
     (status) => {
       widget.popupMessage([
         m('i.fas.fa-file-medical'),
@@ -92,18 +99,7 @@ function addFile(url) {
         m('hr'),
         m('p', 'Successfully added file!'),
       ]);
-    },
-    true,
-    {},
-    undefined,
-    // NOTE: Payload is passed through serializer since JS cannot
-    // represent filesizes >2Gi using `Number` accurately
-    () => `{
-        "fileName": "${details.name}",
-        "hash": "${details.hash}",
-        "flags": ${util.RS_FILE_REQ_ANONYMOUS_ROUTING},
-        "size": ${details.size}
-        }`
+    }
   );
 }
 
