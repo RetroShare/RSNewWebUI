@@ -155,11 +155,30 @@ const Table = () => {
       ]),
   };
 };
-
+const SearchBar = () => {
+  let searchString = '';
+  return {
+    view: (v) =>
+      m('input[type=text][id=searchmail][placeholder=Search Subject].searchbar', {
+        value: searchString,
+        oninput: (e) => {
+          searchString = e.target.value.toLowerCase();
+          for (const hash in v.attrs.list) {
+            if (v.attrs.list[hash].fname.toLowerCase().indexOf(searchString) > -1) {
+              v.attrs.list[hash].isSearched = true;
+            } else {
+              v.attrs.list[hash].isSearched = false;
+            }
+          }
+        },
+      }),
+  };
+};
 module.exports = {
   MessageSummary,
   MessageView,
   Table,
+  SearchBar,
   RS_MSG_BOXMASK,
   RS_MSG_INBOX,
   RS_MSG_SENTBOX,

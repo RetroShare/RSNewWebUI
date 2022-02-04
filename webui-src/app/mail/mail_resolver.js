@@ -2,6 +2,7 @@ const m = require('mithril');
 const rs = require('rswebui');
 const util = require('mail/mail_util');
 const widget = require('widgets');
+const compose = require('mail/mail_compose')
 
 const Messages = {
   all: [],
@@ -34,11 +35,27 @@ const sections = {
   drafts: require('mail/mail_draftbox'),
   sent: require('mail/mail_sentbox'),
 };
-
+const tagselect = {
+  showval: 'Tags',
+  opts: ['Tags','Important', 'Work', 'Personal']
+}
 const Layout = {
   oninit: Messages.load,
   view: (vnode) =>
+
     m('.tab-page', [
+      m("button[id=composebtn]", { onclick: () => { widget.popupMessage(m(compose)); } }, "Compose"),
+      m('select[id=tags]', {
+        value: tagselect.showval,
+        onchange: e => {
+          tagselect.showval = tagselect.opts[e.target.selectedIndex]
+        }
+      }, [
+        tagselect.opts.map(o => m('option', { value: o }, o.toLocaleString()))
+      ]),
+      m(util.SearchBar, {
+        list: Object.assign({}, {}, {}),
+      }),
       m(widget.Sidebar, {
         tabs: Object.keys(sections),
         baseRoute: '/mail/',
