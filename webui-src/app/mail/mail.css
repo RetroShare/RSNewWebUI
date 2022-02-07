@@ -75,3 +75,10 @@ iframe.msg {
   margin-left: 20px;
   height: 40px;
 }
+#composepopup{
+  height: 80%;
+  width: 70%;
+  bottom: 50%;
+  right: 60%;
+  
+}

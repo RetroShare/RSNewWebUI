@@ -174,11 +174,29 @@ const SearchBar = () => {
       }),
   };
 };
+function popupMessageCompose(message) {
+  const container = document.getElementById('modal-container');
+  container.style.display = 'block';
+  m.render(
+    container,
+    m('.modal-content[id=composepopup]', [
+      m(
+        'button.red',
+        {
+          onclick: () => (container.style.display = 'none'),
+        },
+        m('i.fas.fa-times')
+      ),
+      message,
+    ])
+  );
+}
 module.exports = {
   MessageSummary,
   MessageView,
   Table,
   SearchBar,
+  popupMessageCompose,
   RS_MSG_BOXMASK,
   RS_MSG_INBOX,
   RS_MSG_SENTBOX,
