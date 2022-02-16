@@ -13,9 +13,14 @@ table.mails th:nth-child(3) {
   width: 50%;
   text-align: start;
 }
-/* date */
+/* From */
 table.mails th:nth-child(4) {
-  width: 40%;
+  width: 20%;
+  text-align: start;
+}
+/* date */
+table.mails th:nth-child(5) {
+  width: 20%;
   text-align: start;
 }
 
@@ -27,8 +32,12 @@ table.mails td:nth-child(3) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* date */
+/* From */
 table.mails td:nth-child(4) {
+  text-align: start;
+}
+/* date */
+table.mails td:nth-child(5) {
   text-align: start;
 }
 
@@ -79,6 +88,6 @@ iframe.msg {
   height: 80%;
   width: 70%;
   bottom: 50%;
-  right: 60%;
+  right: 58%;
   
 }

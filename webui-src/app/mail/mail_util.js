@@ -17,8 +17,9 @@ const MessageSummary = () => {
   let files = [];
   let isStarred = undefined;
   let msgStatus = '';
+  let fromUserInfo = {};
   return {
-    oninit: (v) =>
+    oninit: (v) => {
       rs.rsJsonApiRequest(
         '/rsMsgs/getMessage',
         {
@@ -38,6 +39,18 @@ const MessageSummary = () => {
           }
         }
       ),
+      rs.rsJsonApiRequest(
+        '/rsIdentity/getIdDetails',
+        {
+            id: (details.rsgxsid_srcId)?details.rsgxsid_srcId:details.rspeerid_srcId,
+        },
+        (data) => {
+          fromUserInfo = data.details;
+          // console.log(data, details.rsgxsid_srcId, details.rspeerid_srcId);
+          // console.log(fromUserInfo);
+        }
+      );
+    },
     view: (v) =>
       m(
         'tr.msgbody',
@@ -77,10 +90,9 @@ const MessageSummary = () => {
           ),
           m('td', files.length),
           m('td', details.title),
-          // m('td', details.rspeerid_srcId == 0 ?
-          //  '[Notification]' :
-          //  peopleUtils.getInfo(details.rspeerid_srcId)), // getInfo previously uses "/rsIdentity/getIdentitiesInfo"
-
+          m('td', details.rsgxsid_srcId === '0'.repeat(32) ?
+           '[Notification]' :
+           fromUserInfo.mNickname),
           m('td', new Date(details.ts * 1000).toLocaleString()),
         ]
       ),
@@ -148,7 +160,7 @@ const Table = () => {
           m('th[title=starred]', m('i.fas.fa-star')),
           m('th[title=attachments]', m('i.fas.fa-paperclip')),
           m('th', 'Subject'),
-          // m('th', 'From'),
+          m('th', 'From'),
           m('th', 'Date'),
         ]),
         v.children,
