@@ -7,7 +7,7 @@ const RS_MSG_INBOX = 0x00;
 const RS_MSG_SENTBOX = 0x01;
 const RS_MSG_OUTBOX = 0x03;
 const RS_MSG_DRAFTBOX = 0x05;
-
+const RS_MSG_TRASH = 0x000020;
 const RS_MSG_NEW = 0x10;
 const RS_MSG_UNREAD_BY_USER = 0x40;
 const RS_MSG_STAR = 0x200;
@@ -217,4 +217,5 @@ module.exports = {
   RS_MSG_NEW,
   RS_MSG_UNREAD_BY_USER,
   RS_MSG_STAR,
+  RS_MSG_TRASH,
 };

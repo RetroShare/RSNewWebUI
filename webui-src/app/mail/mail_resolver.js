@@ -10,6 +10,7 @@ const Messages = {
   sent: [],
   outbox: [],
   drafts: [],
+  trash: [],
   load() {
     rs.rsJsonApiRequest('/rsMsgs/getMessageSummaries', {}, (data) => {
       Messages.all = data.msgList;
@@ -25,6 +26,9 @@ const Messages = {
       Messages.drafts = Messages.all.filter(
         (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_DRAFTBOX
       );
+      Messages.trash = Messages.all.filter(
+        (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_TRASH
+      );
     });
   },
 };
@@ -34,6 +38,7 @@ const sections = {
   outbox: require('mail/mail_outbox'),
   drafts: require('mail/mail_draftbox'),
   sent: require('mail/mail_sentbox'),
+  trash: require('mail/mail_trashbox'),
 };
 const tagselect = {
   showval: 'Tags',
