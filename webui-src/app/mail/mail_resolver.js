@@ -27,7 +27,7 @@ const Messages = {
         (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_DRAFTBOX
       );
       Messages.trash = Messages.all.filter(
-        (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_TRASH
+        (msg) => (msg.msgflags & util.RS_MSG_TRASH)
       );
     });
   },

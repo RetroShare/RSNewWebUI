@@ -39,17 +39,17 @@ const MessageSummary = () => {
           }
         }
       ),
-      rs.rsJsonApiRequest(
-        '/rsIdentity/getIdDetails',
-        {
-            id: (details.rsgxsid_srcId)?details.rsgxsid_srcId:details.rspeerid_srcId,
-        },
-        (data) => {
-          fromUserInfo = data.details;
-          // console.log(data, details.rsgxsid_srcId, details.rspeerid_srcId);
-          // console.log(fromUserInfo);
-        }
-      );
+        rs.rsJsonApiRequest(
+          '/rsIdentity/getIdDetails',
+          {
+            id: details.rsgxsid_srcId || details.rspeerid_srcId,
+          },
+          (data) => {
+            fromUserInfo = data.details;
+            // console.log(data, details.rsgxsid_srcId, details.rspeerid_srcId);
+            // console.log(fromUserInfo);
+          }
+        );
     },
     view: (v) =>
       m(
@@ -90,9 +90,7 @@ const MessageSummary = () => {
           ),
           m('td', files.length),
           m('td', details.title),
-          m('td', details.rsgxsid_srcId === '0'.repeat(32) ?
-           '[Notification]' :
-           fromUserInfo.mNickname),
+          m('td', Number(details.rsgxsid_srcId) === 0 ? '[Unknown]' : fromUserInfo.mNickname),
           m('td', new Date(details.ts * 1000).toLocaleString()),
         ]
       ),
