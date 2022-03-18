@@ -393,8 +393,8 @@ a.tab-menu-item {
   color: white;
 }
 .sidebar {
-  position: fixed;
-  height: 100%;
+  position: absolute;
+  height: 30%;
   width: 200px;
   background-color: white;
 }
@@ -416,7 +416,31 @@ a.tab-menu-item {
   border-left: 5px solid #3ba4d7;
   animation: expand-left-border 0.1s;
 }
-
+.sidebarquickview {
+  position: relative;
+  height: 30%;
+  width: 200px;
+  top: 300px;
+  background-color: white;
+}
+.sidebarquickview a {
+  text-decoration: none;
+  text-transform: capitalize;
+  padding: 1em;
+  cursor: pointer;
+  display: block;
+  font-size: 0.95em;
+  color: #999;
+}
+.sidebarquickview a:hover {
+  color: #222;
+}
+.sidebarquickview .selected-sidebarquickview-link {
+  font-weight: bold;
+  color: #222;
+  border-left: 5px solid #3ba4d7;
+  animation: expand-left-border 0.1s;
+}
 /* Content adjacent to sidebar */
 .node-panel {
   margin-left: 200px;

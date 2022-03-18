@@ -1,7 +1,6 @@
 const m = require('mithril');
-
+let active = 0;
 const Sidebar = () => {
-  let active = 0;
   return {
     view: (v) =>
       m(
@@ -11,6 +10,25 @@ const Sidebar = () => {
             m.route.Link,
             {
               class: index === active ? 'selected-sidebar-link' : '',
+              onclick: () => (active = index),
+              href: v.attrs.baseRoute + panelName,
+            },
+            panelName
+          )
+        )
+      ),
+  };
+};
+const SidebarQuickView = () => {
+  return {
+    view: (v) =>
+      m(
+        '.sidebarquickview',
+        v.attrs.tabs.map((panelName, index) =>
+          m(
+            m.route.Link,
+            {
+              class: index === active ? 'selected-sidebarquickview-link' : '',
               onclick: () => (active = index),
               href: v.attrs.baseRoute + panelName,
             },
@@ -44,5 +62,6 @@ function popupMessage(message) {
 
 module.exports = {
   Sidebar,
+  SidebarQuickView,
   popupMessage,
 };

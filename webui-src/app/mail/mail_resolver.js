@@ -11,6 +11,7 @@ const Messages = {
   outbox: [],
   drafts: [],
   trash: [],
+  starred: [],
   load() {
     rs.rsJsonApiRequest('/rsMsgs/getMessageSummaries', {}, (data) => {
       Messages.all = data.msgList;
@@ -29,6 +30,9 @@ const Messages = {
       Messages.trash = Messages.all.filter(
         (msg) => (msg.msgflags & util.RS_MSG_TRASH)
       );
+      Messages.starred = Messages.all.filter(
+        (msg) => (msg.msgflags & util.RS_MSG_STAR)
+       );
     });
   },
 };
@@ -39,6 +43,9 @@ const sections = {
   drafts: require('mail/mail_draftbox'),
   sent: require('mail/mail_sentbox'),
   trash: require('mail/mail_trashbox'),
+};
+const sectionsquickview = {
+  starred: require('mail/mail_starred'),
 };
 const tagselect = {
   showval: 'Tags',
@@ -65,6 +72,11 @@ const Layout = {
         tabs: Object.keys(sections),
         baseRoute: '/mail/',
       }),
+      m('h3', 'quick view'),
+      m(widget.SidebarQuickView, {
+        tabs: Object.keys(sectionsquickview),
+        baseRoute: '/mail/',
+      }),
       m('.node-panel', vnode.children),
     ]),
 };
@@ -84,7 +96,7 @@ module.exports = {
     }
     return m(
       Layout,
-      m(sections[tab], {
+      m((sections[tab]) || (sectionsquickview[tab]), {
         list: Messages[tab].reverse(),
       })
     );
