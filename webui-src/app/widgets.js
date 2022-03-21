@@ -1,6 +1,6 @@
 const m = require('mithril');
-let active = 0;
 const Sidebar = () => {
+  let active = 0;
   return {
     view: (v) =>
       m(
@@ -20,6 +20,7 @@ const Sidebar = () => {
   };
 };
 const SidebarQuickView = () => {
+  let quickactive = -1;
   return {
     view: (v) =>
       m(
@@ -28,8 +29,8 @@ const SidebarQuickView = () => {
           m(
             m.route.Link,
             {
-              class: index === active ? 'selected-sidebarquickview-link' : '',
-              onclick: () => (active = index),
+              class: index === quickactive ? 'selected-sidebarquickview-link' : '',
+              onclick: () => (quickactive = index),
               href: v.attrs.baseRoute + panelName,
             },
             panelName
