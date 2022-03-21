@@ -25,6 +25,7 @@ const SidebarQuickView = () => {
     view: (v) =>
       m(
         '.sidebarquickview',
+        m('h4', 'Quick View'),
         v.attrs.tabs.map((panelName, index) =>
           m(
             m.route.Link,

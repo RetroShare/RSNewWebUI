@@ -444,7 +444,7 @@ a.tab-menu-item {
 /* Content adjacent to sidebar */
 .node-panel {
   position: relative;
-  bottom: 140px;
+  bottom: 400px;
   margin-left: 200px;
   animation: fadein 0.5s;
 }

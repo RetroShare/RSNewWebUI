@@ -14,6 +14,11 @@ const Messages = {
   starred: [],
   system: [],
   spam: [],
+  important: [],
+  work: [],
+  personal: [],
+  todo: [],
+  later: [],
   load() {
     rs.rsJsonApiRequest('/rsMsgs/getMessageSummaries', {}, (data) => {
       Messages.all = data.msgList;
@@ -41,6 +46,21 @@ const Messages = {
       Messages.spam = Messages.all.filter(
         (msg) => (msg.msgflags & util.RS_MSG_SPAM)
         );
+      Messages.important = Messages.all.filter(
+        (msg) => (msg.msgflags & util.RS_MSGTAGTYPE_IMPORTANT)
+        );
+      Messages.work = Messages.all.filter(
+        (msg) => (msg.msgflags & util.RS_MSGTAGTYPE_WORK)
+        );
+      Messages.personal = Messages.all.filter(
+        (msg) => (msg.msgflags & util.RS_MSGTAGTYPE_PERSONAL)
+        );
+      Messages.todo = Messages.all.filter(
+        (msg) => (msg.msgflags & util.RS_MSGTAGTYPE_TODO)
+        );
+      Messages.later = Messages.all.filter(
+        (msg) => (msg.msgflags & util.RS_MSGTAGTYPE_LATER)
+        );
     });
   },
 };
@@ -56,6 +76,12 @@ const sectionsquickview = {
   starred: require('mail/mail_starred'),
   system: require('mail/mail_system'),
   spam: require('mail/mail_spam'),
+  important: require('mail/mail_important'),
+  work: require('mail/mail_work'),
+  todo: require('mail/mail_todo'),
+  later: require('mail/mail_later'),
+  personal: require('mail/mail_personal'),
+
 };
 const tagselect = {
   showval: 'Tags',
@@ -82,7 +108,6 @@ const Layout = {
         tabs: Object.keys(sections),
         baseRoute: '/mail/',
       }),
-      m('h3', 'quick view'),
       m(widget.SidebarQuickView, {
         tabs: Object.keys(sectionsquickview),
         baseRoute: '/mail/',
