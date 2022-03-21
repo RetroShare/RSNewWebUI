@@ -12,6 +12,11 @@ const RS_MSG_NEW = 0x10;
 const RS_MSG_UNREAD_BY_USER = 0x40;
 const RS_MSG_STAR = 0x200;
 
+const RS_MSG_USER_REQUEST = 0x000400;
+const RS_MSG_FRIEND_RECOMMENDATION = 0x000800;
+const RS_MSG_PUBLISH_KEY = 0x020000;
+const RS_MSG_SYSTEM = (RS_MSG_USER_REQUEST | RS_MSG_FRIEND_RECOMMENDATION | RS_MSG_PUBLISH_KEY);
+
 const MessageSummary = () => {
   let details = {};
   let files = [];
@@ -216,4 +221,5 @@ module.exports = {
   RS_MSG_UNREAD_BY_USER,
   RS_MSG_STAR,
   RS_MSG_TRASH,
+  RS_MSG_SYSTEM
 };

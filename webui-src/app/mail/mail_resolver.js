@@ -12,6 +12,7 @@ const Messages = {
   drafts: [],
   trash: [],
   starred: [],
+  system: [],
   load() {
     rs.rsJsonApiRequest('/rsMsgs/getMessageSummaries', {}, (data) => {
       Messages.all = data.msgList;
@@ -33,6 +34,9 @@ const Messages = {
       Messages.starred = Messages.all.filter(
         (msg) => (msg.msgflags & util.RS_MSG_STAR)
        );
+      Messages.system = Messages.all.filter(
+        (msg) => (msg.msgflags & util.RS_MSG_SYSTEM)
+        );
     });
   },
 };
@@ -46,6 +50,7 @@ const sections = {
 };
 const sectionsquickview = {
   starred: require('mail/mail_starred'),
+  system: require('mail/mail_system'),
 };
 const tagselect = {
   showval: 'Tags',
