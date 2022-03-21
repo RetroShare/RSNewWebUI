@@ -13,6 +13,7 @@ const Messages = {
   trash: [],
   starred: [],
   system: [],
+  spam: [],
   load() {
     rs.rsJsonApiRequest('/rsMsgs/getMessageSummaries', {}, (data) => {
       Messages.all = data.msgList;
@@ -37,6 +38,9 @@ const Messages = {
       Messages.system = Messages.all.filter(
         (msg) => (msg.msgflags & util.RS_MSG_SYSTEM)
         );
+      Messages.spam = Messages.all.filter(
+        (msg) => (msg.msgflags & util.RS_MSG_SPAM)
+        );
     });
   },
 };
@@ -51,6 +55,7 @@ const sections = {
 const sectionsquickview = {
   starred: require('mail/mail_starred'),
   system: require('mail/mail_system'),
+  spam: require('mail/mail_spam'),
 };
 const tagselect = {
   showval: 'Tags',
