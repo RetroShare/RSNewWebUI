@@ -147,6 +147,11 @@ const MessageView = () => {
             m('i.fas.fa-arrow-left')
           ),
           m('h3', details.title),
+          m('button', 'Reply'),
+          m('button', 'Reply All'),
+          m('button', 'Forward'),
+          m('button', 'Delete'),
+
           m('hr'),
           m(
             'iframe[title=message].msg',
