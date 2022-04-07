@@ -14,14 +14,14 @@ const RS_MSG_STAR = 0x200;
 const RS_MSG_SPAM = 0x040000;
 
 const RS_MSGTAGTYPE_IMPORTANT = 1;
-const RS_MSGTAGTYPE_WORK      = 2;
-const RS_MSGTAGTYPE_PERSONAL  = 3;
-const RS_MSGTAGTYPE_TODO      = 4;
-const RS_MSGTAGTYPE_LATER     = 5;
+const RS_MSGTAGTYPE_WORK = 2;
+const RS_MSGTAGTYPE_PERSONAL = 3;
+const RS_MSGTAGTYPE_TODO = 4;
+const RS_MSGTAGTYPE_LATER = 5;
 const RS_MSG_USER_REQUEST = 0x000400;
 const RS_MSG_FRIEND_RECOMMENDATION = 0x000800;
 const RS_MSG_PUBLISH_KEY = 0x020000;
-const RS_MSG_SYSTEM = (RS_MSG_USER_REQUEST | RS_MSG_FRIEND_RECOMMENDATION | RS_MSG_PUBLISH_KEY);
+const RS_MSG_SYSTEM = RS_MSG_USER_REQUEST | RS_MSG_FRIEND_RECOMMENDATION | RS_MSG_PUBLISH_KEY;
 
 const MessageSummary = () => {
   let details = {};
@@ -150,8 +150,21 @@ const MessageView = () => {
           m('button', 'Reply'),
           m('button', 'Reply All'),
           m('button', 'Forward'),
-          m('button', 'Delete'),
-
+          m(
+            'button',
+            {
+              onclick: () => {
+                rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', {
+                  msgId: details.msgId,
+                  bTrash: true
+                }),
+                rs.rsJsonApiRequest('/rsMsgs/MessageDelete', {
+                  msgId: details.msgId,
+                });
+              },
+            },
+            'Delete'
+          ),
           m('hr'),
           m(
             'iframe[title=message].msg',
@@ -238,5 +251,5 @@ module.exports = {
   RS_MSGTAGTYPE_LATER,
   RS_MSGTAGTYPE_PERSONAL,
   RS_MSGTAGTYPE_TODO,
-  RS_MSGTAGTYPE_WORK
+  RS_MSGTAGTYPE_WORK,
 };
