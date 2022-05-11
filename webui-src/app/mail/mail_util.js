@@ -7,18 +7,30 @@ const RS_MSG_INBOX = 0x00;
 const RS_MSG_SENTBOX = 0x01;
 const RS_MSG_OUTBOX = 0x03;
 const RS_MSG_DRAFTBOX = 0x05;
-
+const RS_MSG_TRASH = 0x000020;
 const RS_MSG_NEW = 0x10;
 const RS_MSG_UNREAD_BY_USER = 0x40;
 const RS_MSG_STAR = 0x200;
+const RS_MSG_SPAM = 0x040000;
+
+const RS_MSGTAGTYPE_IMPORTANT = 1;
+const RS_MSGTAGTYPE_WORK = 2;
+const RS_MSGTAGTYPE_PERSONAL = 3;
+const RS_MSGTAGTYPE_TODO = 4;
+const RS_MSGTAGTYPE_LATER = 5;
+const RS_MSG_USER_REQUEST = 0x000400;
+const RS_MSG_FRIEND_RECOMMENDATION = 0x000800;
+const RS_MSG_PUBLISH_KEY = 0x020000;
+const RS_MSG_SYSTEM = RS_MSG_USER_REQUEST | RS_MSG_FRIEND_RECOMMENDATION | RS_MSG_PUBLISH_KEY;
 
 const MessageSummary = () => {
   let details = {};
   let files = [];
   let isStarred = undefined;
   let msgStatus = '';
+  let fromUserInfo = {};
   return {
-    oninit: (v) =>
+    oninit: (v) => {
       rs.rsJsonApiRequest(
         '/rsMsgs/getMessage',
         {
@@ -38,6 +50,18 @@ const MessageSummary = () => {
           }
         }
       ),
+        rs.rsJsonApiRequest(
+          '/rsIdentity/getIdDetails',
+          {
+            id: details.rsgxsid_srcId || details.rspeerid_srcId,
+          },
+          (data) => {
+            fromUserInfo = data.details;
+            // console.log(data, details.rsgxsid_srcId, details.rspeerid_srcId);
+            // console.log(fromUserInfo);
+          }
+        );
+    },
     view: (v) =>
       m(
         'tr.msgbody',
@@ -77,10 +101,7 @@ const MessageSummary = () => {
           ),
           m('td', files.length),
           m('td', details.title),
-          // m('td', details.rspeerid_srcId == 0 ?
-          //  '[Notification]' :
-          //  peopleUtils.getInfo(details.rspeerid_srcId)), // getInfo previously uses "/rsIdentity/getIdentitiesInfo"
-
+          m('td', Number(details.rsgxsid_srcId) === 0 ? '[Unknown]' : fromUserInfo.mNickname),
           m('td', new Date(details.ts * 1000).toLocaleString()),
         ]
       ),
@@ -126,6 +147,24 @@ const MessageView = () => {
             m('i.fas.fa-arrow-left')
           ),
           m('h3', details.title),
+          m('button', 'Reply'),
+          m('button', 'Reply All'),
+          m('button', 'Forward'),
+          m(
+            'button',
+            {
+              onclick: () => {
+                rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', {
+                  msgId: details.msgId,
+                  bTrash: true
+                }),
+                rs.rsJsonApiRequest('/rsMsgs/MessageDelete', {
+                  msgId: details.msgId,
+                });
+              },
+            },
+            'Delete'
+          ),
           m('hr'),
           m(
             'iframe[title=message].msg',
@@ -148,18 +187,55 @@ const Table = () => {
           m('th[title=starred]', m('i.fas.fa-star')),
           m('th[title=attachments]', m('i.fas.fa-paperclip')),
           m('th', 'Subject'),
-          // m('th', 'From'),
+          m('th', 'From'),
           m('th', 'Date'),
         ]),
         v.children,
       ]),
   };
 };
-
+const SearchBar = () => {
+  let searchString = '';
+  return {
+    view: (v) =>
+      m('input[type=text][id=searchmail][placeholder=Search Subject].searchbar', {
+        value: searchString,
+        oninput: (e) => {
+          searchString = e.target.value.toLowerCase();
+          for (const hash in v.attrs.list) {
+            if (v.attrs.list[hash].fname.toLowerCase().indexOf(searchString) > -1) {
+              v.attrs.list[hash].isSearched = true;
+            } else {
+              v.attrs.list[hash].isSearched = false;
+            }
+          }
+        },
+      }),
+  };
+};
+function popupMessageCompose(message) {
+  const container = document.getElementById('modal-container');
+  container.style.display = 'block';
+  m.render(
+    container,
+    m('.modal-content[id=composepopup]', [
+      m(
+        'button.red',
+        {
+          onclick: () => (container.style.display = 'none'),
+        },
+        m('i.fas.fa-times')
+      ),
+      message,
+    ])
+  );
+}
 module.exports = {
   MessageSummary,
   MessageView,
   Table,
+  SearchBar,
+  popupMessageCompose,
   RS_MSG_BOXMASK,
   RS_MSG_INBOX,
   RS_MSG_SENTBOX,
@@ -168,4 +244,12 @@ module.exports = {
   RS_MSG_NEW,
   RS_MSG_UNREAD_BY_USER,
   RS_MSG_STAR,
+  RS_MSG_TRASH,
+  RS_MSG_SYSTEM,
+  RS_MSG_SPAM,
+  RS_MSGTAGTYPE_IMPORTANT,
+  RS_MSGTAGTYPE_LATER,
+  RS_MSGTAGTYPE_PERSONAL,
+  RS_MSGTAGTYPE_TODO,
+  RS_MSGTAGTYPE_WORK,
 };
