@@ -53,7 +53,7 @@ const Layout = () => {
             chat: '/chat',
             mail: '/mail/inbox',
             files: '/files/files',
-            channels: '/channels',
+            channels: '/channels/MyForums',
             config: '/config/network',
           },
         }),
@@ -94,8 +94,8 @@ m.route(document.getElementById('main'), '/', {
   '/files/:tab': {
     render: (v) => m(Layout, m(files, v.attrs)),
   },
-  '/channels': {
-    render: () => m(Layout, m(channels)),
+  '/channels/:tab': {
+    render: (v) => m(Layout, m(channels,v.attrs)),
   },
   '/config/:tab': {
     render: (v) => m(Layout, m(config, v.attrs)),
