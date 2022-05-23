@@ -112,7 +112,7 @@ const Layout = {
         tabs: Object.keys(sectionsquickview),
         baseRoute: '/mail/',
       }),
-      m('.node-panel', vnode.children),
+      m('.mail-node-panel', vnode.children),
     ]),
 };
 

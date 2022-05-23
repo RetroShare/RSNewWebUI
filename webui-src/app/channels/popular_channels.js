@@ -2,8 +2,8 @@ const m = require('mithril');
 
 const Layout = () => {
     return{
-        view: () => [
-            m('h2', 'Popular Forums')
+        view: () => [            
+            m('.widget',[m('h2', 'Popular Channels'),m('hr'),])
         ]
     };
 };

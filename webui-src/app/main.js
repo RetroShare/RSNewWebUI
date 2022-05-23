@@ -53,7 +53,7 @@ const Layout = () => {
             chat: '/chat',
             mail: '/mail/inbox',
             files: '/files/files',
-            channels: '/channels/MyForums',
+            channels: '/channels/MyChannels',
             config: '/config/network',
           },
         }),

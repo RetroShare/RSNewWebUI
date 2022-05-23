@@ -2,10 +2,10 @@ const m = require('mithril');
 const widget = require('widgets');
 
 const sections = {
-  MyForums: require('channels/my_forums'),
-  SubscribedFroums: require('channels/subscribed_forums'),
-  PopularForums: require('channels/popular_forums'),
-  OtherForums: require('channels/other_forums')
+  MyChannels: require('channels/my_channels'),
+  SubscribedChannels: require('channels/subscribed_channels'),
+  PopularChannels: require('channels/popular_channels'),
+  OtherChannels: require('channels/other_channels')
 }
 
 const Layout = {
@@ -15,7 +15,7 @@ const Layout = {
         tabs: Object.keys(sections),
         baseRoute: '/channels/',
       }),
-      m('.node-panel .', vnode.children),
+      m('.channel-node-panel', vnode.children),
     ]),
 };
 
