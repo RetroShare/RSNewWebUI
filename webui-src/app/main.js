@@ -8,6 +8,7 @@ const chat = require('chat/chat');
 const mail = require('mail/mail_resolver');
 const files = require('files/files_resolver');
 const channels = require('channels/channels');
+const forums = require('forums/forums');
 const config = require('config/config_resolver');
 
 const navIcon = {
@@ -18,6 +19,7 @@ const navIcon = {
   mail: m('i.fas.fa-envelope.sidenav-icon'),
   files: m('i.fas.fa-folder-open.sidenav-icon'),
   channels: m('i.fas.fa-tv.sidenav-icon'),
+  forums: m('i.fas.fa-bullhorn.sidenav-icon'),
   config: m('i.fas.fa-cogs.sidenav-icon'),
 };
 
@@ -54,6 +56,7 @@ const Layout = () => {
             mail: '/mail/inbox',
             files: '/files/files',
             channels: '/channels/MyChannels',
+            forums: 'forums/MyForums',
             config: '/config/network',
           },
         }),
@@ -96,6 +99,9 @@ m.route(document.getElementById('main'), '/', {
   },
   '/channels/:tab': {
     render: (v) => m(Layout, m(channels,v.attrs)),
+  },
+  '/forums/:tab': {
+    render: (v) => m(Layout, m(forums,v.attrs)),
   },
   '/config/:tab': {
     render: (v) => m(Layout, m(config, v.attrs)),
