@@ -98,10 +98,13 @@ m.route(document.getElementById('main'), '/', {
     render: (v) => m(Layout, m(files, v.attrs)),
   },
   '/channels/:tab': {
-    render: (v) => m(Layout, m(channels,v.attrs)),
+    render: (v) => m(Layout, m(channels, v.attrs)),
+  },
+  '/channels/:tab/:mGroupId': {
+    render: (v) => m(Layout, m(channels, v.attrs)),
   },
   '/forums/:tab': {
-    render: (v) => m(Layout, m(forums,v.attrs)),
+    render: (v) => m(Layout, m(forums, v.attrs)),
   },
   '/config/:tab': {
     render: (v) => m(Layout, m(config, v.attrs)),

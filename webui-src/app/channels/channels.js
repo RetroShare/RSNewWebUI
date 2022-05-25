@@ -1,6 +1,7 @@
 const m = require('mithril');
 const widget = require('widgets');
 const rs = require('rswebui');
+const util = require('channels/channels_util');
 
 const getChannels =
 {
@@ -8,7 +9,7 @@ const getChannels =
   load(){
 
     rs.rsJsonApiRequest('/rsgxschannels/getChannelsSummaries', {}, (data) => {
-      this.PopularChannels = data;
+      getChannels.PopularChannels = data.channels;
     });
   }
 };
@@ -35,6 +36,19 @@ const Layout = {
 module.exports = {
   view: (vnode) => {
     const tab = vnode.attrs.tab;
-    return m(Layout, m(sections[tab]));
+    // if (Object.prototype.hasOwnProperty.call(vnode.attrs, 'mGroupId')) {
+    //   return m(
+    //     Layout,
+    //     m(util.MessageView, {
+    //       id: vnode.attrs.mGroupId,
+    //     })
+    //   );
+    // }
+    return m(
+      Layout,
+      m((sections[tab]), {
+      list: getChannels.PopularChannels,
+      }),
+    );
   },
 };

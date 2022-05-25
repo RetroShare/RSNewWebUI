@@ -1,11 +1,28 @@
 const m = require('mithril');
+const util = require('channels/channels_util');
 
 const Layout = () => {
-    return{
-        view: () => [
-            m('.widget', [m('h2', 'Popular Channels'), m('hr'), ])
-        ]
-    };
+  return {
+    view: (v) => [
+      m('.widget', [
+        m('h3', 'Popular Channels'),
+        m('hr'),
+        m(
+          util.Table,
+          m(
+            'tbody',
+            v.attrs.list.map((channel) =>
+              m(util.ChannelSummary, {
+                details: channel,
+                category: 'PopularChannels',
+              }),
+            )
+          )
+        ),
+      ]),
+    ],
+  };
 };
 
-module.exports = Layout();
+module.exports = Layout;
+
