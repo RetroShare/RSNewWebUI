@@ -6,7 +6,7 @@ const sections = {
   SubscribedForums: require('forums/subscribed_forums'),
   PopularForums: require('forums/popular_forums'),
   OtherForums: require('forums/other_forums')
-}
+};
 
 const Layout = {
   view: (vnode) =>
