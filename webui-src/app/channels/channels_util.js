@@ -1,39 +1,64 @@
 const m = require('mithril');
 const rs = require('rswebui');
 
-const ChannelSummary = () => {
-  let details = {};
-  let name = '';
+const Data = {
+  DisplayChannels: {},
+};
+
+async function updateDisplayChannels(keyid, details) {
+  await rs
+    .rsJsonApiRequest(
+      '/rsgxschannels/getChannelsInfo',
+      {
+        chanIds: [keyid],
+      },
+      (data) => {
+        details = data.channelsInfo[0];
+      }
+    )
+    .then(() => {
+      if (Data.DisplayChannels[keyid] === undefined) {
+        Data.DisplayChannels[keyid] = {
+          name: details.mMeta.mGroupName,
+          isSearched: true,
+        };
+      }
+    });
+  console.log(Data.DisplayChannels[keyid]);
+}
+const DisplayChannels = () => {
   return {
-    oninit: (v) => {
-    // console.log(v.attrs.details);
-      rs.rsJsonApiRequest(
-        '/rsgxschannels/getChannelsInfo',
-        {
-          chanIds: [v.attrs.details.mGroupId],
-        },
-        (data) => {
-          details = data.channelsInfo[0];
-          console.log('yo');
-          console.log(details.mMeta);
-          console.log(details.mMeta.mGroupName);
-          name = details.mMeta.mGroupName;
-        }
-      );
-    },
+    oninit: (v) => console.log(Data.DisplayChannels[v.attrs.id]),
     view: (v) =>
       m(
         'tr',
         {
-          key: v.attrs.details.mGroupId,
-          onclick: () =>
+          key: v.attrs.id,
+          class: ( Data.DisplayChannels[v.attrs.id] && Data.DisplayChannels[v.attrs.id].isSearched) ? '' : 'hidden',
+          onclick: () => {
+            // console.log(Data.DisplayChannels[v.attrs.id].name);
             m.route.set('/channels/:tab/:mGroupId', {
               tab: v.attrs.category,
-              mGroupId: v.attrs.details.mGroupId,
-            }),
+              mGroupId: v.attrs.id,
+            });
+          },
         },
-        [m('td', name)]
+        [m('td', (Data.DisplayChannels[v.attrs.id])?Data.DisplayChannels[v.attrs.id].name:'')]
       ),
+  };
+};
+
+const ChannelSummary = () => {
+  // let details = {};
+  // let name = '';
+  let keyid = {};
+  return {
+    oninit: (v) => {
+      keyid = v.attrs.details.mGroupId;
+      updateDisplayChannels(keyid);
+    },
+
+    view: (v) => {}
   };
 };
 
@@ -110,28 +135,22 @@ const MessageView = () => {
 const Table = () => {
   return {
     oninit: (v) => {},
-    view: (v) =>
-      m('table.channels', [
-        m('tr', [
-          m('th', 'Channel Name'),
-        ]),
-        v.children,
-      ]),
+    view: (v) => m('table.channels', [m('tr', [m('th', 'Channel Name')]), v.children]),
   };
 };
 const SearchBar = () => {
   let searchString = '';
   return {
     view: (v) =>
-      m('input[type=text][id=searchmail][placeholder=Search Subject].searchbar', {
+      m('input[type=text][id=searchchannel][placeholder=Search Subject].searchbar', {
         value: searchString,
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
-          for (const hash in v.attrs.list) {
-            if (v.attrs.list[hash].fname.toLowerCase().indexOf(searchString) > -1) {
-              v.attrs.list[hash].isSearched = true;
+          for (const hash in Data.DisplayChannels) {
+            if (Data.DisplayChannels[hash].name.toLowerCase().indexOf(searchString) > -1) {
+              Data.DisplayChannels[hash].isSearched = true;
             } else {
-              v.attrs.list[hash].isSearched = false;
+              Data.DisplayChannels[hash].isSearched = false;
             }
           }
         },
@@ -143,5 +162,6 @@ module.exports = {
   SearchBar,
   ChannelSummary,
   MessageView,
+  DisplayChannels,
   Table,
 };

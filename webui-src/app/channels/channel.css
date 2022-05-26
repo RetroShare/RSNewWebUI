@@ -1,6 +1,6 @@
 .channel-node-panel {
     position: relative;
-    bottom: 200px;
+    bottom: 100px;
     margin-left: 200px;
     animation: fadein 0.5s;
   }
@@ -22,4 +22,13 @@ table.channels td:nth-child(1) {
 table.channels tr:hover {
   background-color: #eef3f6;
   cursor: pointer;
+}
+
+table.channels tr.hidden{
+  display: none;
+}
+
+#searchchannel{
+  position:relative;
+  margin-left: 250px;
 }

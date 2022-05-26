@@ -25,6 +25,9 @@ const Layout = {
   oninit: getChannels.load,
   view: (vnode) =>
     m('.tab-page', [
+      m(util.SearchBar, {
+        list: getChannels.PopularChannels
+      }),
       m(widget.Sidebar, {
         tabs: Object.keys(sections),
         baseRoute: '/channels/',
