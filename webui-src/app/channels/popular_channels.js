@@ -18,7 +18,7 @@ const Layout = () => {
               }),
             ),
             v.attrs.list.map((channel) =>
-              m(util.DisplayChannels, {
+              m(util.DisplayChannelsFromList, {
                 id: channel.mGroupId,
                 category: 'PopularChannels',
               }),

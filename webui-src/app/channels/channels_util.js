@@ -14,6 +14,7 @@ async function updateDisplayChannels(keyid, details) {
       },
       (data) => {
         details = data.channelsInfo[0];
+        console.log(details);
       }
     )
     .then(() => {
@@ -21,36 +22,38 @@ async function updateDisplayChannels(keyid, details) {
         Data.DisplayChannels[keyid] = {
           name: details.mMeta.mGroupName,
           isSearched: true,
+          description: details.mDescription,
+          image: details.mImage,
         };
       }
     });
-  console.log(Data.DisplayChannels[keyid]);
+  // console.log(Data.DisplayChannels[keyid]);
 }
-const DisplayChannels = () => {
+const DisplayChannelsFromList = () => {
   return {
-    oninit: (v) => console.log(Data.DisplayChannels[v.attrs.id]),
+    oninit: (v) => {},
     view: (v) =>
       m(
         'tr',
         {
           key: v.attrs.id,
-          class: ( Data.DisplayChannels[v.attrs.id] && Data.DisplayChannels[v.attrs.id].isSearched) ? '' : 'hidden',
+          class:
+            Data.DisplayChannels[v.attrs.id] && Data.DisplayChannels[v.attrs.id].isSearched
+              ? ''
+              : 'hidden',
           onclick: () => {
-            // console.log(Data.DisplayChannels[v.attrs.id].name);
             m.route.set('/channels/:tab/:mGroupId', {
               tab: v.attrs.category,
               mGroupId: v.attrs.id,
             });
           },
         },
-        [m('td', (Data.DisplayChannels[v.attrs.id])?Data.DisplayChannels[v.attrs.id].name:'')]
+        [m('td', Data.DisplayChannels[v.attrs.id] ? Data.DisplayChannels[v.attrs.id].name : '')]
       ),
   };
 };
 
 const ChannelSummary = () => {
-  // let details = {};
-  // let name = '';
   let keyid = {};
   return {
     oninit: (v) => {
@@ -58,75 +61,71 @@ const ChannelSummary = () => {
       updateDisplayChannels(keyid);
     },
 
-    view: (v) => {}
+    view: (v) => {},
   };
 };
 
 const MessageView = () => {
-  let details = {};
-  let message = '';
+  let cname = '';
+  let cimage = '';
   return {
-    oninit: (v) =>
-      rs.rsJsonApiRequest(
-        '/rsMsgs/getMessage',
-        {
-          msgId: v.attrs.id,
-        },
-        (data) => {
-          details = data.msg;
-          // regex to detect html tags
-          // better regex?  /<[a-z][\s\S]*>/gi
-          if (/<\/*[a-z][^>]+?>/gi.test(details.msg)) {
-            message = details.msg;
-          } else {
-            message = '<p style="white-space: pre">' + details.msg + '</p>';
-          }
-        }
-      ),
+    oninit: (v) => {
+      if (Data.DisplayChannels[v.attrs.id]) {
+        cname = Data.DisplayChannels[v.attrs.id].name;
+        cimage = Data.DisplayChannels[v.attrs.id].image;
+      }
+    },
     view: (v) =>
       m(
-        '.widget.msgview',
+        '.widget',
         {
-          key: details.msgId,
+          key: v.attrs.id,
         },
         [
           m(
             'a[title=Back]',
             {
               onclick: () =>
-                m.route.set('/mail/:tab', {
+                m.route.set('/channels/:tab', {
                   tab: m.route.param().tab,
                 }),
             },
             m('i.fas.fa-arrow-left')
           ),
-          m('h3', details.title),
-          m('button', 'Reply'),
-          m('button', 'Reply All'),
-          m('button', 'Forward'),
+          m('h3', cname),
           m(
-            'button',
+            'img.channelpic',
             {
-              onclick: () => {
-                rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', {
-                  msgId: details.msgId,
-                  bTrash: true,
-                }),
-                  rs.rsJsonApiRequest('/rsMsgs/MessageDelete', {
-                    msgId: details.msgId,
-                  });
-              },
-            },
-            'Delete'
+              src: 'data:image/png;base64,' + cimage.mData.base64,
+            }
           ),
+          m('channeldetails', [
+            m('p', m('b', 'Posts: '), 'posts'),
+            m('p', m('b', 'Date created: '), '1/1/11'),
+            m('p', m('b', 'Admin: '), 'name_of_admin'),
+            m('p', m('b', 'Last activity: '), '1/1/11'),
+
+          ]),
+          // m('button', 'Reply'),
+          // m('button', 'Reply All'),
+          // m('button', 'Forward'),
+          // m(
+          //   'button',
+          //   {
+          //     onclick: () => {
+          //       rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', {
+          //         msgId: details.msgId,
+          //         bTrash: true,
+          //       }),
+          //         rs.rsJsonApiRequest('/rsMsgs/MessageDelete', {
+          //           msgId: details.msgId,
+          //         });
+          //     },
+          //   },
+          //   'Delete'
+          // ),
           m('hr'),
-          m(
-            'iframe[title=message].msg',
-            {
-              srcdoc: message,
-            },
-            message
-          ),
+          m('channeldesc', m('b', 'Description: '), Data.DisplayChannels[v.attrs.id].description),
         ]
       ),
   };
@@ -162,6 +161,6 @@ module.exports = {
   SearchBar,
   ChannelSummary,
   MessageView,
-  DisplayChannels,
+  DisplayChannelsFromList,
   Table,
 };

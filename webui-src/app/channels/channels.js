@@ -39,14 +39,14 @@ const Layout = {
 module.exports = {
   view: (vnode) => {
     const tab = vnode.attrs.tab;
-    // if (Object.prototype.hasOwnProperty.call(vnode.attrs, 'mGroupId')) {
-    //   return m(
-    //     Layout,
-    //     m(util.MessageView, {
-    //       id: vnode.attrs.mGroupId,
-    //     })
-    //   );
-    // }
+    if (Object.prototype.hasOwnProperty.call(vnode.attrs, 'mGroupId')) {
+      return m(
+        Layout,
+        m(util.MessageView, {
+          id: vnode.attrs.mGroupId,
+        })
+      );
+    }
     return m(
       Layout,
       m((sections[tab]), {
