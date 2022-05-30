@@ -2,34 +2,33 @@ const m = require('mithril');
 const rs = require('rswebui');
 
 const Data = {
-  DisplayChannels: {},
+  DisplayForums: {},
 };
 
-async function updateDisplayChannels(keyid, details) {
-  await rs
+async function updateDisplayForums(keyid, details = {}) {
+      await rs
     .rsJsonApiRequest(
-      '/rsgxschannels/getChannelsInfo',
+      '/rsgxsforums/getForumsInfo',
       {
-        chanIds: [keyid],
+        forumIds: [keyid],
       },
       (data) => {
-        details = data.channelsInfo[0];
-        console.log(details);
+        details = data.forumsInfo[0];
+        // console.log(details);
       }
     )
     .then(() => {
-      if (Data.DisplayChannels[keyid] === undefined) {
-        Data.DisplayChannels[keyid] = {
+      if (Data.DisplayForums[keyid] === undefined) {
+        Data.DisplayForums[keyid] = {
           name: details.mMeta.mGroupName,
           isSearched: true,
           description: details.mDescription,
-          image: details.mImage,
         };
       }
     });
-  // console.log(Data.DisplayChannels[keyid]);
+//   console.log(Data.DisplayForums[keyid]);
 }
-const DisplayChannelsFromList = () => {
+const DisplayForumsFromList = () => {
   return {
     oninit: (v) => {},
     view: (v) =>
@@ -38,27 +37,27 @@ const DisplayChannelsFromList = () => {
         {
           key: v.attrs.id,
           class:
-            Data.DisplayChannels[v.attrs.id] && Data.DisplayChannels[v.attrs.id].isSearched
+            Data.DisplayForums[v.attrs.id] && Data.DisplayForums[v.attrs.id].isSearched
               ? ''
               : 'hidden',
           onclick: () => {
-            m.route.set('/channels/:tab/:mGroupId', {
+            m.route.set('/forums/:tab/:mGroupId', {
               tab: v.attrs.category,
               mGroupId: v.attrs.id,
             });
           },
         },
-        [m('td', Data.DisplayChannels[v.attrs.id] ? Data.DisplayChannels[v.attrs.id].name : '')]
+        [m('td', Data.DisplayForums[v.attrs.id] ? Data.DisplayForums[v.attrs.id].name : '')]
       ),
   };
 };
 
-const ChannelSummary = () => {
+const ForumSummary = () => {
   let keyid = {};
   return {
     oninit: (v) => {
       keyid = v.attrs.details.mGroupId;
-      updateDisplayChannels(keyid);
+      updateDisplayForums(keyid);
     },
 
     view: (v) => {},
@@ -67,12 +66,10 @@ const ChannelSummary = () => {
 
 const MessageView = () => {
   let cname = '';
-  let cimage = '';
   return {
     oninit: (v) => {
-      if (Data.DisplayChannels[v.attrs.id]) {
-        cname = Data.DisplayChannels[v.attrs.id].name;
-        cimage = Data.DisplayChannels[v.attrs.id].image;
+      if (Data.DisplayForums[v.attrs.id]) {
+        cname = Data.DisplayForums[v.attrs.id].name;
       }
     },
     view: (v) =>
@@ -86,20 +83,14 @@ const MessageView = () => {
             'a[title=Back]',
             {
               onclick: () =>
-                m.route.set('/channels/:tab', {
+                m.route.set('/forums/:tab', {
                   tab: m.route.param().tab,
                 }),
             },
             m('i.fas.fa-arrow-left')
           ),
           m('h3', cname),
-          m(
-            'img.channelpic',
-            {
-              src: 'data:image/png;base64,' + cimage.mData.base64,
-            }
-          ),
-          m('[id=channeldetails]', [
+          m('[id=forumdetails]', [
             m('p', m('b', 'Posts: '), 'posts'),
             m('p', m('b', 'Date created: '), '1/1/11'),
             m('p', m('b', 'Admin: '), 'name_of_admin'),
@@ -125,7 +116,7 @@ const MessageView = () => {
           //   'Delete'
           // ),
           m('hr'),
-          m('channeldesc', m('b', 'Description: '), Data.DisplayChannels[v.attrs.id].description),
+          m('forumdesc', m('b', 'Description: '), Data.DisplayForums[v.attrs.id].description),
         ]
       ),
   };
@@ -134,22 +125,22 @@ const MessageView = () => {
 const Table = () => {
   return {
     oninit: (v) => {},
-    view: (v) => m('table.channels', [m('tr', [m('th', 'Channel Name')]), v.children]),
+    view: (v) => m('table.forums', [m('tr', [m('th', 'Forum Name')]), v.children]),
   };
 };
 const SearchBar = () => {
   let searchString = '';
   return {
     view: (v) =>
-      m('input[type=text][id=searchchannel][placeholder=Search Subject].searchbar', {
+      m('input[type=text][id=searchforum][placeholder=Search Subject].searchbar', {
         value: searchString,
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
-          for (const hash in Data.DisplayChannels) {
-            if (Data.DisplayChannels[hash].name.toLowerCase().indexOf(searchString) > -1) {
-              Data.DisplayChannels[hash].isSearched = true;
+          for (const hash in Data.DisplayForums) {
+            if (Data.DisplayForums[hash].name.toLowerCase().indexOf(searchString) > -1) {
+              Data.DisplayForums[hash].isSearched = true;
             } else {
-              Data.DisplayChannels[hash].isSearched = false;
+              Data.DisplayForums[hash].isSearched = false;
             }
           }
         },
@@ -159,8 +150,8 @@ const SearchBar = () => {
 
 module.exports = {
   SearchBar,
-  ChannelSummary,
+  ForumSummary,
   MessageView,
-  DisplayChannelsFromList,
+  DisplayForumsFromList,
   Table,
 };

@@ -35,9 +35,14 @@ table.channels tr.hidden{
 
 img.channelpic {
   float: left;
-  height: 100px;
+  height: 150px;
+  width:150px;
+  padding: 25px;
 }
-
+#channeldetails{
+  position: relative;
+  margin-left: 150px;
+}
 .p{
   margin:0;
 }

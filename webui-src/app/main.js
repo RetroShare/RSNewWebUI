@@ -106,6 +106,9 @@ m.route(document.getElementById('main'), '/', {
   '/forums/:tab': {
     render: (v) => m(Layout, m(forums, v.attrs)),
   },
+  '/forums/:tab/:mGroupId': {
+    render: (v) => m(Layout, m(forums, v.attrs)),
+  },
   '/config/:tab': {
     render: (v) => m(Layout, m(config, v.attrs)),
   },
