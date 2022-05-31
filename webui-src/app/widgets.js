@@ -19,7 +19,7 @@ const Sidebar = () => {
       ),
   };
 };
-const SidebarQuickView = () => {
+const SidebarQuickView = () => { //for the Mail tab, to be moved later.
   let quickactive = -1;
   return {
     view: (v) =>

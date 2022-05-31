@@ -5,11 +5,19 @@ const util = require('channels/channels_util');
 
 const getChannels =
 {
+  All : [],
   PopularChannels : [],
+  SubscribedChannels : [],
   load(){
 
     rs.rsJsonApiRequest('/rsgxschannels/getChannelsSummaries', {}, (data) => {
-      getChannels.PopularChannels = data.channels;
+      getChannels.All = data.channels;
+
+      getChannels.PopularChannels = getChannels.All;
+      // console.log(util.GROUP_SUBSCRIBE_SUBSCRIBED === 4);
+      getChannels.SubscribedChannels = getChannels.All.filter(
+        (channel) => (channel.mSubscribeFlags) === util.GROUP_SUBSCRIBE_SUBSCRIBED
+      );
     });
   }
 };
@@ -26,7 +34,7 @@ const Layout = {
   view: (vnode) =>
     m('.tab-page', [
       m(util.SearchBar, {
-        list: getChannels.PopularChannels
+        list: getChannels.All
       }),
       m(widget.Sidebar, {
         tabs: Object.keys(sections),
@@ -50,7 +58,7 @@ module.exports = {
     return m(
       Layout,
       m((sections[tab]), {
-      list: getChannels.PopularChannels,
+      list: getChannels[tab],
       }),
     );
   },
