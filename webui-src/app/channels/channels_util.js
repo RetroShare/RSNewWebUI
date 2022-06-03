@@ -1,9 +1,9 @@
 const m = require('mithril');
 const rs = require('rswebui');
 
-const GROUP_SUBSCRIBE_ADMIN          = 0x01;// means: you have the admin key for this group
-const GROUP_SUBSCRIBE_PUBLISH        = 0x02;// means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
-const GROUP_SUBSCRIBE_SUBSCRIBED     = 0x04;// means: you are subscribed to a group, which makes you a source for this group to your friend nodes.
+const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this group
+const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
+const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; // means: you are subscribed to a group, which makes you a source for this group to your friend nodes.
 const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
 
 const Data = {
@@ -29,6 +29,8 @@ async function updateDisplayChannels(keyid, details) {
           isSearched: true,
           description: details.mDescription,
           image: details.mImage,
+          author: details.mMeta.mAuthorId,
+          isSubscribed: details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED,
         };
       }
     });
@@ -73,11 +75,20 @@ const ChannelSummary = () => {
 const MessageView = () => {
   let cname = '';
   let cimage = '';
+  let cauthor = '';
   return {
     oninit: (v) => {
       if (Data.DisplayChannels[v.attrs.id]) {
         cname = Data.DisplayChannels[v.attrs.id].name;
         cimage = Data.DisplayChannels[v.attrs.id].image;
+        if (rs.userList.userMap[Data.DisplayChannels[v.attrs.id].author]) {
+          cauthor = rs.userList.userMap[Data.DisplayChannels[v.attrs.id].author];
+        } else if (Number(Data.DisplayChannels[v.attrs.id].author) === 0) {
+          cauthor = 'No Contact Author';
+        } else {
+          cauthor = 'Unknown';
+        }
+        // console.log(typeof(Data.DisplayChannels[v.attrs.id].author));
       }
     },
     view: (v) =>
@@ -99,17 +110,35 @@ const MessageView = () => {
           ),
           m('h3', cname),
           m(
-            'img.channelpic',
+            'button',
             {
-              src: 'data:image/png;base64,' + cimage.mData.base64,
-            }
+              onclick: () => {
+                if(!Data.DisplayChannels[v.attrs.id].isSubscribed){
+                  rs.rsJsonApiRequest(
+                    '/rsgxschannels/subscribeToChannel',
+                    {
+                      channelId: v.attrs.id,
+                      subscribe: true,
+                    },
+                    (data) => {
+                      console.log(data);
+                    }
+                  ).then( () => {
+                    updateDisplayChannels(v.attrs.id);
+                  });
+                }
+              },
+            },
+            (Data.DisplayChannels[v.attrs.id].isSubscribed)?'Subscribed':'Subscribe'
           ),
+          m('img.channelpic', {
+            src: 'data:image/png;base64,' + cimage.mData.base64,
+          }),
           m('[id=channeldetails]', [
             m('p', m('b', 'Posts: '), 'posts'),
             m('p', m('b', 'Date created: '), '1/1/11'),
-            m('p', m('b', 'Admin: '), 'name_of_admin'),
+            m('p', m('b', 'Admin: '), cauthor),
             m('p', m('b', 'Last activity: '), '1/1/11'),
-
           ]),
           // m('button', 'Reply'),
           // m('button', 'Reply All'),

@@ -31,6 +31,7 @@ table.channels tr.hidden{
 #searchchannel{
   position:relative;
   margin-left: 250px;
+  top: 50px;
 }
 
 img.channelpic {

@@ -12,7 +12,7 @@ const getChannels =
 
     rs.rsJsonApiRequest('/rsgxschannels/getChannelsSummaries', {}, (data) => {
       getChannels.All = data.channels;
-
+      console.log(getChannels.All);
       getChannels.PopularChannels = getChannels.All;
       // console.log(util.GROUP_SUBSCRIBE_SUBSCRIBED === 4);
       getChannels.SubscribedChannels = getChannels.All.filter(
