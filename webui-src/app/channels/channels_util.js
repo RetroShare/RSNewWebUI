@@ -19,7 +19,7 @@ async function updateDisplayChannels(keyid, details) {
       },
       (data) => {
         details = data.channelsInfo[0];
-        console.log(details);
+        // console.log(details);
       }
     )
     .then(() => {
@@ -76,6 +76,7 @@ const MessageView = () => {
   let cname = '';
   let cimage = '';
   let cauthor = '';
+  let csubscribed = {};
   return {
     oninit: (v) => {
       if (Data.DisplayChannels[v.attrs.id]) {
@@ -88,6 +89,7 @@ const MessageView = () => {
         } else {
           cauthor = 'Unknown';
         }
+        csubscribed = Data.DisplayChannels[v.attrs.id].isSubscribed;
         // console.log(typeof(Data.DisplayChannels[v.attrs.id].author));
       }
     },
@@ -127,9 +129,24 @@ const MessageView = () => {
                     updateDisplayChannels(v.attrs.id);
                   });
                 }
+                else
+                {
+                  rs.rsJsonApiRequest(
+                    '/rsgxschannels/subscribeToChannel',
+                    {
+                      channelId: v.attrs.id,
+                      subscribe: false,
+                    },
+                    (data) => {
+                      console.log(data);
+                    }
+                  ).then( () => {
+                    updateDisplayChannels(v.attrs.id);
+                  });
+                }
               },
             },
-            (Data.DisplayChannels[v.attrs.id].isSubscribed)?'Subscribed':'Subscribe'
+            (csubscribed)?'Subscribed':'Subscribe'
           ),
           m('img.channelpic', {
             src: 'data:image/png;base64,' + cimage.mData.base64,
