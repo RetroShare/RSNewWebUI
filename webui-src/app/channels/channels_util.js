@@ -31,6 +31,10 @@ async function updateDisplayChannels(keyid, details) {
           image: details.mImage,
           author: details.mMeta.mAuthorId,
           isSubscribed: details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED,
+          posts: details.mMeta.mVisibleMsgCount,
+          activity: details.mMeta.mLastPost,
+          created: details.mMeta.mPublishTs,
+          all: details,
         };
       }
     });
@@ -77,9 +81,12 @@ const MessageView = () => {
   let cimage = '';
   let cauthor = '';
   let csubscribed = {};
+  let cposts = 0;
+  let toggleUnsubscribe = false;
   return {
     oninit: (v) => {
       if (Data.DisplayChannels[v.attrs.id]) {
+        console.log(Data.DisplayChannels[v.attrs.id].all);
         cname = Data.DisplayChannels[v.attrs.id].name;
         cimage = Data.DisplayChannels[v.attrs.id].image;
         if (rs.userList.userMap[Data.DisplayChannels[v.attrs.id].author]) {
@@ -90,6 +97,7 @@ const MessageView = () => {
           cauthor = 'Unknown';
         }
         csubscribed = Data.DisplayChannels[v.attrs.id].isSubscribed;
+        cposts = Data.DisplayChannels[v.attrs.id].posts;
         // console.log(typeof(Data.DisplayChannels[v.attrs.id].author));
       }
     },
@@ -111,11 +119,12 @@ const MessageView = () => {
             m('i.fas.fa-arrow-left')
           ),
           m('h3', cname),
+
           m(
             'button',
             {
               onclick: () => {
-                if(!Data.DisplayChannels[v.attrs.id].isSubscribed){
+                if (!csubscribed) {
                   rs.rsJsonApiRequest(
                     '/rsgxschannels/subscribeToChannel',
                     {
@@ -125,12 +134,23 @@ const MessageView = () => {
                     (data) => {
                       console.log(data);
                     }
-                  ).then( () => {
-                    updateDisplayChannels(v.attrs.id);
+                  ).then(() => {
+                    Data.DisplayChannels[v.attrs.id].isSubscribed = true;
+                    csubscribed = true;
                   });
+                } else {
+                  toggleUnsubscribe = !toggleUnsubscribe;
                 }
-                else
-                {
+              },
+            },
+            csubscribed ? 'Subscribed' : 'Subscribe'
+          ),
+          m(
+            'button',
+            {
+              style: 'display:' + (toggleUnsubscribe ? 'block' : 'none'),
+              onclick: () => {
+                if (csubscribed) {
                   rs.rsJsonApiRequest(
                     '/rsgxschannels/subscribeToChannel',
                     {
@@ -140,19 +160,21 @@ const MessageView = () => {
                     (data) => {
                       console.log(data);
                     }
-                  ).then( () => {
-                    updateDisplayChannels(v.attrs.id);
+                  ).then(() => {
+                    Data.DisplayChannels[v.attrs.id].isSubscribed = false;
+                    csubscribed = false;
+                    toggleUnsubscribe = false;
                   });
                 }
               },
             },
-            (csubscribed)?'Subscribed':'Subscribe'
+            'Unsubscribe?'
           ),
           m('img.channelpic', {
             src: 'data:image/png;base64,' + cimage.mData.base64,
           }),
           m('[id=channeldetails]', [
-            m('p', m('b', 'Posts: '), 'posts'),
+            m('p', m('b', 'Posts: '), cposts),
             m('p', m('b', 'Date created: '), '1/1/11'),
             m('p', m('b', 'Admin: '), cauthor),
             m('p', m('b', 'Last activity: '), '1/1/11'),

@@ -10,7 +10,6 @@ const getChannels = {
   async load() {
     await rs.rsJsonApiRequest('/rsgxschannels/getChannelsSummaries', {}, (data) => {
       getChannels.All = data.channels;
-      console.log(getChannels.All);
       getChannels.PopularChannels = getChannels.All;
       // console.log(util.GROUP_SUBSCRIBE_SUBSCRIBED === 4);
       getChannels.SubscribedChannels = getChannels.All.filter(
@@ -28,6 +27,7 @@ const sections = {
 };
 
 const Layout = {
+  // oninit : getChannels.load,
   onupdate: getChannels.load,
   view: (vnode) =>
     m('.tab-page', [
@@ -64,5 +64,6 @@ module.exports = {
       check: false,
       tab: vnode.attrs.tab,
     });
+    // this check is implemented for Layout and helps to send in updated list each time.
   },
 };
