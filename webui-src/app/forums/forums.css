@@ -1,7 +1,7 @@
 .forums-node-panel {
     position: relative;
     bottom: 100px;
-    margin-left: 200px;
+    margin-left: 300px;
     animation: fadein 0.5s;
   }
 
@@ -36,8 +36,13 @@ table.forums tr.hidden{
 
 #forumdetails{
   position: relative;
-  margin-left: auto;
+  margin-left: 10px;
+  padding: 10px;
 }
 .p{
   margin:0;
+}
+#toggleunsub{
+  position: relative;
+  background: gray;
 }

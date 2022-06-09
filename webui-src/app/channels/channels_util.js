@@ -86,7 +86,6 @@ const MessageView = () => {
   return {
     oninit: (v) => {
       if (Data.DisplayChannels[v.attrs.id]) {
-        console.log(Data.DisplayChannels[v.attrs.id].all);
         cname = Data.DisplayChannels[v.attrs.id].name;
         cimage = Data.DisplayChannels[v.attrs.id].image;
         if (rs.userList.userMap[Data.DisplayChannels[v.attrs.id].author]) {
@@ -146,11 +145,12 @@ const MessageView = () => {
             csubscribed ? 'Subscribed' : 'Subscribe'
           ),
           m(
-            'button',
+            'button[id=toggleunsub]',
             {
               style: 'display:' + (toggleUnsubscribe ? 'block' : 'none'),
               onclick: () => {
                 if (csubscribed) {
+                  console.log(csubscribed);
                   rs.rsJsonApiRequest(
                     '/rsgxschannels/subscribeToChannel',
                     {

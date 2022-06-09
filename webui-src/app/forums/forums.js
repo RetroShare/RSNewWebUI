@@ -3,16 +3,19 @@ const widget = require('widgets');
 const rs = require('rswebui');
 const util = require('forums/forums_util');
 
-const getForums =
-{
-  PopularForums : [],
-  load(){
-
-    rs.rsJsonApiRequest('/rsgxsforums/getForumsSummaries', {}, (data) => {
-      getForums.PopularForums = data.forums;
-      console.log(getForums.PopularForums);
+const getForums = {
+  All: [],
+  PopularForums: [],
+  SubscribedForums: [],
+  async load() {
+    await rs.rsJsonApiRequest('/rsgxsforums/getForumsSummaries', {}, (data) => {
+      getForums.All = data.forums;
+      getForums.PopularForums = getForums.All;
+      getForums.SubscribedForums = getForums.All.filter(
+        (forum) => forum.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED
+      );
     });
-  }
+  },
 };
 const sections = {
   MyForums: require('forums/my_forums'),
@@ -22,36 +25,43 @@ const sections = {
 };
 
 const Layout = {
-  oninit: getForums.load,
+  // oninit : getForums.load,
+  onupdate: getForums.load,
   view: (vnode) =>
     m('.tab-page', [
       m(util.SearchBar, {
-        list: getForums.PopularForums
+        list: getForums.All,
       }),
       m(widget.Sidebar, {
         tabs: Object.keys(sections),
         baseRoute: '/forums/',
       }),
-      m('.forums-node-panel', vnode.children),
+      m(
+        '.forum-node-panel',
+
+        vnode.attrs.check
+          ? m(util.MessageView, {
+              id: vnode.attrs.id,
+            })
+          : m(sections[vnode.attrs.tab], {
+              list: getForums[vnode.attrs.tab],
+            })
+      ),
     ]),
 };
 
 module.exports = {
   view: (vnode) => {
-    const tab = vnode.attrs.tab;
     if (Object.prototype.hasOwnProperty.call(vnode.attrs, 'mGroupId')) {
-      return m(
-        Layout,
-        m(util.MessageView, {
-          id: vnode.attrs.mGroupId,
-        })
-      );
+      return m(Layout, {
+        check: true, // for forum description
+        id: vnode.attrs.mGroupId,
+      });
     }
-    return m(
-      Layout,
-      m((sections[tab]), {
-      list: getForums.PopularForums,
-      }),
-    );
+    return m(Layout, {
+      check: false,
+      tab: vnode.attrs.tab,
+    });
+    // this check is implemented for Layout and helps to send in updated list each time.
   },
 };

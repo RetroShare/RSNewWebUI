@@ -1,6 +1,11 @@
 const m = require('mithril');
 const rs = require('rswebui');
 
+const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this group
+const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in forums are shared with specific friends.
+const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; // means: you are subscribed to a group, which makes you a source for this group to your friend nodes.
+const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
+
 const Data = {
   DisplayForums: {},
 };
@@ -14,7 +19,6 @@ async function updateDisplayForums(keyid, details = {}) {
       },
       (data) => {
         details = data.forumsInfo[0];
-        // console.log(details);
       }
     )
     .then(() => {
@@ -23,6 +27,7 @@ async function updateDisplayForums(keyid, details = {}) {
           name: details.mMeta.mGroupName,
           isSearched: true,
           description: details.mDescription,
+          isSubscribed: details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED,
         };
       }
     });
@@ -65,11 +70,14 @@ const ForumSummary = () => {
 };
 
 const MessageView = () => {
-  let cname = '';
+  let fname = '';
+  let fsubscribed = {};
+  let toggleUnsubscribe = false;
   return {
     oninit: (v) => {
       if (Data.DisplayForums[v.attrs.id]) {
-        cname = Data.DisplayForums[v.attrs.id].name;
+        fname = Data.DisplayForums[v.attrs.id].name;
+        fsubscribed = Data.DisplayForums[v.attrs.id].isSubscribed;
       }
     },
     view: (v) =>
@@ -89,7 +97,57 @@ const MessageView = () => {
             },
             m('i.fas.fa-arrow-left')
           ),
-          m('h3', cname),
+          m(
+            'button',
+            {
+              onclick: () => {
+                if (!fsubscribed) {
+                  rs.rsJsonApiRequest(
+                    '/rsgxsforums/subscribeToForum',
+                    {
+                      forumId: v.attrs.id,
+                      subscribe: true,
+                    },
+                    (data) => {
+                      console.log(data);
+                    }
+                  ).then(() => {
+                    Data.DisplayForums[v.attrs.id].isSubscribed = true;
+                    fsubscribed = true;
+                  });
+                } else {
+                  toggleUnsubscribe = !toggleUnsubscribe;
+                }
+              },
+            },
+            fsubscribed ? 'Subscribed' : 'Subscribe'
+          ),
+          m(
+            'button[id=toggleunsub]',
+            {
+              style: 'display:' + (toggleUnsubscribe ? 'block' : 'none'),
+              onclick: () => {
+                if (fsubscribed) {
+                  rs.rsJsonApiRequest(
+                    '/rsgxsforums/subscribeToForum',
+                    {
+                      forumId: v.attrs.id,
+                      subscribe: false,
+                    },
+                    (data) => {
+                      console.log(data);
+                    }
+                  ).then(() => {
+                    Data.DisplayForums[v.attrs.id].isSubscribed = false;
+                    fsubscribed = false;
+                    toggleUnsubscribe = false;
+                  });
+                }
+              },
+            },
+            'Unsubscribe?'
+          ),
+          m('h3', fname),
           m('[id=forumdetails]', [
             m('p', m('b', 'Posts: '), 'posts'),
             m('p', m('b', 'Date created: '), '1/1/11'),
@@ -154,4 +212,8 @@ module.exports = {
   MessageView,
   DisplayForumsFromList,
   Table,
+  GROUP_SUBSCRIBE_ADMIN,
+  GROUP_SUBSCRIBE_NOT_SUBSCRIBED,
+  GROUP_SUBSCRIBE_PUBLISH,
+  GROUP_SUBSCRIBE_SUBSCRIBED,
 };
