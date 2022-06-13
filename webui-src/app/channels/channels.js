@@ -8,14 +8,13 @@ const getChannels = {
   PopularChannels: [],
   SubscribedChannels: [],
   async load() {
-    await rs.rsJsonApiRequest('/rsgxschannels/getChannelsSummaries', {}, (data) => {
-      getChannels.All = data.channels;
-      getChannels.PopularChannels = getChannels.All;
-      // console.log(util.GROUP_SUBSCRIBE_SUBSCRIBED === 4);
-      getChannels.SubscribedChannels = getChannels.All.filter(
-        (channel) => channel.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED
-      );
-    });
+    const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelsSummaries');
+    const data = res.body;
+    getChannels.All = data.channels;
+    getChannels.PopularChannels = getChannels.All;
+    getChannels.SubscribedChannels = getChannels.All.filter(
+      (channel) => channel.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED
+    );
   },
 };
 

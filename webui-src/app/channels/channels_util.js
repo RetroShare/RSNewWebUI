@@ -10,35 +10,46 @@ const Data = {
   DisplayChannels: {},
 };
 
+async function updateContent(post, keyid) {
+  const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelContent', {
+    channelId: keyid,
+    contentsIds: [post.mMsgId],
+  });
+  if (res.body.retval) {
+    if (Data.DisplayChannels[keyid]) {
+      Data.DisplayChannels[keyid].postList = res.body.posts;
+    }
+  }
+}
+
 async function updateDisplayChannels(keyid, details) {
-  await rs
-    .rsJsonApiRequest(
-      '/rsgxschannels/getChannelsInfo',
-      {
-        chanIds: [keyid],
-      },
-      (data) => {
-        details = data.channelsInfo[0];
-        // console.log(details);
-      }
-    )
-    .then(() => {
-      if (Data.DisplayChannels[keyid] === undefined) {
-        Data.DisplayChannels[keyid] = {
-          name: details.mMeta.mGroupName,
-          isSearched: true,
-          description: details.mDescription,
-          image: details.mImage,
-          author: details.mMeta.mAuthorId,
-          isSubscribed: details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED,
-          posts: details.mMeta.mVisibleMsgCount,
-          activity: details.mMeta.mLastPost,
-          created: details.mMeta.mPublishTs,
-          all: details,
-        };
-      }
+  const res1 = await rs.rsJsonApiRequest('/rsgxschannels/getChannelsInfo', {
+    chanIds: [keyid],
+  });
+  details = res1.body.channelsInfo[0];
+  Data.DisplayChannels[keyid] = {
+    name: details.mMeta.mGroupName,
+    isSearched: true,
+    description: details.mDescription,
+    image: details.mImage,
+    author: details.mMeta.mAuthorId,
+    isSubscribed: details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED,
+    posts: details.mMeta.mVisibleMsgCount,
+    postList: [],
+    activity: details.mMeta.mLastPost,
+    created: details.mMeta.mPublishTs,
+    all: details,
+  };
+
+  const res2 = await rs.rsJsonApiRequest('/rsgxschannels/getContentSummaries', {
+    channelId: keyid,
+  });
+
+  if (res2.body.retval) {
+    res2.body.summaries.map((post) => {
+      updateContent(post, keyid);
     });
-  // console.log(Data.DisplayChannels[keyid]);
+  }
 }
 const DisplayChannelsFromList = () => {
   return {
@@ -79,10 +90,10 @@ const ChannelSummary = () => {
 const MessageView = () => {
   let cname = '';
   let cimage = '';
+  let plist = {};
   let cauthor = '';
   let csubscribed = {};
   let cposts = 0;
-  let toggleUnsubscribe = false;
   return {
     oninit: (v) => {
       if (Data.DisplayChannels[v.attrs.id]) {
@@ -97,7 +108,7 @@ const MessageView = () => {
         }
         csubscribed = Data.DisplayChannels[v.attrs.id].isSubscribed;
         cposts = Data.DisplayChannels[v.attrs.id].posts;
-        // console.log(typeof(Data.DisplayChannels[v.attrs.id].author));
+        plist = Data.DisplayChannels[v.attrs.id].postList;
       }
     },
     view: (v) =>
@@ -122,53 +133,18 @@ const MessageView = () => {
           m(
             'button',
             {
-              onclick: () => {
-                if (!csubscribed) {
-                  rs.rsJsonApiRequest(
-                    '/rsgxschannels/subscribeToChannel',
-                    {
-                      channelId: v.attrs.id,
-                      subscribe: true,
-                    },
-                    (data) => {
-                      console.log(data);
-                    }
-                  ).then(() => {
-                    Data.DisplayChannels[v.attrs.id].isSubscribed = true;
-                    csubscribed = true;
-                  });
-                } else {
-                  toggleUnsubscribe = !toggleUnsubscribe;
+              onclick: async () => {
+                const res = await rs.rsJsonApiRequest('/rsgxschannels/subscribeToChannel', {
+                  channelId: v.attrs.id,
+                  subscribe: !csubscribed,
+                });
+                if (res.body.retval) {
+                  csubscribed = !csubscribed;
+                  Data.DisplayChannels[v.attrs.id].isSubscribed = csubscribed;
                 }
               },
             },
             csubscribed ? 'Subscribed' : 'Subscribe'
-          ),
-          m(
-            'button[id=toggleunsub]',
-            {
-              style: 'display:' + (toggleUnsubscribe ? 'block' : 'none'),
-              onclick: () => {
-                if (csubscribed) {
-                  console.log(csubscribed);
-                  rs.rsJsonApiRequest(
-                    '/rsgxschannels/subscribeToChannel',
-                    {
-                      channelId: v.attrs.id,
-                      subscribe: false,
-                    },
-                    (data) => {
-                      console.log(data);
-                    }
-                  ).then(() => {
-                    Data.DisplayChannels[v.attrs.id].isSubscribed = false;
-                    csubscribed = false;
-                    toggleUnsubscribe = false;
-                  });
-                }
-              },
-            },
-            'Unsubscribe?'
           ),
           m('img.channelpic', {
             src: 'data:image/png;base64,' + cimage.mData.base64,
@@ -179,26 +155,29 @@ const MessageView = () => {
             m('p', m('b', 'Admin: '), cauthor),
             m('p', m('b', 'Last activity: '), '1/1/11'),
           ]),
-          // m('button', 'Reply'),
-          // m('button', 'Reply All'),
-          // m('button', 'Forward'),
-          // m(
-          //   'button',
-          //   {
-          //     onclick: () => {
-          //       rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', {
-          //         msgId: details.msgId,
-          //         bTrash: true,
-          //       }),
-          //         rs.rsJsonApiRequest('/rsMsgs/MessageDelete', {
-          //           msgId: details.msgId,
-          //         });
-          //     },
-          //   },
-          //   'Delete'
-          // ),
           m('hr'),
           m('channeldesc', m('b', 'Description: '), Data.DisplayChannels[v.attrs.id].description),
+          m('hr'),
+          m(
+            'postdetails',
+            {
+              style: 'display:' + (csubscribed ? 'block' : 'none'),
+            },
+            m('h3', 'Posts'),
+            plist.map((post) => [
+              m('div', { class: 'card' }, [
+                m('img', {
+                  class: 'card-img',
+                  src: 'data:image/png;base64,' + post.mThumbnail.mData.base64,
+                  alt: 'header',
+                }),
+                m('div', { class: 'card-info' }, [
+                  m('h1', { class: 'card-title' }, post.mMeta.mMsgName),
+                  m('p', { class: 'card-author' }, 'Author Name'),
+                ]),
+              ]),
+            ])
+          ),
         ]
       ),
   };

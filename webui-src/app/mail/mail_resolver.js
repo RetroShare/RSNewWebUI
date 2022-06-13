@@ -22,7 +22,6 @@ const Messages = {
   load() {
     rs.rsJsonApiRequest('/rsMsgs/getMessageSummaries', {}, (data) => {
       Messages.all = data.msgList;
-      console.log(Messages.all);
       Messages.inbox = Messages.all.filter(
         (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_INBOX
       );

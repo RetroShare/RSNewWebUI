@@ -9,22 +9,20 @@ const Layout = () => {
         m('hr'),
         m(
           util.Table,
-          m(
-            'tbody',
-            [v.attrs.list.map((channel) =>
+          m('tbody', [
+            v.attrs.list.map((channel) =>
               m(util.ChannelSummary, {
                 details: channel,
                 category: 'PopularChannels',
-              }),
+              })
             ),
             v.attrs.list.map((channel) =>
               m(util.DisplayChannelsFromList, {
                 id: channel.mGroupId,
                 category: 'PopularChannels',
-              }),
+              })
             ),
-          ]
-          )
+          ])
         ),
       ]),
     ],
@@ -32,4 +30,3 @@ const Layout = () => {
 };
 
 module.exports = Layout;
-

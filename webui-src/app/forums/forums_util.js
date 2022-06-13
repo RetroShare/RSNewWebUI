@@ -11,28 +11,20 @@ const Data = {
 };
 
 async function updateDisplayForums(keyid, details = {}) {
-      await rs
-    .rsJsonApiRequest(
-      '/rsgxsforums/getForumsInfo',
-      {
-        forumIds: [keyid],
-      },
-      (data) => {
-        details = data.forumsInfo[0];
-      }
-    )
-    .then(() => {
-      if (Data.DisplayForums[keyid] === undefined) {
-        Data.DisplayForums[keyid] = {
-          name: details.mMeta.mGroupName,
-          isSearched: true,
-          description: details.mDescription,
-          isSubscribed: details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED,
-        };
-      }
-    });
-//   console.log(Data.DisplayForums[keyid]);
+  const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumsInfo', {
+    forumIds: [keyid],
+  });
+  details = res.body.forumsInfo[0];
+  if (Data.DisplayForums[keyid] === undefined) {
+    Data.DisplayForums[keyid] = {
+      name: details.mMeta.mGroupName,
+      isSearched: true,
+      description: details.mDescription,
+      isSubscribed: details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED,
+    };
+  }
 }
+
 const DisplayForumsFromList = () => {
   return {
     oninit: (v) => {},
@@ -72,7 +64,6 @@ const ForumSummary = () => {
 const MessageView = () => {
   let fname = '';
   let fsubscribed = {};
-  let toggleUnsubscribe = false;
   return {
     oninit: (v) => {
       if (Data.DisplayForums[v.attrs.id]) {
@@ -100,52 +91,18 @@ const MessageView = () => {
           m(
             'button',
             {
-              onclick: () => {
-                if (!fsubscribed) {
-                  rs.rsJsonApiRequest(
-                    '/rsgxsforums/subscribeToForum',
-                    {
-                      forumId: v.attrs.id,
-                      subscribe: true,
-                    },
-                    (data) => {
-                      console.log(data);
-                    }
-                  ).then(() => {
-                    Data.DisplayForums[v.attrs.id].isSubscribed = true;
-                    fsubscribed = true;
-                  });
-                } else {
-                  toggleUnsubscribe = !toggleUnsubscribe;
+              onclick: async () => {
+                const res = await rs.rsJsonApiRequest('/rsgxsforums/subscribeToForum', {
+                  forumId: v.attrs.id,
+                  subscribe: !fsubscribed,
+                });
+                if (res.body.retval) {
+                  fsubscribed = !fsubscribed;
+                  Data.DisplayForums[v.attrs.id].isSubscribed = fsubscribed;
                 }
               },
             },
             fsubscribed ? 'Subscribed' : 'Subscribe'
-          ),
-          m(
-            'button[id=toggleunsub]',
-            {
-              style: 'display:' + (toggleUnsubscribe ? 'block' : 'none'),
-              onclick: () => {
-                if (fsubscribed) {
-                  rs.rsJsonApiRequest(
-                    '/rsgxsforums/subscribeToForum',
-                    {
-                      forumId: v.attrs.id,
-                      subscribe: false,
-                    },
-                    (data) => {
-                      console.log(data);
-                    }
-                  ).then(() => {
-                    Data.DisplayForums[v.attrs.id].isSubscribed = false;
-                    fsubscribed = false;
-                    toggleUnsubscribe = false;
-                  });
-                }
-              },
-            },
-            'Unsubscribe?'
           ),
           m('h3', fname),
           m('[id=forumdetails]', [
@@ -153,26 +110,7 @@ const MessageView = () => {
             m('p', m('b', 'Date created: '), '1/1/11'),
             m('p', m('b', 'Admin: '), 'name_of_admin'),
             m('p', m('b', 'Last activity: '), '1/1/11'),
-
           ]),
-          // m('button', 'Reply'),
-          // m('button', 'Reply All'),
-          // m('button', 'Forward'),
-          // m(
-          //   'button',
-          //   {
-          //     onclick: () => {
-          //       rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', {
-          //         msgId: details.msgId,
-          //         bTrash: true,
-          //       }),
-          //         rs.rsJsonApiRequest('/rsMsgs/MessageDelete', {
-          //           msgId: details.msgId,
-          //         });
-          //     },
-          //   },
-          //   'Delete'
-          // ),
           m('hr'),
           m('forumdesc', m('b', 'Description: '), Data.DisplayForums[v.attrs.id].description),
         ]
@@ -182,7 +120,6 @@ const MessageView = () => {
 
 const Table = () => {
   return {
-    oninit: (v) => {},
     view: (v) => m('table.forums', [m('tr', [m('th', 'Forum Name')]), v.children]),
   };
 };

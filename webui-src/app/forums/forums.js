@@ -8,20 +8,19 @@ const getForums = {
   PopularForums: [],
   SubscribedForums: [],
   async load() {
-    await rs.rsJsonApiRequest('/rsgxsforums/getForumsSummaries', {}, (data) => {
-      getForums.All = data.forums;
-      getForums.PopularForums = getForums.All;
-      getForums.SubscribedForums = getForums.All.filter(
-        (forum) => forum.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED
-      );
-    });
+    const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumsSummaries');
+    getForums.All = res.body.forums;
+    getForums.PopularForums = getForums.All;
+    getForums.SubscribedForums = getForums.All.filter(
+      (forum) => forum.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED
+    );
   },
 };
 const sections = {
   MyForums: require('forums/my_forums'),
   SubscribedForums: require('forums/subscribed_forums'),
   PopularForums: require('forums/popular_forums'),
-  OtherForums: require('forums/other_forums')
+  OtherForums: require('forums/other_forums'),
 };
 
 const Layout = {
