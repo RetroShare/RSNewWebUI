@@ -93,7 +93,7 @@ const ChannelView = () => {
   let cauthor = '';
   let csubscribed = {};
   let cposts = 0;
-  let plist = {};
+  // let plist = {};
   return {
     oninit: (v) => {
       if (Data.DisplayChannels[v.attrs.id]) {
@@ -110,7 +110,7 @@ const ChannelView = () => {
         cposts = Data.DisplayChannels[v.attrs.id].posts;
       }
       if (Data.Posts[v.attrs.id]) {
-        plist = Data.Posts[v.attrs.id];
+        // plist = Data.Posts[v.attrs.id];
       }
     },
     view: (v) =>
@@ -167,32 +167,32 @@ const ChannelView = () => {
             },
             m('h3', 'Posts'),
             // plist.map((post) => [
-            Object.keys(plist).map((key, index) => [
-              m(
-                'div',
-                {
-                  class: 'card',
-                  onclick: () => {
-                    m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
-                      tab: m.route.param().tab,
-                      mGroupId: v.attrs.id,
-                      mMsgId: key,
-                    });
-                  },
-                },
-                [
-                  m('img', {
-                    class: 'card-img',
-                    src: 'data:image/png;base64,' + plist[key].mThumbnail.mData.base64,
+            // Object.keys(plist).map((key, index) => [
+            //   m(
+            //     'div',
+            //     {
+            //       class: 'card',
+            //       onclick: () => {
+            //         m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
+            //           tab: m.route.param().tab,
+            //           mGroupId: v.attrs.id,
+            //           mMsgId: key,
+            //         });
+            //       },
+            //     },
+            //     [
+            //       m('img', {
+            //         class: 'card-img',
+            //         src: 'data:image/png;base64,' + plist[key].mThumbnail.mData.base64,
 
-                    alt: 'header',
-                  }),
-                  m('div', { class: 'card-info' }, [
-                    m('h4', { class: 'card-title' }, plist[key].mMeta.mMsgName),
-                  ]),
-                ]
-              ),
-            ])
+            //         alt: 'header',
+            //       }),
+            //       m('div', { class: 'card-info' }, [
+            //         m('h4', { class: 'card-title' }, plist[key].mMeta.mMsgName),
+            //       ]),
+            //     ]
+            //   ),
+            // ])
           ),
         ]
       ),
