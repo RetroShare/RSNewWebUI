@@ -103,6 +103,9 @@ m.route(document.getElementById('main'), '/', {
   '/channels/:tab/:mGroupId': {
     render: (v) => m(Layout, m(channels, v.attrs)),
   },
+  '/channels/:tab/:mGroupId/:mMsgId': {
+    render: (v) => m(Layout, m(channels, v.attrs)),
+  },
   '/forums/:tab': {
     render: (v) => m(Layout, m(forums, v.attrs)),
   },
