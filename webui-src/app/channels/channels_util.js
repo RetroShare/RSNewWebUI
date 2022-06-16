@@ -18,7 +18,7 @@ async function updateContent(post, channelid) {
     contentsIds: [post.mMsgId],
   });
   console.log(res.body.posts);
-  if (res.body.retval) {
+  if (res.body.retval && res.body.posts.length > 0) {
     Data.Posts[channelid][post.mMsgId] = res.body.posts[0];
   }
 }
@@ -116,7 +116,7 @@ const ChannelView = () => {
         cposts = Data.DisplayChannels[v.attrs.id].posts;
       }
       if (Data.Posts[v.attrs.id]) {
-        console.log(Data.Posts[v.attrs.id]);
+        // console.log(Data.Posts[v.attrs.id]);
         plist = Data.Posts[v.attrs.id];
       }
     },
@@ -174,32 +174,35 @@ const ChannelView = () => {
             },
             m('h3', 'Posts'),
 
-            Object.keys(plist).map((key, index) => [
-              m(
-                'div',
-                {
-                  class: 'card',
-                  onclick: () => {
-                    m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
-                      tab: m.route.param().tab,
-                      mGroupId: v.attrs.id,
-                      mMsgId: key,
-                    });
+            m(
+              '[id=grid]',
+              Object.keys(plist).map((key, index) => [
+                m(
+                  'div',
+                  {
+                    class: 'card',
+                    onclick: () => {
+                      m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
+                        tab: m.route.param().tab,
+                        mGroupId: v.attrs.id,
+                        mMsgId: key,
+                      });
+                    },
                   },
-                },
-                [
-                  m('img', {
-                    class: 'card-img',
-                    src: 'data:image/png;base64,' + plist[key].mThumbnail.mData.base64,
+                  [
+                    m('img', {
+                      class: 'card-img',
+                      src: 'data:image/png;base64,' + plist[key].mThumbnail.mData.base64,
 
-                    alt: 'header',
-                  }),
-                  m('div', { class: 'card-info' }, [
-                    m('h4', { class: 'card-title' }, plist[key].mMeta.mMsgName),
-                  ]),
-                ]
-              ),
-            ])
+                      alt: 'No Thumbnail',
+                    }),
+                    m('div', { class: 'card-info' }, [
+                      m('h4', { class: 'card-title' }, plist[key].mMeta.mMsgName),
+                    ]),
+                  ]
+                ),
+              ])
+            )
           ),
         ]
       ),
