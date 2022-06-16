@@ -24,7 +24,6 @@ const sections = {
 };
 
 const Layout = {
-  // oninit : getForums.load,
   onupdate: getForums.load,
   view: (vnode) =>
     m('.tab-page', [
@@ -38,12 +37,12 @@ const Layout = {
       m(
         '.forum-node-panel',
 
-        vnode.attrs.check
+        Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId')
           ? m(util.MessageView, {
-              id: vnode.attrs.id,
+              id: vnode.attrs.pathInfo.mGroupId,
             })
-          : m(sections[vnode.attrs.tab], {
-              list: getForums[vnode.attrs.tab],
+          : m(sections[vnode.attrs.pathInfo.tab], {
+              list: getForums[vnode.attrs.pathInfo.tab],
             })
       ),
     ]),
@@ -51,16 +50,8 @@ const Layout = {
 
 module.exports = {
   view: (vnode) => {
-    if (Object.prototype.hasOwnProperty.call(vnode.attrs, 'mGroupId')) {
-      return m(Layout, {
-        check: true, // for forum description
-        id: vnode.attrs.mGroupId,
-      });
-    }
     return m(Layout, {
-      check: false,
-      tab: vnode.attrs.tab,
+      pathInfo: vnode.attrs,
     });
-    // this check is implemented for Layout and helps to send in updated list each time.
   },
 };

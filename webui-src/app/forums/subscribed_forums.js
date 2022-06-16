@@ -9,22 +9,20 @@ const Layout = () => {
         m('hr'),
         m(
           util.Table,
-          m(
-            'tbody',
-            [v.attrs.list.map((forum) =>
+          m('tbody', [
+            v.attrs.list.map((forum) =>
               m(util.ForumSummary, {
                 details: forum,
                 category: 'SubscribedForums',
-              }),
+              })
             ),
             v.attrs.list.map((forum) =>
               m(util.DisplayForumsFromList, {
                 id: forum.mGroupId,
                 category: 'SubscribedForums',
-              }),
+              })
             ),
-          ]
-          )
+          ])
         ),
       ]),
     ],
@@ -32,4 +30,3 @@ const Layout = () => {
 };
 
 module.exports = Layout;
-

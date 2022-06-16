@@ -67,22 +67,5 @@ module.exports = {
     return m(Layout, {
       pathInfo: vnode.attrs,
     });
-    // if (Object.prototype.hasOwnProperty.call(vnode.attrs, 'mMsgId')) {
-    //   return m(Layout, {
-    //     check: 0, // for channel description
-    //     channelId: vnode.attrs.mGroupId,
-    //     msgId: vnode.attrs.mMsgId,
-    //   });
-    // } else if (Object.prototype.hasOwnProperty.call(vnode.attrs, 'mGroupId')) {
-    //   return m(Layout, {
-    //     check: 1, // for channel description
-    //     id: vnode.attrs.mGroupId,
-    //   });
-    // }
-    // return m(Layout, {
-    //   check: 2,
-    //   tab: vnode.attrs.tab,
-    // });
-    // this check is implemented for Layout and helps to send in updated list each time.
   },
 };

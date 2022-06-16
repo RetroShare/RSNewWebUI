@@ -166,33 +166,6 @@ const ChannelView = () => {
               style: 'display:' + (csubscribed ? 'block' : 'none'),
             },
             m('h3', 'Posts'),
-            // plist.map((post) => [
-            // Object.keys(plist).map((key, index) => [
-            //   m(
-            //     'div',
-            //     {
-            //       class: 'card',
-            //       onclick: () => {
-            //         m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
-            //           tab: m.route.param().tab,
-            //           mGroupId: v.attrs.id,
-            //           mMsgId: key,
-            //         });
-            //       },
-            //     },
-            //     [
-            //       m('img', {
-            //         class: 'card-img',
-            //         src: 'data:image/png;base64,' + plist[key].mThumbnail.mData.base64,
-
-            //         alt: 'header',
-            //       }),
-            //       m('div', { class: 'card-info' }, [
-            //         m('h4', { class: 'card-title' }, plist[key].mMeta.mMsgName),
-            //       ]),
-            //     ]
-            //   ),
-            // ])
           ),
         ]
       ),
