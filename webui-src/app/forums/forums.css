@@ -1,0 +1,48 @@
+.forums-node-panel {
+    position: relative;
+    bottom: 100px;
+    margin-left: 300px;
+    animation: fadein 0.5s;
+  }
+
+/* subject */
+table.forums th:nth-child(1) {
+  width: 50%;
+  text-align: start;
+}
+/* subject */
+table.forums td:nth-child(1) {
+  text-align: start;
+  /* Truncate text with '...' */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+table.forums tr:hover {
+  background-color: #eef3f6;
+  cursor: pointer;
+}
+
+table.forums tr.hidden{
+  display: none;
+}
+
+#searchforum{
+  position:relative;
+  margin-left: 250px;
+  top: 50px;
+}
+
+#forumdetails{
+  position: relative;
+  margin-left: 10px;
+  padding: 10px;
+}
+.p{
+  margin:0;
+}
+#toggleunsub{
+  position: relative;
+  background: gray;
+}
