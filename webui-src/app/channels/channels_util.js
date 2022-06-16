@@ -5,7 +5,8 @@ const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this gr
 const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
 const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; // means: you are subscribed to a group, which makes you a source for this group to your friend nodes.
 const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
-const GROUP_MY_CHANNEL = GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
+const GROUP_MY_CHANNEL =
+  GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
 const Data = {
   DisplayChannels: {},
   Posts: {},
@@ -16,6 +17,7 @@ async function updateContent(post, channelid) {
     channelId: channelid,
     contentsIds: [post.mMsgId],
   });
+  console.log(res.body.posts);
   if (res.body.retval) {
     Data.Posts[channelid][post.mMsgId] = res.body.posts[0];
   }
@@ -32,19 +34,23 @@ async function updateDisplayChannels(keyid, details) {
     description: details.mDescription,
     image: details.mImage,
     author: details.mMeta.mAuthorId,
-    isSubscribed: (details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED) || ((details.mMeta.mSubscribeFlags === GROUP_MY_CHANNEL)),
+    isSubscribed:
+      details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED ||
+      details.mMeta.mSubscribeFlags === GROUP_MY_CHANNEL,
     posts: details.mMeta.mVisibleMsgCount,
     activity: details.mMeta.mLastPost,
     created: details.mMeta.mPublishTs,
     all: details,
   };
 
-  Data.Posts[keyid] = {};
+  if (Data.Posts[keyid] === undefined) {
+    Data.Posts[keyid] = {};
+  }
   const res2 = await rs.rsJsonApiRequest('/rsgxschannels/getContentSummaries', {
     channelId: keyid,
   });
 
-  console.log(res2);
+  // console.log(res2);
   if (res2.body.retval) {
     res2.body.summaries.map((post) => {
       updateContent(post, keyid);
@@ -93,7 +99,7 @@ const ChannelView = () => {
   let cauthor = '';
   let csubscribed = {};
   let cposts = 0;
-  // let plist = {};
+  let plist = {};
   return {
     oninit: (v) => {
       if (Data.DisplayChannels[v.attrs.id]) {
@@ -110,7 +116,8 @@ const ChannelView = () => {
         cposts = Data.DisplayChannels[v.attrs.id].posts;
       }
       if (Data.Posts[v.attrs.id]) {
-        // plist = Data.Posts[v.attrs.id];
+        console.log(Data.Posts[v.attrs.id]);
+        plist = Data.Posts[v.attrs.id];
       }
     },
     view: (v) =>
@@ -166,6 +173,33 @@ const ChannelView = () => {
               style: 'display:' + (csubscribed ? 'block' : 'none'),
             },
             m('h3', 'Posts'),
+
+            Object.keys(plist).map((key, index) => [
+              m(
+                'div',
+                {
+                  class: 'card',
+                  onclick: () => {
+                    m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
+                      tab: m.route.param().tab,
+                      mGroupId: v.attrs.id,
+                      mMsgId: key,
+                    });
+                  },
+                },
+                [
+                  m('img', {
+                    class: 'card-img',
+                    src: 'data:image/png;base64,' + plist[key].mThumbnail.mData.base64,
+
+                    alt: 'header',
+                  }),
+                  m('div', { class: 'card-info' }, [
+                    m('h4', { class: 'card-title' }, plist[key].mMeta.mMsgName),
+                  ]),
+                ]
+              ),
+            ])
           ),
         ]
       ),
