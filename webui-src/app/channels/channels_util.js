@@ -100,6 +100,8 @@ const ChannelView = () => {
   let csubscribed = {};
   let cposts = 0;
   let plist = {};
+  let createDate = {};
+  let lastActivity = {};
   return {
     oninit: (v) => {
       if (Data.DisplayChannels[v.attrs.id]) {
@@ -114,6 +116,8 @@ const ChannelView = () => {
         }
         csubscribed = Data.DisplayChannels[v.attrs.id].isSubscribed;
         cposts = Data.DisplayChannels[v.attrs.id].posts;
+        createDate = Data.DisplayChannels[v.attrs.id].created;
+        lastActivity = Data.DisplayChannels[v.attrs.id].activity;
       }
       if (Data.Posts[v.attrs.id]) {
         // console.log(Data.Posts[v.attrs.id]);
@@ -160,9 +164,21 @@ const ChannelView = () => {
           }),
           m('[id=channeldetails]', [
             m('p', m('b', 'Posts: '), cposts),
-            m('p', m('b', 'Date created: '), '1/1/11'),
+            m(
+              'p',
+              m('b', 'Date created: '),
+              typeof createDate === 'object'
+                ? new Date(createDate.xint64 * 1000).toLocaleString()
+                : 'undefined'
+            ),
             m('p', m('b', 'Admin: '), cauthor),
-            m('p', m('b', 'Last activity: '), '1/1/11'),
+            m(
+              'p',
+              m('b', 'Last activity: '),
+              typeof lastActivity === 'object'
+                ? new Date(lastActivity.xint64 * 1000).toLocaleString()
+                : 'undefined'
+            ),
           ]),
           m('hr'),
           m('channeldesc', m('b', 'Description: '), Data.DisplayChannels[v.attrs.id].description),
@@ -208,7 +224,27 @@ const ChannelView = () => {
       ),
   };
 };
+const FilesTable = () => {
+  return {
+    oninit: (v) => {},
+    view: (v) =>
+      m('table.files', [
+        m('tr', [m('th', 'File Name'), m('th', 'Size'), m('th', m('i.fas.fa-download'))]),
+        v.children,
+      ]),
+  };
+};
+function formatBytes(bytes, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
 
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
 const PostView = () => {
   let post = {};
   return {
@@ -232,11 +268,26 @@ const PostView = () => {
         ),
         m('h3', post.mMeta.mMsgName),
         m('p', m.trust(post.mMsg)),
+        m('hr'),
+        m('h3', 'Files(' + post.mAttachmentCount + ')'),
+        m(
+          FilesTable,
+          m(
+            'tbody',
+            post.mFiles.map((file) =>
+              m('tr', [
+                m('td', file.mName),
+                m('td', formatBytes(file.mSize.xint64)),
+                m('button', 'Download', m('i.fas.fa-download')),
+              ])
+            )
+          )
+        ),
       ]),
   };
 };
 
-const Table = () => {
+const ChannelTable = () => {
   return {
     oninit: (v) => {},
     view: (v) => m('table.channels', [m('tr', [m('th', 'Channel Name')]), v.children]),
@@ -268,7 +319,7 @@ module.exports = {
   ChannelView,
   PostView,
   DisplayChannelsFromList,
-  Table,
+  ChannelTable,
   GROUP_SUBSCRIBE_ADMIN,
   GROUP_SUBSCRIBE_NOT_SUBSCRIBED,
   GROUP_SUBSCRIBE_PUBLISH,

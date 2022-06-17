@@ -32,8 +32,12 @@ const sections = {
 };
 
 const Layout = {
-  // oninit : getChannels.load,
-  onupdate: getChannels.load,
+  oninit : () => {
+    rs.setBackgroundTask(getChannels.load, 1000, () => {
+      // return m.route.get() === '/files/files';
+    });
+  },
+  // onupdate: getChannels.load,
   view: (vnode) =>
     m('.tab-page', [
       m(util.SearchBar, {
