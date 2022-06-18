@@ -7,19 +7,32 @@ const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; // means: you are subscribed to a group
 const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
 const GROUP_MY_CHANNEL =
   GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
+// const GXS_VOTE_DOWN = 0x0001;
+// const GXS_VOTE_UP = 0x0002;
+
+
+
 const Data = {
   DisplayChannels: {},
   Posts: {},
+  Comments: {},
 };
 
-async function updateContent(post, channelid) {
+async function updateContent(content, channelid) {
   const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelContent', {
     channelId: channelid,
-    contentsIds: [post.mMsgId],
+    contentsIds: [content.mMsgId],
   });
-  console.log(res.body.posts);
+  // console.log(res.body.posts);
   if (res.body.retval && res.body.posts.length > 0) {
-    Data.Posts[channelid][post.mMsgId] = res.body.posts[0];
+    Data.Posts[channelid][content.mMsgId] = res.body.posts[0];
+  }
+  if (res.body.retval && res.body.comments.length > 0) {
+    if (Data.Comments[content.mThreadId] === undefined) {
+      Data.Comments[content.mThreadId] = {};
+    }
+    Data.Comments[content.mThreadId][content.mMsgId] = res.body.comments[0];
+    // console.log(Data.Comments[content.mThreadId][content.mMsgId]);
   }
 }
 
@@ -52,8 +65,8 @@ async function updateDisplayChannels(keyid, details) {
 
   // console.log(res2);
   if (res2.body.retval) {
-    res2.body.summaries.map((post) => {
-      updateContent(post, keyid);
+    res2.body.summaries.map((content) => {
+      updateContent(content, keyid);
     });
   }
 }
@@ -224,6 +237,16 @@ const ChannelView = () => {
       ),
   };
 };
+const CommentsTable = () => {
+  return {
+    oninit: (v) => {},
+    view: (v) =>
+      m('table.comments', [
+        m('tr', [m('th', 'Comment'), m('th', 'Author'), m('th', 'Date')]),
+        v.children,
+      ]),
+  };
+};
 const FilesTable = () => {
   return {
     oninit: (v) => {},
@@ -247,10 +270,14 @@ function formatBytes(bytes, decimals = 2) {
 }
 const PostView = () => {
   let post = {};
+  let comments = {};
   return {
     oninit: (v) => {
       if (Data.Posts[v.attrs.channelId] && Data.Posts[v.attrs.channelId][v.attrs.msgId]) {
         post = Data.Posts[v.attrs.channelId][v.attrs.msgId];
+      }
+      if (Data.Comments[v.attrs.msgId]) {
+        comments = Data.Comments[v.attrs.msgId];
       }
     },
     view: (v) =>
@@ -279,6 +306,23 @@ const PostView = () => {
                 m('td', file.mName),
                 m('td', formatBytes(file.mSize.xint64)),
                 m('button', 'Download', m('i.fas.fa-download')),
+              ])
+            )
+          )
+        ),
+        m('hr'),
+        m('h3', 'Comments' + comments.length),
+        m(
+          CommentsTable,
+          m(
+            'tbody',
+            Object.keys(comments).map((key, index) =>
+              m('tr', [
+                m('td', comments[key].mComment),
+                m('td', rs.userList.userMap[comments[key].mMeta.mAuthorId]),
+                m('td', typeof comments[key].mMeta.mPublishTs === 'object'
+                ? new Date(comments[key].mMeta.mPublishTs.xint64 * 1000).toLocaleString()
+                : 'undefined'),
               ])
             )
           )
