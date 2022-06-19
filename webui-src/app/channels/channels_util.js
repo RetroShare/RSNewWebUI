@@ -7,10 +7,9 @@ const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; // means: you are subscribed to a group
 const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
 const GROUP_MY_CHANNEL =
   GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
+const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
 // const GXS_VOTE_DOWN = 0x0001;
 // const GXS_VOTE_UP = 0x0002;
-
-
 
 const Data = {
   DisplayChannels: {},
@@ -32,7 +31,6 @@ async function updateContent(content, channelid) {
       Data.Comments[content.mThreadId] = {};
     }
     Data.Comments[content.mThreadId][content.mMsgId] = res.body.comments[0];
-    // console.log(Data.Comments[content.mThreadId][content.mMsgId]);
   }
 }
 
@@ -63,7 +61,6 @@ async function updateDisplayChannels(keyid, details) {
     channelId: keyid,
   });
 
-  // console.log(res2);
   if (res2.body.retval) {
     res2.body.summaries.map((content) => {
       updateContent(content, keyid);
@@ -133,7 +130,6 @@ const ChannelView = () => {
         lastActivity = Data.DisplayChannels[v.attrs.id].activity;
       }
       if (Data.Posts[v.attrs.id]) {
-        // console.log(Data.Posts[v.attrs.id]);
         plist = Data.Posts[v.attrs.id];
       }
     },
@@ -257,20 +253,20 @@ const FilesTable = () => {
       ]),
   };
 };
+
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
-
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
+
 const PostView = () => {
   let post = {};
   let comments = {};
+  const filesInfo = {};
   return {
     oninit: (v) => {
       if (Data.Posts[v.attrs.channelId] && Data.Posts[v.attrs.channelId][v.attrs.msgId]) {
@@ -278,6 +274,14 @@ const PostView = () => {
       }
       if (Data.Comments[v.attrs.msgId]) {
         comments = Data.Comments[v.attrs.msgId];
+      }
+      if (post) {
+        post.mFiles.map(async (file) => {
+          const res = await rs.rsJsonApiRequest('/rsfiles/alreadyHaveFile', {
+            hash: file.mHash,
+          });
+          filesInfo[file.mHash] = res.body;
+        });
       }
     },
     view: (v) =>
@@ -305,13 +309,36 @@ const PostView = () => {
               m('tr', [
                 m('td', file.mName),
                 m('td', formatBytes(file.mSize.xint64)),
-                m('button', 'Download', m('i.fas.fa-download')),
+                m(
+                  'button',
+                  {
+                    onclick: async () => {
+                      filesInfo[file.mHash]
+                        ? filesInfo[file.mHash].retval
+                          ? ''
+                          : await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                              fileName: file.mName,
+                              hash: file.mHash,
+                              flags: RS_FILE_REQ_ANONYMOUS_ROUTING,
+                              size: {
+                                xstr64: file.mSize.xstr64,
+                              },
+                            })
+                        : '';
+                    },
+                  },
+                  filesInfo[file.mHash]
+                    ? filesInfo[file.mHash].retval
+                      ? 'Open File'
+                      : ['Download', m('i.fas.fa-download')]
+                    : ''
+                ),
               ])
             )
           )
         ),
         m('hr'),
-        m('h3', 'Comments' + comments.length),
+        m('h3', 'Comments'),
         m(
           CommentsTable,
           m(
@@ -320,9 +347,12 @@ const PostView = () => {
               m('tr', [
                 m('td', comments[key].mComment),
                 m('td', rs.userList.userMap[comments[key].mMeta.mAuthorId]),
-                m('td', typeof comments[key].mMeta.mPublishTs === 'object'
-                ? new Date(comments[key].mMeta.mPublishTs.xint64 * 1000).toLocaleString()
-                : 'undefined'),
+                m(
+                  'td',
+                  typeof comments[key].mMeta.mPublishTs === 'object'
+                    ? new Date(comments[key].mMeta.mPublishTs.xint64 * 1000).toLocaleString()
+                    : 'undefined'
+                ),
               ])
             )
           )
