@@ -8,8 +8,8 @@ const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
 const GROUP_MY_CHANNEL =
   GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
 const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
-// const GXS_VOTE_DOWN = 0x0001;
-// const GXS_VOTE_UP = 0x0002;
+const GXS_VOTE_DOWN = 0x0001;
+const GXS_VOTE_UP = 0x0002;
 
 const Data = {
   DisplayChannels: {},
@@ -25,12 +25,24 @@ async function updateContent(content, channelid) {
   // console.log(res.body.posts);
   if (res.body.retval && res.body.posts.length > 0) {
     Data.Posts[channelid][content.mMsgId] = res.body.posts[0];
-  }
-  if (res.body.retval && res.body.comments.length > 0) {
+  } else if (res.body.retval && res.body.comments.length > 0) {
     if (Data.Comments[content.mThreadId] === undefined) {
       Data.Comments[content.mThreadId] = {};
     }
     Data.Comments[content.mThreadId][content.mMsgId] = res.body.comments[0];
+  } else if (res.body.retval && res.body.votes.length > 0) {
+    const vote = res.body.votes[0];
+    if (
+      Data.Comments[vote.mMeta.mThreadId] &&
+      Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId]
+    ) {
+      if (vote.mVoteType == GXS_VOTE_UP) {
+        Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].mUpVotes += 1;
+      }
+      if (vote.mVoteType == GXS_VOTE_DOWN) {
+        Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].mDownVotes += 1;
+      }
+    }
   }
 }
 
@@ -238,7 +250,15 @@ const CommentsTable = () => {
     oninit: (v) => {},
     view: (v) =>
       m('table.comments', [
-        m('tr', [m('th', 'Comment'), m('th', 'Author'), m('th', 'Date')]),
+        m('tr', [
+          m('th', 'Comment'),
+          m('th', 'Author'),
+          m('th', 'Date'),
+          m('th', 'Score'),
+          m('th', 'Upvotes'),
+          m('th', 'DownVotes'),
+          m('th', 'OwnVote'),
+        ]),
         v.children,
       ]),
   };
@@ -331,7 +351,7 @@ const PostView = () => {
                     ? filesInfo[file.mHash].retval
                       ? 'Open File'
                       : ['Download', m('i.fas.fa-download')]
-                    : ''
+                    : 'Please Wait...'
                 ),
               ])
             )
@@ -353,6 +373,9 @@ const PostView = () => {
                     ? new Date(comments[key].mMeta.mPublishTs.xint64 * 1000).toLocaleString()
                     : 'undefined'
                 ),
+                m('td', comments[key].mScore),
+                m('td', comments[key].mUpVotes),
+                m('td', comments[key].mDownVotes),
               ])
             )
           )

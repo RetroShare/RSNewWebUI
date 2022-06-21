@@ -33,7 +33,7 @@ const sections = {
 
 const Layout = {
   oninit : () => {
-    rs.setBackgroundTask(getChannels.load, 1000, () => {
+    rs.setBackgroundTask(getChannels.load, 5000, () => {
       // return m.route.get() === '/files/files';
     });
   },

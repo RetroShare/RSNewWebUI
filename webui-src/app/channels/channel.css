@@ -77,6 +77,20 @@ img.channelpic {
 }
 
 /* subject */
+table.comments th{
+  height: 40px;
+}
+table.comments th:nth-child(1) {
+  width: 40%;
+}
 table.comments td {
   word-wrap: break-word;
+}
+table.comments td:nth-child(1){
+  border: 2px solid lightskyblue;
+  border-radius: 25px;
+
+}
+table.comments tr{
+  height: 40px;
 }
