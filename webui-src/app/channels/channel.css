@@ -87,7 +87,7 @@ table.comments td {
   word-wrap: break-word;
 }
 table.comments td:nth-child(1){
-  border: 2px solid lightskyblue;
+  border: 3px solid lightskyblue;
   border-radius: 25px;
 
 }

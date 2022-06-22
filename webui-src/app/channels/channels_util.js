@@ -22,7 +22,6 @@ async function updateContent(content, channelid) {
     channelId: channelid,
     contentsIds: [content.mMsgId],
   });
-  // console.log(res.body.posts);
   if (res.body.retval && res.body.posts.length > 0) {
     Data.Posts[channelid][content.mMsgId] = res.body.posts[0];
   } else if (res.body.retval && res.body.comments.length > 0) {
@@ -36,10 +35,10 @@ async function updateContent(content, channelid) {
       Data.Comments[vote.mMeta.mThreadId] &&
       Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId]
     ) {
-      if (vote.mVoteType == GXS_VOTE_UP) {
+      if (vote.mVoteType === GXS_VOTE_UP) {
         Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].mUpVotes += 1;
       }
-      if (vote.mVoteType == GXS_VOTE_DOWN) {
+      if (vote.mVoteType === GXS_VOTE_DOWN) {
         Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].mDownVotes += 1;
       }
     }
@@ -115,136 +114,7 @@ const ChannelSummary = () => {
   };
 };
 
-const ChannelView = () => {
-  let cname = '';
-  let cimage = '';
-  let cauthor = '';
-  let csubscribed = {};
-  let cposts = 0;
-  let plist = {};
-  let createDate = {};
-  let lastActivity = {};
-  return {
-    oninit: (v) => {
-      if (Data.DisplayChannels[v.attrs.id]) {
-        cname = Data.DisplayChannels[v.attrs.id].name;
-        cimage = Data.DisplayChannels[v.attrs.id].image;
-        if (rs.userList.userMap[Data.DisplayChannels[v.attrs.id].author]) {
-          cauthor = rs.userList.userMap[Data.DisplayChannels[v.attrs.id].author];
-        } else if (Number(Data.DisplayChannels[v.attrs.id].author) === 0) {
-          cauthor = 'No Contact Author';
-        } else {
-          cauthor = 'Unknown';
-        }
-        csubscribed = Data.DisplayChannels[v.attrs.id].isSubscribed;
-        cposts = Data.DisplayChannels[v.attrs.id].posts;
-        createDate = Data.DisplayChannels[v.attrs.id].created;
-        lastActivity = Data.DisplayChannels[v.attrs.id].activity;
-      }
-      if (Data.Posts[v.attrs.id]) {
-        plist = Data.Posts[v.attrs.id];
-      }
-    },
-    view: (v) =>
-      m(
-        '.widget',
-        {
-          key: v.attrs.id,
-        },
-        [
-          m(
-            'a[title=Back]',
-            {
-              onclick: () =>
-                m.route.set('/channels/:tab', {
-                  tab: m.route.param().tab,
-                }),
-            },
-            m('i.fas.fa-arrow-left')
-          ),
-          m('h3', cname),
 
-          m(
-            'button',
-            {
-              onclick: async () => {
-                const res = await rs.rsJsonApiRequest('/rsgxschannels/subscribeToChannel', {
-                  channelId: v.attrs.id,
-                  subscribe: !csubscribed,
-                });
-                if (res.body.retval) {
-                  csubscribed = !csubscribed;
-                  Data.DisplayChannels[v.attrs.id].isSubscribed = csubscribed;
-                }
-              },
-            },
-            csubscribed ? 'Subscribed' : 'Subscribe'
-          ),
-          m('img.channelpic', {
-            src: 'data:image/png;base64,' + cimage.mData.base64,
-          }),
-          m('[id=channeldetails]', [
-            m('p', m('b', 'Posts: '), cposts),
-            m(
-              'p',
-              m('b', 'Date created: '),
-              typeof createDate === 'object'
-                ? new Date(createDate.xint64 * 1000).toLocaleString()
-                : 'undefined'
-            ),
-            m('p', m('b', 'Admin: '), cauthor),
-            m(
-              'p',
-              m('b', 'Last activity: '),
-              typeof lastActivity === 'object'
-                ? new Date(lastActivity.xint64 * 1000).toLocaleString()
-                : 'undefined'
-            ),
-          ]),
-          m('hr'),
-          m('channeldesc', m('b', 'Description: '), Data.DisplayChannels[v.attrs.id].description),
-          m('hr'),
-          m(
-            'postdetails',
-            {
-              style: 'display:' + (csubscribed ? 'block' : 'none'),
-            },
-            m('h3', 'Posts'),
-
-            m(
-              '[id=grid]',
-              Object.keys(plist).map((key, index) => [
-                m(
-                  'div',
-                  {
-                    class: 'card',
-                    onclick: () => {
-                      m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
-                        tab: m.route.param().tab,
-                        mGroupId: v.attrs.id,
-                        mMsgId: key,
-                      });
-                    },
-                  },
-                  [
-                    m('img', {
-                      class: 'card-img',
-                      src: 'data:image/png;base64,' + plist[key].mThumbnail.mData.base64,
-
-                      alt: 'No Thumbnail',
-                    }),
-                    m('div', { class: 'card-info' }, [
-                      m('h4', { class: 'card-title' }, plist[key].mMeta.mMsgName),
-                    ]),
-                  ]
-                ),
-              ])
-            )
-          ),
-        ]
-      ),
-  };
-};
 const CommentsTable = () => {
   return {
     oninit: (v) => {},
@@ -283,106 +153,25 @@ function formatBytes(bytes, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-const PostView = () => {
-  let post = {};
-  let comments = {};
-  const filesInfo = {};
-  return {
-    oninit: (v) => {
-      if (Data.Posts[v.attrs.channelId] && Data.Posts[v.attrs.channelId][v.attrs.msgId]) {
-        post = Data.Posts[v.attrs.channelId][v.attrs.msgId];
-      }
-      if (Data.Comments[v.attrs.msgId]) {
-        comments = Data.Comments[v.attrs.msgId];
-      }
-      if (post) {
-        post.mFiles.map(async (file) => {
-          const res = await rs.rsJsonApiRequest('/rsfiles/alreadyHaveFile', {
-            hash: file.mHash,
-          });
-          filesInfo[file.mHash] = res.body;
-        });
-      }
-    },
-    view: (v) =>
-      m('.widget', { key: v.attrs.msgId }, [
-        m(
-          'a[title=Back]',
-          {
-            onclick: () =>
-              m.route.set('/channels/:tab/:mGroupId', {
-                tab: m.route.param().tab,
-                mGroupId: m.route.param().mGroupId,
-              }),
-          },
-          m('i.fas.fa-arrow-left')
-        ),
-        m('h3', post.mMeta.mMsgName),
-        m('p', m.trust(post.mMsg)),
-        m('hr'),
-        m('h3', 'Files(' + post.mAttachmentCount + ')'),
-        m(
-          FilesTable,
-          m(
-            'tbody',
-            post.mFiles.map((file) =>
-              m('tr', [
-                m('td', file.mName),
-                m('td', formatBytes(file.mSize.xint64)),
-                m(
-                  'button',
-                  {
-                    onclick: async () => {
-                      filesInfo[file.mHash]
-                        ? filesInfo[file.mHash].retval
-                          ? ''
-                          : await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
-                              fileName: file.mName,
-                              hash: file.mHash,
-                              flags: RS_FILE_REQ_ANONYMOUS_ROUTING,
-                              size: {
-                                xstr64: file.mSize.xstr64,
-                              },
-                            })
-                        : '';
-                    },
-                  },
-                  filesInfo[file.mHash]
-                    ? filesInfo[file.mHash].retval
-                      ? 'Open File'
-                      : ['Download', m('i.fas.fa-download')]
-                    : 'Please Wait...'
-                ),
-              ])
-            )
-          )
-        ),
-        m('hr'),
-        m('h3', 'Comments'),
-        m(
-          CommentsTable,
-          m(
-            'tbody',
-            Object.keys(comments).map((key, index) =>
-              m('tr', [
-                m('td', comments[key].mComment),
-                m('td', rs.userList.userMap[comments[key].mMeta.mAuthorId]),
-                m(
-                  'td',
-                  typeof comments[key].mMeta.mPublishTs === 'object'
-                    ? new Date(comments[key].mMeta.mPublishTs.xint64 * 1000).toLocaleString()
-                    : 'undefined'
-                ),
-                m('td', comments[key].mScore),
-                m('td', comments[key].mUpVotes),
-                m('td', comments[key].mDownVotes),
-              ])
-            )
-          )
-        ),
-      ]),
-  };
-};
+function popupMessage(message) {
+  const container = document.getElementById('modal-container');
+  container.style.display = 'block';
+  m.render(
+    container,
+    m('.modal-content', [
+      m(
+        'button.red',
+        {
+          onclick: () => (container.style.display = 'none'),
+        },
+        m('i.fas.fa-times')
+      ),
+      message,
+    ])
+  );
+}
+
+
 
 const ChannelTable = () => {
   return {
@@ -411,15 +200,19 @@ const SearchBar = () => {
 };
 
 module.exports = {
+  Data,
   SearchBar,
+  popupMessage,
   ChannelSummary,
-  ChannelView,
-  PostView,
+  formatBytes,
   DisplayChannelsFromList,
   ChannelTable,
+  FilesTable,
+  CommentsTable,
   GROUP_SUBSCRIBE_ADMIN,
   GROUP_SUBSCRIBE_NOT_SUBSCRIBED,
   GROUP_SUBSCRIBE_PUBLISH,
   GROUP_SUBSCRIBE_SUBSCRIBED,
   GROUP_MY_CHANNEL,
+  RS_FILE_REQ_ANONYMOUS_ROUTING,
 };
