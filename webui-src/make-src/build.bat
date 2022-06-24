@@ -1,6 +1,8 @@
 @echo off
 REM create webfiles from sources at compile time (works without npm/node.js)
 
+setlocal enabledelayedexpansion
+
 set publicdest=%1\webui
 set src=%1\webui-src
 
@@ -15,25 +17,48 @@ echo building app.js
 echo - copy template.js ...
 copy %src%\make-src\template.js %publicdest%\app.js
 
-for %%F in (%src%\app\*.js) DO (set "fname=%%~nF" && CALL :addfile)
+pushd %src%\app
+set "basefolder=%cd%\"
+for /R %%F in (*.js) do call :addfile-js "%basefolder%" "%%F"
+popd
 
 echo building app.css
-type %src%\app\green-black.scss >> %publicdest%\app.css
+rem type %src%\app\green-black.scss >> %publicdest%\app.css
 type %src%\make-src\main.css >> %publicdest%\app.css
-type %src%\make-src\chat.css >> %publicdest%\app.css
+rem type %src%\make-src\chat.css >> %publicdest%\app.css
 
-echo copy index.html
-copy %src%\app\assets\index.html %publicdest%\index.html
+pushd %src%\app
+set "basefolder=%cd%\"
+for /R %%F in (*.css) do (
+	set fname=%%~dpnF
+	set fname=!fname:%basefolder%=!
+	set fname=!fname:\=/!
+	echo - adding !fname! ...
+	type %%F >> %publicdest%\app.css
+)
+popd
+
+echo copy assets folder
+xcopy /s %src%\assets\ %publicdest%
+
+echo copy data folder
+xcopy /s %src%\..\data %publicdest%\data\
 
 echo build.bat complete
 
 goto :EOF
 
-:addfile
-echo - adding %fname% ...
-echo require.register("%fname%", function(exports, require, module) { >> %publicdest%\app.js
-echo %src%\app\%fname%.js
-type %src%\app\%fname%.js >> %publicdest%\app.js
+:addfile-js
+set basefolder=%~1
+set fname=%~2
+
+set registername=%~dpn2
+set registername=!registername:%basefolder%=!
+set registername=%registername:\=/%
+
+echo - adding %registername% ...
+echo require.register("%registername%", function(exports, require, module) { >> %publicdest%\app.js
+type %fname% >> %publicdest%\app.js
 echo. >> %publicdest%\app.js
 echo }); >> %publicdest%\app.js
 
