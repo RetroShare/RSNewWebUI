@@ -94,3 +94,11 @@ table.comments td:nth-child(1){
 table.comments tr{
   height: 40px;
 }
+
+#options{
+  width: 100px;
+  text-align: center;
+  font-size: medium;
+  margin-left: 20px;
+  height: 40px;
+}

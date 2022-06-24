@@ -122,6 +122,7 @@ const CommentsTable = () => {
       m('table.comments', [
         m('tr', [
           m('th', 'Comment'),
+          m('th', ''),
           m('th', 'Author'),
           m('th', 'Date'),
           m('th', 'Score'),
@@ -133,6 +134,12 @@ const CommentsTable = () => {
       ]),
   };
 };
+
+const optionSelect = {
+  showval: 'Options',
+  opts: ['Reply', 'Vote Up', 'Vote Down']
+};
+
 const FilesTable = () => {
   return {
     oninit: (v) => {},
@@ -206,9 +213,11 @@ module.exports = {
   ChannelSummary,
   formatBytes,
   DisplayChannelsFromList,
+  updateDisplayChannels,
   ChannelTable,
   FilesTable,
   CommentsTable,
+  optionSelect,
   GROUP_SUBSCRIBE_ADMIN,
   GROUP_SUBSCRIBE_NOT_SUBSCRIBED,
   GROUP_SUBSCRIBE_PUBLISH,

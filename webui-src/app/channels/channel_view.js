@@ -137,12 +137,14 @@ const ChannelView = () => {
 
 const AddComment = () => {
   let inputComment = '';
-
   return {
     view: (vnode) =>
       m('.widget', [
         m('h3', 'Add Comment'),
         m('hr'),
+        (vnode.attrs.parent_comment !== '') > 0
+          ? [m('h5', 'Reply to comment: '), m('p', vnode.attrs.parent_comment)]
+          : '',
         m('textarea[rows=5][style="width: 90%; display: block;"]', {
           oninput: (e) => (inputComment = e.target.value),
           value: inputComment,
@@ -166,6 +168,7 @@ const AddComment = () => {
                     m('hr'),
                     m('p', 'Comment added successfully'),
                   ]);
+              util.updateDisplayChannels(vnode.attrs.channelId);
             },
           },
           'Add'
@@ -256,10 +259,10 @@ const PostView = () => {
         m(
           'button',
           {
-            onclick: async () => {
-              console.log(ownId);
+            onclick: () => {
               util.popupMessage(
                 m(AddComment, {
+                  parent_comment: '',
                   channelId: v.attrs.channelId,
                   authorId: ownId,
                   threadId: v.attrs.msgId,
@@ -277,6 +280,30 @@ const PostView = () => {
             Object.keys(comments).map((key, index) =>
               m('tr', [
                 m('td', comments[key].mComment),
+                m(
+                  'select[id=options]',
+                  {
+                    onchange: (e) => {
+                      if (e.target.selectedIndex === 1) {
+                        util.popupMessage(
+                          m(AddComment, {
+                            parent_comment: comments[key].mComment,
+                            channelId: v.attrs.channelId,
+                            authorId: ownId,
+                            threadId: comments[key].mMeta.mThreadId,
+                            parentId: comments[key].mMeta.mMsgId,
+                          })
+                        );
+                      }
+                    },
+                  },
+                  [
+                    m('option[hidden][selected]', 'Options'),
+                    util.optionSelect.opts.map((option) =>
+                      m('option', { value: option }, option.toLocaleString())
+                    ),
+                  ]
+                ),
                 m('td', rs.userList.userMap[comments[key].mMeta.mAuthorId]),
                 m(
                   'td',
