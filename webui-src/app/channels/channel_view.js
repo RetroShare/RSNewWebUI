@@ -107,6 +107,7 @@ const ChannelView = () => {
                   'div',
                   {
                     class: 'card',
+                    style: 'display: ' + (plist[key].isSearched? 'block': 'none'),
                     onclick: () => {
                       m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
                         tab: m.route.param().tab,
@@ -118,12 +119,12 @@ const ChannelView = () => {
                   [
                     m('img', {
                       class: 'card-img',
-                      src: 'data:image/png;base64,' + plist[key].mThumbnail.mData.base64,
+                      src: 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
 
                       alt: 'No Thumbnail',
                     }),
                     m('div', { class: 'card-info' }, [
-                      m('h4', { class: 'card-title' }, plist[key].mMeta.mMsgName),
+                      m('h4', { class: 'card-title' }, plist[key].post.mMeta.mMsgName),
                     ]),
                   ]
                 ),
@@ -134,6 +135,18 @@ const ChannelView = () => {
       ),
   };
 };
+
+async function AddVote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
+  // const res = await rs.rsJsonApiRequest('/rsgxschannels/createVoteV2', {
+  //   channelId: vchannelId,
+  //   postId: vpostId,
+  //   authorId: vauthorId,
+  //   commentId: vcommentId,
+  //   vote: voteType,
+  // });
+
+  // if (res.body.retval) util.updateDisplayChannels(vchannelId);
+}
 
 const AddComment = () => {
   let inputComment = '';
@@ -184,7 +197,7 @@ const PostView = () => {
   return {
     oninit: (v) => {
       if (Data.Posts[v.attrs.channelId] && Data.Posts[v.attrs.channelId][v.attrs.msgId]) {
-        post = Data.Posts[v.attrs.channelId][v.attrs.msgId];
+        post = Data.Posts[v.attrs.channelId][v.attrs.msgId].post;
       }
       if (Data.Comments[v.attrs.msgId]) {
         comments = Data.Comments[v.attrs.msgId];
@@ -285,6 +298,7 @@ const PostView = () => {
                   {
                     onchange: (e) => {
                       if (e.target.selectedIndex === 1) {
+                        // reply
                         util.popupMessage(
                           m(AddComment, {
                             parent_comment: comments[key].mComment,
@@ -293,6 +307,23 @@ const PostView = () => {
                             threadId: comments[key].mMeta.mThreadId,
                             parentId: comments[key].mMeta.mMsgId,
                           })
+                        );
+                      } else if (e.target.selectedIndex === 2) {
+                        // voteUP
+                        AddVote(
+                          util.GXS_VOTE_UP,
+                          v.attrs.channelId,
+                          v.attrs.msgId,
+                          ownId,
+                          comments[key].mMeta.mMsgId
+                        );
+                      } else if (e.target.selectedIndex === 3) {
+                        AddVote(
+                          util.GXS_VOTE_DOWN,
+                          v.attrs.channelId,
+                          v.attrs.msgId,
+                          ownId,
+                          comments[key].mMeta.mMsgId
                         );
                       }
                     },

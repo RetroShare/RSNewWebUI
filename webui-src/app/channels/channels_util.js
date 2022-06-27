@@ -23,7 +23,7 @@ async function updateContent(content, channelid) {
     contentsIds: [content.mMsgId],
   });
   if (res.body.retval && res.body.posts.length > 0) {
-    Data.Posts[channelid][content.mMsgId] = res.body.posts[0];
+    Data.Posts[channelid][content.mMsgId] = { post: res.body.posts[0], isSearched: true };
   } else if (res.body.retval && res.body.comments.length > 0) {
     if (Data.Comments[content.mThreadId] === undefined) {
       Data.Comments[content.mThreadId] = {};
@@ -114,7 +114,6 @@ const ChannelSummary = () => {
   };
 };
 
-
 const CommentsTable = () => {
   return {
     oninit: (v) => {},
@@ -137,7 +136,7 @@ const CommentsTable = () => {
 
 const optionSelect = {
   showval: 'Options',
-  opts: ['Reply', 'Vote Up', 'Vote Down']
+  opts: ['Reply', 'Vote Up', 'Vote Down'],
 };
 
 const FilesTable = () => {
@@ -178,8 +177,6 @@ function popupMessage(message) {
   );
 }
 
-
-
 const ChannelTable = () => {
   return {
     oninit: (v) => {},
@@ -194,11 +191,23 @@ const SearchBar = () => {
         value: searchString,
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
-          for (const hash in Data.DisplayChannels) {
-            if (Data.DisplayChannels[hash].name.toLowerCase().indexOf(searchString) > -1) {
-              Data.DisplayChannels[hash].isSearched = true;
-            } else {
-              Data.DisplayChannels[hash].isSearched = false;
+          if (v.attrs.category.localeCompare('channels') === 0) {
+            for (const hash in Data.DisplayChannels) {
+              if (Data.DisplayChannels[hash].name.toLowerCase().indexOf(searchString) > -1) {
+                Data.DisplayChannels[hash].isSearched = true;
+              } else {
+                Data.DisplayChannels[hash].isSearched = false;
+              }
+            }
+          }
+          else
+          {
+            for (const hash in Data.Posts[v.attrs.channelId]) {
+              if (Data.Posts[v.attrs.channelId][hash].post.mMeta.mMsgName.toLowerCase().indexOf(searchString) > -1) {
+                Data.Posts[v.attrs.channelId][hash].isSearched = true;
+              } else {
+                Data.Posts[v.attrs.channelId][hash].isSearched = false;
+              }
             }
           }
         },
@@ -223,5 +232,7 @@ module.exports = {
   GROUP_SUBSCRIBE_PUBLISH,
   GROUP_SUBSCRIBE_SUBSCRIBED,
   GROUP_MY_CHANNEL,
+  GXS_VOTE_DOWN,
+  GXS_VOTE_UP,
   RS_FILE_REQ_ANONYMOUS_ROUTING,
 };

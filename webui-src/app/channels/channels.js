@@ -41,9 +41,16 @@ const Layout = {
   // onupdate: getChannels.load,
   view: (vnode) =>
     m('.tab-page', [
-      m(util.SearchBar, {
-        list: getChannels.All,
-      }),
+      Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId')
+          ? ''
+          : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId')
+          ? m(util.SearchBar, {
+            category: 'posts',
+            channelId: vnode.attrs.pathInfo.mGroupId
+          })
+          : m(util.SearchBar, {
+            category: 'channels'
+          }),
       m(widget.Sidebar, {
         tabs: Object.keys(sections),
         baseRoute: '/channels/',
