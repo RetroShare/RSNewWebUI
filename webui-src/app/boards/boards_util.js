@@ -21,7 +21,7 @@ async function updateContent(content, boardid) {
     contentsIds: [content.mMsgId],
   });
   if (res.body.retval && res.body.posts.length > 0) {
-    Data.Posts[channelid][content.mMsgId] = { post: res.body.posts[0], isSearched: true };
+    Data.Posts[boardid][content.mMsgId] = { post: res.body.posts[0], isSearched: true };
   } else if (res.body.retval && res.body.comments.length > 0) {
     if (Data.Comments[content.mThreadId] === undefined) {
       Data.Comments[content.mThreadId] = {};
