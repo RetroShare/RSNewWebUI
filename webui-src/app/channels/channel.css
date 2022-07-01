@@ -81,12 +81,15 @@ table.comments th{
   height: 40px;
 }
 table.comments th:nth-child(1) {
+  width: 2%;
+}
+table.comments th:nth-child(2) {
   width: 40%;
 }
 table.comments td {
   word-wrap: break-word;
 }
-table.comments td:nth-child(1){
+table.comments td:nth-child(2){
   border: 3px solid lightskyblue;
   border-radius: 25px;
 

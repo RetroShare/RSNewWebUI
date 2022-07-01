@@ -4,6 +4,37 @@ const util = require('channels/channels_util');
 const Data = util.Data;
 const peopleUtil = require('people/people_util');
 
+const AddPost = () => {
+  let content = '';
+  return {
+    view: (vnode) =>
+      m('.widget', [
+        m('h3', 'Add Post'),
+        m('hr'),
+        m('label[for=thumbnail]', 'Thumbnail: '),
+        m('input[type=file][name=files][id=thumbnail]', {
+          onchange: (e) => {
+            console.log(e.target.files);
+          },
+        }),
+        m('label[for=browse]', 'Attachments: '),
+        m('input[type=file][name=files][id=browse][multiple=multiple]', {
+          onchange: (e) => {
+            console.log(e.target.files);
+          },
+        }),
+        m('input[type=text][placeholder=Title]', {
+          oninput: (e) => console.log(e.target.value),
+        }),
+        m('textarea[rows=5][style="width: 90%; display: block;"]', {
+          oninput: (e) => (content = e.target.value),
+          value: content,
+        }),
+        m('button', {}, 'Add'),
+      ]),
+  };
+};
+
 const ChannelView = () => {
   let cname = '';
   let cimage = '';
@@ -99,6 +130,8 @@ const ChannelView = () => {
               style: 'display:' + (csubscribed ? 'block' : 'none'),
             },
             m('h3', 'Posts'),
+            m('button', { onclick: () => util.popupMessage(m(AddPost)) }, 'Add Post'),
+            m('hr'),
 
             m(
               '[id=grid]',
@@ -107,7 +140,7 @@ const ChannelView = () => {
                   'div',
                   {
                     class: 'card',
-                    style: 'display: ' + (plist[key].isSearched? 'block': 'none'),
+                    style: 'display: ' + (plist[key].isSearched ? 'block' : 'none'),
                     onclick: () => {
                       m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
                         tab: m.route.param().tab,
@@ -144,7 +177,6 @@ async function AddVote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
   //   commentId: vcommentId,
   //   vote: voteType,
   // });
-
   // if (res.body.retval) util.updateDisplayChannels(vchannelId);
 }
 
@@ -189,9 +221,97 @@ const AddComment = () => {
       ]),
   };
 };
+
+function DisplayComment(comment, identity) {
+  let showReplies = false;
+  return {
+    oninit: (v) => {
+      console.log(comment.mComment);
+      if (Data.ParentCommentMap[comment.mMeta.mMsgId]) {
+        Data.ParentCommentMap[comment.mMeta.mMsgId].forEach((value) => console.log(value));
+      }
+    },
+    view: (v) => [
+      m('tr', [
+        m('i.fas.fa-angle-right', {
+          class: 'fa-rotate-' + (showReplies ? '90' : '0'),
+          style: 'margin-top:12px',
+          onclick: () => {
+            showReplies = !showReplies;
+            console.log(showReplies);
+          },
+        }),
+
+        m('td', comment.mComment),
+        m(
+          'select[id=options]',
+          {
+            onchange: (e) => {
+              if (e.target.selectedIndex === 1) {
+                // reply
+                util.popupMessage(
+                  m(AddComment, {
+                    parent_comment: comment.mComment,
+                    channelId: comment.mMeta.mGroupId,
+                    authorId: identity,
+                    threadId: comment.mMeta.mThreadId,
+                    parentId: comment.mMeta.mMsgId,
+                  })
+                );
+              } else if (e.target.selectedIndex === 2) {
+                // voteUP
+                AddVote(
+                  util.GXS_VOTE_UP,
+                  comment.mMeta.mGroupId,
+                  comment.mMeta.mThreadId,
+                  identity,
+                  comment.mMeta.mMsgId
+                );
+              } else if (e.target.selectedIndex === 3) {
+                AddVote(
+                  util.GXS_VOTE_DOWN,
+                  comment.mMeta.mGroupId,
+                  comment.mMeta.mThreadId,
+                  identity,
+                  comment.mMeta.mMsgId
+                );
+              }
+            },
+          },
+          [
+            m('option[hidden][selected]', 'Options'),
+            util.optionSelect.opts.map((option) =>
+              m('option', { value: option }, option.toLocaleString())
+            ),
+          ]
+        ),
+        m('td', rs.userList.userMap[comment.mMeta.mAuthorId]),
+        m(
+          'td',
+          typeof comment.mMeta.mPublishTs === 'object'
+            ? new Date(comment.mMeta.mPublishTs.xint64 * 1000).toLocaleString()
+            : 'undefined'
+        ),
+        m('td', comment.mScore),
+        m('td', comment.mUpVotes),
+        m('td', comment.mDownVotes),
+      ]),
+      showReplies
+        ? Data.ParentCommentMap[comment.mMeta.mMsgId]
+          ? Data.ParentCommentMap[comment.mMeta.mMsgId].forEach(
+              (value) =>
+              m(DisplayComment(value, identity))
+              // console.log(value)
+            )
+          : 'undef'
+        : 'toggle',
+    ],
+  };
+}
+
 const PostView = () => {
   let post = {};
-  let comments = {};
+  let topComments = {};
   const filesInfo = {};
   let ownId = {};
   return {
@@ -199,8 +319,8 @@ const PostView = () => {
       if (Data.Posts[v.attrs.channelId] && Data.Posts[v.attrs.channelId][v.attrs.msgId]) {
         post = Data.Posts[v.attrs.channelId][v.attrs.msgId].post;
       }
-      if (Data.Comments[v.attrs.msgId]) {
-        comments = Data.Comments[v.attrs.msgId];
+      if (Data.TopComments[v.attrs.msgId]) {
+        topComments = Data.TopComments[v.attrs.msgId];
       }
       if (post) {
         post.mFiles.map(async (file) => {
@@ -290,62 +410,8 @@ const PostView = () => {
           util.CommentsTable,
           m(
             'tbody',
-            Object.keys(comments).map((key, index) =>
-              m('tr', [
-                m('td', comments[key].mComment),
-                m(
-                  'select[id=options]',
-                  {
-                    onchange: (e) => {
-                      if (e.target.selectedIndex === 1) {
-                        // reply
-                        util.popupMessage(
-                          m(AddComment, {
-                            parent_comment: comments[key].mComment,
-                            channelId: v.attrs.channelId,
-                            authorId: ownId,
-                            threadId: comments[key].mMeta.mThreadId,
-                            parentId: comments[key].mMeta.mMsgId,
-                          })
-                        );
-                      } else if (e.target.selectedIndex === 2) {
-                        // voteUP
-                        AddVote(
-                          util.GXS_VOTE_UP,
-                          v.attrs.channelId,
-                          v.attrs.msgId,
-                          ownId,
-                          comments[key].mMeta.mMsgId
-                        );
-                      } else if (e.target.selectedIndex === 3) {
-                        AddVote(
-                          util.GXS_VOTE_DOWN,
-                          v.attrs.channelId,
-                          v.attrs.msgId,
-                          ownId,
-                          comments[key].mMeta.mMsgId
-                        );
-                      }
-                    },
-                  },
-                  [
-                    m('option[hidden][selected]', 'Options'),
-                    util.optionSelect.opts.map((option) =>
-                      m('option', { value: option }, option.toLocaleString())
-                    ),
-                  ]
-                ),
-                m('td', rs.userList.userMap[comments[key].mMeta.mAuthorId]),
-                m(
-                  'td',
-                  typeof comments[key].mMeta.mPublishTs === 'object'
-                    ? new Date(comments[key].mMeta.mPublishTs.xint64 * 1000).toLocaleString()
-                    : 'undefined'
-                ),
-                m('td', comments[key].mScore),
-                m('td', comments[key].mUpVotes),
-                m('td', comments[key].mDownVotes),
-              ])
+            Object.keys(topComments).map((key, index) =>
+              m(DisplayComment(topComments[key], ownId ))
             )
           )
         ),

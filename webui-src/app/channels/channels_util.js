@@ -15,6 +15,8 @@ const Data = {
   DisplayChannels: {},
   Posts: {},
   Comments: {},
+  TopComments: [],
+  ParentCommentMap: {},
 };
 
 async function updateContent(content, channelid) {
@@ -28,12 +30,28 @@ async function updateContent(content, channelid) {
     if (Data.Comments[content.mThreadId] === undefined) {
       Data.Comments[content.mThreadId] = {};
     }
-    Data.Comments[content.mThreadId][content.mMsgId] = res.body.comments[0];
+    Data.Comments[content.mThreadId][content.mMsgId] = res.body.comments[0]; // Comments[post][comment]
+    const comm = res.body.comments[0];
+    if(Data.TopComments[comm.mMeta.mThreadId] === undefined)
+    {
+      Data.TopComments[comm.mMeta.mThreadId] = {};
+    }
+    if (comm.mMeta.mThreadId === comm.mMeta.mParentId) {
+      Data.TopComments[comm.mMeta.mThreadId][comm.mMeta.mMsgId] = comm;  // pushing top comments respective to post
+    }
+    else
+    {
+      if(Data.ParentCommentMap[comm.mMeta.mParentId] === undefined)
+      {
+        Data.ParentCommentMap[comm.mMeta.mParentId] = new Set();
+      }
+      Data.ParentCommentMap[comm.mMeta.mParentId].add(comm);
+    }
   } else if (res.body.retval && res.body.votes.length > 0) {
     const vote = res.body.votes[0];
     if (
       Data.Comments[vote.mMeta.mThreadId] &&
-      Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId]
+      Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId] // finding [post][comment]
     ) {
       if (vote.mVoteType === GXS_VOTE_UP) {
         Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].mUpVotes += 1;
@@ -120,6 +138,7 @@ const CommentsTable = () => {
     view: (v) =>
       m('table.comments', [
         m('tr', [
+          m('th', ''),
           m('th', 'Comment'),
           m('th', ''),
           m('th', 'Author'),
@@ -189,6 +208,8 @@ const SearchBar = () => {
     view: (v) =>
       m('input[type=text][id=searchchannel][placeholder=Search Subject].searchbar', {
         value: searchString,
+        placeholder:
+          v.attrs.category.localeCompare('channels') === 0 ? 'Search Channels' : 'Search Posts',
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
           if (v.attrs.category.localeCompare('channels') === 0) {
@@ -199,11 +220,13 @@ const SearchBar = () => {
                 Data.DisplayChannels[hash].isSearched = false;
               }
             }
-          }
-          else
-          {
+          } else {
             for (const hash in Data.Posts[v.attrs.channelId]) {
-              if (Data.Posts[v.attrs.channelId][hash].post.mMeta.mMsgName.toLowerCase().indexOf(searchString) > -1) {
+              if (
+                Data.Posts[v.attrs.channelId][hash].post.mMeta.mMsgName
+                  .toLowerCase()
+                  .indexOf(searchString) > -1
+              ) {
                 Data.Posts[v.attrs.channelId][hash].isSearched = true;
               } else {
                 Data.Posts[v.attrs.channelId][hash].isSearched = false;
