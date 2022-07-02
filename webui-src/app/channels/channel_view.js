@@ -3,6 +3,45 @@ const rs = require('rswebui');
 const util = require('channels/channels_util');
 const Data = util.Data;
 const peopleUtil = require('people/people_util');
+const sha1 = require('channels/sha1');
+
+function parseFile(file, callback) {
+  var fileSize = file.size;
+  var chunkSize = 1024 * 1024; // bytes
+  var offset = 0;
+  var self = this; // we need a reference to the current object
+  var chunkReaderBlock = null;
+  var hash = sha1.create();
+
+  var readEventHandler = function (evt) {
+    if (evt.target.error == null) {
+      offset += evt.target.result.length;
+      // console.log(sha1(evt.target.result)); // callback for handling read chunk
+      hash.update(evt.target.result);
+    } else {
+      console.log('Read error: ' + evt.target.error);
+      return;
+    }
+    if (offset >= fileSize) {
+      console.log(hash.hex());
+      console.log('Done reading file');
+      return;
+    }
+
+    // of to the next chunk
+    chunkReaderBlock(offset, chunkSize, file);
+  };
+
+  chunkReaderBlock = function (_offset, length, _file) {
+    var r = new FileReader();
+    var blob = _file.slice(_offset, length + _offset);
+    r.onload = readEventHandler;
+    r.readAsText(blob);
+  };
+
+  // now let's start the read with the first block
+  chunkReaderBlock(offset, chunkSize, file);
+}
 
 const AddPost = () => {
   let content = '';
@@ -14,7 +53,15 @@ const AddPost = () => {
         m('label[for=thumbnail]', 'Thumbnail: '),
         m('input[type=file][name=files][id=thumbnail]', {
           onchange: (e) => {
-            console.log(e.target.files);
+            // sha1(e.target.files);
+            // var hash = sha1.create();
+            // // hash.update(e.target.files);
+            // // hash.hex();
+            // console.log(sha1(e.target.files[0]));
+            // console.log(hash.update(e.target.files[0]));
+            // console.log(hash.hex());
+            // console.log(e.target.files[0]);
+            parseFile(e.target.files[0]);
           },
         }),
         m('label[for=browse]', 'Attachments: '),
@@ -299,8 +346,7 @@ function DisplayComment(comment, identity) {
       showReplies
         ? Data.ParentCommentMap[comment.mMeta.mMsgId]
           ? Data.ParentCommentMap[comment.mMeta.mMsgId].forEach(
-              (value) =>
-              m(DisplayComment(value, identity))
+              (value) => m(DisplayComment(value, identity))
               // console.log(value)
             )
           : 'undef'
@@ -410,9 +456,7 @@ const PostView = () => {
           util.CommentsTable,
           m(
             'tbody',
-            Object.keys(topComments).map((key, index) =>
-              m(DisplayComment(topComments[key], ownId ))
-            )
+            Object.keys(topComments).map((key, index) => m(DisplayComment(topComments[key], ownId)))
           )
         ),
       ]),
