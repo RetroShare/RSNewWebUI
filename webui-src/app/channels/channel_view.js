@@ -5,79 +5,137 @@ const Data = util.Data;
 const peopleUtil = require('people/people_util');
 const sha1 = require('channels/sha1');
 
-function parseFile(file, callback) {
-  var fileSize = file.size;
-  var chunkSize = 1024 * 1024; // bytes
-  var offset = 0;
-  var self = this; // we need a reference to the current object
-  var chunkReaderBlock = null;
-  var hash = sha1.create();
+const filesUploadHashes = {
+  // not a good practice, figure out a better way later.
+  PostFiles: [],
+  Thumbnail: [],
+};
 
-  var readEventHandler = function (evt) {
+async function parseFile(file, type) {
+  const fileSize = file.size;
+  const chunkSize = 1024 * 1024; // bytes
+  let offset = 0;
+  let chunkReaderBlock = null;
+  const hash = sha1.create();
+  let ans = '';
+
+  const readEventHandler = async function (evt) {
     if (evt.target.error == null) {
       offset += evt.target.result.length;
-      // console.log(sha1(evt.target.result)); // callback for handling read chunk
-      hash.update(evt.target.result);
+      await hash.update(evt.target.result);
     } else {
       console.log('Read error: ' + evt.target.error);
       return;
     }
     if (offset >= fileSize) {
-      console.log(hash.hex());
-      console.log('Done reading file');
+      ans = await hash.hex();
+      if (type.localeCompare('multiple') === 0) {
+        filesUploadHashes.PostFiles.push(ans);
+      } else {
+        filesUploadHashes.Thumbnail.push(ans);
+      }
       return;
     }
 
     // of to the next chunk
-    chunkReaderBlock(offset, chunkSize, file);
+    await chunkReaderBlock(offset, chunkSize, file);
   };
 
-  chunkReaderBlock = function (_offset, length, _file) {
-    var r = new FileReader();
-    var blob = _file.slice(_offset, length + _offset);
-    r.onload = readEventHandler;
-    r.readAsText(blob);
+  chunkReaderBlock = async function (_offset, length, _file) {
+    const reader = new FileReader();
+    const blob = _file.slice(_offset, length + _offset);
+    reader.onload = await readEventHandler;
+    await reader.readAsText(blob);
   };
 
-  // now let's start the read with the first block
-  chunkReaderBlock(offset, chunkSize, file);
+  // read with the first block
+  await chunkReaderBlock(offset, chunkSize, file);
+  return ans;
 }
 
 const AddPost = () => {
   let content = '';
+  let ptitle = '';
+  const pthumbnail = [];
+  const pfiles = [];
+  let uploadFiles = false;
+  let uploadThumbnail = false;
+
   return {
     view: (vnode) =>
       m('.widget', [
         m('h3', 'Add Post'),
         m('hr'),
         m('label[for=thumbnail]', 'Thumbnail: '),
-        m('input[type=file][name=files][id=thumbnail]', {
-          onchange: (e) => {
-            // sha1(e.target.files);
-            // var hash = sha1.create();
-            // // hash.update(e.target.files);
-            // // hash.hex();
-            // console.log(sha1(e.target.files[0]));
-            // console.log(hash.update(e.target.files[0]));
-            // console.log(hash.hex());
-            // console.log(e.target.files[0]);
-            parseFile(e.target.files[0]);
+        m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
+          onchange: async (e) => {
+            filesUploadHashes.Thumbnail = [];
+            await parseFile(e.target.files[0], '');
+            console.log(filesUploadHashes.Thumbnail, filesUploadHashes.Thumbnail.length);
+
+            if (filesUploadHashes.Thumbnail.length === e.target.files.length) {
+              pthumbnail.push({
+                name: e.target.files[0].name,
+                size: e.target.files[0].size,
+                hash: filesUploadHashes.Thumbnail[0],
+              });
+              uploadThumbnail = true;
+            }
           },
         }),
         m('label[for=browse]', 'Attachments: '),
         m('input[type=file][name=files][id=browse][multiple=multiple]', {
-          onchange: (e) => {
-            console.log(e.target.files);
+          onchange: async (e) => {
+            filesUploadHashes.PostFiles = [];
+            for (let i = 0; i < e.target.files.length; i++) {
+              await parseFile(e.target.files[i], 'multiple');
+            }
+            console.log(filesUploadHashes.PostFiles, filesUploadHashes.PostFiles.length);
+
+            if (filesUploadHashes.PostFiles.length === e.target.files.length) {
+              for (let i = 0; i < e.target.files.length; i++) {
+                pfiles.push({
+                  name: e.target.files[i].name,
+                  size: e.target.files[i].size,
+                  hash: filesUploadHashes.PostFiles[i],
+                });
+              }
+              uploadFiles = true;
+            }
           },
         }),
         m('input[type=text][placeholder=Title]', {
-          oninput: (e) => console.log(e.target.value),
+          oninput: (e) => (ptitle = e.target.value),
         }),
         m('textarea[rows=5][style="width: 90%; display: block;"]', {
           oninput: (e) => (content = e.target.value),
           value: content,
         }),
-        m('button', {}, 'Add'),
+        m(
+          'button',
+          {
+            onclick: async () => {
+              if (uploadFiles && uploadThumbnail) {
+                console.log(vnode.attrs.chanId, ptitle, content, pfiles, pthumbnail);
+                // const res = await rs.rsJsonApiRequest('/rsgxschannels/createPostV2', {
+                //   channelId: vnode.attrs.chanId,
+                //   title: ptitle,
+                //   mBody: content,
+                //   files: pfiles,
+                //   thumbnail: pthumbnail,
+                // });
+                // res.body.retval === false
+                //   ? util.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                //   : util.popupMessage([
+                //       m('h3', 'Success'),
+                //       m('hr'),
+                //       m('p', 'Post added successfully'),
+                //     ]);
+              }
+            },
+          },
+          'Add'
+        ),
       ]),
   };
 };
@@ -177,7 +235,11 @@ const ChannelView = () => {
               style: 'display:' + (csubscribed ? 'block' : 'none'),
             },
             m('h3', 'Posts'),
-            m('button', { onclick: () => util.popupMessage(m(AddPost)) }, 'Add Post'),
+            m(
+              'button',
+              { onclick: () => util.popupMessage(m(AddPost, { chanId: v.attrs.id })) },
+              'Add Post'
+            ),
             m('hr'),
 
             m(
@@ -270,22 +332,23 @@ const AddComment = () => {
 };
 
 function DisplayComment(comment, identity) {
-  let showReplies = false;
   return {
+    showReplies: false,
     oninit: (v) => {
-      console.log(comment.mComment);
-      if (Data.ParentCommentMap[comment.mMeta.mMsgId]) {
-        Data.ParentCommentMap[comment.mMeta.mMsgId].forEach((value) => console.log(value));
-      }
+      console.log(v.state.showReplies);
+      // console.log(comment.mComment, v.state.showReplies);
+      // if (Data.ParentCommentMap[comment.mMeta.mMsgId]) {
+      //   Data.ParentCommentMap[comment.mMeta.mMsgId].forEach((value) => console.log(value));
+      // }
     },
     view: (v) => [
       m('tr', [
         m('i.fas.fa-angle-right', {
-          class: 'fa-rotate-' + (showReplies ? '90' : '0'),
+          class: 'fa-rotate-' + (v.state.showReplies ? '90' : '0'),
           style: 'margin-top:12px',
           onclick: () => {
-            showReplies = !showReplies;
-            console.log(showReplies);
+            v.state.showReplies = !v.state.showReplies;
+            console.log(v.state.showReplies);
           },
         }),
 
@@ -343,14 +406,14 @@ function DisplayComment(comment, identity) {
         m('td', comment.mUpVotes),
         m('td', comment.mDownVotes),
       ]),
-      showReplies
+      v.state.showReplies
         ? Data.ParentCommentMap[comment.mMeta.mMsgId]
           ? Data.ParentCommentMap[comment.mMeta.mMsgId].forEach(
-              (value) => m(DisplayComment(value, identity))
-              // console.log(value)
+              // (value) => m(DisplayComment(value, identity))
+              (value) => console.log(value)
             )
-          : 'undef'
-        : 'toggle',
+          : ''
+        : '',
     ],
   };
 }

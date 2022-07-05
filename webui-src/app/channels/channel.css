@@ -62,7 +62,7 @@ img.channelpic {
 
 .card {
   width: 150px;
-  height: 150px;
+  height: auto;
   border: 2px solid gray;
   cursor: pointer;
   text-align: center;
@@ -72,8 +72,9 @@ img.channelpic {
   height: 120px;
 }
 .card-title{
-  position: absolute;
+  position: relative;
   bottom: 0px;
+  overflow: auto;
 }
 
 /* subject */
