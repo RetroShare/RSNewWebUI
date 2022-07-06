@@ -17,7 +17,6 @@ async function parseFile(file, type) {
   let offset = 0;
   let chunkReaderBlock = null;
   const hash = sha1.create();
-  let ans = '';
 
   const readEventHandler = async function (evt) {
     if (evt.target.error == null) {
@@ -28,7 +27,8 @@ async function parseFile(file, type) {
       return;
     }
     if (offset >= fileSize) {
-      ans = await hash.hex();
+      const ans = await hash.hex();
+      console.log(ans);
       if (type.localeCompare('multiple') === 0) {
         filesUploadHashes.PostFiles.push(ans);
       } else {
@@ -43,14 +43,13 @@ async function parseFile(file, type) {
 
   chunkReaderBlock = async function (_offset, length, _file) {
     const reader = new FileReader();
-    const blob = _file.slice(_offset, length + _offset);
-    reader.onload = await readEventHandler;
+    const blob = await _file.slice(_offset, length + _offset);
+    reader.onload = readEventHandler;
     await reader.readAsText(blob);
   };
 
   // read with the first block
   await chunkReaderBlock(offset, chunkSize, file);
-  return ans;
 }
 
 const AddPost = () => {
@@ -331,24 +330,20 @@ const AddComment = () => {
   };
 };
 
-function DisplayComment(comment, identity) {
+function DisplayComment(commentStruct, identity) {
+  const comment = commentStruct.comment;
   return {
-    showReplies: false,
     oninit: (v) => {
-      console.log(v.state.showReplies);
-      // console.log(comment.mComment, v.state.showReplies);
-      // if (Data.ParentCommentMap[comment.mMeta.mMsgId]) {
-      //   Data.ParentCommentMap[comment.mMeta.mMsgId].forEach((value) => console.log(value));
-      // }
+      console.log(comment.mComment);
     },
     view: (v) => [
       m('tr', [
         m('i.fas.fa-angle-right', {
-          class: 'fa-rotate-' + (v.state.showReplies ? '90' : '0'),
+          class: 'fa-rotate-' + (commentStruct.showReplies ? '90' : '0'),
           style: 'margin-top:12px',
           onclick: () => {
-            v.state.showReplies = !v.state.showReplies;
-            console.log(v.state.showReplies);
+            commentStruct.showReplies = !commentStruct.showReplies;
+            // console.log(commentStruct.showReplies);
           },
         }),
 
@@ -406,11 +401,19 @@ function DisplayComment(comment, identity) {
         m('td', comment.mUpVotes),
         m('td', comment.mDownVotes),
       ]),
-      v.state.showReplies
+      commentStruct.showReplies
         ? Data.ParentCommentMap[comment.mMeta.mMsgId]
+        // ? m('tr', m('td', 'hello world'))
           ? Data.ParentCommentMap[comment.mMeta.mMsgId].forEach(
-              // (value) => m(DisplayComment(value, identity))
-              (value) => console.log(value)
+              (value) =>
+                Data.Comments[value.mMeta.mThreadId] &&
+                Data.Comments[value.mMeta.mThreadId][value.mMeta.mMsgId]
+                  ?
+                      m(DisplayComment(
+                        Data.Comments[value.mMeta.mThreadId][value.mMeta.mMsgId],
+                        identity
+                      ))
+                  : ''
             )
           : ''
         : '',
@@ -519,7 +522,19 @@ const PostView = () => {
           util.CommentsTable,
           m(
             'tbody',
-            Object.keys(topComments).map((key, index) => m(DisplayComment(topComments[key], ownId)))
+            Object.keys(topComments).map((key, index) =>
+              Data.Comments[topComments[key].mMeta.mThreadId] &&
+              Data.Comments[topComments[key].mMeta.mThreadId][topComments[key].mMeta.mMsgId]
+                ? m(
+                    DisplayComment(
+                      Data.Comments[topComments[key].mMeta.mThreadId][
+                        topComments[key].mMeta.mMsgId
+                      ],
+                      ownId
+                    )
+                  )
+                : ''
+            )
           )
         ),
       ]),

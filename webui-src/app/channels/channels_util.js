@@ -30,7 +30,7 @@ async function updateContent(content, channelid) {
     if (Data.Comments[content.mThreadId] === undefined) {
       Data.Comments[content.mThreadId] = {};
     }
-    Data.Comments[content.mThreadId][content.mMsgId] = res.body.comments[0]; // Comments[post][comment]
+    Data.Comments[content.mThreadId][content.mMsgId] = {comment: res.body.comments[0], showReplies: false}; // Comments[post][comment]
     const comm = res.body.comments[0];
     if(Data.TopComments[comm.mMeta.mThreadId] === undefined)
     {
@@ -54,10 +54,10 @@ async function updateContent(content, channelid) {
       Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId] // finding [post][comment]
     ) {
       if (vote.mVoteType === GXS_VOTE_UP) {
-        Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].mUpVotes += 1;
+        Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mUpVotes += 1;
       }
       if (vote.mVoteType === GXS_VOTE_DOWN) {
-        Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].mDownVotes += 1;
+        Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mDownVotes += 1;
       }
     }
   }
