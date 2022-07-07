@@ -17,8 +17,7 @@ const getBoards =
     getBoards.PopularBoards = getBoards.All;
     getBoards.SubscribedBoards = getBoards.All.filter(
         (board) => 
-          board.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED ||
-          board.mSubscribeFlags === util.GROUP_MY_BOARD
+          board.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED
     );
     getBoards.MyBoards = getBoards.All.filter(
         (board) => board.mSubscribeFlags === util.GROUP_MY_BOARD

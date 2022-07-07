@@ -58,8 +58,8 @@ const Layout = () => {
             mail: '/mail/inbox',
             files: '/files/files',
             channels: '/channels/MyChannels',
-            forums: 'forums/MyForums',
-            boards: 'boards/MyBoards',
+            forums: '/forums/MyForums',
+            boards: '/boards/MyBoards',
             config: '/config/network',
           },
         }),
@@ -119,6 +119,9 @@ m.route(document.getElementById('main'), '/', {
     render: (v) => m(Layout, m(boards, v.attrs)),
   },
   '/boards/:tab/:mGroupId': {
+    render: (v) => m(Layout, m(boards, v.attrs)),
+  },
+  '/boards/:tab/:mGroupId/:mMsgId': {
     render: (v) => m(Layout, m(boards, v.attrs)),
   },
   '/config/:tab': {
