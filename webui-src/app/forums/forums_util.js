@@ -5,6 +5,9 @@ const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this gr
 const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in forums are shared with specific friends.
 const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; // means: you are subscribed to a group, which makes you a source for this group to your friend nodes.
 const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
+const GROUP_MY_FORUM =
+  GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
+
 
 const Data = {
   DisplayForums: {},
@@ -153,4 +156,5 @@ module.exports = {
   GROUP_SUBSCRIBE_NOT_SUBSCRIBED,
   GROUP_SUBSCRIBE_PUBLISH,
   GROUP_SUBSCRIBE_SUBSCRIBED,
+  GROUP_MY_FORUM
 };

@@ -1,7 +1,7 @@
 .forums-node-panel {
     position: relative;
-    bottom: 100px;
-    margin-left: 300px;
+    bottom: 200px;
+    margin-left: 200px;
     animation: fadein 0.5s;
   }
 
@@ -31,12 +31,12 @@ table.forums tr.hidden{
 #searchforum{
   position:relative;
   margin-left: 250px;
-  top: 50px;
+  /* top: 50px; */
 }
 
 #forumdetails{
   position: relative;
-  margin-left: 10px;
+  margin-left: 150px;
   padding: 10px;
 }
 .p{

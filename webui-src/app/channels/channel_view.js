@@ -329,95 +329,105 @@ const AddComment = () => {
       ]),
   };
 };
-
-function DisplayComment(commentStruct, identity) {
-  const comment = commentStruct.comment;
+function DisplayComment() {
+  // No reliance on initialisation signature
   return {
     oninit: (v) => {
-      console.log(comment.mComment);
+      console.log(v.attrs.commentStruct.comment.mComment);
     },
-    view: (v) => [
-      m('tr', [
-        m('i.fas.fa-angle-right', {
-          class: 'fa-rotate-' + (commentStruct.showReplies ? '90' : '0'),
-          style: 'margin-top:12px',
-          onclick: () => {
-            commentStruct.showReplies = !commentStruct.showReplies;
-            // console.log(commentStruct.showReplies);
-          },
-        }),
-
-        m('td', comment.mComment),
-        m(
-          'select[id=options]',
-          {
-            onchange: (e) => {
-              if (e.target.selectedIndex === 1) {
-                // reply
-                util.popupMessage(
-                  m(AddComment, {
-                    parent_comment: comment.mComment,
-                    channelId: comment.mMeta.mGroupId,
-                    authorId: identity,
-                    threadId: comment.mMeta.mThreadId,
-                    parentId: comment.mMeta.mMsgId,
-                  })
-                );
-              } else if (e.target.selectedIndex === 2) {
-                // voteUP
-                AddVote(
-                  util.GXS_VOTE_UP,
-                  comment.mMeta.mGroupId,
-                  comment.mMeta.mThreadId,
-                  identity,
-                  comment.mMeta.mMsgId
-                );
-              } else if (e.target.selectedIndex === 3) {
-                AddVote(
-                  util.GXS_VOTE_DOWN,
-                  comment.mMeta.mGroupId,
-                  comment.mMeta.mThreadId,
-                  identity,
-                  comment.mMeta.mMsgId
-                );
-              }
+    view: ({ attrs: { commentStruct, identity } }) => {
+      // Use component / vnode interface instead
+      const comment = commentStruct.comment;
+      let parMap = [];
+      if (Data.ParentCommentMap[comment.mMeta.mMsgId]) {
+        parMap = Array.from(Data.ParentCommentMap[comment.mMeta.mMsgId]);
+      } // console.log(parMap);
+      // console.log(Array.from(Data.ParentCommentMap[comment.mMeta.mMsgId]));
+      return [
+        m('tr', [
+          (parMap.length > 0)?m('td', m('i.fas.fa-angle-right', {
+            class: 'fa-rotate-' + (commentStruct.showReplies ? '90' : '0'),
+            style: 'margin-top:12px',
+            onclick: () => {
+              commentStruct.showReplies = !commentStruct.showReplies;
             },
-          },
-          [
-            m('option[hidden][selected]', 'Options'),
-            util.optionSelect.opts.map((option) =>
-              m('option', { value: option }, option.toLocaleString())
-            ),
-          ]
-        ),
-        m('td', rs.userList.userMap[comment.mMeta.mAuthorId]),
-        m(
-          'td',
-          typeof comment.mMeta.mPublishTs === 'object'
-            ? new Date(comment.mMeta.mPublishTs.xint64 * 1000).toLocaleString()
-            : 'undefined'
-        ),
-        m('td', comment.mScore),
-        m('td', comment.mUpVotes),
-        m('td', comment.mDownVotes),
-      ]),
-      commentStruct.showReplies
-        ? Data.ParentCommentMap[comment.mMeta.mMsgId]
-        // ? m('tr', m('td', 'hello world'))
-          ? Data.ParentCommentMap[comment.mMeta.mMsgId].forEach(
-              (value) =>
-                Data.Comments[value.mMeta.mThreadId] &&
-                Data.Comments[value.mMeta.mThreadId][value.mMeta.mMsgId]
-                  ?
-                      m(DisplayComment(
-                        Data.Comments[value.mMeta.mThreadId][value.mMeta.mMsgId],
-                        identity
-                      ))
-                  : ''
-            )
-          : ''
-        : '',
-    ],
+          })):m('td', ''),
+
+          m('td', comment.mComment),
+          m(
+            'select[id=options]',
+            {
+              onchange: (e) => {
+                if (e.target.selectedIndex === 1) {
+                  // reply
+                  util.popupMessage(
+                    m(AddComment, {
+                      parent_comment: comment.mComment,
+                      channelId: comment.mMeta.mGroupId,
+                      authorId: identity,
+                      threadId: comment.mMeta.mThreadId,
+                      parentId: comment.mMeta.mMsgId,
+                    })
+                  );
+                } else if (e.target.selectedIndex === 2) {
+                  // voteUP
+                  AddVote(
+                    util.GXS_VOTE_UP,
+                    comment.mMeta.mGroupId,
+                    comment.mMeta.mThreadId,
+                    identity,
+                    comment.mMeta.mMsgId
+                  );
+                } else if (e.target.selectedIndex === 3) {
+                  AddVote(
+                    util.GXS_VOTE_DOWN,
+                    comment.mMeta.mGroupId,
+                    comment.mMeta.mThreadId,
+                    identity,
+                    comment.mMeta.mMsgId
+                  );
+                }
+              },
+            },
+            [
+              m('option[hidden][selected]', 'Options'),
+              util.optionSelect.opts.map((option) =>
+                m('option', { value: option }, option.toLocaleString())
+              ),
+            ]
+          ),
+          m('td', rs.userList.userMap[comment.mMeta.mAuthorId]),
+          m(
+            'td',
+            typeof comment.mMeta.mPublishTs === 'object'
+              ? new Date(comment.mMeta.mPublishTs.xint64 * 1000).toLocaleString()
+              : 'undefined'
+          ),
+          m('td', comment.mScore),
+          m('td', comment.mUpVotes),
+          m('td', comment.mDownVotes),
+        ]),
+        commentStruct.showReplies &&
+          // Data.ParentCommentMap[comment.mMeta.mMsgId] &&
+          // Data.ParentCommentMap[comment.mMeta.mMsgId].forEach(
+          //   (value) =>
+          parMap.map(
+            (value) =>
+            // console.log(value)
+            // Data.Comments[Data.ParentCommentMap[comment.mMeta.mMsgId][key].mMeta.mThreadId] &&
+            // Data.Comments[Data.ParentCommentMap[comment.mMeta.mMsgId][key].mMeta.mThreadId][
+            //   Data.ParentCommentMap[comment.mMeta.mMsgId][key].mMeta.mMsgId
+            // ] &&
+            m(DisplayComment, {
+              commentStruct:
+                Data.Comments[value.mMeta.mThreadId][
+                  value.mMeta.mMsgId
+                ],
+              identity,
+            })
+          ),
+      ];
+    },
   };
 }
 
@@ -525,14 +535,14 @@ const PostView = () => {
             Object.keys(topComments).map((key, index) =>
               Data.Comments[topComments[key].mMeta.mThreadId] &&
               Data.Comments[topComments[key].mMeta.mThreadId][topComments[key].mMeta.mMsgId]
-                ? m(
-                    DisplayComment(
+                ? m(DisplayComment, {
+                    // Do not call DisplayComment as a function, invoke like a component
+                    identity: ownId, // supply the input as named attributes
+                    commentStruct:
                       Data.Comments[topComments[key].mMeta.mThreadId][
                         topComments[key].mMeta.mMsgId
                       ],
-                      ownId
-                    )
-                  )
+                  })
                 : ''
             )
           )
