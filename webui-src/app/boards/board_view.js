@@ -27,7 +27,7 @@ const BoardView = () => {
         }
         bsubscribed = Data.DisplayBoards[v.attrs.id].isSubscribed;
         bposts = Data.DisplayBoards[v.attrs.id].posts;
-        breateDate = Data.DisplayBoards[v.attrs.id].created;
+        createDate = Data.DisplayBoards[v.attrs.id].created;
         lastActivity = Data.DisplayBoards[v.attrs.id].activity;
       }
       if (Data.Posts[v.attrs.id]) {
