@@ -4,6 +4,8 @@ const util = require('channels/channels_util');
 const Data = util.Data;
 const peopleUtil = require('people/people_util');
 const sha1 = require('channels/sha1');
+const fileUtil = require('files/files_util');
+const fileDown = require('files/files_downloads');
 
 const filesUploadHashes = {
   // not a good practice, figure out a better way later.
@@ -330,30 +332,32 @@ const AddComment = () => {
   };
 };
 function DisplayComment() {
-  // No reliance on initialisation signature
   return {
     oninit: (v) => {
       console.log(v.attrs.commentStruct.comment.mComment);
     },
-    view: ({ attrs: { commentStruct, identity } }) => {
-      // Use component / vnode interface instead
+    view: ({ attrs: { commentStruct, identity, isReply } }) => {
       const comment = commentStruct.comment;
       let parMap = [];
       if (Data.ParentCommentMap[comment.mMeta.mMsgId]) {
         parMap = Array.from(Data.ParentCommentMap[comment.mMeta.mMsgId]);
-      } // console.log(parMap);
-      // console.log(Array.from(Data.ParentCommentMap[comment.mMeta.mMsgId]));
+      }
       return [
         m('tr', [
-          (parMap.length > 0)?m('td', m('i.fas.fa-angle-right', {
-            class: 'fa-rotate-' + (commentStruct.showReplies ? '90' : '0'),
-            style: 'margin-top:12px',
-            onclick: () => {
-              commentStruct.showReplies = !commentStruct.showReplies;
-            },
-          })):m('td', ''),
+          parMap.length > 0
+            ? m(
+                'td',
+                m('i.fas.fa-angle-right', {
+                  class: 'fa-rotate-' + (commentStruct.showReplies ? '90' : '0'),
+                  style: 'margin-top:12px',
+                  onclick: () => {
+                    commentStruct.showReplies = !commentStruct.showReplies;
+                  },
+                })
+              )
+            : m('td', ''),
 
-          m('td', comment.mComment),
+          m('td', { style: isReply ? 'position:relative;left:20px' : '' }, comment.mComment),
           m(
             'select[id=options]',
             {
@@ -408,22 +412,11 @@ function DisplayComment() {
           m('td', comment.mDownVotes),
         ]),
         commentStruct.showReplies &&
-          // Data.ParentCommentMap[comment.mMeta.mMsgId] &&
-          // Data.ParentCommentMap[comment.mMeta.mMsgId].forEach(
-          //   (value) =>
-          parMap.map(
-            (value) =>
-            // console.log(value)
-            // Data.Comments[Data.ParentCommentMap[comment.mMeta.mMsgId][key].mMeta.mThreadId] &&
-            // Data.Comments[Data.ParentCommentMap[comment.mMeta.mMsgId][key].mMeta.mThreadId][
-            //   Data.ParentCommentMap[comment.mMeta.mMsgId][key].mMeta.mMsgId
-            // ] &&
+          parMap.map((value) =>
             m(DisplayComment, {
-              commentStruct:
-                Data.Comments[value.mMeta.mThreadId][
-                  value.mMeta.mMsgId
-                ],
+              commentStruct: Data.Comments[value.mMeta.mThreadId][value.mMeta.mMsgId],
               identity,
+              isReply: true,
             })
           ),
       ];
@@ -505,6 +498,12 @@ const PostView = () => {
                       : ['Download', m('i.fas.fa-download')]
                     : 'Please Wait...'
                 ),
+                fileDown.list[file.mHash] && m(fileUtil.File, {
+                  info: fileDown.list[file.mHash],
+                  direction: 'down',
+                  transferred: fileDown.list[file.mHash].transfered.xint64,
+                  parts: [],
+                })
               ])
             )
           )
@@ -536,12 +535,12 @@ const PostView = () => {
               Data.Comments[topComments[key].mMeta.mThreadId] &&
               Data.Comments[topComments[key].mMeta.mThreadId][topComments[key].mMeta.mMsgId]
                 ? m(DisplayComment, {
-                    // Do not call DisplayComment as a function, invoke like a component
-                    identity: ownId, // supply the input as named attributes
+                    identity: ownId,
                     commentStruct:
                       Data.Comments[topComments[key].mMeta.mThreadId][
                         topComments[key].mMeta.mMsgId
                       ],
+                    isReply: false,
                   })
                 : ''
             )
