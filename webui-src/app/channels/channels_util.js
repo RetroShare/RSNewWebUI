@@ -140,7 +140,6 @@ const CommentsTable = () => {
         m('tr', [
           m('th', ''),
           m('th', 'Comment'),
-          m('th', ''),
           m('th', 'Author'),
           m('th', 'Date'),
           m('th', 'Score'),

@@ -357,49 +357,72 @@ function DisplayComment() {
               )
             : m('td', ''),
 
-          m('td', { style: isReply ? 'position:relative;left:20px' : '' }, comment.mComment),
-          m(
-            'select[id=options]',
-            {
-              onchange: (e) => {
-                if (e.target.selectedIndex === 1) {
-                  // reply
-                  util.popupMessage(
-                    m(AddComment, {
-                      parent_comment: comment.mComment,
-                      channelId: comment.mMeta.mGroupId,
-                      authorId: identity,
-                      threadId: comment.mMeta.mThreadId,
-                      parentId: comment.mMeta.mMsgId,
-                    })
-                  );
-                } else if (e.target.selectedIndex === 2) {
-                  // voteUP
-                  AddVote(
-                    util.GXS_VOTE_UP,
-                    comment.mMeta.mGroupId,
-                    comment.mMeta.mThreadId,
-                    identity,
-                    comment.mMeta.mMsgId
-                  );
-                } else if (e.target.selectedIndex === 3) {
-                  AddVote(
-                    util.GXS_VOTE_DOWN,
-                    comment.mMeta.mGroupId,
-                    comment.mMeta.mThreadId,
-                    identity,
-                    comment.mMeta.mMsgId
-                  );
-                }
-              },
-            },
-            [
-              m('option[hidden][selected]', 'Options'),
-              util.optionSelect.opts.map((option) =>
-                m('option', { value: option }, option.toLocaleString())
+          m('td', { style: isReply ? 'position:relative;left:20px' : '' }, [
+            comment.mComment,
+            m('options', { style: 'display:block' }, [
+              m(
+                'button',
+                {
+                  style: 'font-size:15px',
+                  onclick: () =>
+                    util.popupMessage(
+                      m(AddComment, {
+                        parent_comment: comment.mComment,
+                        channelId: comment.mMeta.mGroupId,
+                        authorId: identity,
+                        threadId: comment.mMeta.mThreadId,
+                        parentId: comment.mMeta.mMsgId,
+                      })
+                    ),
+                },
+                'Reply'
               ),
-            ]
-          ),
+              m('button', { style: 'font-size:15px' }, m('i.fas.fa-thumbs-up')),
+              m('button', { style: 'font-size:15px' }, m('i.fas.fa-thumbs-down')),
+            ]),
+          ]),
+          // m(
+          //   'select[id=options]',
+          //   {
+          //     onchange: (e) => {
+          //       if (e.target.selectedIndex === 1) {
+          //         // reply
+          //         util.popupMessage(
+          //           m(AddComment, {
+          //             parent_comment: comment.mComment,
+          //             channelId: comment.mMeta.mGroupId,
+          //             authorId: identity,
+          //             threadId: comment.mMeta.mThreadId,
+          //             parentId: comment.mMeta.mMsgId,
+          //           })
+          //         );
+          //       } else if (e.target.selectedIndex === 2) {
+          //         // voteUP
+          //         AddVote(
+          //           util.GXS_VOTE_UP,
+          //           comment.mMeta.mGroupId,
+          //           comment.mMeta.mThreadId,
+          //           identity,
+          //           comment.mMeta.mMsgId
+          //         );
+          //       } else if (e.target.selectedIndex === 3) {
+          //         AddVote(
+          //           util.GXS_VOTE_DOWN,
+          //           comment.mMeta.mGroupId,
+          //           comment.mMeta.mThreadId,
+          //           identity,
+          //           comment.mMeta.mMsgId
+          //         );
+          //       }
+          //     },
+          //   },
+          //   [
+          //     m('option[hidden][selected]', 'Options'),
+          //     util.optionSelect.opts.map((option) =>
+          //       m('option', { value: option }, option.toLocaleString())
+          //     ),
+          //   ]
+          // ),
           m('td', rs.userList.userMap[comment.mMeta.mAuthorId]),
           m(
             'td',
@@ -498,12 +521,13 @@ const PostView = () => {
                       : ['Download', m('i.fas.fa-download')]
                     : 'Please Wait...'
                 ),
-                fileDown.list[file.mHash] && m(fileUtil.File, {
-                  info: fileDown.list[file.mHash],
-                  direction: 'down',
-                  transferred: fileDown.list[file.mHash].transfered.xint64,
-                  parts: [],
-                })
+                fileDown.list[file.mHash] &&
+                  m(fileUtil.File, {
+                    info: fileDown.list[file.mHash],
+                    direction: 'down',
+                    transferred: fileDown.list[file.mHash].transfered.xint64,
+                    parts: [],
+                  }),
               ])
             )
           )
