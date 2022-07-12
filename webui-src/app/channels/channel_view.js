@@ -19,6 +19,7 @@ async function parseFile(file, type) {
   let offset = 0;
   let chunkReaderBlock = null;
   const hash = sha1.create();
+  const ansList = [];
 
   const readEventHandler = async function (evt) {
     if (evt.target.error == null) {
@@ -31,6 +32,7 @@ async function parseFile(file, type) {
     if (offset >= fileSize) {
       const ans = await hash.hex();
       console.log(ans);
+      ansList.push(ans);
       if (type.localeCompare('multiple') === 0) {
         filesUploadHashes.PostFiles.push(ans);
       } else {
@@ -41,6 +43,7 @@ async function parseFile(file, type) {
 
     // of to the next chunk
     await chunkReaderBlock(offset, chunkSize, file);
+    return ansList;
   };
 
   chunkReaderBlock = async function (_offset, length, _file) {
@@ -52,6 +55,7 @@ async function parseFile(file, type) {
 
   // read with the first block
   await chunkReaderBlock(offset, chunkSize, file);
+  return ansList;
 }
 
 const AddPost = () => {
@@ -71,8 +75,9 @@ const AddPost = () => {
         m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
           onchange: async (e) => {
             filesUploadHashes.Thumbnail = [];
-            await parseFile(e.target.files[0], '');
-            console.log(filesUploadHashes.Thumbnail, filesUploadHashes.Thumbnail.length);
+            const ansList = await parseFile(e.target.files[0], '');
+            console.log(ansList, ansList.length);
+            // console.log(filesUploadHashes.Thumbnail, filesUploadHashes.Thumbnail.length);
 
             if (filesUploadHashes.Thumbnail.length === e.target.files.length) {
               pthumbnail.push({
@@ -239,7 +244,7 @@ const ChannelView = () => {
             m(
               'button',
               { onclick: () => util.popupMessage(m(AddPost, { chanId: v.attrs.id })) },
-              'Add Post'
+              ['Add Post', m('i.fas.fa-edit')]
             ),
             m('hr'),
 
@@ -279,7 +284,7 @@ const ChannelView = () => {
   };
 };
 
-async function AddVote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
+// async function AddVote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
   // const res = await rs.rsJsonApiRequest('/rsgxschannels/createVoteV2', {
   //   channelId: vchannelId,
   //   postId: vpostId,
@@ -288,7 +293,7 @@ async function AddVote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
   //   vote: voteType,
   // });
   // if (res.body.retval) util.updateDisplayChannels(vchannelId);
-}
+// }
 
 const AddComment = () => {
   let inputComment = '';

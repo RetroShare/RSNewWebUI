@@ -5,12 +5,12 @@ const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this gr
 const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in forums are shared with specific friends.
 const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; // means: you are subscribed to a group, which makes you a source for this group to your friend nodes.
 const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
-const GROUP_MY_FORUM =
-  GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
-
+const GROUP_MY_FORUM = GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
 
 const Data = {
   DisplayForums: {},
+  Posts: {},
+  ParentThreads: {},
 };
 
 async function updateDisplayForums(keyid, details = {}) {
@@ -18,13 +18,32 @@ async function updateDisplayForums(keyid, details = {}) {
     forumIds: [keyid],
   });
   details = res.body.forumsInfo[0];
-  if (Data.DisplayForums[keyid] === undefined) {
-    Data.DisplayForums[keyid] = {
-      name: details.mMeta.mGroupName,
-      isSearched: true,
-      description: details.mDescription,
-      isSubscribed: details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED,
-    };
+  Data.DisplayForums[keyid] = {
+    name: details.mMeta.mGroupName,
+    author: details.mMeta.mAuthorId,
+    isSearched: true,
+    description: details.mDescription,
+    isSubscribed:
+      details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED ||
+      details.mMeta.mSubscribeFlags === GROUP_MY_FORUM,
+    activity: details.mMeta.mLastPost,
+    created: details.mMeta.mPublishTs,
+  };
+  if (Data.Posts[keyid] === undefined) {
+    Data.Posts[keyid] = {};
+  }
+  const res2 = await rs.rsJsonApiRequest('/rsgxsforums/getForumMsgMetaData', {
+    forumId: keyid,
+  });
+  if (res2.body.retval) {
+    res2.body.msgMetas.map((thread) => {
+      if (Data.ParentThreads[thread.mGroupId] === undefined) {
+        Data.ParentThreads[thread.mGroupId] = {};
+      }
+      if (thread.mThreadId === thread.mParentId) {
+        Data.ParentThreads[thread.mGroupId][thread.mMsgId] = thread;
+      }
+    });
   }
 }
 
@@ -64,68 +83,26 @@ const ForumSummary = () => {
   };
 };
 
-const MessageView = () => {
-  let fname = '';
-  let fsubscribed = {};
-  return {
-    oninit: (v) => {
-      if (Data.DisplayForums[v.attrs.id]) {
-        fname = Data.DisplayForums[v.attrs.id].name;
-        fsubscribed = Data.DisplayForums[v.attrs.id].isSubscribed;
-      }
-    },
-    view: (v) =>
-      m(
-        '.widget',
-        {
-          key: v.attrs.id,
-        },
-        [
-          m(
-            'a[title=Back]',
-            {
-              onclick: () =>
-                m.route.set('/forums/:tab', {
-                  tab: m.route.param().tab,
-                }),
-            },
-            m('i.fas.fa-arrow-left')
-          ),
-          m(
-            'button',
-            {
-              onclick: async () => {
-                const res = await rs.rsJsonApiRequest('/rsgxsforums/subscribeToForum', {
-                  forumId: v.attrs.id,
-                  subscribe: !fsubscribed,
-                });
-                if (res.body.retval) {
-                  fsubscribed = !fsubscribed;
-                  Data.DisplayForums[v.attrs.id].isSubscribed = fsubscribed;
-                }
-              },
-            },
-            fsubscribed ? 'Subscribed' : 'Subscribe'
-          ),
-          m('h3', fname),
-          m('[id=forumdetails]', [
-            m('p', m('b', 'Posts: '), 'posts'),
-            m('p', m('b', 'Date created: '), '1/1/11'),
-            m('p', m('b', 'Admin: '), 'name_of_admin'),
-            m('p', m('b', 'Last activity: '), '1/1/11'),
-          ]),
-          m('hr'),
-          m('forumdesc', m('b', 'Description: '), Data.DisplayForums[v.attrs.id].description),
-        ]
-      ),
-  };
-};
-
-const Table = () => {
+const ForumTable = () => {
   return {
     view: (v) => m('table.forums', [m('tr', [m('th', 'Forum Name')]), v.children]),
   };
 };
+const ThreadsTable = () => {
+  return {
+    oninit: (v) => {},
+    view: (v) =>
+      m('table.threads', [
+        m('tr', [
+          m('th', 'Comment'),
+          m('th', 'Author'),
+          m('th', 'Date'),
+        ]),
+        v.children,
+      ]),
+  };
+};
+
 const SearchBar = () => {
   let searchString = '';
   return {
@@ -147,14 +124,15 @@ const SearchBar = () => {
 };
 
 module.exports = {
+  Data,
   SearchBar,
   ForumSummary,
-  MessageView,
   DisplayForumsFromList,
-  Table,
+  ForumTable,
+  ThreadsTable,
   GROUP_SUBSCRIBE_ADMIN,
   GROUP_SUBSCRIBE_NOT_SUBSCRIBED,
   GROUP_SUBSCRIBE_PUBLISH,
   GROUP_SUBSCRIBE_SUBSCRIBED,
-  GROUP_MY_FORUM
+  GROUP_MY_FORUM,
 };

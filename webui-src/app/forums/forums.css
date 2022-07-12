@@ -36,7 +36,6 @@ table.forums tr.hidden{
 
 #forumdetails{
   position: relative;
-  margin-left: 150px;
   padding: 10px;
 }
 .p{
@@ -45,4 +44,9 @@ table.forums tr.hidden{
 #toggleunsub{
   position: relative;
   background: gray;
+}
+
+table.threads tr:hover {
+  background-color: #eef3f6;
+  cursor: pointer;
 }

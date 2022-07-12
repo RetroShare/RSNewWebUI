@@ -8,7 +8,7 @@ const Layout = () => {
         m('h3', 'Popular Forums'),
         m('hr'),
         m(
-          util.Table,
+          util.ForumTable,
           m('tbody', [
             v.attrs.list.map((forum) =>
               m(util.ForumSummary, {

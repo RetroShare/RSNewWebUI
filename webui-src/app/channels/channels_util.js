@@ -15,7 +15,7 @@ const Data = {
   DisplayChannels: {},
   Posts: {},
   Comments: {},
-  TopComments: [],
+  TopComments: {},
   ParentCommentMap: {},
 };
 
@@ -80,7 +80,6 @@ async function updateDisplayChannels(keyid, details) {
     posts: details.mMeta.mVisibleMsgCount,
     activity: details.mMeta.mLastPost,
     created: details.mMeta.mPublishTs,
-    all: details,
   };
 
   if (Data.Posts[keyid] === undefined) {
