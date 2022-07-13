@@ -3,7 +3,17 @@ const rs = require('rswebui');
 const util = require('forums/forums_util');
 
 const ThreadView = () => {
-  return {
+
+  let thread = {};
+    return {
+    oninit: (v) => {
+      if (
+        util.Data.ParentThreads[v.attrs.forumId] &&
+        util.Data.ParentThreads[v.attrs.forumId][v.attrs.msgId]
+      ) {
+        thread = util.Data.ParentThreads[v.attrs.forumId][v.attrs.msgId];
+      }
+    },
     view: (v) =>
       m('.widget', { key: v.attrs.msgId }, [
         m(
@@ -17,6 +27,7 @@ const ThreadView = () => {
           },
           m('i.fas.fa-arrow-left')
         ),
+        m('h3', thread.mMsgName),
       ]),
   };
 };

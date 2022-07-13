@@ -50,7 +50,7 @@ async function parseFile(file, type) {
     const reader = new FileReader();
     const blob = await _file.slice(_offset, length + _offset);
     reader.onload = readEventHandler;
-    await reader.readAsText(blob);
+    await reader.readAsDataURL(blob);
   };
 
   // read with the first block
