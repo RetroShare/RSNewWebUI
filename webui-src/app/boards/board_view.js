@@ -53,23 +53,22 @@ const BoardView = () => {
           ),
           m('h3', bname),
 
-          /*m(
+          m(
             'button',
             {
               onclick: async () => {
                 const res = await rs.rsJsonApiRequest('/rsposted/subscribeToBoard', {
-                  channelId: v.attrs.id,
-                  subscribe: !csubscribed,
+                  boardId: v.attrs.id,
+                  subscribe: !bsubscribed,
                 });
                 if (res.body.retval) {
-                  csubscribed = !csubscribed;
-                  Data.DisplayBoards[v.attrs.id].isSubscribed = csubscribed;
+                  bsubscribed = !bsubscribed;
+                  Data.DisplayBoards[v.attrs.id].isSubscribed = bsubscribed;
                 }
               },
             },
             bsubscribed ? 'Subscribed' : 'Subscribe'
-          ),*/
-
+          ),
           m('img.boardpic', {
             src: 'data:image/png;base64,' + bimage.mData.base64,
           }),
@@ -97,7 +96,7 @@ const BoardView = () => {
           m(
             'postdetails',
             {
-              style: 'display:' + (csubscribed ? 'block' : 'none'),
+              style: 'display:' + (bsubscribed ? 'block' : 'none'),
             },
             m('h3', 'Posts'),
 
