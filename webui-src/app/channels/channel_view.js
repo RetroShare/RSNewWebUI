@@ -21,18 +21,42 @@ async function parseFile(file, type) {
   const hash = sha1.create();
   const ansList = [];
 
-  const readEventHandler = async function (evt) {
-    if (evt.target.error == null) {
-      offset += evt.target.result.length;
-      await hash.update(evt.target.result);
-    } else {
-      console.log('Read error: ' + evt.target.error);
-      return;
-    }
+  // const readEventHandler = async function (evt) {
+  //   if (evt.target.error == null) {
+  //     offset += evt.target.result.length;
+  //     await hash.update(evt.target.result);
+  //   } else {
+  //     console.log('Read error: ' + evt.target.error);
+  //     return;
+  //   }
+  //   if (offset >= fileSize) {
+  //     const ans = await hash.hex();
+  //     console.log(ans);
+  //     ansList.push(ans);
+  //     if (type.localeCompare('multiple') === 0) {
+  //       filesUploadHashes.PostFiles.push(ans);
+  //     } else {
+  //       filesUploadHashes.Thumbnail.push(ans);
+  //     }
+  //     return;
+  //   }
+
+  //   // of to the next chunk
+  //   await chunkReaderBlock(offset, chunkSize, file);
+  //   return ansList;
+  // };
+
+  chunkReaderBlock = async function (_offset, length, _file) {
+    const reader = new FileReader();
+    const blob = await _file.slice(_offset, length + _offset);
+    const data = await blob.text();
+    console.log(data);
+    offset += data.length;
+    await hash.update(data);
     if (offset >= fileSize) {
       const ans = await hash.hex();
-      console.log(ans);
-      ansList.push(ans);
+      // console.log(ans);
+      // ansList.push(ans);
       if (type.localeCompare('multiple') === 0) {
         filesUploadHashes.PostFiles.push(ans);
       } else {
@@ -43,14 +67,6 @@ async function parseFile(file, type) {
 
     // of to the next chunk
     await chunkReaderBlock(offset, chunkSize, file);
-    return ansList;
-  };
-
-  chunkReaderBlock = async function (_offset, length, _file) {
-    const reader = new FileReader();
-    const blob = await _file.slice(_offset, length + _offset);
-    reader.onload = readEventHandler;
-    await reader.readAsDataURL(blob);
   };
 
   // read with the first block
@@ -61,8 +77,8 @@ async function parseFile(file, type) {
 const AddPost = () => {
   let content = '';
   let ptitle = '';
-  const pthumbnail = [];
-  const pfiles = [];
+  let pthumbnail = [];
+  let pfiles = [];
   let uploadFiles = false;
   let uploadThumbnail = false;
 
@@ -75,8 +91,8 @@ const AddPost = () => {
         m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
           onchange: async (e) => {
             filesUploadHashes.Thumbnail = [];
+            pthumbnail = [];
             const ansList = await parseFile(e.target.files[0], '');
-            console.log(ansList, ansList.length);
             // console.log(filesUploadHashes.Thumbnail, filesUploadHashes.Thumbnail.length);
 
             if (filesUploadHashes.Thumbnail.length === e.target.files.length) {
@@ -93,10 +109,11 @@ const AddPost = () => {
         m('input[type=file][name=files][id=browse][multiple=multiple]', {
           onchange: async (e) => {
             filesUploadHashes.PostFiles = [];
+            pfiles = [];
             for (let i = 0; i < e.target.files.length; i++) {
               await parseFile(e.target.files[i], 'multiple');
             }
-            console.log(filesUploadHashes.PostFiles, filesUploadHashes.PostFiles.length);
+            // console.log(filesUploadHashes.PostFiles, filesUploadHashes.PostFiles.length);
 
             if (filesUploadHashes.PostFiles.length === e.target.files.length) {
               for (let i = 0; i < e.target.files.length; i++) {
@@ -123,20 +140,20 @@ const AddPost = () => {
             onclick: async () => {
               if (uploadFiles && uploadThumbnail) {
                 console.log(vnode.attrs.chanId, ptitle, content, pfiles, pthumbnail);
-                // const res = await rs.rsJsonApiRequest('/rsgxschannels/createPostV2', {
-                //   channelId: vnode.attrs.chanId,
-                //   title: ptitle,
-                //   mBody: content,
-                //   files: pfiles,
-                //   thumbnail: pthumbnail,
-                // });
-                // res.body.retval === false
-                //   ? util.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                //   : util.popupMessage([
-                //       m('h3', 'Success'),
-                //       m('hr'),
-                //       m('p', 'Post added successfully'),
-                //     ]);
+                const res = await rs.rsJsonApiRequest('/rsgxschannels/createPostV2', {
+                  channelId: vnode.attrs.chanId,
+                  title: ptitle,
+                  mBody: content,
+                  files: pfiles,
+                  thumbnail: pthumbnail,
+                });
+                res.body.retval === false
+                  ? util.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                  : util.popupMessage([
+                      m('h3', 'Success'),
+                      m('hr'),
+                      m('p', 'Post added successfully'),
+                    ]);
               }
             },
           },
@@ -241,11 +258,10 @@ const ChannelView = () => {
               style: 'display:' + (csubscribed ? 'block' : 'none'),
             },
             m('h3', 'Posts'),
-            m(
-              'button',
-              { onclick: () => util.popupMessage(m(AddPost, { chanId: v.attrs.id })) },
-              ['Add Post', m('i.fas.fa-edit')]
-            ),
+            m('button', { onclick: () => util.popupMessage(m(AddPost, { chanId: v.attrs.id })) }, [
+              'Add Post',
+              m('i.fas.fa-edit'),
+            ]),
             m('hr'),
 
             m(
@@ -285,14 +301,14 @@ const ChannelView = () => {
 };
 
 // async function AddVote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
-  // const res = await rs.rsJsonApiRequest('/rsgxschannels/createVoteV2', {
-  //   channelId: vchannelId,
-  //   postId: vpostId,
-  //   authorId: vauthorId,
-  //   commentId: vcommentId,
-  //   vote: voteType,
-  // });
-  // if (res.body.retval) util.updateDisplayChannels(vchannelId);
+// const res = await rs.rsJsonApiRequest('/rsgxschannels/createVoteV2', {
+//   channelId: vchannelId,
+//   postId: vpostId,
+//   authorId: vauthorId,
+//   commentId: vcommentId,
+//   vote: voteType,
+// });
+// if (res.body.retval) util.updateDisplayChannels(vchannelId);
 // }
 
 const AddComment = () => {
@@ -341,7 +357,8 @@ function DisplayComment() {
     oninit: (v) => {
       console.log(v.attrs.commentStruct.comment.mComment);
     },
-    view: ({ attrs: { commentStruct, identity, isReply } }) => {
+    view: ({ attrs: { commentStruct, identity, replyDepth } }) => {
+      console.log(replyDepth);
       const comment = commentStruct.comment;
       let parMap = [];
       if (Data.ParentCommentMap[comment.mMeta.mMsgId]) {
@@ -362,72 +379,41 @@ function DisplayComment() {
               )
             : m('td', ''),
 
-          m('td', { style: isReply ? 'position:relative;left:20px' : '' }, [
-            comment.mComment,
-            m('options', { style: 'display:block' }, [
-              m(
-                'button',
-                {
-                  style: 'font-size:15px',
-                  onclick: () =>
-                    util.popupMessage(
-                      m(AddComment, {
-                        parent_comment: comment.mComment,
-                        channelId: comment.mMeta.mGroupId,
-                        authorId: identity,
-                        threadId: comment.mMeta.mThreadId,
-                        parentId: comment.mMeta.mMsgId,
-                      })
-                    ),
-                },
-                'Reply'
-              ),
-              m('button', { style: 'font-size:15px' }, m('i.fas.fa-thumbs-up')),
-              m('button', { style: 'font-size:15px' }, m('i.fas.fa-thumbs-down')),
-            ]),
-          ]),
-          // m(
-          //   'select[id=options]',
-          //   {
-          //     onchange: (e) => {
-          //       if (e.target.selectedIndex === 1) {
-          //         // reply
-          //         util.popupMessage(
-          //           m(AddComment, {
-          //             parent_comment: comment.mComment,
-          //             channelId: comment.mMeta.mGroupId,
-          //             authorId: identity,
-          //             threadId: comment.mMeta.mThreadId,
-          //             parentId: comment.mMeta.mMsgId,
-          //           })
-          //         );
-          //       } else if (e.target.selectedIndex === 2) {
-          //         // voteUP
-          //         AddVote(
-          //           util.GXS_VOTE_UP,
-          //           comment.mMeta.mGroupId,
-          //           comment.mMeta.mThreadId,
-          //           identity,
-          //           comment.mMeta.mMsgId
-          //         );
-          //       } else if (e.target.selectedIndex === 3) {
-          //         AddVote(
-          //           util.GXS_VOTE_DOWN,
-          //           comment.mMeta.mGroupId,
-          //           comment.mMeta.mThreadId,
-          //           identity,
-          //           comment.mMeta.mMsgId
-          //         );
-          //       }
-          //     },
-          //   },
-          //   [
-          //     m('option[hidden][selected]', 'Options'),
-          //     util.optionSelect.opts.map((option) =>
-          //       m('option', { value: option }, option.toLocaleString())
-          //     ),
-          //   ]
-          // ),
+          m(
+            'td',
+            {
+              style: {
+                position: 'relative',
+                '--replyDepth': replyDepth,
+                left: 'calc(30px*var(--replyDepth))',
+              },
+            },
+            [
+              comment.mComment,
+              m('options', { style: 'display:block' }, [
+                m(
+                  'button',
+                  {
+                    style: 'font-size:15px',
+                    onclick: () =>
+                      util.popupMessage(
+                        m(AddComment, {
+                          parent_comment: comment.mComment,
+                          channelId: comment.mMeta.mGroupId,
+                          authorId: identity,
+                          threadId: comment.mMeta.mThreadId,
+                          parentId: comment.mMeta.mMsgId,
+                        })
+                      ),
+                  },
+                  'Reply'
+                ),
+                m('button', { style: 'font-size:15px' }, m('i.fas.fa-thumbs-up')),
+                m('button', { style: 'font-size:15px' }, m('i.fas.fa-thumbs-down')),
+              ]),
+            ]
+          ),
+
           m('td', rs.userList.userMap[comment.mMeta.mAuthorId]),
           m(
             'td',
@@ -444,7 +430,7 @@ function DisplayComment() {
             m(DisplayComment, {
               commentStruct: Data.Comments[value.mMeta.mThreadId][value.mMeta.mMsgId],
               identity,
-              isReply: true,
+              replyDepth: replyDepth + 1,
             })
           ),
       ];
@@ -569,7 +555,7 @@ const PostView = () => {
                       Data.Comments[topComments[key].mMeta.mThreadId][
                         topComments[key].mMeta.mMsgId
                       ],
-                    isReply: false,
+                    replyDepth: 0,
                   })
                 : ''
             )

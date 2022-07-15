@@ -56,13 +56,13 @@ img.channelpic {
 
 #grid{
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 100px;
 }
 
 .card {
   width: 150px;
-  height: auto;
+  height: 200px;
   border: 2px solid gray;
   cursor: pointer;
   text-align: center;
