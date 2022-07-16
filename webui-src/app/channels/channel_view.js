@@ -8,7 +8,7 @@ const fileUtil = require('files/files_util');
 const fileDown = require('files/files_downloads');
 
 const filesUploadHashes = {
-  // not a good practice, figure out a better way later.
+  // figure out a better way later.
   PostFiles: [],
   Thumbnail: [],
 };
@@ -47,7 +47,7 @@ async function parseFile(file, type) {
   // };
 
   chunkReaderBlock = async function (_offset, length, _file) {
-    const reader = new FileReader();
+    // const reader = new FileReader();
     const blob = await _file.slice(_offset, length + _offset);
     const data = await blob.text();
     console.log(data);
@@ -93,7 +93,7 @@ const AddPost = () => {
             filesUploadHashes.Thumbnail = [];
             pthumbnail = [];
             const ansList = await parseFile(e.target.files[0], '');
-            // console.log(filesUploadHashes.Thumbnail, filesUploadHashes.Thumbnail.length);
+            console.log(ansList);
 
             if (filesUploadHashes.Thumbnail.length === e.target.files.length) {
               pthumbnail.push({

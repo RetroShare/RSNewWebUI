@@ -2,10 +2,69 @@ const m = require('mithril');
 const rs = require('rswebui');
 const util = require('forums/forums_util');
 
-const ThreadView = () => {
+function DisplayThread() {
+  return {
+    oninit: (v) => {
+      // console.log(v.attrs.threadStruct.thread.mComment);
+    },
+    view: ({ attrs: { threadStruct, replyDepth } }) => {
+      const thread = threadStruct.thread;
+      let parMap = [];
+      if (util.Data.ParentThreadMap[thread.mMeta.mMsgId]) {
+        parMap = Array.from(util.Data.ParentThreadMap[thread.mMeta.mMsgId]);
+      }
+      console.log(parMap);
+      return [
+        m('tr', [
+          parMap.length > 0
+            ? m(
+                'td',
+                m('i.fas.fa-angle-right', {
+                  class: 'fa-rotate-' + (threadStruct.showReplies ? '90' : '0'),
+                  style: 'margin-top:12px',
+                  onclick: () => {
+                    threadStruct.showReplies = !threadStruct.showReplies;
+                  },
+                })
+              )
+            : m('td', ''),
 
+          m(
+            'td',
+            {
+              style: {
+                position: 'relative',
+                '--replyDepth': replyDepth,
+                left: 'calc(30px*var(--replyDepth))',
+              },
+            },
+            [
+              thread.mMeta.mMsgName,
+            ]
+          ),
+          m('td', ''),
+          m('td', rs.userList.userMap[thread.mMeta.mAuthorId]),
+          m(
+            'td',
+            typeof thread.mMeta.mPublishTs === 'object'
+              ? new Date(thread.mMeta.mPublishTs.xint64 * 1000).toLocaleString()
+              : 'undefined'
+          ),
+        ]),
+        threadStruct.showReplies &&
+          parMap.map((value) =>
+            m(DisplayThread, {
+              threadStruct: util.Data.Threads[value.mGroupId][value.mMsgId],
+              replyDepth: replyDepth + 1,
+            })
+          ),
+      ];
+    },
+  };
+}
+const ThreadView = () => {
   let thread = {};
-    return {
+  return {
     oninit: (v) => {
       if (
         util.Data.ParentThreads[v.attrs.forumId] &&
@@ -28,6 +87,16 @@ const ThreadView = () => {
           m('i.fas.fa-arrow-left')
         ),
         m('h3', thread.mMsgName),
+        m(
+          util.ThreadsReplyTable,
+          m(
+            'tbody',
+            m(DisplayThread, {
+              threadStruct: util.Data.Threads[v.attrs.forumId][v.attrs.msgId],
+              replyDepth: 0,
+            })
+          )
+        ),
       ]),
   };
 };
@@ -57,7 +126,6 @@ const ForumView = () => {
       if (util.Data.ParentThreads[v.attrs.id]) {
         topThreads = util.Data.ParentThreads[v.attrs.id];
       }
-      console.log(util.Data.ParentThreads, v.attrs.id);
     },
     view: (v) =>
       m(

@@ -9,13 +9,14 @@ const GROUP_MY_FORUM = GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROU
 
 const Data = {
   DisplayForums: {},
-  Posts: {},
+  Threads: {},
   ParentThreads: {},
+  ParentThreadMap: {},
 };
 
 async function updateDisplayForums(keyid, details = {}) {
   const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumsInfo', {
-    forumIds: [keyid],
+    forumIds: [keyid], // keyid: Forumid
   });
   details = res.body.forumsInfo[0];
   Data.DisplayForums[keyid] = {
@@ -29,19 +30,32 @@ async function updateDisplayForums(keyid, details = {}) {
     activity: details.mMeta.mLastPost,
     created: details.mMeta.mPublishTs,
   };
-  if (Data.Posts[keyid] === undefined) {
-    Data.Posts[keyid] = {};
+  if (Data.Threads[keyid] === undefined) {
+    Data.Threads[keyid] = {};
   }
   const res2 = await rs.rsJsonApiRequest('/rsgxsforums/getForumMsgMetaData', {
     forumId: keyid,
   });
   if (res2.body.retval) {
-    res2.body.msgMetas.map((thread) => {
-      if (Data.ParentThreads[thread.mGroupId] === undefined) {
-        Data.ParentThreads[thread.mGroupId] = {};
+    res2.body.msgMetas.map(async (thread) => {
+      const res3 = await rs.rsJsonApiRequest('/rsgxsforums/getForumContent', {
+        forumId: keyid,
+        msgsIds: [thread.mMsgId],
+      });
+
+      if (res3.body.retval) {
+        Data.Threads[keyid][thread.mMsgId] = { thread: res3.body.msgs[0], showReplies: false };
+      }
+      if (Data.ParentThreads[keyid] === undefined) {
+        Data.ParentThreads[keyid] = {};
       }
       if (thread.mThreadId === thread.mParentId) {
-        Data.ParentThreads[thread.mGroupId][thread.mMsgId] = thread;
+        Data.ParentThreads[keyid][thread.mMsgId] = thread;
+      } else {
+        if (Data.ParentThreadMap[thread.mParentId] === undefined) {
+          Data.ParentThreadMap[thread.mParentId] = new Set();
+        }
+        Data.ParentThreadMap[thread.mParentId].add(thread);
       }
     });
   }
@@ -93,11 +107,17 @@ const ThreadsTable = () => {
     oninit: (v) => {},
     view: (v) =>
       m('table.threads', [
-        m('tr', [
-          m('th', 'Comment'),
-          m('th', 'Author'),
-          m('th', 'Date'),
-        ]),
+        m('tr', [m('th', 'Comment'), m('th', 'Author'), m('th', 'Date')]),
+        v.children,
+      ]),
+  };
+};
+const ThreadsReplyTable = () => {
+  return {
+    oninit: (v) => {},
+    view: (v) =>
+      m('table.threadreply', [
+        m('tr', [m('th', ''), m('th', 'Comment'), m('th', 'Unread'), m('th', 'Author'), m('th', 'Date')]),
         v.children,
       ]),
   };
@@ -130,6 +150,7 @@ module.exports = {
   DisplayForumsFromList,
   ForumTable,
   ThreadsTable,
+  ThreadsReplyTable,
   GROUP_SUBSCRIBE_ADMIN,
   GROUP_SUBSCRIBE_NOT_SUBSCRIBED,
   GROUP_SUBSCRIBE_PUBLISH,
