@@ -33,7 +33,7 @@ const sections = {
 };
 
 const Layout = {
-  oninit : () => {
+  oninit: () => {
     rs.setBackgroundTask(getChannels.load, 5000, () => {
       // return m.route.get() === '/files/files';
     });
@@ -42,14 +42,14 @@ const Layout = {
   view: (vnode) =>
     m('.tab-page', [
       Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId')
-          ? ''
-          : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId')
-          ? m(util.SearchBar, {
+        ? ''
+        : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId')
+        ? m(util.SearchBar, {
             category: 'posts',
-            channelId: vnode.attrs.pathInfo.mGroupId
+            channelId: vnode.attrs.pathInfo.mGroupId,
           })
-          : m(util.SearchBar, {
-            category: 'channels'
+        : m(util.SearchBar, {
+            category: 'channels',
           }),
       m(widget.Sidebar, {
         tabs: Object.keys(sections),

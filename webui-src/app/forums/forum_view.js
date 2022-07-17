@@ -4,16 +4,13 @@ const util = require('forums/forums_util');
 
 function DisplayThread() {
   return {
-    oninit: (v) => {
-      // console.log(v.attrs.threadStruct.thread.mComment);
-    },
+    oninit: (v) => {},
     view: ({ attrs: { threadStruct, replyDepth } }) => {
       const thread = threadStruct.thread;
       let parMap = [];
       if (util.Data.ParentThreadMap[thread.mMeta.mMsgId]) {
         parMap = Array.from(util.Data.ParentThreadMap[thread.mMeta.mMsgId]);
       }
-      console.log(parMap);
       return [
         m('tr', [
           parMap.length > 0
@@ -37,10 +34,9 @@ function DisplayThread() {
                 '--replyDepth': replyDepth,
                 left: 'calc(30px*var(--replyDepth))',
               },
+              onclick: () => (ThreadView.showThread = thread.mMeta.mMsgId),
             },
-            [
-              thread.mMeta.mMsgName,
-            ]
+            [thread.mMeta.mMsgName]
           ),
           m('td', ''),
           m('td', rs.userList.userMap[thread.mMeta.mAuthorId]),
@@ -64,15 +60,19 @@ function DisplayThread() {
 }
 const ThreadView = () => {
   let thread = {};
+
   return {
+    showThread: '',
     oninit: (v) => {
       if (
         util.Data.ParentThreads[v.attrs.forumId] &&
         util.Data.ParentThreads[v.attrs.forumId][v.attrs.msgId]
       ) {
         thread = util.Data.ParentThreads[v.attrs.forumId][v.attrs.msgId];
+        v.state.showThread = v.attrs.msgId;
       }
     },
+    onupdate: (v) => console.log(v.state.showThread),
     view: (v) =>
       m('.widget', { key: v.attrs.msgId }, [
         m(
@@ -87,16 +87,26 @@ const ThreadView = () => {
           m('i.fas.fa-arrow-left')
         ),
         m('h3', thread.mMsgName),
+        m('hr'),
         m(
           util.ThreadsReplyTable,
           m(
             'tbody',
-            m(DisplayThread, {
-              threadStruct: util.Data.Threads[v.attrs.forumId][v.attrs.msgId],
-              replyDepth: 0,
-            })
+            util.Data.Threads[v.attrs.forumId] &&
+              util.Data.Threads[v.attrs.forumId][v.attrs.msgId] &&
+              m(DisplayThread, {
+                threadStruct: util.Data.Threads[v.attrs.forumId][v.attrs.msgId],
+                replyDepth: 0,
+              })
           )
         ),
+        m('hr'),
+        v.state.showThread && [
+          m('h4', 'Messages'),
+          util.Data.Threads[v.attrs.forumId] &&
+            util.Data.Threads[v.attrs.forumId][v.state.showThread] &&
+            m('p', m.trust(util.Data.Threads[v.attrs.forumId][v.state.showThread].thread.mMsg)),
+        ],
       ]),
   };
 };

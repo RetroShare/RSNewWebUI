@@ -1,9 +1,9 @@
 .forums-node-panel {
-    position: relative;
-    bottom: 200px;
-    margin-left: 200px;
-    animation: fadein 0.5s;
-  }
+  position: relative;
+  bottom: 200px;
+  margin-left: 200px;
+  animation: fadein 0.5s;
+}
 
 /* subject */
 table.forums th:nth-child(1) {
@@ -24,24 +24,24 @@ table.forums tr:hover {
   cursor: pointer;
 }
 
-table.forums tr.hidden{
+table.forums tr.hidden {
   display: none;
 }
 
-#searchforum{
-  position:relative;
+#searchforum {
+  position: relative;
   margin-left: 250px;
   /* top: 50px; */
 }
 
-#forumdetails{
+#forumdetails {
   position: relative;
   padding: 10px;
 }
-.p{
-  margin:0;
+.p {
+  margin: 0;
 }
-#toggleunsub{
+#toggleunsub {
   position: relative;
   background: gray;
 }
@@ -55,7 +55,6 @@ table.threads td {
 }
 table.threadreply th:nth-child(2) {
   width: 50%;
-  
 }
 table.threadreply th:nth-child(1) {
   width: 2%;

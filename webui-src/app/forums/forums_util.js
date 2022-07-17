@@ -117,7 +117,13 @@ const ThreadsReplyTable = () => {
     oninit: (v) => {},
     view: (v) =>
       m('table.threadreply', [
-        m('tr', [m('th', ''), m('th', 'Comment'), m('th', 'Unread'), m('th', 'Author'), m('th', 'Date')]),
+        m('tr', [
+          m('th', ''),
+          m('th', 'Comment'),
+          m('th', 'Unread'),
+          m('th', 'Author'),
+          m('th', 'Date'),
+        ]),
         v.children,
       ]),
   };

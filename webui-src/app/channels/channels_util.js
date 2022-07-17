@@ -30,19 +30,18 @@ async function updateContent(content, channelid) {
     if (Data.Comments[content.mThreadId] === undefined) {
       Data.Comments[content.mThreadId] = {};
     }
-    Data.Comments[content.mThreadId][content.mMsgId] = {comment: res.body.comments[0], showReplies: false}; // Comments[post][comment]
+    Data.Comments[content.mThreadId][content.mMsgId] = {
+      comment: res.body.comments[0],
+      showReplies: false,
+    }; // Comments[post][comment]
     const comm = res.body.comments[0];
-    if(Data.TopComments[comm.mMeta.mThreadId] === undefined)
-    {
+    if (Data.TopComments[comm.mMeta.mThreadId] === undefined) {
       Data.TopComments[comm.mMeta.mThreadId] = {};
     }
     if (comm.mMeta.mThreadId === comm.mMeta.mParentId) {
-      Data.TopComments[comm.mMeta.mThreadId][comm.mMeta.mMsgId] = comm;  // pushing top comments respective to post
-    }
-    else
-    {
-      if(Data.ParentCommentMap[comm.mMeta.mParentId] === undefined)
-      {
+      Data.TopComments[comm.mMeta.mThreadId][comm.mMeta.mMsgId] = comm; // pushing top comments respective to post
+    } else {
+      if (Data.ParentCommentMap[comm.mMeta.mParentId] === undefined) {
         Data.ParentCommentMap[comm.mMeta.mParentId] = new Set();
       }
       Data.ParentCommentMap[comm.mMeta.mParentId].add(comm);
