@@ -50,7 +50,6 @@ async function parseFile(file, type) {
     // const reader = new FileReader();
     const blob = await _file.slice(_offset, length + _offset);
     const data = await blob.text();
-    console.log(data);
     offset += data.length;
     await hash.update(data);
     if (offset >= fileSize) {
@@ -93,7 +92,6 @@ const AddPost = () => {
             filesUploadHashes.Thumbnail = [];
             pthumbnail = [];
             const ansList = await parseFile(e.target.files[0], '');
-            console.log(ansList);
 
             if (filesUploadHashes.Thumbnail.length === e.target.files.length) {
               pthumbnail.push({
@@ -300,16 +298,19 @@ const ChannelView = () => {
   };
 };
 
-// async function AddVote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
-// const res = await rs.rsJsonApiRequest('/rsgxschannels/createVoteV2', {
-//   channelId: vchannelId,
-//   postId: vpostId,
-//   authorId: vauthorId,
-//   commentId: vcommentId,
-//   vote: voteType,
-// });
-// if (res.body.retval) util.updateDisplayChannels(vchannelId);
-// }
+async function AddVote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
+  const res = await rs.rsJsonApiRequest('/rsgxschannels/voteForComment', {
+    channelId: vchannelId,
+    postId: vpostId,
+    authorId: vauthorId,
+    commentId: vcommentId,
+    vote: voteType,
+  });
+  if (res.body.retval) {
+    util.updateDisplayChannels(vchannelId);
+    m.redraw();
+  }
+}
 
 const AddComment = () => {
   let inputComment = '';
@@ -345,6 +346,7 @@ const AddComment = () => {
                     m('p', 'Comment added successfully'),
                   ]);
               util.updateDisplayChannels(vnode.attrs.channelId);
+              m.redraw();
             },
           },
           'Add'
@@ -354,19 +356,16 @@ const AddComment = () => {
 };
 function DisplayComment() {
   return {
-    oninit: (v) => {
-      console.log(v.attrs.commentStruct.comment.mComment);
-    },
+    oninit: (v) => {},
     view: ({ attrs: { commentStruct, identity, replyDepth } }) => {
-      console.log(replyDepth);
       const comment = commentStruct.comment;
-      let parMap = [];
+      let parMap = {};
       if (Data.ParentCommentMap[comment.mMeta.mMsgId]) {
-        parMap = Array.from(Data.ParentCommentMap[comment.mMeta.mMsgId]);
+        parMap = Data.ParentCommentMap[comment.mMeta.mMsgId];
       }
       return [
         m('tr', [
-          parMap.length > 0
+          Object.keys(parMap).length
             ? m(
                 'td',
                 m('i.fas.fa-angle-right', {
@@ -408,8 +407,36 @@ function DisplayComment() {
                   },
                   'Reply'
                 ),
-                m('button', { style: 'font-size:15px' }, m('i.fas.fa-thumbs-up')),
-                m('button', { style: 'font-size:15px' }, m('i.fas.fa-thumbs-down')),
+                m(
+                  'button',
+                  {
+                    style: 'font-size:15px',
+                    onclick: () =>
+                      AddVote(
+                        util.GXS_VOTE_UP,
+                        comment.mMeta.mGroupId,
+                        comment.mMeta.mThreadId,
+                        identity,
+                        comment.mMeta.mMsgId
+                      ),
+                  },
+                  m('i.fas.fa-thumbs-up')
+                ),
+                m(
+                  'button',
+                  {
+                    style: 'font-size:15px',
+                    onclick: () =>
+                      AddVote(
+                        util.GXS_VOTE_DOWN,
+                        comment.mMeta.mGroupId,
+                        comment.mMeta.mThreadId,
+                        identity,
+                        comment.mMeta.mMsgId
+                      ),
+                  },
+                  m('i.fas.fa-thumbs-down')
+                ),
               ]),
             ]
           ),
@@ -426,9 +453,10 @@ function DisplayComment() {
           m('td', comment.mDownVotes),
         ]),
         commentStruct.showReplies &&
-          parMap.map((value) =>
+          // parMap.map((value) =>
+          Object.keys(parMap).map((key, index) =>
             m(DisplayComment, {
-              commentStruct: Data.Comments[value.mMeta.mThreadId][value.mMeta.mMsgId],
+              commentStruct: Data.Comments[parMap[key].mMeta.mThreadId][parMap[key].mMeta.mMsgId],
               identity,
               replyDepth: replyDepth + 1,
             })

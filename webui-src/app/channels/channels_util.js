@@ -42,9 +42,9 @@ async function updateContent(content, channelid) {
       Data.TopComments[comm.mMeta.mThreadId][comm.mMeta.mMsgId] = comm; // pushing top comments respective to post
     } else {
       if (Data.ParentCommentMap[comm.mMeta.mParentId] === undefined) {
-        Data.ParentCommentMap[comm.mMeta.mParentId] = new Set();
+        Data.ParentCommentMap[comm.mMeta.mParentId] = {};
       }
-      Data.ParentCommentMap[comm.mMeta.mParentId].add(comm);
+      Data.ParentCommentMap[comm.mMeta.mParentId][comm.mMeta.mMsgId] = comm;
     }
   } else if (res.body.retval && res.body.votes.length > 0) {
     const vote = res.body.votes[0];
