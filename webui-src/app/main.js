@@ -9,6 +9,7 @@ const mail = require('mail/mail_resolver');
 const files = require('files/files_resolver');
 const channels = require('channels/channels');
 const forums = require('forums/forums');
+const boards = require('boards/boards');
 const config = require('config/config_resolver');
 
 const navIcon = {
@@ -20,6 +21,7 @@ const navIcon = {
   files: m('i.fas.fa-folder-open.sidenav-icon'),
   channels: m('i.fas.fa-tv.sidenav-icon'),
   forums: m('i.fas.fa-bullhorn.sidenav-icon'),
+  boards: m('i.fas.fa-globe.sidenav-icon'),
   config: m('i.fas.fa-cogs.sidenav-icon'),
 };
 
@@ -56,7 +58,8 @@ const Layout = () => {
             mail: '/mail/inbox',
             files: '/files/files',
             channels: '/channels/MyChannels',
-            forums: 'forums/MyForums',
+            forums: '/forums/MyForums',
+            boards: '/boards/MyBoards',
             config: '/config/network',
           },
         }),
@@ -111,6 +114,15 @@ m.route(document.getElementById('main'), '/', {
   },
   '/forums/:tab/:mGroupId': {
     render: (v) => m(Layout, m(forums, v.attrs)),
+  },
+  '/boards/:tab': {
+    render: (v) => m(Layout, m(boards, v.attrs)),
+  },
+  '/boards/:tab/:mGroupId': {
+    render: (v) => m(Layout, m(boards, v.attrs)),
+  },
+  '/boards/:tab/:mGroupId/:mMsgId': {
+    render: (v) => m(Layout, m(boards, v.attrs)),
   },
   '/config/:tab': {
     render: (v) => m(Layout, m(config, v.attrs)),
