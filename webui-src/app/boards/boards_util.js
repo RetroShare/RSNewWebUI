@@ -52,7 +52,7 @@ async function updateDisplayBoards(keyid, details) {
     name: details.mMeta.mGroupName,
     isSearched: true,
     description: details.mDescription,
-    image: details.mImage,
+    image: details.mGroupImage,
     author: details.mMeta.mAuthorId,
     isSubscribed:
       details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED ||
