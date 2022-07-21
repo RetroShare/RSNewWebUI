@@ -118,7 +118,7 @@ m.route(document.getElementById('main'), '/', {
 
   '/forums/:tab/:mGroupId/:mMsgId': {
     render: (v) => m(Layout, m(forums, v.attrs)),
-
+  },
   '/boards/:tab': {
     render: (v) => m(Layout, m(boards, v.attrs)),
   },
