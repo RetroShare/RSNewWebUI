@@ -5,23 +5,64 @@ const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this gr
 const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
 const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; // means: you are subscribed to a group, which makes you a source for this group to your friend nodes.
 const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
-const GROUP_MY_CHANNEL = GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
+const GROUP_MY_CHANNEL =
+  GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
+const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
+const GXS_VOTE_DOWN = 0x0001;
+const GXS_VOTE_UP = 0x0002;
+
 const Data = {
   DisplayChannels: {},
   Posts: {},
+  Comments: {},
+  TopComments: {},
+  ParentCommentMap: {},
 };
 
-async function updateContent(post, channelid) {
+async function updatecontent(content, channelid) {
   const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelContent', {
     channelId: channelid,
-    contentsIds: [post.mMsgId],
+    contentsIds: [content.mMsgId],
   });
-  if (res.body.retval) {
-    Data.Posts[channelid][post.mMsgId] = res.body.posts[0];
+  if (res.body.retval && res.body.posts.length > 0) {
+    Data.Posts[channelid][content.mMsgId] = { post: res.body.posts[0], isSearched: true };
+  } else if (res.body.retval && res.body.comments.length > 0) {
+    if (Data.Comments[content.mThreadId] === undefined) {
+      Data.Comments[content.mThreadId] = {};
+    }
+    Data.Comments[content.mThreadId][content.mMsgId] = {
+      comment: res.body.comments[0],
+      showReplies: false,
+    }; // Comments[post][comment]
+    const comm = res.body.comments[0];
+    if (Data.TopComments[comm.mMeta.mThreadId] === undefined) {
+      Data.TopComments[comm.mMeta.mThreadId] = {};
+    }
+    if (comm.mMeta.mThreadId === comm.mMeta.mParentId) {
+      Data.TopComments[comm.mMeta.mThreadId][comm.mMeta.mMsgId] = comm; // pushing top comments respective to post
+    } else {
+      if (Data.ParentCommentMap[comm.mMeta.mParentId] === undefined) {
+        Data.ParentCommentMap[comm.mMeta.mParentId] = {};
+      }
+      Data.ParentCommentMap[comm.mMeta.mParentId][comm.mMeta.mMsgId] = comm;
+    }
+  } else if (res.body.retval && res.body.votes.length > 0) {
+    const vote = res.body.votes[0];
+    if (
+      Data.Comments[vote.mMeta.mThreadId] &&
+      Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId] // finding [post][comment]
+    ) {
+      if (vote.mVoteType === GXS_VOTE_UP) {
+        Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mUpVotes += 1;
+      }
+      if (vote.mVoteType === GXS_VOTE_DOWN) {
+        Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mDownVotes += 1;
+      }
+    }
   }
 }
 
-async function updateDisplayChannels(keyid, details) {
+async function updatedisplaychannels(keyid, details) {
   const res1 = await rs.rsJsonApiRequest('/rsgxschannels/getChannelsInfo', {
     chanIds: [keyid],
   });
@@ -32,22 +73,24 @@ async function updateDisplayChannels(keyid, details) {
     description: details.mDescription,
     image: details.mImage,
     author: details.mMeta.mAuthorId,
-    isSubscribed: (details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED) || ((details.mMeta.mSubscribeFlags === GROUP_MY_CHANNEL)),
+    isSubscribed:
+      details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED ||
+      details.mMeta.mSubscribeFlags === GROUP_MY_CHANNEL,
     posts: details.mMeta.mVisibleMsgCount,
     activity: details.mMeta.mLastPost,
     created: details.mMeta.mPublishTs,
-    all: details,
   };
 
-  Data.Posts[keyid] = {};
+  if (Data.Posts[keyid] === undefined) {
+    Data.Posts[keyid] = {};
+  }
   const res2 = await rs.rsJsonApiRequest('/rsgxschannels/getContentSummaries', {
     channelId: keyid,
   });
 
-  console.log(res2);
   if (res2.body.retval) {
-    res2.body.summaries.map((post) => {
-      updateContent(post, keyid);
+    res2.body.summaries.map((content) => {
+      updatecontent(content, keyid);
     });
   }
 }
@@ -80,126 +123,73 @@ const ChannelSummary = () => {
   return {
     oninit: (v) => {
       keyid = v.attrs.details.mGroupId;
-      updateDisplayChannels(keyid);
+      updatedisplaychannels(keyid);
     },
 
     view: (v) => {},
   };
 };
 
-const ChannelView = () => {
-  let cname = '';
-  let cimage = '';
-  let cauthor = '';
-  let csubscribed = {};
-  let cposts = 0;
-  // let plist = {};
+const CommentsTable = () => {
   return {
-    oninit: (v) => {
-      if (Data.DisplayChannels[v.attrs.id]) {
-        cname = Data.DisplayChannels[v.attrs.id].name;
-        cimage = Data.DisplayChannels[v.attrs.id].image;
-        if (rs.userList.userMap[Data.DisplayChannels[v.attrs.id].author]) {
-          cauthor = rs.userList.userMap[Data.DisplayChannels[v.attrs.id].author];
-        } else if (Number(Data.DisplayChannels[v.attrs.id].author) === 0) {
-          cauthor = 'No Contact Author';
-        } else {
-          cauthor = 'Unknown';
-        }
-        csubscribed = Data.DisplayChannels[v.attrs.id].isSubscribed;
-        cposts = Data.DisplayChannels[v.attrs.id].posts;
-      }
-      if (Data.Posts[v.attrs.id]) {
-        // plist = Data.Posts[v.attrs.id];
-      }
-    },
+    oninit: (v) => {},
     view: (v) =>
-      m(
-        '.widget',
-        {
-          key: v.attrs.id,
-        },
-        [
-          m(
-            'a[title=Back]',
-            {
-              onclick: () =>
-                m.route.set('/channels/:tab', {
-                  tab: m.route.param().tab,
-                }),
-            },
-            m('i.fas.fa-arrow-left')
-          ),
-          m('h3', cname),
-
-          m(
-            'button',
-            {
-              onclick: async () => {
-                const res = await rs.rsJsonApiRequest('/rsgxschannels/subscribeToChannel', {
-                  channelId: v.attrs.id,
-                  subscribe: !csubscribed,
-                });
-                if (res.body.retval) {
-                  csubscribed = !csubscribed;
-                  Data.DisplayChannels[v.attrs.id].isSubscribed = csubscribed;
-                }
-              },
-            },
-            csubscribed ? 'Subscribed' : 'Subscribe'
-          ),
-          m('img.channelpic', {
-            src: 'data:image/png;base64,' + cimage.mData.base64,
-          }),
-          m('[id=channeldetails]', [
-            m('p', m('b', 'Posts: '), cposts),
-            m('p', m('b', 'Date created: '), '1/1/11'),
-            m('p', m('b', 'Admin: '), cauthor),
-            m('p', m('b', 'Last activity: '), '1/1/11'),
-          ]),
-          m('hr'),
-          m('channeldesc', m('b', 'Description: '), Data.DisplayChannels[v.attrs.id].description),
-          m('hr'),
-          m(
-            'postdetails',
-            {
-              style: 'display:' + (csubscribed ? 'block' : 'none'),
-            },
-            m('h3', 'Posts'),
-          ),
-        ]
-      ),
-  };
-};
-
-const PostView = () => {
-  let post = {};
-  return {
-    oninit: (v) => {
-      if (Data.Posts[v.attrs.channelId] && Data.Posts[v.attrs.channelId][v.attrs.msgId]) {
-        post = Data.Posts[v.attrs.channelId][v.attrs.msgId];
-      }
-    },
-    view: (v) =>
-      m('.widget', { key: v.attrs.msgId }, [
-        m(
-          'a[title=Back]',
-          {
-            onclick: () =>
-              m.route.set('/channels/:tab/:mGroupId', {
-                tab: m.route.param().tab,
-                mGroupId: m.route.param().mGroupId,
-              }),
-          },
-          m('i.fas.fa-arrow-left')
-        ),
-        m('h3', post.mMeta.mMsgName),
-        m('p', m.trust(post.mMsg)),
+      m('table.comments', [
+        m('tr', [
+          m('th', ''),
+          m('th', 'Comment'),
+          m('th', 'Author'),
+          m('th', 'Date'),
+          m('th', 'Score'),
+          m('th', 'Upvotes'),
+          m('th', 'DownVotes'),
+          m('th', 'OwnVote'),
+        ]),
+        v.children,
       ]),
   };
 };
 
-const Table = () => {
+
+const FilesTable = () => {
+  return {
+    oninit: (v) => {},
+    view: (v) =>
+      m('table.files', [
+        m('tr', [m('th', 'File Name'), m('th', 'Size'), m('th', m('i.fas.fa-download'))]),
+        v.children,
+      ]),
+  };
+};
+
+function formatbytes(bytes, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+function popupmessage(message) {
+  const container = document.getElementById('modal-container');
+  container.style.display = 'block';
+  m.render(
+    container,
+    m('.modal-content', [
+      m(
+        'button.red',
+        {
+          onclick: () => (container.style.display = 'none'),
+        },
+        m('i.fas.fa-times')
+      ),
+      message,
+    ])
+  );
+}
+
+const ChannelTable = () => {
   return {
     oninit: (v) => {},
     view: (v) => m('table.channels', [m('tr', [m('th', 'Channel Name')]), v.children]),
@@ -211,13 +201,29 @@ const SearchBar = () => {
     view: (v) =>
       m('input[type=text][id=searchchannel][placeholder=Search Subject].searchbar', {
         value: searchString,
+        placeholder:
+          v.attrs.category.localeCompare('channels') === 0 ? 'Search Channels' : 'Search Posts',
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
-          for (const hash in Data.DisplayChannels) {
-            if (Data.DisplayChannels[hash].name.toLowerCase().indexOf(searchString) > -1) {
-              Data.DisplayChannels[hash].isSearched = true;
-            } else {
-              Data.DisplayChannels[hash].isSearched = false;
+          if (v.attrs.category.localeCompare('channels') === 0) {
+            for (const hash in Data.DisplayChannels) {
+              if (Data.DisplayChannels[hash].name.toLowerCase().indexOf(searchString) > -1) {
+                Data.DisplayChannels[hash].isSearched = true;
+              } else {
+                Data.DisplayChannels[hash].isSearched = false;
+              }
+            }
+          } else {
+            for (const hash in Data.Posts[v.attrs.channelId]) {
+              if (
+                Data.Posts[v.attrs.channelId][hash].post.mMeta.mMsgName
+                  .toLowerCase()
+                  .indexOf(searchString) > -1
+              ) {
+                Data.Posts[v.attrs.channelId][hash].isSearched = true;
+              } else {
+                Data.Posts[v.attrs.channelId][hash].isSearched = false;
+              }
             }
           }
         },
@@ -226,15 +232,22 @@ const SearchBar = () => {
 };
 
 module.exports = {
+  Data,
   SearchBar,
+  popupmessage,
   ChannelSummary,
-  ChannelView,
-  PostView,
+  formatbytes,
   DisplayChannelsFromList,
-  Table,
+  updatedisplaychannels,
+  ChannelTable,
+  FilesTable,
+  CommentsTable,
   GROUP_SUBSCRIBE_ADMIN,
   GROUP_SUBSCRIBE_NOT_SUBSCRIBED,
   GROUP_SUBSCRIBE_PUBLISH,
   GROUP_SUBSCRIBE_SUBSCRIBED,
   GROUP_MY_CHANNEL,
+  GXS_VOTE_DOWN,
+  GXS_VOTE_UP,
+  RS_FILE_REQ_ANONYMOUS_ROUTING,
 };

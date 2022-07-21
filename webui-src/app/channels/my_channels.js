@@ -8,7 +8,7 @@ const Layout = () => {
         m('h3', 'My Channels'),
         m('hr'),
         m(
-          util.Table,
+          util.ChannelTable,
           m('tbody', [
             v.attrs.list.map((channel) =>
               m(util.ChannelSummary, {

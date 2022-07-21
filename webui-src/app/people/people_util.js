@@ -55,8 +55,8 @@ function sortIds(list) {
   return list;
 }
 
-function ownIds(consumer = (list) => {}, onlySigned = false) {
-  rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {}, (owns) => {
+async function ownIds(consumer = (list) => {}, onlySigned = false) {
+  await rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {}, (owns) => {
     if (onlySigned) {
       consumer(sortIds(owns.ids));
     } else {

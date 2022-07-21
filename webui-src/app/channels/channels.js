@@ -2,6 +2,7 @@ const m = require('mithril');
 const widget = require('widgets');
 const rs = require('rswebui');
 const util = require('channels/channels_util');
+const viewUtil = require('channels/channel_view');
 
 const getChannels = {
   All: [],
@@ -32,13 +33,24 @@ const sections = {
 };
 
 const Layout = {
-  // oninit : getChannels.load,
-  onupdate: getChannels.load,
+  oninit: () => {
+    rs.setBackgroundTask(getChannels.load, 5000, () => {
+      // return m.route.get() === '/files/files';
+    });
+  },
+  // onupdate: getChannels.load,
   view: (vnode) =>
     m('.tab-page', [
-      m(util.SearchBar, {
-        list: getChannels.All,
-      }),
+      Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId')
+        ? ''
+        : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId')
+        ? m(util.SearchBar, {
+            category: 'posts',
+            channelId: vnode.attrs.pathInfo.mGroupId,
+          })
+        : m(util.SearchBar, {
+            category: 'channels',
+          }),
       m(widget.Sidebar, {
         tabs: Object.keys(sections),
         baseRoute: '/channels/',
@@ -47,12 +59,12 @@ const Layout = {
         '.channel-node-panel',
 
         Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId')
-          ? m(util.PostView, {
+          ? m(viewUtil.PostView, {
               msgId: vnode.attrs.pathInfo.mMsgId,
               channelId: vnode.attrs.pathInfo.mGroupId,
             })
           : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId')
-          ? m(util.ChannelView, {
+          ? m(viewUtil.ChannelView, {
               id: vnode.attrs.pathInfo.mGroupId,
             })
           : m(sections[vnode.attrs.pathInfo.tab], {
