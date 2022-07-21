@@ -1,0 +1,102 @@
+.board-node-panel {
+    position: relative;
+    bottom: 200px;
+    margin-left: 200px;
+    animation: fadein 0.5s;
+  }
+
+/* subject */
+table.boards th:nth-child(1) {
+  width: 50%;
+  text-align: start;
+}
+/* subject */
+table.boards td:nth-child(1) {
+  text-align: start;
+  /* Truncate text with '...' */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+table.boards tr:hover {
+  background-color: #eef3f6;
+  cursor: pointer;
+}
+
+table.boards tr.hidden{
+  display: none;
+}
+
+#searchboard{
+  position:relative;
+  margin-left: 250px;
+}
+
+img.boardpic {
+  float: left;
+  height: 150px;
+  width:150px;
+  padding: 25px;
+}
+#boarddetails{
+  position: relative;
+  margin-left: 150px;
+}
+.p{
+  margin:0;
+}
+
+#toggleunsub{
+  position: relative;
+  background: gray;
+}
+
+#grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 100px;
+}
+
+.card {
+  width: 150px;
+  height: 150px;
+  border: 2px solid gray;
+  cursor: pointer;
+  text-align: center;
+}
+.card-img{
+  width: 120px;
+  height: 120px;
+}
+.card-title{
+  position: absolute;
+  bottom: 0px;
+}
+
+/* subject */
+table.comments th{
+  height: 40px;
+}
+table.comments th:nth-child(1) {
+  width: 40%;
+}
+table.comments td {
+  word-wrap: break-word;
+}
+table.comments td:nth-child(1){
+  border: 3px solid lightskyblue;
+  border-radius: 25px;
+
+}
+table.comments tr{
+  height: 40px;
+}
+
+#options{
+  width: 100px;
+  text-align: center;
+  font-size: medium;
+  margin-left: 20px;
+  height: 40px;
+}
