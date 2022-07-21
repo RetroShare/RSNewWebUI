@@ -19,7 +19,7 @@ const Data = {
   ParentCommentMap: {},
 };
 
-async function updateContent(content, channelid) {
+async function updatecontent(content, channelid) {
   const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelContent', {
     channelId: channelid,
     contentsIds: [content.mMsgId],
@@ -62,7 +62,7 @@ async function updateContent(content, channelid) {
   }
 }
 
-async function updateDisplayChannels(keyid, details) {
+async function updatedisplaychannels(keyid, details) {
   const res1 = await rs.rsJsonApiRequest('/rsgxschannels/getChannelsInfo', {
     chanIds: [keyid],
   });
@@ -90,7 +90,7 @@ async function updateDisplayChannels(keyid, details) {
 
   if (res2.body.retval) {
     res2.body.summaries.map((content) => {
-      updateContent(content, keyid);
+      updatecontent(content, keyid);
     });
   }
 }
@@ -123,7 +123,7 @@ const ChannelSummary = () => {
   return {
     oninit: (v) => {
       keyid = v.attrs.details.mGroupId;
-      updateDisplayChannels(keyid);
+      updatedisplaychannels(keyid);
     },
 
     view: (v) => {},
@@ -150,10 +150,6 @@ const CommentsTable = () => {
   };
 };
 
-const optionSelect = {
-  showval: 'Options',
-  opts: ['Reply', 'Vote Up', 'Vote Down'],
-};
 
 const FilesTable = () => {
   return {
@@ -166,7 +162,7 @@ const FilesTable = () => {
   };
 };
 
-function formatBytes(bytes, decimals = 2) {
+function formatbytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
@@ -175,7 +171,7 @@ function formatBytes(bytes, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-function popupMessage(message) {
+function popupmessage(message) {
   const container = document.getElementById('modal-container');
   container.style.display = 'block';
   m.render(
@@ -238,15 +234,14 @@ const SearchBar = () => {
 module.exports = {
   Data,
   SearchBar,
-  popupMessage,
+  popupmessage,
   ChannelSummary,
-  formatBytes,
+  formatbytes,
   DisplayChannelsFromList,
-  updateDisplayChannels,
+  updatedisplaychannels,
   ChannelTable,
   FilesTable,
   CommentsTable,
-  optionSelect,
   GROUP_SUBSCRIBE_ADMIN,
   GROUP_SUBSCRIBE_NOT_SUBSCRIBED,
   GROUP_SUBSCRIBE_PUBLISH,

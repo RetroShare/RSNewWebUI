@@ -14,7 +14,7 @@ const Data = {
   ParentThreadMap: {},
 };
 
-async function updateDisplayForums(keyid, details = {}) {
+async function updatedisplayforums(keyid, details = {}) {
   const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumsInfo', {
     forumIds: [keyid], // keyid: Forumid
   });
@@ -53,9 +53,9 @@ async function updateDisplayForums(keyid, details = {}) {
         Data.ParentThreads[keyid][thread.mMsgId] = thread;
       } else {
         if (Data.ParentThreadMap[thread.mParentId] === undefined) {
-          Data.ParentThreadMap[thread.mParentId] = new Set();
+          Data.ParentThreadMap[thread.mParentId] = {};
         }
-        Data.ParentThreadMap[thread.mParentId].add(thread);
+        Data.ParentThreadMap[thread.mParentId][thread.mMsgId] = thread;
       }
     });
   }
@@ -90,7 +90,7 @@ const ForumSummary = () => {
   return {
     oninit: (v) => {
       keyid = v.attrs.details.mGroupId;
-      updateDisplayForums(keyid);
+      updatedisplayforums(keyid);
     },
 
     view: (v) => {},
@@ -107,7 +107,7 @@ const ThreadsTable = () => {
     oninit: (v) => {},
     view: (v) =>
       m('table.threads', [
-        m('tr', [m('th', 'Comment'), m('th', 'Author'), m('th', 'Date')]),
+        m('tr', [m('th', 'Comment'), m('th', 'Date'), m('th', 'Author')]),
         v.children,
       ]),
   };

@@ -2,18 +2,18 @@ const m = require('mithril');
 const rs = require('rswebui');
 const util = require('forums/forums_util');
 
-function DisplayThread() {
+function displaythread() {
   return {
     oninit: (v) => {},
     view: ({ attrs: { threadStruct, replyDepth } }) => {
       const thread = threadStruct.thread;
       let parMap = [];
       if (util.Data.ParentThreadMap[thread.mMeta.mMsgId]) {
-        parMap = Array.from(util.Data.ParentThreadMap[thread.mMeta.mMsgId]);
+        parMap = util.Data.ParentThreadMap[thread.mMeta.mMsgId];
       }
       return [
         m('tr', [
-          parMap.length > 0
+          Object.keys(parMap).length
             ? m(
                 'td',
                 m('i.fas.fa-angle-right', {
@@ -48,9 +48,9 @@ function DisplayThread() {
           ),
         ]),
         threadStruct.showReplies &&
-          parMap.map((value) =>
-            m(DisplayThread, {
-              threadStruct: util.Data.Threads[value.mGroupId][value.mMsgId],
+          Object.keys(parMap).map((key, index) =>
+            m(displaythread, {
+              threadStruct: util.Data.Threads[parMap[key].mGroupId][parMap[key].mMsgId],
               replyDepth: replyDepth + 1,
             })
           ),
@@ -94,7 +94,7 @@ const ThreadView = () => {
             'tbody',
             util.Data.Threads[v.attrs.forumId] &&
               util.Data.Threads[v.attrs.forumId][v.attrs.msgId] &&
-              m(DisplayThread, {
+              m(displaythread, {
                 threadStruct: util.Data.Threads[v.attrs.forumId][v.attrs.msgId],
                 replyDepth: 0,
               })
@@ -198,7 +198,9 @@ const ForumView = () => {
               style: 'display:' + (fsubscribed ? 'block' : 'none'),
             },
             m('h3', 'Threads'),
-            m('button', { onclick: () => util.popupMessage() }, [
+            m('button', 
+            // { onclick: () => util.popupMessage() },
+             [
               'New Thread',
               m('i.fas.fa-pencil-alt'),
             ]),

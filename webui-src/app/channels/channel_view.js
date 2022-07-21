@@ -13,11 +13,11 @@ const filesUploadHashes = {
   Thumbnail: [],
 };
 
-async function parseFile(file, type) {
+async function parsefile(file, type) {
   const fileSize = file.size;
   const chunkSize = 1024 * 1024; // bytes
   let offset = 0;
-  let chunkReaderBlock = null;
+  let chunkreaderblock = null;
   const hash = sha1.create();
   const ansList = [];
 
@@ -42,11 +42,11 @@ async function parseFile(file, type) {
   //   }
 
   //   // of to the next chunk
-  //   await chunkReaderBlock(offset, chunkSize, file);
+  //   await chunkreaderblock(offset, chunkSize, file);
   //   return ansList;
   // };
 
-  chunkReaderBlock = async function (_offset, length, _file) {
+  chunkreaderblock = async function (_offset, length, _file) {
     // const reader = new FileReader();
     const blob = await _file.slice(_offset, length + _offset);
     const data = await blob.text();
@@ -65,11 +65,11 @@ async function parseFile(file, type) {
     }
 
     // of to the next chunk
-    await chunkReaderBlock(offset, chunkSize, file);
+    await chunkreaderblock(offset, chunkSize, file);
   };
 
   // read with the first block
-  await chunkReaderBlock(offset, chunkSize, file);
+  await chunkreaderblock(offset, chunkSize, file);
   return ansList;
 }
 
@@ -91,7 +91,7 @@ const AddPost = () => {
           onchange: async (e) => {
             filesUploadHashes.Thumbnail = [];
             pthumbnail = [];
-            const ansList = await parseFile(e.target.files[0], '');
+            const ansList = await parsefile(e.target.files[0], '');
 
             if (filesUploadHashes.Thumbnail.length === e.target.files.length) {
               pthumbnail.push({
@@ -109,7 +109,7 @@ const AddPost = () => {
             filesUploadHashes.PostFiles = [];
             pfiles = [];
             for (let i = 0; i < e.target.files.length; i++) {
-              await parseFile(e.target.files[i], 'multiple');
+              await parsefile(e.target.files[i], 'multiple');
             }
             // console.log(filesUploadHashes.PostFiles, filesUploadHashes.PostFiles.length);
 
@@ -128,7 +128,8 @@ const AddPost = () => {
         m('input[type=text][placeholder=Title]', {
           oninput: (e) => (ptitle = e.target.value),
         }),
-        m('textarea[rows=5][style="width: 90%; display: block;"]', {
+        m('textarea[rows=5]', {
+          style: {width: '90%', display: 'block'},
           oninput: (e) => (content = e.target.value),
           value: content,
         }),
@@ -146,8 +147,8 @@ const AddPost = () => {
                   thumbnail: pthumbnail,
                 });
                 res.body.retval === false
-                  ? util.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                  : util.popupMessage([
+                  ? util.m([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                  : util.m([
                       m('h3', 'Success'),
                       m('hr'),
                       m('p', 'Post added successfully'),
@@ -256,7 +257,7 @@ const ChannelView = () => {
               style: 'display:' + (csubscribed ? 'block' : 'none'),
             },
             m('h3', 'Posts'),
-            m('button', { onclick: () => util.popupMessage(m(AddPost, { chanId: v.attrs.id })) }, [
+            m('button', { onclick: () => util.m(m(AddPost, { chanId: v.attrs.id })) }, [
               'Add Post',
               m('i.fas.fa-edit'),
             ]),
@@ -283,7 +284,7 @@ const ChannelView = () => {
                       class: 'card-img',
                       src: 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
 
-                      alt: 'No Thumbnail',
+                      alt: '',
                     }),
                     m('div', { class: 'card-info' }, [
                       m('h4', { class: 'card-title' }, plist[key].post.mMeta.mMsgName),
@@ -298,7 +299,7 @@ const ChannelView = () => {
   };
 };
 
-async function AddVote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
+async function addvote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
   const res = await rs.rsJsonApiRequest('/rsgxschannels/voteForComment', {
     channelId: vchannelId,
     postId: vpostId,
@@ -307,7 +308,7 @@ async function AddVote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
     vote: voteType,
   });
   if (res.body.retval) {
-    util.updateDisplayChannels(vchannelId);
+    util.updatedisplaychannels(vchannelId);
     m.redraw();
   }
 }
@@ -322,7 +323,8 @@ const AddComment = () => {
         (vnode.attrs.parent_comment !== '') > 0
           ? [m('h5', 'Reply to comment: '), m('p', vnode.attrs.parent_comment)]
           : '',
-        m('textarea[rows=5][style="width: 90%; display: block;"]', {
+        m('textarea[rows=5]', {
+          style: {width: '90%', display: 'block'},
           oninput: (e) => (inputComment = e.target.value),
           value: inputComment,
         }),
@@ -339,13 +341,13 @@ const AddComment = () => {
               });
 
               res.body.retval === false
-                ? util.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                : util.popupMessage([
+                ? util.m([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                : util.m([
                     m('h3', 'Success'),
                     m('hr'),
                     m('p', 'Comment added successfully'),
                   ]);
-              util.updateDisplayChannels(vnode.attrs.channelId);
+              util.updatedisplaychannels(vnode.attrs.channelId);
               m.redraw();
             },
           },
@@ -354,7 +356,7 @@ const AddComment = () => {
       ]),
   };
 };
-function DisplayComment() {
+function displaycomment() {
   return {
     oninit: (v) => {},
     view: ({ attrs: { commentStruct, identity, replyDepth } }) => {
@@ -395,7 +397,7 @@ function DisplayComment() {
                   {
                     style: 'font-size:15px',
                     onclick: () =>
-                      util.popupMessage(
+                      util.m(
                         m(AddComment, {
                           parent_comment: comment.mComment,
                           channelId: comment.mMeta.mGroupId,
@@ -412,7 +414,7 @@ function DisplayComment() {
                   {
                     style: 'font-size:15px',
                     onclick: () =>
-                      AddVote(
+                      addvote(
                         util.GXS_VOTE_UP,
                         comment.mMeta.mGroupId,
                         comment.mMeta.mThreadId,
@@ -427,7 +429,7 @@ function DisplayComment() {
                   {
                     style: 'font-size:15px',
                     onclick: () =>
-                      AddVote(
+                      addvote(
                         util.GXS_VOTE_DOWN,
                         comment.mMeta.mGroupId,
                         comment.mMeta.mThreadId,
@@ -455,7 +457,7 @@ function DisplayComment() {
         commentStruct.showReplies &&
           // parMap.map((value) =>
           Object.keys(parMap).map((key, index) =>
-            m(DisplayComment, {
+            m(displaycomment, {
               commentStruct: Data.Comments[parMap[key].mMeta.mThreadId][parMap[key].mMeta.mMsgId],
               identity,
               replyDepth: replyDepth + 1,
@@ -515,7 +517,7 @@ const PostView = () => {
             post.mFiles.map((file) =>
               m('tr', [
                 m('td', file.mName),
-                m('td', util.formatBytes(file.mSize.xint64)),
+                m('td', util.formatbytes(file.mSize.xint64)),
                 m(
                   'button',
                   {
@@ -557,7 +559,7 @@ const PostView = () => {
           'button',
           {
             onclick: () => {
-              util.popupMessage(
+              util.popupmessage(
                 m(AddComment, {
                   parent_comment: '',
                   channelId: v.attrs.channelId,
@@ -577,7 +579,7 @@ const PostView = () => {
             Object.keys(topComments).map((key, index) =>
               Data.Comments[topComments[key].mMeta.mThreadId] &&
               Data.Comments[topComments[key].mMeta.mThreadId][topComments[key].mMeta.mMsgId]
-                ? m(DisplayComment, {
+                ? m(displaycomment, {
                     identity: ownId,
                     commentStruct:
                       Data.Comments[topComments[key].mMeta.mThreadId][
