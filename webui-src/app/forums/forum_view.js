@@ -1,6 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const util = require('forums/forums_util');
+const peopleUtil = require('people/people_util');
 
 function displaythread() {
   return {
@@ -58,9 +59,57 @@ function displaythread() {
     },
   };
 }
+const AddThread = () => {
+  let title = '';
+  let body = '';
+  return {
+    view: (vnode) =>
+      m('.widget', [
+        m('h3', 'Add Thread'),
+        m('hr'),
+        (vnode.attrs.parent_thread !== '') > 0
+          ? [m('h5', 'Reply to thread: '), m('p', vnode.attrs.parent_thread)]
+          : '',
+        m('input[type=text][placeholder=Title]', {
+          oninput: (e) => (title = e.target.value),
+        }),
+        m('textarea[rows=5]', {
+          style: { width: '90%', display: 'block' },
+          oninput: (e) => (body = e.target.value),
+          value: body,
+        }),
+        m(
+          'button',
+          {
+            onclick: async () => {
+              const res =
+                (vnode.attrs.parent_thread !== '') > 0
+                  ? {}
+                  : await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
+                    forumId: vnode.attrs.forumId,
+                    mBody: body,
+                    title: title,
+                    authorId: vnode.attrs.authorId,
+                  });
+
+              res.body.retval === false
+                ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                : util.popupmessage([
+                    m('h3', 'Success'),
+                    m('hr'),
+                    m('p', 'Thread added successfully'),
+                  ]);
+              util.updatedisplayforums(vnode.attrs.forumId);
+              m.redraw();
+            },
+          },
+          'Add'
+        ),
+      ]),
+  };
+};
 const ThreadView = () => {
   let thread = {};
-
   return {
     showThread: '',
     oninit: (v) => {
@@ -118,6 +167,7 @@ const ForumView = () => {
   let createDate = {};
   let lastActivity = {};
   let topThreads = {};
+  let ownId = '';
   return {
     oninit: (v) => {
       if (util.Data.DisplayForums[v.attrs.id]) {
@@ -136,6 +186,9 @@ const ForumView = () => {
       if (util.Data.ParentThreads[v.attrs.id]) {
         topThreads = util.Data.ParentThreads[v.attrs.id];
       }
+      peopleUtil.ownIds((data) => {
+        ownId = data[0];
+      });
     },
     view: (v) =>
       m(
@@ -198,12 +251,22 @@ const ForumView = () => {
               style: 'display:' + (fsubscribed ? 'block' : 'none'),
             },
             m('h3', 'Threads'),
-            m('button', 
-            // { onclick: () => util.popupMessage() },
-             [
-              'New Thread',
-              m('i.fas.fa-pencil-alt'),
-            ]),
+            m(
+              'button',
+              {
+                onclick: () => {
+                  util.popupmessage(
+                    m(AddThread, {
+                      parent_thread: '',
+                      forumId: v.attrs.id,
+                      authorId: ownId,
+                      parentId: '',
+                    })
+                  );
+                },
+              },
+              ['New Thread', m('i.fas.fa-pencil-alt')]
+            ),
             m('hr'),
             m(
               util.ThreadsTable,

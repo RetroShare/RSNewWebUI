@@ -148,6 +148,23 @@ const SearchBar = () => {
       }),
   };
 };
+function popupmessage(message) {
+  const container = document.getElementById('modal-container');
+  container.style.display = 'block';
+  m.render(
+    container,
+    m('.modal-content', [
+      m(
+        'button.red',
+        {
+          onclick: () => (container.style.display = 'none'),
+        },
+        m('i.fas.fa-times')
+      ),
+      message,
+    ])
+  );
+}
 
 module.exports = {
   Data,
@@ -157,6 +174,8 @@ module.exports = {
   ForumTable,
   ThreadsTable,
   ThreadsReplyTable,
+  popupmessage,
+  updatedisplayforums,
   GROUP_SUBSCRIBE_ADMIN,
   GROUP_SUBSCRIBE_NOT_SUBSCRIBED,
   GROUP_SUBSCRIBE_PUBLISH,

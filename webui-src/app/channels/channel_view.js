@@ -147,8 +147,8 @@ const AddPost = () => {
                   thumbnail: pthumbnail,
                 });
                 res.body.retval === false
-                  ? util.m([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                  : util.m([
+                  ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                  : util.popupmessage([
                       m('h3', 'Success'),
                       m('hr'),
                       m('p', 'Post added successfully'),
@@ -257,7 +257,7 @@ const ChannelView = () => {
               style: 'display:' + (csubscribed ? 'block' : 'none'),
             },
             m('h3', 'Posts'),
-            m('button', { onclick: () => util.m(m(AddPost, { chanId: v.attrs.id })) }, [
+            m('button', { onclick: () => util.popupmessage(m(AddPost, { chanId: v.attrs.id })) }, [
               'Add Post',
               m('i.fas.fa-edit'),
             ]),
@@ -341,8 +341,8 @@ const AddComment = () => {
               });
 
               res.body.retval === false
-                ? util.m([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                : util.m([
+                ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                : util.popupmessage([
                     m('h3', 'Success'),
                     m('hr'),
                     m('p', 'Comment added successfully'),
@@ -397,7 +397,7 @@ function displaycomment() {
                   {
                     style: 'font-size:15px',
                     onclick: () =>
-                      util.m(
+                      util.popupmessage(
                         m(AddComment, {
                           parent_comment: comment.mComment,
                           channelId: comment.mMeta.mGroupId,
