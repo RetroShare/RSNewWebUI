@@ -2,57 +2,108 @@ const m = require('mithril');
 const rs = require('rswebui');
 const util = require('forums/forums_util');
 const peopleUtil = require('people/people_util');
+const { updatedisplayforums } = require('./forums_util');
 
 function displaythread() {
   return {
     oninit: (v) => {},
-    view: ({ attrs: { threadStruct, replyDepth } }) => {
+    view: ({ attrs: { threadStruct, replyDepth, identity } }) => {
       const thread = threadStruct.thread;
       let parMap = [];
       if (util.Data.ParentThreadMap[thread.mMeta.mMsgId]) {
         parMap = util.Data.ParentThreadMap[thread.mMeta.mMsgId];
       }
       return [
-        m('tr', [
-          Object.keys(parMap).length
-            ? m(
-                'td',
-                m('i.fas.fa-angle-right', {
-                  class: 'fa-rotate-' + (threadStruct.showReplies ? '90' : '0'),
-                  style: 'margin-top:12px',
-                  onclick: () => {
-                    threadStruct.showReplies = !threadStruct.showReplies;
-                  },
-                })
-              )
-            : m('td', ''),
+        m(
+          'tr',
+          {
+            style: thread.mMeta.mMsgStatus === util.THREAD_UNREAD ? { fontWeight: 'bold' } : '',
+          },
+          [
+            Object.keys(parMap).length
+              ? m(
+                  'td',
+                  m('i.fas.fa-angle-right', {
+                    class: 'fa-rotate-' + (threadStruct.showReplies ? '90' : '0'),
+                    style: 'margin-top:12px',
+                    onclick: () => {
+                      threadStruct.showReplies = !threadStruct.showReplies;
+                    },
+                  })
+                )
+              : m('td', ''),
 
-          m(
-            'td',
-            {
-              style: {
-                position: 'relative',
-                '--replyDepth': replyDepth,
-                left: 'calc(30px*var(--replyDepth))',
+            m(
+              'td',
+              {
+                style: {
+                  position: 'relative',
+                  '--replyDepth': replyDepth,
+                  left: 'calc(30px*var(--replyDepth))',
+                },
+                onclick: () => (ThreadView.showThread = thread.mMeta.mMsgId),
               },
-              onclick: () => (ThreadView.showThread = thread.mMeta.mMsgId),
-            },
-            [thread.mMeta.mMsgName]
-          ),
-          m('td', ''),
-          m('td', rs.userList.userMap[thread.mMeta.mAuthorId]),
-          m(
-            'td',
-            typeof thread.mMeta.mPublishTs === 'object'
-              ? new Date(thread.mMeta.mPublishTs.xint64 * 1000).toLocaleString()
-              : 'undefined'
-          ),
-        ]),
+              [
+                thread.mMeta.mMsgName,
+                m(
+                  'options',
+                  { style: 'display:block' },
+                  m(
+                    'button',
+                    {
+                      style: 'font-size:15px',
+                      onclick: () =>
+                        util.popupmessage(
+                          m(AddThread, {
+                            parent_thread: thread.mMeta.mMsgName,
+                            forumId: thread.mMeta.mGroupId,
+                            authorId: identity,
+                            parentId: thread.mMeta.mMsgId,
+                          })
+                        ),
+                    },
+                    'Reply'
+                  )
+                ),
+              ]
+            ),
+            m(
+              'td',
+              m(
+                'button',
+                {
+                  style: {fontSize:'15px'},
+                  onclick: async() => {
+                    const res = await rs.rsJsonApiRequest('/rsgxsforums/markRead', {
+                      messageId: thread.mMeta.mMsgId,
+                      read: false,
+                    });
+
+                    if(res.body.retval)
+                    {
+                      updatedisplayforums(thread.mMeta.mGroupId);
+                      m.redraw();
+                    }
+                  },
+                },
+                'Mark Unread'
+              )
+            ),
+            m('td', rs.userList.userMap[thread.mMeta.mAuthorId]),
+            m(
+              'td',
+              typeof thread.mMeta.mPublishTs === 'object'
+                ? new Date(thread.mMeta.mPublishTs.xint64 * 1000).toLocaleString()
+                : 'undefined'
+            ),
+          ]
+        ),
         threadStruct.showReplies &&
           Object.keys(parMap).map((key, index) =>
             m(displaythread, {
               threadStruct: util.Data.Threads[parMap[key].mGroupId][parMap[key].mMsgId],
               replyDepth: replyDepth + 1,
+              identity,
             })
           ),
       ];
@@ -84,13 +135,19 @@ const AddThread = () => {
             onclick: async () => {
               const res =
                 (vnode.attrs.parent_thread !== '') > 0
-                  ? {}
+                  ? await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
+                      forumId: vnode.attrs.forumId,
+                      mBody: body,
+                      title: title,
+                      authorId: vnode.attrs.authorId,
+                      parentId: vnode.attrs.parentId,
+                    })
                   : await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
-                    forumId: vnode.attrs.forumId,
-                    mBody: body,
-                    title: title,
-                    authorId: vnode.attrs.authorId,
-                  });
+                      forumId: vnode.attrs.forumId,
+                      mBody: body,
+                      title: title,
+                      authorId: vnode.attrs.authorId,
+                    });
 
               res.body.retval === false
                 ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
@@ -110,6 +167,7 @@ const AddThread = () => {
 };
 const ThreadView = () => {
   let thread = {};
+  let ownId = '';
   return {
     showThread: '',
     oninit: (v) => {
@@ -120,6 +178,9 @@ const ThreadView = () => {
         thread = util.Data.ParentThreads[v.attrs.forumId][v.attrs.msgId];
         v.state.showThread = v.attrs.msgId;
       }
+      peopleUtil.ownIds((data) => {
+        ownId = data[0];
+      });
     },
     onupdate: (v) => console.log(v.state.showThread),
     view: (v) =>
@@ -146,6 +207,7 @@ const ThreadView = () => {
               m(displaythread, {
                 threadStruct: util.Data.Threads[v.attrs.forumId][v.attrs.msgId],
                 replyDepth: 0,
+                identity: ownId,
               })
           )
         ),
@@ -276,6 +338,10 @@ const ForumView = () => {
                   m(
                     'tr',
                     {
+                      style:
+                        topThreads[key].mMsgStatus === util.THREAD_UNREAD
+                          ? { fontWeight: 'bold' }
+                          : '',
                       onclick: () => {
                         m.route.set('/forums/:tab/:mGroupId/:mMsgId', {
                           tab: m.route.param().tab,
