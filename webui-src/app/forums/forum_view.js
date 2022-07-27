@@ -6,9 +6,8 @@ const { updatedisplayforums } = require('./forums_util');
 
 function displaythread() {
   return {
-    oninit: (v) => {},
-    view: ({ attrs: { threadStruct, replyDepth, identity } }) => {
-      const thread = threadStruct.thread;
+    view: (v) => {
+      const thread = v.attrs.threadStruct.thread;
       let parMap = [];
       if (util.Data.ParentThreadMap[thread.mMeta.mMsgId]) {
         parMap = util.Data.ParentThreadMap[thread.mMeta.mMsgId];
@@ -24,10 +23,10 @@ function displaythread() {
               ? m(
                   'td',
                   m('i.fas.fa-angle-right', {
-                    class: 'fa-rotate-' + (threadStruct.showReplies ? '90' : '0'),
+                    class: 'fa-rotate-' + (v.attrs.threadStruct.showReplies ? '90' : '0'),
                     style: 'margin-top:12px',
                     onclick: () => {
-                      threadStruct.showReplies = !threadStruct.showReplies;
+                      v.attrs.threadStruct.showReplies = !v.attrs.threadStruct.showReplies;
                     },
                   })
                 )
@@ -38,10 +37,11 @@ function displaythread() {
               {
                 style: {
                   position: 'relative',
-                  '--replyDepth': replyDepth,
+                  '--replyDepth': v.attrs.replyDepth,
                   left: 'calc(30px*var(--replyDepth))',
                 },
-                onclick: () => (ThreadView.showThread = thread.mMeta.mMsgId),
+                onclick: () => v.attrs.changeThread(thread.mMeta.mMsgId),
+                ondblclick:() => v.attrs.threadStruct.showReplies = !v.attrs.threadStruct.showReplies,
               },
               [
                 thread.mMeta.mMsgName,
@@ -57,7 +57,7 @@ function displaythread() {
                           m(AddThread, {
                             parent_thread: thread.mMeta.mMsgName,
                             forumId: thread.mMeta.mGroupId,
-                            authorId: identity,
+                            authorId: v.attrs.identity,
                             parentId: thread.mMeta.mMsgId,
                           })
                         ),
@@ -75,7 +75,7 @@ function displaythread() {
                   style: {fontSize:'15px'},
                   onclick: async() => {
                     const res = await rs.rsJsonApiRequest('/rsgxsforums/markRead', {
-                      messageId: thread.mMeta.mMsgId,
+                      messageId: [thread.mMeta.mGroupId,thread.mMeta.mMsgId],
                       read: false,
                     });
 
@@ -98,12 +98,13 @@ function displaythread() {
             ),
           ]
         ),
-        threadStruct.showReplies &&
+        v.attrs.threadStruct.showReplies &&
           Object.keys(parMap).map((key, index) =>
             m(displaythread, {
               threadStruct: util.Data.Threads[parMap[key].mGroupId][parMap[key].mMsgId],
-              replyDepth: replyDepth + 1,
-              identity,
+              replyDepth: v.attrs.replyDepth + 1,
+              identity: v.attrs.identity,
+              changeThread: v.attrs.changeThread,
             })
           ),
       ];
@@ -182,7 +183,6 @@ const ThreadView = () => {
         ownId = data[0];
       });
     },
-    onupdate: (v) => console.log(v.state.showThread),
     view: (v) =>
       m('.widget', { key: v.attrs.msgId }, [
         m(
@@ -208,6 +208,9 @@ const ThreadView = () => {
                 threadStruct: util.Data.Threads[v.attrs.forumId][v.attrs.msgId],
                 replyDepth: 0,
                 identity: ownId,
+                changeThread(newThread){
+                  v.state.showThread = newThread
+                },
               })
           )
         ),

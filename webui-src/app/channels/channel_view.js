@@ -129,7 +129,7 @@ const AddPost = () => {
           oninput: (e) => (ptitle = e.target.value),
         }),
         m('textarea[rows=5]', {
-          style: {width: '90%', display: 'block'},
+          style: { width: '90%', display: 'block' },
           oninput: (e) => (content = e.target.value),
           value: content,
         }),
@@ -282,7 +282,10 @@ const ChannelView = () => {
                   [
                     m('img', {
                       class: 'card-img',
-                      src: 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
+                      src:
+                        plist[key].post.mThumbnail.mData.base64 === ""
+                          ? '../../../data/streaming.png'
+                          : 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
 
                       alt: '',
                     }),
@@ -324,7 +327,7 @@ const AddComment = () => {
           ? [m('h5', 'Reply to comment: '), m('p', vnode.attrs.parent_comment)]
           : '',
         m('textarea[rows=5]', {
-          style: {width: '90%', display: 'block'},
+          style: { width: '90%', display: 'block' },
           oninput: (e) => (inputComment = e.target.value),
           value: inputComment,
         }),
