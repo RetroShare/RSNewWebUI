@@ -76,6 +76,7 @@ async function updatedisplaychannels(keyid, details) {
     isSubscribed:
       details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED ||
       details.mMeta.mSubscribeFlags === GROUP_MY_CHANNEL,
+    mychannel: details.mMeta.mSubscribeFlags === GROUP_MY_CHANNEL,
     posts: details.mMeta.mVisibleMsgCount,
     activity: details.mMeta.mLastPost,
     created: details.mMeta.mPublishTs,

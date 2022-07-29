@@ -167,6 +167,7 @@ const ChannelView = () => {
   let cimage = '';
   let cauthor = '';
   let csubscribed = {};
+  let mychannel = false;
   let cposts = 0;
   let plist = {};
   let createDate = {};
@@ -184,6 +185,7 @@ const ChannelView = () => {
           cauthor = 'Unknown';
         }
         csubscribed = Data.DisplayChannels[v.attrs.id].isSubscribed;
+        mychannel = Data.DisplayChannels[v.attrs.id].mychannel;
         cposts = Data.DisplayChannels[v.attrs.id].posts;
         createDate = Data.DisplayChannels[v.attrs.id].created;
         lastActivity = Data.DisplayChannels[v.attrs.id].activity;
@@ -257,10 +259,12 @@ const ChannelView = () => {
               style: 'display:' + (csubscribed ? 'block' : 'none'),
             },
             m('h3', 'Posts'),
-            m('button', { onclick: () => util.popupmessage(m(AddPost, { chanId: v.attrs.id })) }, [
-              'Add Post',
-              m('i.fas.fa-edit'),
-            ]),
+            mychannel &&
+              m(
+                'button',
+                { onclick: () => util.popupmessage(m(AddPost, { chanId: v.attrs.id })) },
+                ['Add Post', m('i.fas.fa-edit')]
+              ),
             m('hr'),
 
             m(
@@ -283,7 +287,7 @@ const ChannelView = () => {
                     m('img', {
                       class: 'card-img',
                       src:
-                        plist[key].post.mThumbnail.mData.base64 === ""
+                        plist[key].post.mThumbnail.mData.base64 === ''
                           ? '../../../data/streaming.png'
                           : 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
 
@@ -318,10 +322,32 @@ async function addvote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
 
 const AddComment = () => {
   let inputComment = '';
+  let identity;
   return {
+    oninit: (vnode) => {
+      if (vnode.attrs.authorId) {
+        identity = vnode.attrs.authorId[0];
+      }
+    },
     view: (vnode) =>
       m('.widget', [
         m('h3', 'Add Comment'),
+        m('label[for=tags]', 'Select identity'),
+        m(
+          'select[id=idtags]',
+          {
+            value: identity,
+            onchange: (e) => {
+              identity = vnode.attrs.authorId[e.target.selectedIndex];
+            },
+          },
+          [
+            vnode.attrs.authorId &&
+              vnode.attrs.authorId.map((o) =>
+                m('option', { value: o }, rs.userList.userMap[o].toLocaleString())
+              ),
+          ]
+        ),
         m('hr'),
         (vnode.attrs.parent_comment !== '') > 0
           ? [m('h5', 'Reply to comment: '), m('p', vnode.attrs.parent_comment)]
@@ -339,7 +365,7 @@ const AddComment = () => {
                 channelId: vnode.attrs.channelId,
                 threadId: vnode.attrs.threadId,
                 comment: inputComment,
-                authorId: vnode.attrs.authorId,
+                authorId: identity,
                 parentId: vnode.attrs.parentId,
               });
 
@@ -475,7 +501,7 @@ const PostView = () => {
   let post = {};
   let topComments = {};
   const filesInfo = {};
-  let ownId = {};
+  let ownId;
   return {
     oninit: (v) => {
       if (Data.Posts[v.attrs.channelId] && Data.Posts[v.attrs.channelId][v.attrs.msgId]) {
@@ -493,7 +519,13 @@ const PostView = () => {
         });
       }
       peopleUtil.ownIds((data) => {
-        ownId = data[0];
+        ownId = data;
+        for (let i = 0; i < ownId.length; i++) {
+          if (Number(ownId[i]) === 0) {
+            ownId.splice(i, 1);
+          }
+        }
+        console.log(ownId);
       });
     },
     view: (v) =>
