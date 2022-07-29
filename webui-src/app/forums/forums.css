@@ -70,3 +70,10 @@ table.threadreply tr:hover {
   background-color: #eef3f6;
   cursor: pointer;
 }
+#idtags{
+  width: 160px;
+  text-align: center;
+  font-size: medium;
+  margin-left: 10px;
+  height: 40px;
+}

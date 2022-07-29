@@ -5,9 +5,11 @@ const peopleUtil = require('people/people_util');
 const { updatedisplayforums } = require('./forums_util');
 
 function displaythread() {
+  let groupmessagepair;
   return {
     view: (v) => {
       const thread = v.attrs.threadStruct.thread;
+      groupmessagepair = [thread.mMeta.mGroupId, thread.mMeta.mMsgId];
       let parMap = [];
       if (util.Data.ParentThreadMap[thread.mMeta.mMsgId]) {
         parMap = util.Data.ParentThreadMap[thread.mMeta.mMsgId];
@@ -41,7 +43,8 @@ function displaythread() {
                   left: 'calc(30px*var(--replyDepth))',
                 },
                 onclick: () => v.attrs.changeThread(thread.mMeta.mMsgId),
-                ondblclick:() => v.attrs.threadStruct.showReplies = !v.attrs.threadStruct.showReplies,
+                ondblclick: () =>
+                  (v.attrs.threadStruct.showReplies = !v.attrs.threadStruct.showReplies),
               },
               [
                 thread.mMeta.mMsgName,
@@ -72,15 +75,14 @@ function displaythread() {
               m(
                 'button',
                 {
-                  style: {fontSize:'15px'},
-                  onclick: async() => {
+                  style: { fontSize: '15px' },
+                  onclick: async () => {
                     const res = await rs.rsJsonApiRequest('/rsgxsforums/markRead', {
-                      messageId: [thread.mMeta.mGroupId,thread.mMeta.mMsgId],
+                      messageId: groupmessagepair,
                       read: false,
                     });
 
-                    if(res.body.retval)
-                    {
+                    if (res.body.retval) {
                       updatedisplayforums(thread.mMeta.mGroupId);
                       m.redraw();
                     }
@@ -114,7 +116,11 @@ function displaythread() {
 const AddThread = () => {
   let title = '';
   let body = '';
+  let identity;
   return {
+    oninit: (vnode) => {
+       identity = vnode.attrs.authorId[0];
+    },
     view: (vnode) =>
       m('.widget', [
         m('h3', 'Add Thread'),
@@ -125,6 +131,22 @@ const AddThread = () => {
         m('input[type=text][placeholder=Title]', {
           oninput: (e) => (title = e.target.value),
         }),
+        m('label[for=tags]', 'Select identity'),
+        m(
+          'select[id=idtags]',
+          {
+            value: identity,
+            onchange: (e) => {
+              identity = vnode.attrs.authorId[e.target.selectedIndex];
+            },
+          },
+          [
+            vnode.attrs.authorId.map(
+              (o) =>
+                m('option', { value: o }, rs.userList.userMap[o].toLocaleString())
+            ),
+          ]
+        ),
         m('textarea[rows=5]', {
           style: { width: '90%', display: 'block' },
           oninput: (e) => (body = e.target.value),
@@ -140,14 +162,14 @@ const AddThread = () => {
                       forumId: vnode.attrs.forumId,
                       mBody: body,
                       title: title,
-                      authorId: vnode.attrs.authorId,
+                      authorId: identity,
                       parentId: vnode.attrs.parentId,
                     })
                   : await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
                       forumId: vnode.attrs.forumId,
                       mBody: body,
                       title: title,
-                      authorId: vnode.attrs.authorId,
+                      authorId: identity,
                     });
 
               res.body.retval === false
@@ -168,7 +190,7 @@ const AddThread = () => {
 };
 const ThreadView = () => {
   let thread = {};
-  let ownId = '';
+  let ownId;
   return {
     showThread: '',
     oninit: (v) => {
@@ -180,7 +202,12 @@ const ThreadView = () => {
         v.state.showThread = v.attrs.msgId;
       }
       peopleUtil.ownIds((data) => {
-        ownId = data[0];
+        ownId = data;
+        for (let i = 0; i < ownId.length; i++) {
+          if (Number(ownId[i]) === 0) {
+            ownId.splice(i, 1);
+          }
+        }
       });
     },
     view: (v) =>
@@ -208,8 +235,8 @@ const ThreadView = () => {
                 threadStruct: util.Data.Threads[v.attrs.forumId][v.attrs.msgId],
                 replyDepth: 0,
                 identity: ownId,
-                changeThread(newThread){
-                  v.state.showThread = newThread
+                changeThread(newThread) {
+                  v.state.showThread = newThread;
                 },
               })
           )
@@ -252,7 +279,12 @@ const ForumView = () => {
         topThreads = util.Data.ParentThreads[v.attrs.id];
       }
       peopleUtil.ownIds((data) => {
-        ownId = data[0];
+        ownId = data;
+        for (let i = 0; i < ownId.length; i++) {
+          if (Number(ownId[i]) === 0) {
+            ownId.splice(i, 1);
+          }
+        }
       });
     },
     view: (v) =>
