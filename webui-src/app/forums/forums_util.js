@@ -47,6 +47,19 @@ async function updatedisplayforums(keyid, details = {}) {
 
       if (res3.body.retval) {
         Data.Threads[keyid][thread.mMsgId] = { thread: res3.body.msgs[0], showReplies: false };
+        if (
+          Data.Threads[keyid][thread.mMsgId] &&
+          Data.Threads[keyid][thread.mMsgId].thread.mMeta.mMsgStatus === THREAD_UNREAD
+        ) {
+          let parent = Data.Threads[keyid][thread.mMsgId].thread.mMeta.mParentId;
+          console.log("orig: " + Data.Threads[keyid][thread.mMsgId].thread.mMeta.mMsgName);
+          while(Data.Threads[keyid][parent])
+          {
+            console.log(Data.Threads[keyid][parent].thread.mMeta.mMsgName);
+            Data.Threads[keyid][parent].thread.mMeta.mMsgStatus = THREAD_UNREAD;
+            parent = Data.Threads[keyid][parent].thread.mMeta.mParentId;
+          }
+        }
       }
       if (Data.ParentThreads[keyid] === undefined) {
         Data.ParentThreads[keyid] = {};

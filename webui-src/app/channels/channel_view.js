@@ -401,7 +401,7 @@ function displaycomment() {
                 'td',
                 m('i.fas.fa-angle-right', {
                   class: 'fa-rotate-' + (commentStruct.showReplies ? '90' : '0'),
-                  style: 'margin-top:12px',
+                  style: 'cursor:pointer',
                   onclick: () => {
                     commentStruct.showReplies = !commentStruct.showReplies;
                   },
@@ -525,7 +525,6 @@ const PostView = () => {
             ownId.splice(i, 1);
           }
         }
-        console.log(ownId);
       });
     },
     view: (v) =>
