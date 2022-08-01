@@ -52,10 +52,9 @@ async function updatedisplayforums(keyid, details = {}) {
           Data.Threads[keyid][thread.mMsgId].thread.mMeta.mMsgStatus === THREAD_UNREAD
         ) {
           let parent = Data.Threads[keyid][thread.mMsgId].thread.mMeta.mParentId;
-          console.log("orig: " + Data.Threads[keyid][thread.mMsgId].thread.mMeta.mMsgName);
-          while(Data.Threads[keyid][parent])
-          {
-            console.log(Data.Threads[keyid][parent].thread.mMeta.mMsgName);
+          // console.log("orig: " + Data.Threads[keyid][thread.mMsgId].thread.mMeta.mMsgName);
+          while (Data.Threads[keyid][parent]) {
+            // console.log(Data.Threads[keyid][parent].thread.mMeta.mMsgName);
             Data.Threads[keyid][parent].thread.mMeta.mMsgStatus = THREAD_UNREAD;
             parent = Data.Threads[keyid][parent].thread.mMeta.mParentId;
           }
@@ -65,7 +64,7 @@ async function updatedisplayforums(keyid, details = {}) {
         Data.ParentThreads[keyid] = {};
       }
       if (thread.mThreadId === thread.mParentId) {
-        Data.ParentThreads[keyid][thread.mMsgId] = thread;
+        Data.ParentThreads[keyid][thread.mMsgId] = Data.Threads[keyid][thread.mMsgId].thread.mMeta;
       } else {
         if (Data.ParentThreadMap[thread.mParentId] === undefined) {
           Data.ParentThreadMap[thread.mParentId] = {};

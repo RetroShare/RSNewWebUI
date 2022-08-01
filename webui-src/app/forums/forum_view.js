@@ -6,19 +6,21 @@ const { updatedisplayforums } = require('./forums_util');
 
 function displaythread() {
   let groupmessagepair;
+  let unread;
   return {
     view: (v) => {
       const thread = v.attrs.threadStruct.thread;
-      groupmessagepair = [thread.mMeta.mGroupId, thread.mMeta.mMsgId];
+      groupmessagepair = { first: thread.mMeta.mGroupId, second: thread.mMeta.mMsgId };
       let parMap = [];
       if (util.Data.ParentThreadMap[thread.mMeta.mMsgId]) {
         parMap = util.Data.ParentThreadMap[thread.mMeta.mMsgId];
       }
+      unread = thread.mMeta.mMsgStatus === util.THREAD_UNREAD;
       return [
         m(
           'tr',
           {
-            style: thread.mMeta.mMsgStatus === util.THREAD_UNREAD ? { fontWeight: 'bold' } : '',
+            style: unread ? { fontWeight: 'bold' } : '',
           },
           [
             Object.keys(parMap).length
@@ -42,7 +44,19 @@ function displaythread() {
                   '--replyDepth': v.attrs.replyDepth,
                   left: 'calc(30px*var(--replyDepth))',
                 },
-                onclick: () => v.attrs.changeThread(thread.mMeta.mMsgId),
+                onclick: async () => {
+                  v.attrs.changeThread(thread.mMeta.mMsgId);
+                  if (unread) {
+                    const res = await rs.rsJsonApiRequest('/rsgxsforums/markRead', {
+                      messageId: groupmessagepair,
+                      read: true,
+                    });
+                    if (res.body.retval) {
+                      updatedisplayforums(thread.mMeta.mGroupId);
+                      m.redraw();
+                    }
+                  }
+                },
                 ondblclick: () =>
                   (v.attrs.threadStruct.showReplies = !v.attrs.threadStruct.showReplies),
               },
@@ -77,7 +91,7 @@ function displaythread() {
                 {
                   style: { fontSize: '15px' },
                   onclick: async () => {
-                    const res = await rs.rsJsonApiRequest('/rsgxsforums/markRead', {
+                    if(!unread){const res = await rs.rsJsonApiRequest('/rsgxsforums/markRead', {
                       messageId: groupmessagepair,
                       read: false,
                     });
@@ -85,7 +99,7 @@ function displaythread() {
                     if (res.body.retval) {
                       updatedisplayforums(thread.mMeta.mGroupId);
                       m.redraw();
-                    }
+                    }}
                   },
                 },
                 'Mark Unread'
@@ -119,7 +133,7 @@ const AddThread = () => {
   let identity;
   return {
     oninit: (vnode) => {
-       identity = vnode.attrs.authorId[0];
+      identity = vnode.attrs.authorId[0];
     },
     view: (vnode) =>
       m('.widget', [
@@ -141,9 +155,8 @@ const AddThread = () => {
             },
           },
           [
-            vnode.attrs.authorId.map(
-              (o) =>
-                m('option', { value: o }, rs.userList.userMap[o].toLocaleString())
+            vnode.attrs.authorId.map((o) =>
+              m('option', { value: o }, rs.userList.userMap[o].toLocaleString())
             ),
           ]
         ),
@@ -199,7 +212,7 @@ const ThreadView = () => {
         util.Data.ParentThreads[v.attrs.forumId][v.attrs.msgId]
       ) {
         thread = util.Data.ParentThreads[v.attrs.forumId][v.attrs.msgId];
-        v.state.showThread = v.attrs.msgId;
+        // v.state.showThread = v.attrs.msgId;
       }
       peopleUtil.ownIds((data) => {
         ownId = data;
