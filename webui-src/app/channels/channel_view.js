@@ -73,6 +73,77 @@ async function parsefile(file, type) {
   return ansList;
 }
 
+function createchannel() {
+  let title;
+  let body;
+  let identity;
+  return {
+    oninit: (vnode) => {
+      if (vnode.attrs.authorId) {
+        identity = vnode.attrs.authorId[0];
+      }
+    },
+    view: (vnode) =>
+      m('.widget', [
+        m('h3', 'Create Channel'),
+        m('hr'),
+        m('input[type=text][placeholder=Title]', {
+          oninput: (e) => (title = e.target.value),
+        }),
+        m('label[for=tags]', 'Select identity'),
+        m(
+          'select[id=idtags]',
+          {
+            value: identity,
+            onchange: (e) => {
+              identity = vnode.attrs.authorId[e.target.selectedIndex];
+            },
+          },
+          [
+            vnode.attrs.authorId &&
+              vnode.attrs.authorId.map((o) =>
+                m(
+                  'option',
+                  { value: o },
+                  rs.userList.userMap[o] ? rs.userList.userMap[o].toLocaleString() : 'No Signature'
+                )
+              ),
+          ]
+        ),
+        m('textarea[rows=5][placeholder=Description]', {
+          style: { width: '90%', display: 'block' },
+          oninput: (e) => (body = e.target.value),
+          value: body,
+        }),
+        m(
+          'button',
+          {
+            onclick: async () => {
+              const res = await rs.rsJsonApiRequest('/rsgxschannels/createChannelV2', {
+                name: title,
+                description: body,
+                // thumbnail: {},
+                ...(Number(identity) !== 0 && { authorId: identity }),
+              });
+              if (res.body.retval) {
+                util.updatedisplaychannels(res.body.channelId);
+                m.redraw();
+              }
+              res.body.retval === false
+                ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                : util.popupmessage([
+                    m('h3', 'Success'),
+                    m('hr'),
+                    m('p', 'Channel created successfully'),
+                  ]);
+            },
+          },
+          'Create'
+        ),
+      ]),
+  };
+}
+
 const AddPost = () => {
   let content = '';
   let ptitle = '';
@@ -111,7 +182,7 @@ const AddPost = () => {
             for (let i = 0; i < e.target.files.length; i++) {
               await parsefile(e.target.files[i], 'multiple');
             }
-            // console.log(filesUploadHashes.PostFiles, filesUploadHashes.PostFiles.length);
+            console.log(filesUploadHashes.PostFiles, filesUploadHashes.PostFiles.length);
 
             if (filesUploadHashes.PostFiles.length === e.target.files.length) {
               for (let i = 0; i < e.target.files.length; i++) {
@@ -153,6 +224,8 @@ const AddPost = () => {
                       m('hr'),
                       m('p', 'Post added successfully'),
                     ]);
+                util.updatedisplaychannels(vnode.attrs.chanId);
+                m.redraw();
               }
             },
           },
@@ -632,4 +705,5 @@ const PostView = () => {
 module.exports = {
   ChannelView,
   PostView,
+  createchannel,
 };

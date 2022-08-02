@@ -60,7 +60,7 @@ const Layout = () => {
             style: {fontSize: '1.2em', width: '200px'},
             onclick: () =>
               util.popupmessage(
-                m(viewUtil.addpost, {
+                m(viewUtil.createforum, {
                   authorId: ownId,
                 })
               ),

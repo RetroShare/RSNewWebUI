@@ -4,7 +4,7 @@ const util = require('forums/forums_util');
 const peopleUtil = require('people/people_util');
 const { updatedisplayforums } = require('./forums_util');
 
-function addpost() {
+function createforum() {
   let title;
   let body;
   let identity;
@@ -508,5 +508,5 @@ const ForumView = () => {
 module.exports = {
   ForumView,
   ThreadView,
-  addpost,
+  createforum,
 };
