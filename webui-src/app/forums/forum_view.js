@@ -4,6 +4,79 @@ const util = require('forums/forums_util');
 const peopleUtil = require('people/people_util');
 const { updatedisplayforums } = require('./forums_util');
 
+function addpost() {
+  let title;
+  let body;
+  let identity;
+  return {
+    oninit: (vnode) => {
+      if (vnode.attrs.authorId) {
+        identity = vnode.attrs.authorId[0];
+      }
+    },
+    view: (vnode) =>
+      m('.widget', [
+        m('h3', 'Create Forum'),
+        m('hr'),
+        m('input[type=text][placeholder=Title]', {
+          oninput: (e) => (title = e.target.value),
+        }),
+        m('label[for=tags]', 'Select identity'),
+        m(
+          'select[id=idtags]',
+          {
+            value: identity,
+            onchange: (e) => {
+              identity = vnode.attrs.authorId[e.target.selectedIndex];
+            },
+          },
+          [
+            vnode.attrs.authorId &&
+              vnode.attrs.authorId.map((o) =>
+                m(
+                  'option',
+                  { value: o },
+                  rs.userList.userMap[o] ? rs.userList.userMap[o].toLocaleString() : 'No Signature'
+                )
+              ),
+          ]
+        ),
+        m('textarea[rows=5][placeholder=Description]', {
+          style: { width: '90%', display: 'block' },
+          oninput: (e) => (body = e.target.value),
+          value: body,
+        }),
+        m(
+          'button',
+          {
+            onclick: async () => {
+
+              
+              const res = await rs.rsJsonApiRequest('/rsgxsforums/createForumV2', {
+                name: title,
+                description: body,
+                ...((Number(identity) !== 0) && {authorId: identity}),
+              });
+              if(res.body.retval)
+              {
+                util.updatedisplayforums(res.body.forumId);
+                m.redraw();
+              }
+              res.body.retval === false
+                ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                : util.popupmessage([
+                    m('h3', 'Success'),
+                    m('hr'),
+                    m('p', 'Forum created successfully'),
+                  ]);
+            },
+          },
+          'Create'
+        ),
+      ]),
+  };
+}
+
 function displaythread() {
   let groupmessagepair;
   let unread;
@@ -91,15 +164,17 @@ function displaythread() {
                 {
                   style: { fontSize: '15px' },
                   onclick: async () => {
-                    if(!unread){const res = await rs.rsJsonApiRequest('/rsgxsforums/markRead', {
-                      messageId: groupmessagepair,
-                      read: false,
-                    });
+                    if (!unread) {
+                      const res = await rs.rsJsonApiRequest('/rsgxsforums/markRead', {
+                        messageId: groupmessagepair,
+                        read: false,
+                      });
 
-                    if (res.body.retval) {
-                      updatedisplayforums(thread.mMeta.mGroupId);
-                      m.redraw();
-                    }}
+                      if (res.body.retval) {
+                        updatedisplayforums(thread.mMeta.mGroupId);
+                        m.redraw();
+                      }
+                    }
                   },
                 },
                 'Mark Unread'
@@ -133,7 +208,9 @@ const AddThread = () => {
   let identity;
   return {
     oninit: (vnode) => {
-      identity = vnode.attrs.authorId[0];
+      if (vnode.attrs.authorId) {
+        identity = vnode.attrs.authorId[0];
+      }
     },
     view: (vnode) =>
       m('.widget', [
@@ -155,9 +232,10 @@ const AddThread = () => {
             },
           },
           [
-            vnode.attrs.authorId.map((o) =>
-              m('option', { value: o }, rs.userList.userMap[o].toLocaleString())
-            ),
+            vnode.attrs.authorId &&
+              vnode.attrs.authorId.map((o) =>
+                m('option', { value: o }, rs.userList.userMap[o].toLocaleString())
+              ),
           ]
         ),
         m('textarea[rows=5]', {
@@ -204,9 +282,10 @@ const AddThread = () => {
 const ThreadView = () => {
   let thread = {};
   let ownId;
+  let onlineId;
   return {
     showThread: '',
-    oninit: (v) => {
+    oninit: async (v) => {
       if (
         util.Data.ParentThreads[v.attrs.forumId] &&
         util.Data.ParentThreads[v.attrs.forumId][v.attrs.msgId]
@@ -222,6 +301,9 @@ const ThreadView = () => {
           }
         }
       });
+
+      // const res = await rs.rsJsonApiRequest('/rsPeers/getOwnId',{});
+      // console.log(res);
     },
     view: (v) =>
       m('.widget', { key: v.attrs.msgId }, [
@@ -426,4 +508,5 @@ const ForumView = () => {
 module.exports = {
   ForumView,
   ThreadView,
+  addpost,
 };
