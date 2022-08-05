@@ -520,7 +520,7 @@ function displaycomment() {
                         util.GXS_VOTE_UP,
                         comment.mMeta.mGroupId,
                         comment.mMeta.mThreadId,
-                        identity,
+                        identity[0], //not correct way. Give options
                         comment.mMeta.mMsgId
                       ),
                   },
@@ -535,7 +535,7 @@ function displaycomment() {
                         util.GXS_VOTE_DOWN,
                         comment.mMeta.mGroupId,
                         comment.mMeta.mThreadId,
-                        identity,
+                        identity[0], //not correct way. Give options
                         comment.mMeta.mMsgId
                       ),
                   },
