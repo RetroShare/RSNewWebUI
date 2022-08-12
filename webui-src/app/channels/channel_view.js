@@ -380,6 +380,7 @@ const ChannelView = () => {
 };
 
 async function addvote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
+  console.log(vauthorId);
   const res = await rs.rsJsonApiRequest('/rsgxschannels/voteForComment', {
     channelId: vchannelId,
     postId: vpostId,
@@ -461,7 +462,7 @@ const AddComment = () => {
 function displaycomment() {
   return {
     oninit: (v) => {},
-    view: ({ attrs: { commentStruct, identity, replyDepth } }) => {
+    view: ({ attrs: { commentStruct, identity, replyDepth, voteIdentity } }) => {
       const comment = commentStruct.comment;
       let parMap = {};
       if (Data.ParentCommentMap[comment.mMeta.mMsgId]) {
@@ -511,36 +512,38 @@ function displaycomment() {
                   },
                   'Reply'
                 ),
-                m(
-                  'button',
-                  {
-                    style: 'font-size:15px',
-                    onclick: () =>
-                      addvote(
-                        util.GXS_VOTE_UP,
-                        comment.mMeta.mGroupId,
-                        comment.mMeta.mThreadId,
-                        identity[0], //not correct way. Give options
-                        comment.mMeta.mMsgId
-                      ),
-                  },
-                  m('i.fas.fa-thumbs-up')
-                ),
-                m(
-                  'button',
-                  {
-                    style: 'font-size:15px',
-                    onclick: () =>
-                      addvote(
-                        util.GXS_VOTE_DOWN,
-                        comment.mMeta.mGroupId,
-                        comment.mMeta.mThreadId,
-                        identity[0], //not correct way. Give options
-                        comment.mMeta.mMsgId
-                      ),
-                  },
-                  m('i.fas.fa-thumbs-down')
-                ),
+                voteIdentity &&
+                  m(
+                    'button',
+                    {
+                      style: 'font-size:15px',
+                      onclick: () =>
+                        addvote(
+                          util.GXS_VOTE_UP,
+                          comment.mMeta.mGroupId,
+                          comment.mMeta.mThreadId,
+                          voteIdentity,
+                          comment.mMeta.mMsgId
+                        ),
+                    },
+                    m('i.fas.fa-thumbs-up')
+                  ),
+                voteIdentity &&
+                  m(
+                    'button',
+                    {
+                      style: 'font-size:15px',
+                      onclick: () =>
+                        addvote(
+                          util.GXS_VOTE_DOWN,
+                          comment.mMeta.mGroupId,
+                          comment.mMeta.mThreadId,
+                          voteIdentity,
+                          comment.mMeta.mMsgId
+                        ),
+                    },
+                    m('i.fas.fa-thumbs-down')
+                  ),
               ]),
             ]
           ),
@@ -561,6 +564,7 @@ function displaycomment() {
           Object.keys(parMap).map((key, index) =>
             m(displaycomment, {
               commentStruct: Data.Comments[parMap[key].mMeta.mThreadId][parMap[key].mMeta.mMsgId],
+              voteIdentity,
               identity,
               replyDepth: replyDepth + 1,
             })
@@ -574,9 +578,10 @@ const PostView = () => {
   let post = {};
   let topComments = {};
   const filesInfo = {};
+  let voteIdentity;
   let ownId;
   return {
-    oninit: (v) => {
+    oninit: async (v) => {
       if (Data.Posts[v.attrs.channelId] && Data.Posts[v.attrs.channelId][v.attrs.msgId]) {
         post = Data.Posts[v.attrs.channelId][v.attrs.msgId].post;
       }
@@ -591,13 +596,14 @@ const PostView = () => {
           filesInfo[file.mHash] = res.body;
         });
       }
-      peopleUtil.ownIds((data) => {
+      await peopleUtil.ownIds((data) => {
         ownId = data;
         for (let i = 0; i < ownId.length; i++) {
           if (Number(ownId[i]) === 0) {
             ownId.splice(i, 1);
           }
         }
+        voteIdentity = ownId[0];
       });
     },
     view: (v) =>
@@ -680,6 +686,26 @@ const PostView = () => {
           'Add Comment'
         ),
         m(
+          'label[for=idtags',
+          {
+            style: { marginLeft: '10px' },
+          },
+          'Voter ID: '
+        ),
+        m(
+          'select[id=idtags]',
+          {
+            value: voteIdentity,
+            onchange: (e) => {
+              voteIdentity = ownId[e.target.selectedIndex];
+            },
+          },
+          [
+            ownId &&
+              ownId.map((o) => m('option', { value: o }, rs.userList.userMap[o].toLocaleString())),
+          ]
+        ),
+        m(
           util.CommentsTable,
           m(
             'tbody',
@@ -688,6 +714,7 @@ const PostView = () => {
               Data.Comments[topComments[key].mMeta.mThreadId][topComments[key].mMeta.mMsgId]
                 ? m(displaycomment, {
                     identity: ownId,
+                    voteIdentity,
                     commentStruct:
                       Data.Comments[topComments[key].mMeta.mThreadId][
                         topComments[key].mMeta.mMsgId
