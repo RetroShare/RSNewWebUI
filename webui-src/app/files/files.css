@@ -36,3 +36,9 @@ span > i {
   width: 40%;
   box-shadow: 0 0 3px #aaa;
 }
+.file-node-panel {
+  position: relative;
+  bottom: 140px;
+  margin-left: 200px;
+  animation: fadein 0.5s;
+}

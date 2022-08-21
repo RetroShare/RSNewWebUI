@@ -52,7 +52,7 @@ function calcRemainingTime(bytes, rate) {
   }
 }
 
-function fileAction(hash, action) {
+async function fileAction(hash, action) {
   let actionHeader = '';
   const jsonParams = {
     hash,
@@ -82,9 +82,26 @@ function fileAction(hash, action) {
       console.error('Unknown action in Downloads.control()');
       return;
   }
-  rs.rsJsonApiRequest(actionHeader, jsonParams, () => {});
+  const res = await rs.rsJsonApiRequest(actionHeader, jsonParams, () => {});
+  return res.body.retval;
 }
-
+function popupmessage(message) {
+  const container = document.getElementById('modal-container');
+  container.style.display = 'block';
+  m.render(
+    container,
+    m('.modal-content', [
+      m(
+        'button.red',
+        {
+          onclick: () => (container.style.display = 'none'),
+        },
+        m('i.fas.fa-times')
+      ),
+      message,
+    ])
+  );
+}
 function actionButton(file, action) {
   switch (action) {
     case 'resume':
@@ -120,7 +137,27 @@ function actionButton(file, action) {
           title: 'cancel',
 
           onclick() {
-            fileAction(file.hash, 'cancel');
+            popupmessage(
+              m('Cancelpop', [
+                m('p', 'Are you sure you want to cancel download?'),
+                m(
+                  'button',
+                  {
+                    onclick: () => {
+                      if (fileAction(file.hash, 'cancel')) {
+                        popupmessage(m('p', 'Download Cancelled Successfully'));
+                      } else {
+                        popupmessage(m('p', 'Download Cancel Failed'));
+                      }
+
+                      m.redraw();
+                    },
+                  },
+                  'Cancel'
+                ),
+              ])
+            );
+            // fileAction(file.hash, 'cancel');
           },
         },
         m('i.fas.fa-times')
@@ -178,6 +215,8 @@ const File = () => {
             : m(ProgressBar, {
                 rate: (v.attrs.transferred / v.attrs.info.size.xint64) * 100,
               }),
+          m('span.filestat', m('i.fas.fa-download'), makeFriendlyUnit(v.attrs.transferred)),
+
           m('span.filestat', m('i.fas.fa-file'), makeFriendlyUnit(v.attrs.info.size.xint64)),
           m(
             'span.filestat',

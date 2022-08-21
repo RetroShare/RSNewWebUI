@@ -5,17 +5,20 @@ const util = require('channels/channels_util');
 const viewUtil = require('channels/channel_view');
 const peopleUtil = require('people/people_util');
 
-
 const getChannels = {
   All: [],
   PopularChannels: [],
   SubscribedChannels: [],
   MyChannels: [],
+  OtherChannels: [],
   async load() {
     const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelsSummaries');
     const data = res.body;
     getChannels.All = data.channels;
     getChannels.PopularChannels = getChannels.All;
+    getChannels.PopularChannels.sort((a, b) => b.mPop - a.mPop);
+    getChannels.OtherChannels = getChannels.PopularChannels.slice(5);
+    getChannels.PopularChannels = getChannels.PopularChannels.slice(0, 5);
     getChannels.SubscribedChannels = getChannels.All.filter(
       (channel) =>
         channel.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED ||

@@ -160,6 +160,7 @@ const AddPost = () => {
         m('label[for=thumbnail]', 'Thumbnail: '),
         m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
           onchange: async (e) => {
+            console.log(e.target.files[0]);
             filesUploadHashes.Thumbnail = [];
             pthumbnail = [];
             const ansList = await parsefile(e.target.files[0], '');
@@ -645,7 +646,7 @@ const PostView = () => {
                               size: {
                                 xstr64: file.mSize.xstr64,
                               },
-                            })
+                            }) && m.redraw()
                         : '';
                     },
                   },
