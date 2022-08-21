@@ -22,6 +22,14 @@
   float: right;
   margin-left: 15px;
 }
+.file-view select {
+  float: right;
+  margin-left: 15px;
+}
+.file-view label {
+  float: right;
+  margin-left: 15px;
+}
 span > i {
   margin-right: 5px;
 }
