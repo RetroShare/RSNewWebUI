@@ -12,11 +12,11 @@ const GXS_VOTE_DOWN = 0x0001;
 const GXS_VOTE_UP = 0x0002;
 
 const Data = {
-  DisplayChannels: {},
-  Posts: {},
-  Comments: {},
-  TopComments: {},
-  ParentCommentMap: {},
+  DisplayChannels: {}, //chanID -> channel info
+  Posts: {},    //chanID, PostID -> {post, isSearched}
+  Comments: {}, //threadID, msgID -> {Comment, showReplies}
+  TopComments: {}, //threadID, msgID -> comment(Top thread comment)
+  ParentCommentMap: {}, //stores replies of a comment threadID, msgID -> comment
 };
 
 async function updatecontent(content, channelid) {
