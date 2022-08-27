@@ -50,3 +50,16 @@ span > i {
   margin-left: 200px;
   animation: fadein 0.5s;
 }
+
+table.myfiles td {
+  word-wrap: break-word;
+}
+table.myfiles th:nth-child(1) {
+  width: 2%;
+}
+table.myfiles th:nth-child(2) {
+  width: 50%;
+}
+table.myfiles td:nth-child(2) {
+  text-align: start;
+}
