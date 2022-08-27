@@ -15,6 +15,7 @@ const FT_STATE_PAUSED = 0x0006;
 const FT_STATE_CHECKING_HASH = 0x0007;
 
 const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
+const RS_FILE_HINTS_REMOTE = 0x00000008;
 
 function makeFriendlyUnit(bytes) {
   let cnt = bytes;
@@ -336,6 +337,7 @@ module.exports = {
   FT_STATE_PAUSED,
   FT_STATE_CHECKING_HASH,
   RS_FILE_REQ_ANONYMOUS_ROUTING,
+  RS_FILE_HINTS_REMOTE,
   makeFriendlyUnit,
   File,
   SearchBar,

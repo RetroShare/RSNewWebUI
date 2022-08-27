@@ -2,7 +2,6 @@ const m = require('mithril');
 const rs = require('rswebui');
 const util = require('files/files_util');
 
-const filesearchflag = 'RS_FILE_HINTS_REMOTE'; //friends
 function displayfiles() {
   const children_list = []; //stores children details
   let loaded = false; //checks whether we have loaded the children details or not.
@@ -27,7 +26,7 @@ function displayfiles() {
                       console.log(child);
                       const res = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
                         handle: child.handle.xint64,
-                        flags: filesearchflag,
+                        flags: util.RS_FILE_HINTS_REMOTE,
                       });
                       children_list.push(res.body.details);
                       loaded = true;
@@ -67,7 +66,7 @@ const Layout = () => {
   return {
     oninit: async () => {
       const res = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
-        flags: filesearchflag,
+        flags: util.RS_FILE_HINTS_REMOTE,
       });
       parent = res;
     },
