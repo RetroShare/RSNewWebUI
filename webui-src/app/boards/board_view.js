@@ -4,6 +4,79 @@ const util = require('boards/boards_util');
 const Data = util.Data;
 const peopleUtil = require('people/people_util');
 
+function createboard() {
+  let title;
+  let body;
+  let identity;
+  return {
+    oninit: (vnode) => {
+      if (vnode.attrs.authorId) {
+        identity = vnode.attrs.authorId[0];
+      }
+    },
+    view: (vnode) =>
+      m('.widget', [
+        m('h3', 'Create Board'),
+        m('hr'),
+        m('input[type=text][placeholder=Title]', {
+          oninput: (e) => (title = e.target.value),
+        }),
+        m('label[for=tags]', 'Select identity'),
+        m(
+          'select[id=idtags]',
+          {
+            value: identity,
+            onchange: (e) => {
+              identity = vnode.attrs.authorId[e.target.selectedIndex];
+            },
+          },
+          [
+            vnode.attrs.authorId &&
+              vnode.attrs.authorId.map((o) =>
+                m(
+                  'option',
+                  { value: o },
+                  rs.userList.userMap[o] ? rs.userList.userMap[o].toLocaleString() : 'No Signature'
+                )
+              ),
+          ]
+        ),
+        m('textarea[rows=5][placeholder=Description]', {
+          style: { width: '90%', display: 'block' },
+          oninput: (e) => (body = e.target.value),
+          value: body,
+        }),
+        m(
+          'button',
+          {
+            onclick: async () => {
+
+              
+              const res = await rs.rsJsonApiRequest('/rsposted/createBoardV2', {
+                name: title,
+                description: body,
+                ...((Number(identity) !== 0) && {authorId: identity}),
+              });
+              if(res.body.retval)
+              {
+                util.updatedisplayboards(res.body.boardId);
+                m.redraw();
+              }
+              res.body.retval === false
+                ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                : util.popupmessage([
+                    m('h3', 'Success'),
+                    m('hr'),
+                    m('p', 'Board created successfully'),
+                  ]);
+            },
+          },
+          'Create'
+        ),
+      ]),
+  };
+}
+
 const BoardView = () => {
   let bname = '';
   let bimage = '';
@@ -139,4 +212,5 @@ const BoardView = () => {
 
 module.exports = {
   BoardView,
+  createboard,
 };

@@ -122,6 +122,24 @@ const BoardTable = () => {
   };
 };
 
+function popupmessage(message) {
+  const container = document.getElementById('modal-container');
+  container.style.display = 'block';
+  m.render(
+    container,
+    m('.modal-content', [
+      m(
+        'button.red',
+        {
+          onclick: () => (container.style.display = 'none'),
+        },
+        m('i.fas.fa-times')
+      ),
+      message,
+    ])
+  );
+}
+
 const SearchBar = () => {
   let searchString = '';
   return {
@@ -145,6 +163,7 @@ const SearchBar = () => {
 module.exports = {
   Data,
   SearchBar,
+  popupmessage,
   BoardSummary,
   DisplayBoardsFromList,
   updateDisplayBoards,
