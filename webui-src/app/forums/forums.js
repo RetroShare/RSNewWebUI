@@ -77,6 +77,7 @@ const Layout = () => {
           Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId')
             ? m(viewUtil.ThreadView, {
                 msgId: vnode.attrs.pathInfo.mMsgId,
+                // mOrigMsgId: vnode.attrs.pathInfo.mOrigMsgId,
                 forumId: vnode.attrs.pathInfo.mGroupId,
               })
             : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId')

@@ -81,10 +81,10 @@ function displaythread() {
   return {
     view: (v) => {
       const thread = v.attrs.threadStruct.thread;
-      groupmessagepair = { first: thread.mMeta.mGroupId, second: thread.mMeta.mMsgId };
+      groupmessagepair = { first: thread.mMeta.mGroupId, second: thread.mMeta.mOrigMsgId };
       let parMap = [];
-      if (util.Data.ParentThreadMap[thread.mMeta.mMsgId]) {
-        parMap = util.Data.ParentThreadMap[thread.mMeta.mMsgId];
+      if (util.Data.ParentThreadMap[thread.mMeta.mOrigMsgId]) {
+        parMap = util.Data.ParentThreadMap[thread.mMeta.mOrigMsgId];
       }
       unread = thread.mMeta.mMsgStatus === util.THREAD_UNREAD;
       v.attrs.identity &&
@@ -122,7 +122,7 @@ function displaythread() {
                   left: 'calc(30px*var(--replyDepth))',
                 },
                 onclick: async () => {
-                  v.attrs.changeThread(thread.mMeta.mMsgId);
+                  v.attrs.changeThread(thread.mMeta.mOrigMsgId);
                   if (unread) {
                     const res = await rs.rsJsonApiRequest('/rsgxsforums/markRead', {
                       messageId: groupmessagepair,
@@ -170,7 +170,8 @@ function displaythread() {
                               current_title: thread.mMeta.mMsgName,
                               current_body: thread.mMsg,
                               authorId: thread.mMeta.mAuthorId,
-                              current_msgid: thread.mMeta.mMsgId,
+                              current_parent: thread.mMeta.mParentId,
+                              current_msgid: thread.mMeta.mOrigMsgId,
                             })
                           ),
                       },
@@ -214,7 +215,7 @@ function displaythread() {
         v.attrs.threadStruct.showReplies &&
           Object.keys(parMap).map((key, index) =>
             m(displaythread, {
-              threadStruct: util.Data.Threads[parMap[key].mGroupId][parMap[key].mMsgId],
+              threadStruct: util.Data.Threads[parMap[key].mGroupId][parMap[key].mOrigMsgId],
               replyDepth: v.attrs.replyDepth + 1,
               identity: v.attrs.identity,
               changeThread: v.attrs.changeThread,
@@ -228,7 +229,10 @@ const EditThread = () => {
   let title = '';
   let body = '';
   return {
-    
+    oninit: (vnode) => {
+      title = vnode.attrs.current_title;
+      body = vnode.attrs.current_body;
+    },
     view: (vnode) =>
       m('.widget', [
         m('h3', 'Edit Thread'),
@@ -266,14 +270,14 @@ const EditThread = () => {
           'button',
           {
             onclick: async () => {
-              const res =
-              await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
-                  forumId: vnode.attrs.forumId,
-                  mBody: body,
-                  title: title,
-                  authorId: vnode.attrs.authorId,
-                  origPostId: vnode.attrs.current_msgid,
-                })
+              const res = await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
+                forumId: vnode.attrs.forumId,
+                mBody: body,
+                title: title,
+                authorId: vnode.attrs.authorId,
+                parentId: vnode.attrs.current_parent,
+                origPostId: vnode.attrs.current_msgid,
+              });
               res.body.retval === false
                 ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
                 : util.popupmessage([
@@ -380,6 +384,7 @@ const ThreadView = () => {
       ) {
         thread = util.Data.ParentThreads[v.attrs.forumId][v.attrs.msgId];
         // v.state.showThread = v.attrs.msgId;
+        console.log(thread);
       }
       peopleUtil.ownIds((data) => {
         ownId = data;
@@ -561,7 +566,7 @@ const ForumView = () => {
                         m.route.set('/forums/:tab/:mGroupId/:mMsgId', {
                           tab: m.route.param().tab,
                           mGroupId: v.attrs.id,
-                          mMsgId: topThreads[key].mMsgId,
+                          mMsgId: topThreads[key].mOrigMsgId,
                         });
                       },
                     },

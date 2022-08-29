@@ -46,34 +46,35 @@ async function updatedisplayforums(keyid, details = {}) {
       });
 
       if (
-        res3.body.retval 
-        // &&
-        // (Data.Threads[keyid][thread.mOrigMsgId] === undefined ||
-        //   Data.Threads[keyid][thread.mOrigMsgId].thread.mPublishTs.xint64 <
-        //     thread.mPublishTs.xint64)
+        res3.body.retval &&
+        (Data.Threads[keyid][thread.mOrigMsgId] === undefined ||
+          Data.Threads[keyid][thread.mOrigMsgId].thread.mMeta.mPublishTs.xint64 <
+            thread.mPublishTs.xint64)
       ) {
-        Data.Threads[keyid][thread.mMsgId] = { thread: res3.body.msgs[0], showReplies: false };
+        Data.Threads[keyid][thread.mOrigMsgId] = { thread: res3.body.msgs[0], showReplies: false };
         if (
-          Data.Threads[keyid][thread.mMsgId] &&
-          Data.Threads[keyid][thread.mMsgId].thread.mMeta.mMsgStatus === THREAD_UNREAD
+          Data.Threads[keyid][thread.mOrigMsgId] &&
+          Data.Threads[keyid][thread.mOrigMsgId].thread.mMeta.mMsgStatus === THREAD_UNREAD
         ) {
-          let parent = Data.Threads[keyid][thread.mMsgId].thread.mMeta.mParentId;
+          let parent = Data.Threads[keyid][thread.mOrigMsgId].thread.mMeta.mParentId;
           while (Data.Threads[keyid][parent]) {
             Data.Threads[keyid][parent].thread.mMeta.mMsgStatus = THREAD_UNREAD;
             parent = Data.Threads[keyid][parent].thread.mMeta.mParentId;
           }
         }
-      }
-      if (Data.ParentThreads[keyid] === undefined) {
-        Data.ParentThreads[keyid] = {};
-      }
-      if (thread.mThreadId === thread.mParentId) {
-        Data.ParentThreads[keyid][thread.mMsgId] = Data.Threads[keyid][thread.mMsgId].thread.mMeta;
-      } else {
-        if (Data.ParentThreadMap[thread.mParentId] === undefined) {
-          Data.ParentThreadMap[thread.mParentId] = {};
+
+        if (Data.ParentThreads[keyid] === undefined) {
+          Data.ParentThreads[keyid] = {};
         }
-        Data.ParentThreadMap[thread.mParentId][thread.mMsgId] = thread;
+        if (thread.mThreadId === thread.mParentId) {
+          Data.ParentThreads[keyid][thread.mOrigMsgId] =
+            Data.Threads[keyid][thread.mOrigMsgId].thread.mMeta;
+        } else {
+          if (Data.ParentThreadMap[thread.mParentId] === undefined) {
+            Data.ParentThreadMap[thread.mParentId] = {};
+          }
+          Data.ParentThreadMap[thread.mParentId][thread.mOrigMsgId] = thread;
+        }
       }
     });
   }
