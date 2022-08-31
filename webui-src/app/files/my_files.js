@@ -21,9 +21,8 @@ function displayfiles() {
                 class: 'fa-rotate-' + (parStruct.showChild ? '90' : '0'),
                 style: 'margin-top:12px',
                 onclick: () => {
-                  if (!loaded) {
+                  if (!loaded) {  //if it is not already retrieved
                     parStruct.details.children.map(async (child) => {
-                      console.log(child);
                       const res = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
                         handle: child.handle.xint64,
                       });
@@ -51,8 +50,9 @@ function displayfiles() {
       ]),
       parStruct.showChild &&
         children_list.map((child) =>
-          m(displayfiles, {
+          m(displayfiles, { //recursive call
             par_directory: { details: child, showChild: false },
+            replyDepth: v.attrs.replyDepth + 1,
           })
         ),
     ],

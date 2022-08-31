@@ -273,7 +273,7 @@ const SearchBar = () => {
   let searchString = '';
   return {
     view: (v) =>
-      m('input[type=text][placeholder=search].searchbar', {
+      m('input[type=text][placeholder=SearchDownloads].searchbar', {
         value: searchString,
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();

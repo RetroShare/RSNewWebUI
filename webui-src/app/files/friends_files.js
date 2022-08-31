@@ -21,9 +21,8 @@ function displayfiles() {
                 class: 'fa-rotate-' + (parStruct.showChild ? '90' : '0'),
                 style: 'margin-top:12px',
                 onclick: () => {
-                  if (!loaded) {
+                  if (!loaded) { //if it is not already retrieved.
                     parStruct.details.children.map(async (child) => {
-                      console.log(child);
                       const res = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
                         handle: child.handle.xint64,
                         flags: util.RS_FILE_HINTS_REMOTE,
@@ -50,10 +49,11 @@ function displayfiles() {
         ),
         m('td', util.formatbytes(parStruct.details.size.xint64)),
       ]),
-      parStruct.showChild &&
+      parStruct.showChild && //recursive call to show children
         children_list.map((child) =>
           m(displayfiles, {
             par_directory: { details: child, showChild: false },
+            replyDepth: v.attrs.replyDepth + 1,
           })
         ),
     ],
@@ -77,7 +77,7 @@ const Layout = () => {
           util.FriendsFilesTable,
           m(
             'tbody',
-            parent &&
+            parent && //root
               m(displayfiles, {
                 par_directory: { details: parent.body.details, showChild: false },
                 replyDepth: 0,
