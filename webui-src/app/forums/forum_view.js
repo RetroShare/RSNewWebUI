@@ -73,7 +73,152 @@ function createforum() {
       ]),
   };
 }
+const EditThread = () => {
+  let title = '';
+  let body = '';
+  return {
+    oninit: (vnode) => {
+      title = vnode.attrs.current_title;
+      body = vnode.attrs.current_body;
+    },
+    view: (vnode) =>
+      m('.widget', [
+        m('h3', 'Edit Thread'),
+        m('hr'),
 
+        m(
+          'iddisplay',
+          {
+            style: { display: 'block ruby' },
+          },
+          [
+            'Identity: ',
+            m('h5[id=authid]', rs.userList.userMap[vnode.attrs.authorId].toLocaleString()),
+          ]
+        ),
+        m(
+          'titledisplay',
+          {
+            style: { display: 'block ruby' },
+          },
+          [
+            'Title: ',
+            m('input[type=text][placeholder=Title]', {
+              value: vnode.attrs.current_title,
+              oninput: (e) => (title = e.target.value),
+            }),
+          ]
+        ),
+        m('textarea[rows=5]', {
+          style: { width: '90%', display: 'block' },
+          oninput: (e) => (body = e.target.value),
+          value: vnode.attrs.current_body,
+        }),
+        m(
+          'button',
+          {
+            onclick: async () => {
+              const res = await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
+                forumId: vnode.attrs.forumId,
+                mBody: body,
+                title: title,
+                authorId: vnode.attrs.authorId,
+                parentId: vnode.attrs.current_parent,
+                origPostId: vnode.attrs.current_msgid,
+              });
+              res.body.retval === false
+                ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                : util.popupmessage([
+                    m('h3', 'Success'),
+                    m('hr'),
+                    m('p', 'Thread edited successfully'),
+                  ]);
+              util.updatedisplayforums(vnode.attrs.forumId);
+              m.redraw();
+            },
+          },
+          'Add'
+        ),
+      ]),
+  };
+};
+const AddThread = () => {
+  let title = '';
+  let body = '';
+  let identity;
+  return {
+    oninit: (vnode) => {
+      if (vnode.attrs.authorId) {
+        identity = vnode.attrs.authorId[0];
+      }
+    },
+    view: (vnode) =>
+      m('.widget', [
+        m('h3', 'Add Thread'),
+        m('hr'),
+        (vnode.attrs.parent_thread !== '') > 0
+          ? [m('h5', 'Reply to thread: '), m('p', vnode.attrs.parent_thread)]
+          : '',
+        m('input[type=text][placeholder=Title]', {
+          oninput: (e) => (title = e.target.value),
+        }),
+        m('label[for=tags]', 'Select identity'),
+        m(
+          'select[id=idtags]',
+          {
+            value: identity,
+            onchange: (e) => {
+              identity = vnode.attrs.authorId[e.target.selectedIndex];
+            },
+          },
+          [
+            vnode.attrs.authorId &&
+              vnode.attrs.authorId.map((o) =>
+                m('option', { value: o }, rs.userList.userMap[o].toLocaleString())
+              ),
+          ]
+        ),
+        m('textarea[rows=5]', {
+          style: { width: '90%', display: 'block' },
+          oninput: (e) => (body = e.target.value),
+          value: body,
+        }),
+        m(
+          'button',
+          {
+            onclick: async () => {
+              const res =
+                (vnode.attrs.parent_thread !== '') > 0
+                  ? await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
+                      forumId: vnode.attrs.forumId,
+                      mBody: body,
+                      title: title,
+                      authorId: identity,
+                      parentId: vnode.attrs.parentId,
+                    })
+                  : await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
+                      forumId: vnode.attrs.forumId,
+                      mBody: body,
+                      title: title,
+                      authorId: identity,
+                    });
+
+              res.body.retval === false
+                ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                : util.popupmessage([
+                    m('h3', 'Success'),
+                    m('hr'),
+                    m('p', 'Thread added successfully'),
+                  ]);
+              util.updatedisplayforums(vnode.attrs.forumId);
+              m.redraw();
+            },
+          },
+          'Add'
+        ),
+      ]),
+  };
+};
 function displaythread() {
   let groupmessagepair;
   let unread;
@@ -225,156 +370,10 @@ function displaythread() {
     },
   };
 }
-const EditThread = () => {
-  let title = '';
-  let body = '';
-  return {
-    oninit: (vnode) => {
-      title = vnode.attrs.current_title;
-      body = vnode.attrs.current_body;
-    },
-    view: (vnode) =>
-      m('.widget', [
-        m('h3', 'Edit Thread'),
-        m('hr'),
 
-        m(
-          'iddisplay',
-          {
-            style: { display: 'block ruby' },
-          },
-          [
-            'Identity: ',
-            m('h5[id=authid]', rs.userList.userMap[vnode.attrs.authorId].toLocaleString()),
-          ]
-        ),
-        m(
-          'titledisplay',
-          {
-            style: { display: 'block ruby' },
-          },
-          [
-            'Title: ',
-            m('input[type=text][placeholder=Title]', {
-              value: vnode.attrs.current_title,
-              oninput: (e) => (title = e.target.value),
-            }),
-          ]
-        ),
-        m('textarea[rows=5]', {
-          style: { width: '90%', display: 'block' },
-          oninput: (e) => (body = e.target.value),
-          value: vnode.attrs.current_body,
-        }),
-        m(
-          'button',
-          {
-            onclick: async () => {
-              const res = await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
-                forumId: vnode.attrs.forumId,
-                mBody: body,
-                title: title,
-                authorId: vnode.attrs.authorId,
-                parentId: vnode.attrs.current_parent,
-                origPostId: vnode.attrs.current_msgid,
-              });
-              res.body.retval === false
-                ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                : util.popupmessage([
-                    m('h3', 'Success'),
-                    m('hr'),
-                    m('p', 'Thread edited successfully'),
-                  ]);
-              util.updatedisplayforums(vnode.attrs.forumId);
-              m.redraw();
-            },
-          },
-          'Add'
-        ),
-      ]),
-  };
-};
-const AddThread = () => {
-  let title = '';
-  let body = '';
-  let identity;
-  return {
-    oninit: (vnode) => {
-      if (vnode.attrs.authorId) {
-        identity = vnode.attrs.authorId[0];
-      }
-    },
-    view: (vnode) =>
-      m('.widget', [
-        m('h3', 'Add Thread'),
-        m('hr'),
-        (vnode.attrs.parent_thread !== '') > 0
-          ? [m('h5', 'Reply to thread: '), m('p', vnode.attrs.parent_thread)]
-          : '',
-        m('input[type=text][placeholder=Title]', {
-          oninput: (e) => (title = e.target.value),
-        }),
-        m('label[for=tags]', 'Select identity'),
-        m(
-          'select[id=idtags]',
-          {
-            value: identity,
-            onchange: (e) => {
-              identity = vnode.attrs.authorId[e.target.selectedIndex];
-            },
-          },
-          [
-            vnode.attrs.authorId &&
-              vnode.attrs.authorId.map((o) =>
-                m('option', { value: o }, rs.userList.userMap[o].toLocaleString())
-              ),
-          ]
-        ),
-        m('textarea[rows=5]', {
-          style: { width: '90%', display: 'block' },
-          oninput: (e) => (body = e.target.value),
-          value: body,
-        }),
-        m(
-          'button',
-          {
-            onclick: async () => {
-              const res =
-                (vnode.attrs.parent_thread !== '') > 0
-                  ? await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
-                      forumId: vnode.attrs.forumId,
-                      mBody: body,
-                      title: title,
-                      authorId: identity,
-                      parentId: vnode.attrs.parentId,
-                    })
-                  : await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
-                      forumId: vnode.attrs.forumId,
-                      mBody: body,
-                      title: title,
-                      authorId: identity,
-                    });
-
-              res.body.retval === false
-                ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                : util.popupmessage([
-                    m('h3', 'Success'),
-                    m('hr'),
-                    m('p', 'Thread added successfully'),
-                  ]);
-              util.updatedisplayforums(vnode.attrs.forumId);
-              m.redraw();
-            },
-          },
-          'Add'
-        ),
-      ]),
-  };
-};
 const ThreadView = () => {
   let thread = {};
   let ownId;
-  let onlineId;
   return {
     showThread: '',
     oninit: async (v) => {

@@ -1,9 +1,9 @@
 const m = require('mithril');
 const rs = require('rswebui');
 
-const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this group
-const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
-const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; // means: you are subscribed to a group, which makes you a source for this group to your friend nodes.
+const GROUP_SUBSCRIBE_ADMIN = 0x01; //  means: you have the admin key for this group
+const GROUP_SUBSCRIBE_PUBLISH = 0x02; //  means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
+const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; //  means: you are subscribed to a group, which makes you a source for this group to your friend nodes.
 const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
 const GROUP_MY_CHANNEL =
   GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
@@ -12,11 +12,11 @@ const GXS_VOTE_DOWN = 0x0001;
 const GXS_VOTE_UP = 0x0002;
 
 const Data = {
-  DisplayChannels: {}, //chanID -> channel info
-  Posts: {},    //chanID, PostID -> {post, isSearched}
-  Comments: {}, //threadID, msgID -> {Comment, showReplies}
-  TopComments: {}, //threadID, msgID -> comment(Top thread comment)
-  ParentCommentMap: {}, //stores replies of a comment threadID, msgID -> comment
+  DisplayChannels: {}, // chanID -> channel info
+  Posts: {},    // chanID, PostID -> {post, isSearched}
+  Comments: {}, // threadID, msgID -> {Comment, showReplies}
+  TopComments: {}, // threadID, msgID -> comment(Top thread comment)
+  ParentCommentMap: {}, // stores replies of a comment threadID, msgID -> comment
 };
 
 async function updatecontent(content, channelid) {
@@ -33,13 +33,13 @@ async function updatecontent(content, channelid) {
     Data.Comments[content.mThreadId][content.mMsgId] = {
       comment: res.body.comments[0],
       showReplies: false,
-    }; // Comments[post][comment]
+    }; //  Comments[post][comment]
     const comm = res.body.comments[0];
     if (Data.TopComments[comm.mMeta.mThreadId] === undefined) {
       Data.TopComments[comm.mMeta.mThreadId] = {};
     }
     if (comm.mMeta.mThreadId === comm.mMeta.mParentId) {
-      Data.TopComments[comm.mMeta.mThreadId][comm.mMeta.mMsgId] = comm; // pushing top comments respective to post
+      Data.TopComments[comm.mMeta.mThreadId][comm.mMeta.mMsgId] = comm; //  pushing top comments respective to post
     } else {
       if (Data.ParentCommentMap[comm.mMeta.mParentId] === undefined) {
         Data.ParentCommentMap[comm.mMeta.mParentId] = {};
@@ -50,7 +50,7 @@ async function updatecontent(content, channelid) {
     const vote = res.body.votes[0];
     if (
       Data.Comments[vote.mMeta.mThreadId] &&
-      Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId] // finding [post][comment]
+      Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId] //  finding [post][comment]
     ) {
       if (vote.mVoteType === GXS_VOTE_UP) {
         Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mUpVotes += 1;

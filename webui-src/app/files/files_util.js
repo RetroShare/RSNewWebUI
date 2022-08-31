@@ -195,7 +195,7 @@ const chunkStrats = [
   'CHUNK_STRATEGY_PROGRESSIVE',
 ];
 const chunkStratsOptions = ['Streaming', 'Random', 'Progressive'];
-//rstypes.h :: 366
+// rstypes.h :: 366
 
 const File = () => {
   let chunkStrat;
