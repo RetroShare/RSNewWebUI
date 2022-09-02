@@ -105,3 +105,10 @@ table.comments tr {
   margin-left: 20px;
   height: 40px;
 } */
+#mtags{
+  width: 160px;
+  text-align: center;
+  font-size: medium;
+  margin-left: 10px;
+  height: 40px;
+}

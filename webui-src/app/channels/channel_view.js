@@ -72,11 +72,15 @@ async function parsefile(file, type) {
   await chunkreaderblock(offset, chunkSize, file);
   return ansList;
 }
+const messageGroups = ['Public', 'Restricted Circle', 'Restricted Node Group'];
+const messageGroupsCode = ['', '', ''];
 
 function createchannel() {
   let title;
   let body;
   let identity;
+  let thumbnail;
+  let selectedGroup = messageGroups;
   return {
     oninit: (vnode) => {
       if (vnode.attrs.authorId) {
@@ -87,29 +91,58 @@ function createchannel() {
       m('.widget', [
         m('h3', 'Create Channel'),
         m('hr'),
+        m('label[for=thumbnail]', 'Thumbnail: '),
+        m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
+          onchange: async (e) => {
+            // console.log(e.target.files[0]);
+            let reader = new FileReader();
+            reader.onloadend = function () {
+              // console.log(reader.result.substring(reader.result.indexOf(',') + 1));
+              thumbnail = reader.result.substring(reader.result.indexOf(',') + 1);
+            };
+            reader.readAsDataURL(e.target.files[0]);
+          },
+        }),
         m('input[type=text][placeholder=Title]', {
           oninput: (e) => (title = e.target.value),
         }),
-        m('label[for=tags]', 'Select identity'),
-        m(
-          'select[id=idtags]',
-          {
-            value: identity,
-            onchange: (e) => {
-              identity = vnode.attrs.authorId[e.target.selectedIndex];
+        m('div', { style: { float: 'right' } }, [
+          m('label[for=idtags]', 'Select identity: '),
+          m(
+            'select[id=idtags]',
+            {
+              value: identity,
+              onchange: (e) => {
+                identity = vnode.attrs.authorId[e.target.selectedIndex];
+              },
             },
-          },
-          [
-            vnode.attrs.authorId &&
-              vnode.attrs.authorId.map((o) =>
-                m(
-                  'option',
-                  { value: o },
-                  rs.userList.userMap[o] ? rs.userList.userMap[o].toLocaleString() : 'No Signature'
-                )
-              ),
-          ]
-        ),
+            [
+              vnode.attrs.authorId &&
+                vnode.attrs.authorId.map((o) =>
+                  m(
+                    'option',
+                    { value: o },
+                    rs.userList.userMap[o]
+                      ? rs.userList.userMap[o].toLocaleString()
+                      : 'No Signature'
+                  )
+                ),
+            ]
+          ),
+        ]),
+        m('div', { style: { float: 'right' } }, [
+          m('label[for=mtags]', 'Message Distribution: '),
+          m(
+            'select[id=mtags]',
+            {
+              value: selectedGroup,
+              onchange: (e) => {
+                selectedGroup = messageGroupsCode[e.target.selectedIndex];
+              },
+            },
+            [messageGroups.map((group) => m('option', { value: group }, group))]
+          ),
+        ]),
         m('textarea[rows=5][placeholder=Description]', {
           style: { width: '90%', display: 'block' },
           oninput: (e) => (body = e.target.value),
@@ -122,7 +155,7 @@ function createchannel() {
               const res = await rs.rsJsonApiRequest('/rsgxschannels/createChannelV2', {
                 name: title,
                 description: body,
-                // thumbnail: {},
+                thumbnail: { mData: { base64: thumbnail } },
                 ...(Number(identity) !== 0 && { authorId: identity }),
               });
               if (res.body.retval) {
@@ -150,8 +183,6 @@ const AddPost = () => {
   let pthumbnail = [];
   let pfiles = [];
   let uploadFiles = false;
-  let uploadThumbnail = false;
-
   return {
     view: (vnode) =>
       m('.widget', [
@@ -160,19 +191,13 @@ const AddPost = () => {
         m('label[for=thumbnail]', 'Thumbnail: '),
         m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
           onchange: async (e) => {
-            console.log(e.target.files[0]);
-            filesUploadHashes.Thumbnail = [];
-            pthumbnail = [];
-            const ansList = await parsefile(e.target.files[0], '');
-
-            if (filesUploadHashes.Thumbnail.length === e.target.files.length) {
-              pthumbnail.push({
-                name: e.target.files[0].name,
-                size: e.target.files[0].size,
-                hash: filesUploadHashes.Thumbnail[0],
-              });
-              uploadThumbnail = true;
-            }
+            // console.log(e.target.files[0]);
+            let reader = new FileReader();
+            reader.onloadend = function () {
+              // console.log(reader.result.substring(reader.result.indexOf(',') + 1));
+              pthumbnail = reader.result.substring(reader.result.indexOf(',') + 1);
+            };
+            reader.readAsDataURL(e.target.files[0]);
           },
         }),
         m('label[for=browse]', 'Attachments: '),
@@ -209,14 +234,14 @@ const AddPost = () => {
           'button',
           {
             onclick: async () => {
-              if (uploadFiles && uploadThumbnail) {
+              if (uploadFiles) {
                 console.log(vnode.attrs.chanId, ptitle, content, pfiles, pthumbnail);
                 const res = await rs.rsJsonApiRequest('/rsgxschannels/createPostV2', {
                   channelId: vnode.attrs.chanId,
                   title: ptitle,
                   mBody: content,
                   files: pfiles,
-                  thumbnail: pthumbnail,
+                  thumbnail: { mData: { base64: pthumbnail } },
                 });
                 res.body.retval === false
                   ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
@@ -639,14 +664,14 @@ const PostView = () => {
                       filesInfo[file.mHash]
                         ? filesInfo[file.mHash].retval
                           ? ''
-                          : await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                          : (await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
                               fileName: file.mName,
                               hash: file.mHash,
                               flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
                               size: {
                                 xstr64: file.mSize.xstr64,
                               },
-                            }) && m.redraw()
+                            })) && m.redraw()
                         : '';
                     },
                   },
