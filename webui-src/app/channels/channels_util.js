@@ -11,9 +11,16 @@ const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
 const GXS_VOTE_DOWN = 0x0001;
 const GXS_VOTE_UP = 0x0002;
 
+//rsgxscircles.h:50
+const PUBLIC = 1; /// Public distribution
+const EXTERNAL = 2; /// Restricted to an external circle, based on GxsIds
+const NODES_GROUP = 3;
+
+
+
 const Data = {
   DisplayChannels: {}, // chanID -> channel info
-  Posts: {},    // chanID, PostID -> {post, isSearched}
+  Posts: {}, // chanID, PostID -> {post, isSearched}
   Comments: {}, // threadID, msgID -> {Comment, showReplies}
   TopComments: {}, // threadID, msgID -> comment(Top thread comment)
   ParentCommentMap: {}, // stores replies of a comment threadID, msgID -> comment
@@ -151,7 +158,6 @@ const CommentsTable = () => {
   };
 };
 
-
 const FilesTable = () => {
   return {
     oninit: (v) => {},
@@ -250,5 +256,8 @@ module.exports = {
   GROUP_MY_CHANNEL,
   GXS_VOTE_DOWN,
   GXS_VOTE_UP,
+  PUBLIC,
+  EXTERNAL,
+  NODES_GROUP,
   RS_FILE_REQ_ANONYMOUS_ROUTING,
 };

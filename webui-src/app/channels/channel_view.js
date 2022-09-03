@@ -73,40 +73,51 @@ async function parsefile(file, type) {
   return ansList;
 }
 const messageGroups = ['Public', 'Restricted Circle', 'Restricted Node Group'];
-const messageGroupsCode = ['', '', ''];
+const messageGroupsCode = [util.PUBLIC, util.EXTERNAL, util.NODES_GROUP]; //rsgxscirles.h:50
 
 function createchannel() {
   let title;
   let body;
   let identity;
   let thumbnail;
-  let selectedGroup = messageGroups;
+  let selectedGroup = messageGroups[0];
+  let selectedGroupCode = messageGroupsCode[0];
+  let selectedCircle;
+  let circles;
   return {
-    oninit: (vnode) => {
+    oninit: async (vnode) => {
       if (vnode.attrs.authorId) {
         identity = vnode.attrs.authorId[0];
+      }
+
+      const res = await rs.rsJsonApiRequest('/rsgxscircles/getCirclesSummaries');
+      if (res.body.retval) {
+        circles = res.body.circles;
+        selectedCircle = circles[0].mGroupName;
       }
     },
     view: (vnode) =>
       m('.widget', [
         m('h3', 'Create Channel'),
         m('hr'),
-        m('label[for=thumbnail]', 'Thumbnail: '),
-        m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
-          onchange: async (e) => {
-            // console.log(e.target.files[0]);
-            let reader = new FileReader();
-            reader.onloadend = function () {
-              // console.log(reader.result.substring(reader.result.indexOf(',') + 1));
-              thumbnail = reader.result.substring(reader.result.indexOf(',') + 1);
-            };
-            reader.readAsDataURL(e.target.files[0]);
-          },
-        }),
         m('input[type=text][placeholder=Title]', {
+          style: { float: 'left' },
           oninput: (e) => (title = e.target.value),
         }),
-        m('div', { style: { float: 'right' } }, [
+        m('div', { style: { float: 'right', marginTop: '10px', marginBottom: '10px' } }, [
+          m('label[for=thumbnail]', 'Thumbnail: '),
+          m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
+            onchange: async (e) => {
+              let reader = new FileReader();
+              reader.onloadend = function () {
+                thumbnail = reader.result.substring(reader.result.indexOf(',') + 1);
+              };
+              reader.readAsDataURL(e.target.files[0]);
+            },
+          }),
+        ]),
+
+        m('div', { style: { float: 'right', marginTop: '10px', marginBottom: '10px' } }, [
           m('label[for=idtags]', 'Select identity: '),
           m(
             'select[id=idtags]',
@@ -130,21 +141,54 @@ function createchannel() {
             ]
           ),
         ]),
-        m('div', { style: { float: 'right' } }, [
+        m('div', { style: { float: 'left', marginTop: '10px', marginBottom: '10px' } }, [
           m('label[for=mtags]', 'Message Distribution: '),
           m(
             'select[id=mtags]',
             {
               value: selectedGroup,
               onchange: (e) => {
-                selectedGroup = messageGroupsCode[e.target.selectedIndex];
+                selectedGroup = messageGroups[e.target.selectedIndex];
+                selectedGroupCode = messageGroupsCode[e.target.selectedIndex];
+                util.popupmessage(m(createchannel, { authorId: vnode.attrs.authorId }));
               },
             },
             [messageGroups.map((group) => m('option', { value: group }, group))]
           ),
         ]),
+        circles &&
+          m(
+            'div',
+            {
+              style: {
+                float: 'left',
+                marginTop: '10px',
+                marginBottom: '10px',
+                display: selectedGroupCode === util.EXTERNAL ? 'block' : 'none',
+              },
+            },
+            [
+              m('label[for=circlestag]', 'Circles: '),
+              m(
+                'select[id=circlestag]',
+                {
+                  value: selectedCircle,
+                  onchange: (e) => {
+                    selectedCircle = circles[e.target.selectedIndex];
+                    console.log(selectedCircle);
+                    // selectedGroupCode = messageGroupsCode[e.target.selectedIndex];
+                  },
+                },
+                [
+                  circles.map((circle) =>
+                    m('option', { value: circle.mGroupName }, circle.mGroupName)
+                  ),
+                ]
+              ),
+            ]
+          ),
         m('textarea[rows=5][placeholder=Description]', {
-          style: { width: '90%', display: 'block' },
+          style: { width: '100%', display: 'block' },
           oninput: (e) => (body = e.target.value),
           value: body,
         }),
@@ -157,6 +201,9 @@ function createchannel() {
                 description: body,
                 thumbnail: { mData: { base64: thumbnail } },
                 ...(Number(identity) !== 0 && { authorId: identity }),
+                circleType: selectedGroupCode,
+                ...(selectedGroupCode === util.EXTERNAL &&
+                  selectedCircle && { circleId: selectedCircle.mGroupId }),
               });
               if (res.body.retval) {
                 util.updatedisplaychannels(res.body.channelId);
@@ -329,7 +376,10 @@ const ChannelView = () => {
             csubscribed ? 'Subscribed' : 'Subscribe'
           ),
           m('img.channelpic', {
-            src: 'data:image/png;base64,' + cimage.mData.base64,
+            src:
+              cimage.mData.base64 === ''
+                ? 'data/streaming.png'
+                : 'data:image/png;base64,' + cimage.mData.base64,
           }),
           m('[id=channeldetails]', [
             m('p', m('b', 'Posts: '), cposts),
@@ -387,7 +437,7 @@ const ChannelView = () => {
                       class: 'card-img',
                       src:
                         plist[key].post.mThumbnail.mData.base64 === ''
-                          ? '../../../data/streaming.png'
+                          ? 'data/streaming.png'
                           : 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
 
                       alt: '',
