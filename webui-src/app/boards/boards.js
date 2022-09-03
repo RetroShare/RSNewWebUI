@@ -11,11 +11,15 @@ const getBoards =
   PopularBoards : [],
   SubscribedBoards : [],
   MyBoards : [],
+  OtherBoards : [],
   async load(){
     const res = await rs.rsJsonApiRequest('/rsPosted/getBoardsSummaries');
     const data = res.body;
     getBoards.All = data.groupInfo;
     getBoards.PopularBoards = getBoards.All;
+    getBoards.PopularBoards.sort((a, b) => b.mPop - a.mPop);
+    getBoards.OtherBoards = getBoards.PopularBoards.slice(5);
+    getBoards.PopularBoards = getBoards.PopularBoards.slice(0, 5);
     getBoards.SubscribedBoards = getBoards.All.filter(
         (board) => 
           board.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED
