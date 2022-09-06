@@ -17,6 +17,8 @@ const FT_STATE_CHECKING_HASH = 0x0007;
 const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
 const RS_FILE_HINTS_REMOTE = 0x00000008;
 
+
+
 function makeFriendlyUnit(bytes) {
   let cnt = bytes;
   for (const s of ['', 'k', 'M', 'G']) {
@@ -310,7 +312,12 @@ const FriendsFilesTable = () => {
   return {
     view: (v) =>
       m('table.myfiles', [
-        m('tr', [m('th', ''), m('th', 'Friends Directories'), m('th', 'Size')]),
+        m('tr', [
+          m('th', ''),
+          m('th', 'Friends Directories'),
+          m('th', 'Size'),
+          m('th', m('i.fas.fa-download')),
+        ]),
         v.children,
       ]),
   };

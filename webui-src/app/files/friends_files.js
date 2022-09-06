@@ -6,10 +6,20 @@ function displayfiles() {
   const childrenList = []; // stores children details
   let loaded = false; // checks whether we have loaded the children details or not.
   let parStruct; // stores current struct(details, showChild)
+  let isFile = false;
+  let haveFile = false;
   return {
-    oninit: (v) => {
+    oninit: async (v) => {
       if (v.attrs.par_directory) {
         parStruct = v.attrs.par_directory;
+        if (Number(parStruct.details.hash) !== 0) {
+          isFile = true;
+          const res = await rs.rsJsonApiRequest('/rsfiles/alreadyHaveFile', {
+            // checks if the file is already there with the user
+            hash: parStruct.details.hash,
+          });
+          haveFile = res.body.retval;
+        }
       }
     },
     view: (v) => [
@@ -21,7 +31,8 @@ function displayfiles() {
                 class: 'fa-rotate-' + (parStruct.showChild ? '90' : '0'),
                 style: 'margin-top:12px',
                 onclick: () => {
-                  if (!loaded) { // if it is not already retrieved.
+                  if (!loaded) {
+                    // if it is not already retrieved.
                     parStruct.details.children.map(async (child) => {
                       const res = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
                         handle: child.handle.xint64,
@@ -48,6 +59,30 @@ function displayfiles() {
           parStruct.details.name
         ),
         m('td', util.formatbytes(parStruct.details.size.xint64)),
+        isFile &&
+          m(
+            'td',
+            m(
+              'button',
+              {
+                style: { fontSize: '0.9em' },
+                onclick: async () => {
+                  haveFile
+                    ? ''
+                    : (await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                        fileName: parStruct.details.name,
+                        hash: parStruct.details.hash,
+                        flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                        size: {
+                          xstr64: parStruct.details.size.xstr64,
+                        },
+                      })) && m.redraw();
+                },
+              },
+
+              haveFile ? 'Open File' : ['Download', m('i.fas.fa-download')]
+            )
+          ),
       ]),
       parStruct.showChild && // recursive call to show children
         childrenList.map((child) =>
