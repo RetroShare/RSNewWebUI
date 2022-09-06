@@ -46,7 +46,7 @@ span > i {
 }
 .file-node-panel {
   position: relative;
-  bottom: 140px;
+  bottom: 200px;
   margin-left: 200px;
   animation: fadein 0.5s;
 }

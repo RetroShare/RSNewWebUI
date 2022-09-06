@@ -53,7 +53,7 @@ function createforum() {
               const res = await rs.rsJsonApiRequest('/rsgxsforums/createForumV2', {
                 name: title,
                 description: body,
-                ...(Number(identity) !== 0 && { authorId: identity }),
+                ...(Number(identity) !== 0 && { authorId: identity }), // if id == '0', authorId is left empty
               });
               if (res.body.retval) {
                 util.updatedisplayforums(res.body.forumId);
@@ -89,7 +89,7 @@ const EditThread = () => {
         m(
           'iddisplay',
           {
-            style: { display: 'block ruby' },
+            style: { display: 'block ruby' }, // same line block ruby
           },
           [
             'Identity: ',
@@ -188,7 +188,7 @@ const AddThread = () => {
           {
             onclick: async () => {
               const res =
-                (vnode.attrs.parent_thread !== '') > 0
+                (vnode.attrs.parent_thread !== '') > 0 // is it a reply or a new thread
                   ? await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
                       forumId: vnode.attrs.forumId,
                       mBody: body,
@@ -220,6 +220,7 @@ const AddThread = () => {
   };
 };
 function displaythread() {
+  // recursive function to display all the threads
   let groupmessagepair;
   let unread;
   let editpermission = false;
@@ -235,6 +236,7 @@ function displaythread() {
       v.attrs.identity &&
         v.attrs.identity.map((val) => {
           if (val.localeCompare(thread.mMeta.mAuthorId) === 0) {
+            // if the author of the thread matches one of our own ids
             editpermission = true;
           }
         });
@@ -245,7 +247,7 @@ function displaythread() {
             style: unread ? { fontWeight: 'bold' } : '',
           },
           [
-            Object.keys(parMap).length
+            Object.keys(parMap).length // if this thread has some replies
               ? m(
                   'td',
                   m('i.fas.fa-angle-right', {
@@ -264,7 +266,7 @@ function displaythread() {
                 style: {
                   position: 'relative',
                   '--replyDepth': v.attrs.replyDepth,
-                  left: 'calc(30px*var(--replyDepth))',
+                  left: 'calc(30px*var(--replyDepth))', // shifts reply by 30 px
                 },
                 onclick: async () => {
                   v.attrs.changeThread(thread.mMeta.mOrigMsgId);
@@ -308,7 +310,6 @@ function displaythread() {
                         style: 'font-size:15px',
                         onclick: () =>
                           util.popupmessage(
-                            // m('h3', 'hello')
                             m(EditThread, {
                               current_thread: thread.mMeta.mMsgName,
                               forumId: thread.mMeta.mGroupId,
@@ -360,6 +361,7 @@ function displaythread() {
         v.attrs.threadStruct.showReplies &&
           Object.keys(parMap).map((key, index) =>
             m(displaythread, {
+              // recursive call to all replies
               threadStruct: util.Data.Threads[parMap[key].mGroupId][parMap[key].mOrigMsgId],
               replyDepth: v.attrs.replyDepth + 1,
               identity: v.attrs.identity,
@@ -382,8 +384,6 @@ const ThreadView = () => {
         util.Data.ParentThreads[v.attrs.forumId][v.attrs.msgId]
       ) {
         thread = util.Data.ParentThreads[v.attrs.forumId][v.attrs.msgId];
-        // v.state.showThread = v.attrs.msgId;
-        console.log(thread);
       }
       peopleUtil.ownIds((data) => {
         ownId = data;
@@ -420,7 +420,8 @@ const ThreadView = () => {
                 replyDepth: 0,
                 identity: ownId,
                 changeThread(newThread) {
-                  v.state.showThread = newThread;
+                  v.state.showThread = newThread; 
+                  // For displaying the messages of the threads. We pass this into the recursive function displaythreads()
                 },
               })
           )
@@ -431,6 +432,7 @@ const ThreadView = () => {
           util.Data.Threads[v.attrs.forumId] &&
             util.Data.Threads[v.attrs.forumId][v.state.showThread] &&
             m('p', m.trust(util.Data.Threads[v.attrs.forumId][v.state.showThread].thread.mMsg)),
+            // m.trust is to render html content directly.
         ],
       ]),
   };

@@ -22,6 +22,7 @@ async function updatedisplayforums(keyid, details = {}) {
   });
   details = res.body.forumsInfo[0];
   Data.DisplayForums[keyid] = {
+    // struct for a forum
     name: details.mMeta.mGroupName,
     author: details.mMeta.mAuthorId,
     isSearched: true,
@@ -50,6 +51,7 @@ async function updatedisplayforums(keyid, details = {}) {
         (Data.Threads[keyid][thread.mOrigMsgId] === undefined ||
           Data.Threads[keyid][thread.mOrigMsgId].thread.mMeta.mPublishTs.xint64 <
             thread.mPublishTs.xint64)
+        // here we get the latest edited thread for each thread by comparing the publish time
       ) {
         Data.Threads[keyid][thread.mOrigMsgId] = { thread: res3.body.msgs[0], showReplies: false };
         if (
@@ -58,6 +60,7 @@ async function updatedisplayforums(keyid, details = {}) {
         ) {
           let parent = Data.Threads[keyid][thread.mOrigMsgId].thread.mMeta.mParentId;
           while (Data.Threads[keyid][parent]) {
+            // to mark all parent threads of an inread thread
             Data.Threads[keyid][parent].thread.mMeta.mMsgStatus = THREAD_UNREAD;
             parent = Data.Threads[keyid][parent].thread.mMeta.mParentId;
           }
@@ -67,6 +70,7 @@ async function updatedisplayforums(keyid, details = {}) {
           Data.ParentThreads[keyid] = {};
         }
         if (thread.mThreadId === thread.mParentId) {
+          // top level thread.
           Data.ParentThreads[keyid][thread.mOrigMsgId] =
             Data.Threads[keyid][thread.mOrigMsgId].thread.mMeta;
         } else {

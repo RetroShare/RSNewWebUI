@@ -200,10 +200,10 @@ function createchannel() {
                 name: title,
                 description: body,
                 thumbnail: { mData: { base64: thumbnail } },
-                ...(Number(identity) !== 0 && { authorId: identity }),
+                ...(Number(identity) !== 0 && { authorId: identity }), //checks if some identity has to be assigned
                 circleType: selectedGroupCode,
                 ...(selectedGroupCode === util.EXTERNAL &&
-                  selectedCircle && { circleId: selectedCircle.mGroupId }),
+                  selectedCircle && { circleId: selectedCircle.mGroupId }), //checks if the selectedGroup code is EXTERNAL
               });
               if (res.body.retval) {
                 util.updatedisplaychannels(res.body.channelId);
@@ -229,7 +229,7 @@ const AddPost = () => {
   let ptitle = '';
   let pthumbnail = [];
   let pfiles = [];
-  let uploadFiles = false;
+  let uploadFiles = true;
   return {
     view: (vnode) =>
       m('.widget', [
@@ -238,24 +238,24 @@ const AddPost = () => {
         m('label[for=thumbnail]', 'Thumbnail: '),
         m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
           onchange: async (e) => {
-            // console.log(e.target.files[0]);
             let reader = new FileReader();
             reader.onloadend = function () {
-              // console.log(reader.result.substring(reader.result.indexOf(',') + 1));
               pthumbnail = reader.result.substring(reader.result.indexOf(',') + 1);
             };
-            reader.readAsDataURL(e.target.files[0]);
+            reader.readAsDataURL(e.target.files[0]); // converts into base64 string
           },
         }),
         m('label[for=browse]', 'Attachments: '),
         m('input[type=file][name=files][id=browse][multiple=multiple]', {
+          // attachments option wrong hash, not working
           onchange: async (e) => {
+            uploadFiles = false;
             filesUploadHashes.PostFiles = [];
             pfiles = [];
             for (let i = 0; i < e.target.files.length; i++) {
               await parsefile(e.target.files[i], 'multiple');
             }
-            console.log(filesUploadHashes.PostFiles, filesUploadHashes.PostFiles.length);
+            // console.log(filesUploadHashes.PostFiles, filesUploadHashes.PostFiles.length);
 
             if (filesUploadHashes.PostFiles.length === e.target.files.length) {
               for (let i = 0; i < e.target.files.length; i++) {
@@ -287,7 +287,7 @@ const AddPost = () => {
                   channelId: vnode.attrs.chanId,
                   title: ptitle,
                   mBody: content,
-                  files: pfiles,
+                  files: pfiles, //does not work for now
                   thumbnail: { mData: { base64: pthumbnail } },
                 });
                 res.body.retval === false
@@ -423,7 +423,7 @@ const ChannelView = () => {
                   'div',
                   {
                     class: 'card',
-                    style: 'display: ' + (plist[key].isSearched ? 'block' : 'none'),
+                    style: 'display: ' + (plist[key].isSearched ? 'block' : 'none'), // for search
                     onclick: () => {
                       m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
                         tab: m.route.param().tab,
@@ -500,7 +500,7 @@ const AddComment = () => {
         ),
         m('hr'),
         (vnode.attrs.parent_comment !== '') > 0
-          ? [m('h5', 'Reply to comment: '), m('p', vnode.attrs.parent_comment)]
+          ? [m('h5', 'Reply to comment: '), m('p', vnode.attrs.parent_comment)] // if it is add reply option
           : '',
         m('textarea[rows=5]', {
           style: { width: '90%', display: 'block' },
@@ -536,6 +536,7 @@ const AddComment = () => {
   };
 };
 function displaycomment() {
+  // recursive function to display comments
   return {
     oninit: (v) => {},
     view: ({ attrs: { commentStruct, identity, replyDepth, voteIdentity } }) => {
@@ -546,7 +547,7 @@ function displaycomment() {
       }
       return [
         m('tr', [
-          Object.keys(parMap).length
+          Object.keys(parMap).length // if it has replies
             ? m(
                 'td',
                 m('i.fas.fa-angle-right', {
@@ -565,7 +566,7 @@ function displaycomment() {
               style: {
                 position: 'relative',
                 '--replyDepth': replyDepth,
-                left: 'calc(30px*var(--replyDepth))',
+                left: 'calc(30px*var(--replyDepth))', // shifts the reply by 30px
               },
             },
             [
@@ -635,14 +636,14 @@ function displaycomment() {
           m('td', comment.mUpVotes),
           m('td', comment.mDownVotes),
         ]),
-        commentStruct.showReplies &&
+        commentStruct.showReplies && // recursive calls for the replies
           // parMap.map((value) =>
           Object.keys(parMap).map((key, index) =>
             m(displaycomment, {
               commentStruct: Data.Comments[parMap[key].mMeta.mThreadId][parMap[key].mMeta.mMsgId],
               voteIdentity,
               identity,
-              replyDepth: replyDepth + 1,
+              replyDepth: replyDepth + 1, // for the css
             })
           ),
       ];
@@ -662,11 +663,12 @@ const PostView = () => {
         post = Data.Posts[v.attrs.channelId][v.attrs.msgId].post;
       }
       if (Data.TopComments[v.attrs.msgId]) {
-        topComments = Data.TopComments[v.attrs.msgId];
+        topComments = Data.TopComments[v.attrs.msgId]; // get all the top level parent comments
       }
       if (post) {
         post.mFiles.map(async (file) => {
           const res = await rs.rsJsonApiRequest('/rsfiles/alreadyHaveFile', {
+            // checks if the file is already there with the user
             hash: file.mHash,
           });
           filesInfo[file.mHash] = res.body;
@@ -676,7 +678,7 @@ const PostView = () => {
         ownId = data;
         for (let i = 0; i < ownId.length; i++) {
           if (Number(ownId[i]) === 0) {
-            ownId.splice(i, 1);
+            ownId.splice(i, 1); // workaround for id '0'
           }
         }
         voteIdentity = ownId[0];
@@ -731,7 +733,7 @@ const PostView = () => {
                       : ['Download', m('i.fas.fa-download')]
                     : 'Please Wait...'
                 ),
-                fileDown.list[file.mHash] &&
+                fileDown.list[file.mHash] && // using the file from files_util to display download.
                   m(fileUtil.File, {
                     info: fileDown.list[file.mHash],
                     direction: 'down',
@@ -788,7 +790,7 @@ const PostView = () => {
             Object.keys(topComments).map((key, index) =>
               Data.Comments[topComments[key].mMeta.mThreadId] &&
               Data.Comments[topComments[key].mMeta.mThreadId][topComments[key].mMeta.mMsgId]
-                ? m(displaycomment, {
+                ? m(displaycomment, { // calls the recursive function for all the parents.
                     identity: ownId,
                     voteIdentity,
                     commentStruct:

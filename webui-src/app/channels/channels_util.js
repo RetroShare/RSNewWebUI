@@ -1,13 +1,19 @@
 const m = require('mithril');
 const rs = require('rswebui');
 
+// rstypes.h:96
 const GROUP_SUBSCRIBE_ADMIN = 0x01; //  means: you have the admin key for this group
 const GROUP_SUBSCRIBE_PUBLISH = 0x02; //  means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
 const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; //  means: you are subscribed to a group, which makes you a source for this group to your friend nodes.
 const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
+
 const GROUP_MY_CHANNEL =
   GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
+
+// rsfiles.h:168
 const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
+
+// rsgxscommon.h:194
 const GXS_VOTE_DOWN = 0x0001;
 const GXS_VOTE_UP = 0x0002;
 
@@ -15,8 +21,6 @@ const GXS_VOTE_UP = 0x0002;
 const PUBLIC = 1; /// Public distribution
 const EXTERNAL = 2; /// Restricted to an external circle, based on GxsIds
 const NODES_GROUP = 3;
-
-
 
 const Data = {
   DisplayChannels: {}, // chanID -> channel info
@@ -46,7 +50,9 @@ async function updatecontent(content, channelid) {
       Data.TopComments[comm.mMeta.mThreadId] = {};
     }
     if (comm.mMeta.mThreadId === comm.mMeta.mParentId) {
-      Data.TopComments[comm.mMeta.mThreadId][comm.mMeta.mMsgId] = comm; //  pushing top comments respective to post
+      // this is a check for the top level comments
+      Data.TopComments[comm.mMeta.mThreadId][comm.mMeta.mMsgId] = comm;
+      //  pushing top comments respective to post
     } else {
       if (Data.ParentCommentMap[comm.mMeta.mParentId] === undefined) {
         Data.ParentCommentMap[comm.mMeta.mParentId] = {};
@@ -75,6 +81,7 @@ async function updatedisplaychannels(keyid, details) {
   });
   details = res1.body.channelsInfo[0];
   Data.DisplayChannels[keyid] = {
+    // struct for a channel
     name: details.mMeta.mGroupName,
     isSearched: true,
     description: details.mDescription,
@@ -170,6 +177,7 @@ const FilesTable = () => {
 };
 
 function formatbytes(bytes, decimals = 2) {
+  // takes in size returns a string (size)(kb/gb/tb)
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
@@ -202,7 +210,7 @@ const ChannelTable = () => {
     view: (v) => m('table.channels', [m('tr', [m('th', 'Channel Name')]), v.children]),
   };
 };
-const SearchBar = () => {
+const SearchBar = () => { // same search bar is used for both channels and posts
   let searchString = '';
   return {
     view: (v) =>
@@ -212,7 +220,7 @@ const SearchBar = () => {
           v.attrs.category.localeCompare('channels') === 0 ? 'Search Channels' : 'Search Posts',
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
-          if (v.attrs.category.localeCompare('channels') === 0) {
+          if (v.attrs.category.localeCompare('channels') === 0) { // for channels
             for (const hash in Data.DisplayChannels) {
               if (Data.DisplayChannels[hash].name.toLowerCase().indexOf(searchString) > -1) {
                 Data.DisplayChannels[hash].isSearched = true;
@@ -221,7 +229,7 @@ const SearchBar = () => {
               }
             }
           } else {
-            for (const hash in Data.Posts[v.attrs.channelId]) {
+            for (const hash in Data.Posts[v.attrs.channelId]) { // for posts
               if (
                 Data.Posts[v.attrs.channelId][hash].post.mMeta.mMsgName
                   .toLowerCase()

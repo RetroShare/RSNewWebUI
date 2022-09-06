@@ -1,0 +1,6 @@
+.config-node-panel {
+    position: relative;
+    bottom: 250px;
+    margin-left: 200px;
+    animation: fadein 0.5s;
+  }

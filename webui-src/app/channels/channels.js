@@ -22,7 +22,7 @@ const getChannels = {
     getChannels.SubscribedChannels = getChannels.All.filter(
       (channel) =>
         channel.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED ||
-        channel.mSubscribeFlags === util.GROUP_MY_CHANNEL
+        channel.mSubscribeFlags === util.GROUP_MY_CHANNEL // my channel is subscribed
     );
     getChannels.MyChannels = getChannels.All.filter(
       (channel) => channel.mSubscribeFlags === util.GROUP_MY_CHANNEL
@@ -52,7 +52,7 @@ const Layout = () => {
             ownId.splice(i, 1);
           }
         }
-        ownId.unshift(0);
+        ownId.unshift(0); // we need an extra check when a channel is created with no identity.
       });
     },
     // onupdate: getChannels.load,
@@ -73,7 +73,8 @@ const Layout = () => {
           {
             style: { fontSize: '1.2em', width: '200px' },
             onclick: () =>
-              ownId && util.popupmessage(
+              ownId &&
+              util.popupmessage(
                 m(viewUtil.createchannel, {
                   authorId: ownId,
                 })
@@ -88,16 +89,17 @@ const Layout = () => {
         m(
           '.channel-node-panel',
 
-          Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId')
+          Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId') // posts
             ? m(viewUtil.PostView, {
                 msgId: vnode.attrs.pathInfo.mMsgId,
                 channelId: vnode.attrs.pathInfo.mGroupId,
               })
-            : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId')
+            : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId') // channels view
             ? m(viewUtil.ChannelView, {
                 id: vnode.attrs.pathInfo.mGroupId,
               })
             : m(sections[vnode.attrs.pathInfo.tab], {
+                // subscribed, all, popular, other
                 list: getChannels[vnode.attrs.pathInfo.tab],
               })
         ),

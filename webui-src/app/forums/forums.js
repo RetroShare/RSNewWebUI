@@ -57,7 +57,7 @@ const Layout = () => {
         m(
           'button',
           {
-            style: {fontSize: '1.2em', width: '200px'},
+            style: { fontSize: '1.2em', width: '200px' },
             onclick: () =>
               util.popupmessage(
                 m(viewUtil.createforum, {
@@ -74,13 +74,12 @@ const Layout = () => {
         m(
           '.forums-node-panel',
 
-          Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId')
+          Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId') // thread's view
             ? m(viewUtil.ThreadView, {
                 msgId: vnode.attrs.pathInfo.mMsgId,
-                // mOrigMsgId: vnode.attrs.pathInfo.mOrigMsgId,
                 forumId: vnode.attrs.pathInfo.mGroupId,
               })
-            : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId')
+            : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId') // Forum's view
             ? m(viewUtil.ForumView, {
                 id: vnode.attrs.pathInfo.mGroupId,
               })
