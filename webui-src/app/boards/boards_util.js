@@ -9,10 +9,15 @@ const GROUP_MY_BOARD = GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROU
 const GXS_VOTE_DOWN = 0x0001;
 const GXS_VOTE_UP = 0x0002;
 
+//rsgxscircles.h:50
+const PUBLIC = 1; /// Public distribution
+const EXTERNAL = 2; /// Restricted to an external circle, based on GxsIds
+const NODES_GROUP = 3;
+
 const Data = {
-  DisplayBoards: {},
-  Posts: {},
-  Comments: {},
+  DisplayBoards: {}, // boardID -> board info
+  Posts: {}, // boardID, PostID -> {post, isSearched}
+  Comments: {}, // threadID, msgID -> {Comment, showReplies}
 };
 
 async function updateContent(content, boardid) {
@@ -175,4 +180,7 @@ module.exports = {
   GROUP_MY_BOARD,
   GXS_VOTE_DOWN,
   GXS_VOTE_UP,
+  PUBLIC,
+  EXTERNAL,
+  NODES_GROUP,
 };

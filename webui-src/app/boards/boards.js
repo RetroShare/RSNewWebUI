@@ -65,7 +65,7 @@ const Layout = () => {
           {
             style: {fontSize: '1.2em', width: '200px'},
             onclick: () =>
-              util.popupmessage(
+               ownId && util.popupmessage(
                 m(viewUtil.createboard, {
                   authorId: ownId,
                 })
