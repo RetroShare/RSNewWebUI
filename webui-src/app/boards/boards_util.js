@@ -132,7 +132,7 @@ function popupmessage(message) {
   container.style.display = 'block';
   m.render(
     container,
-    m('.modal-content', [
+    m('.modal-content[id=composepopup]', [
       m(
         'button.red',
         {
