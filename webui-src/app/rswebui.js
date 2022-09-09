@@ -266,4 +266,5 @@ module.exports = {
   logon,
   events: eventQueue.events,
   userList,
+  loginKey,
 };

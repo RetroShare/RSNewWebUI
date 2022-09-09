@@ -1,6 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const util = require('channels/channels_util');
+const widget = require('widgets');
 const Data = util.Data;
 const peopleUtil = require('people/people_util');
 const sha1 = require('channels/sha1');
@@ -150,7 +151,7 @@ function createchannel() {
               onchange: (e) => {
                 selectedGroup = messageGroups[e.target.selectedIndex];
                 selectedGroupCode = messageGroupsCode[e.target.selectedIndex];
-                util.popupmessage(m(createchannel, { authorId: vnode.attrs.authorId }));
+                widget.popupMessage(m(createchannel, { authorId: vnode.attrs.authorId }));
               },
             },
             [messageGroups.map((group) => m('option', { value: group }, group))]
@@ -210,8 +211,8 @@ function createchannel() {
                 m.redraw();
               }
               res.body.retval === false
-                ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                : util.popupmessage([
+                ? widget.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                : widget.popupMessage([
                     m('h3', 'Success'),
                     m('hr'),
                     m('p', 'Channel created successfully'),
@@ -291,8 +292,8 @@ const AddPost = () => {
                   thumbnail: { mData: { base64: pthumbnail } },
                 });
                 res.body.retval === false
-                  ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                  : util.popupmessage([
+                  ? widget.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                  : widget.popupMessage([
                       m('h3', 'Success'),
                       m('hr'),
                       m('p', 'Post added successfully'),
@@ -411,7 +412,7 @@ const ChannelView = () => {
             mychannel &&
               m(
                 'button',
-                { onclick: () => util.popupmessage(m(AddPost, { chanId: v.attrs.id })) },
+                { onclick: () => widget.popupMessage(m(AddPost, { chanId: v.attrs.id })) },
                 ['Add Post', m('i.fas.fa-edit')]
               ),
             m('hr'),
@@ -456,7 +457,6 @@ const ChannelView = () => {
 };
 
 async function addvote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
-  console.log(vauthorId);
   const res = await rs.rsJsonApiRequest('/rsgxschannels/voteForComment', {
     channelId: vchannelId,
     postId: vpostId,
@@ -520,8 +520,8 @@ const AddComment = () => {
               });
 
               res.body.retval === false
-                ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                : util.popupmessage([
+                ? widget.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                : widget.popupMessage([
                     m('h3', 'Success'),
                     m('hr'),
                     m('p', 'Comment added successfully'),
@@ -577,7 +577,7 @@ function displaycomment() {
                   {
                     style: 'font-size:15px',
                     onclick: () =>
-                      util.popupmessage(
+                      widget.popupMessage(
                         m(AddComment, {
                           parent_comment: comment.mComment,
                           channelId: comment.mMeta.mGroupId,
@@ -712,6 +712,7 @@ const PostView = () => {
                 m(
                   'button',
                   {
+                    style: { fontSize: '0.9em' },
                     onclick: async () => {
                       filesInfo[file.mHash]
                         ? filesInfo[file.mHash].retval
@@ -750,7 +751,7 @@ const PostView = () => {
           'button',
           {
             onclick: () => {
-              util.popupmessage(
+              widget.popupMessage(
                 m(AddComment, {
                   parent_comment: '',
                   channelId: v.attrs.channelId,
@@ -790,7 +791,8 @@ const PostView = () => {
             Object.keys(topComments).map((key, index) =>
               Data.Comments[topComments[key].mMeta.mThreadId] &&
               Data.Comments[topComments[key].mMeta.mThreadId][topComments[key].mMeta.mMsgId]
-                ? m(displaycomment, { // calls the recursive function for all the parents.
+                ? m(displaycomment, {
+                    // calls the recursive function for all the parents.
                     identity: ownId,
                     voteIdentity,
                     commentStruct:

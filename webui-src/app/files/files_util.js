@@ -1,5 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const widget = require('widgets');
 
 const RS_FILE_CTRL_PAUSE = 0x00000100;
 const RS_FILE_CTRL_START = 0x00000200;
@@ -16,8 +17,6 @@ const FT_STATE_CHECKING_HASH = 0x0007;
 
 const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
 const RS_FILE_HINTS_REMOTE = 0x00000008;
-
-
 
 function makeFriendlyUnit(bytes) {
   let cnt = bytes;
@@ -88,23 +87,7 @@ async function fileAction(hash, action) {
   const res = await rs.rsJsonApiRequest(actionHeader, jsonParams, () => {});
   return res.body.retval;
 }
-function popupmessage(message) {
-  const container = document.getElementById('modal-container');
-  container.style.display = 'block';
-  m.render(
-    container,
-    m('.modal-content', [
-      m(
-        'button.red',
-        {
-          onclick: () => (container.style.display = 'none'),
-        },
-        m('i.fas.fa-times')
-      ),
-      message,
-    ])
-  );
-}
+
 function actionButton(file, action) {
   switch (action) {
     case 'resume':
@@ -140,17 +123,18 @@ function actionButton(file, action) {
           title: 'cancel',
 
           onclick() {
-            popupmessage(
+            widget.popupMessage(
               m('Cancelpop', [
                 m('p', 'Are you sure you want to cancel download?'),
                 m(
                   'button',
                   {
-                    onclick: () => {
-                      if (fileAction(file.hash, 'cancel')) {
-                        popupmessage(m('p', 'Download Cancelled Successfully'));
+                    onclick: async () => {
+                      const res = await fileAction(file.hash, 'cancel');
+                      if (res) {
+                        widget.popupMessage(m('p', 'Download Cancelled Successfully'));
                       } else {
-                        popupmessage(m('p', 'Download Cancel Failed'));
+                        widget.popupMessage(m('p', 'Download Cancel Failed'));
                       }
 
                       m.redraw();

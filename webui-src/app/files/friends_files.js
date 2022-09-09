@@ -53,7 +53,7 @@ function displayfiles() {
             style: {
               position: 'relative',
               '--replyDepth': v.attrs.replyDepth,
-              left: 'calc(30px*var(--replyDepth))',
+              left: `calc(30px*${v.attrs.replyDepth})`,
             },
           },
           parStruct.details.name
@@ -69,14 +69,14 @@ function displayfiles() {
                 onclick: async () => {
                   haveFile
                     ? ''
-                    : (await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                    : await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
                         fileName: parStruct.details.name,
                         hash: parStruct.details.hash,
                         flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
                         size: {
                           xstr64: parStruct.details.size.xstr64,
                         },
-                      })) && m.redraw();
+                      });
                 },
               },
 

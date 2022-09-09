@@ -41,7 +41,8 @@ function displayfiles() {
             style: {
               position: 'relative',
               '--replyDepth': v.attrs.replyDepth,
-              left: 'calc(30px*var(--replyDepth))',
+              left: `calc(30px*${v.attrs.replyDepth})`,
+
             },
           },
           parStruct.details.name

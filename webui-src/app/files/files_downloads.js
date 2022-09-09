@@ -7,14 +7,18 @@ const Downloads = {
   statusMap: {},
   hashes: [],
 
-  loadHashes() {
-    rs.rsJsonApiRequest('/rsFiles/FileDownloads', {}, (d) => (Downloads.hashes = d.hashs));
+  async loadHashes() {
+    const res = await rs.rsJsonApiRequest(
+      '/rsFiles/FileDownloads',
+      {},
+      (d) => (Downloads.hashes = d.hashs)
+    );
   },
 
-  loadStatus() {
-    Downloads.loadHashes();
+  async loadStatus() {
+    await Downloads.loadHashes();
     const fileKeys = Object.keys(Downloads.statusMap);
-    if (Downloads.hashes.length !== fileKeys.length) {
+    if (Downloads.hashes !== undefined && Downloads.hashes.length !== fileKeys.length) {
       // New file added
       if (Downloads.hashes.length > fileKeys.length) {
         const newHashes = util.compareArrays(Downloads.hashes, fileKeys);
