@@ -8,6 +8,8 @@ function displayfiles() {
   let parStruct; // stores current struct(details, showChild)
   let isFile = false;
   let haveFile = false;
+  let isId = false;
+  let nameOfId;
   return {
     oninit: async (v) => {
       if (v.attrs.par_directory) {
@@ -19,6 +21,15 @@ function displayfiles() {
             hash: parStruct.details.hash,
           });
           haveFile = res.body.retval;
+        }
+      }
+      if (v.attrs.replyDepth === 1 && parStruct) {
+        isId = true;
+        const res = await rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
+          sslId: parStruct.details.name,
+        });
+        if (res.body.retval) {
+          nameOfId = res.body.det.name;
         }
       }
     },
@@ -56,7 +67,9 @@ function displayfiles() {
               left: `calc(30px*${v.attrs.replyDepth})`,
             },
           },
-          parStruct.details.name
+          isId
+            ? nameOfId + ' (' + parStruct.details.name.slice(0, 8) + '...)'
+            : parStruct.details.name
         ),
         m('td', util.formatbytes(parStruct.details.size.xint64)),
         isFile &&

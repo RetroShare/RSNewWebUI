@@ -135,7 +135,7 @@ function createchannel() {
                     'option',
                     { value: o },
                     rs.userList.userMap[o]
-                      ? rs.userList.userMap[o].toLocaleString()
+                      ? rs.userList.userMap[o].toLocaleString() + ' (' + o.slice(0, 8) + '...)'
                       : 'No Signature'
                   )
                 ),
@@ -494,7 +494,11 @@ const AddComment = () => {
           [
             vnode.attrs.authorId &&
               vnode.attrs.authorId.map((o) =>
-                m('option', { value: o }, rs.userList.userMap[o].toLocaleString())
+                m(
+                  'option',
+                  { value: o },
+                  rs.userList.userMap[o].toLocaleString() + ' (' + o.slice(0, 8) + '...)'
+                )
               ),
           ]
         ),
@@ -781,7 +785,13 @@ const PostView = () => {
           },
           [
             ownId &&
-              ownId.map((o) => m('option', { value: o }, rs.userList.userMap[o].toLocaleString())),
+              ownId.map((o) =>
+                m(
+                  'option',
+                  { value: o },
+                  rs.userList.userMap[o].toLocaleString() + ' (' + o.slice(0, 8) + '...)'
+                )
+              ),
           ]
         ),
         m(

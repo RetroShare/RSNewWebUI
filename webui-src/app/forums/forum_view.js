@@ -36,7 +36,9 @@ function createforum() {
                 m(
                   'option',
                   { value: o },
-                  rs.userList.userMap[o] ? rs.userList.userMap[o].toLocaleString() : 'No Signature'
+                  rs.userList.userMap[o]
+                    ? rs.userList.userMap[o].toLocaleString() + ' (' + o.slice(0, 8) + '...)'
+                    : 'No Signature'
                 )
               ),
           ]
@@ -174,7 +176,11 @@ const AddThread = () => {
           [
             vnode.attrs.authorId &&
               vnode.attrs.authorId.map((o) =>
-                m('option', { value: o }, rs.userList.userMap[o].toLocaleString())
+                m(
+                  'option',
+                  { value: o },
+                  rs.userList.userMap[o].toLocaleString() + ' (' + o.slice(0, 8) + '...)'
+                )
               ),
           ]
         ),
@@ -420,7 +426,7 @@ const ThreadView = () => {
                 replyDepth: 0,
                 identity: ownId,
                 changeThread(newThread) {
-                  v.state.showThread = newThread; 
+                  v.state.showThread = newThread;
                   // For displaying the messages of the threads. We pass this into the recursive function displaythreads()
                 },
               })
@@ -432,7 +438,7 @@ const ThreadView = () => {
           util.Data.Threads[v.attrs.forumId] &&
             util.Data.Threads[v.attrs.forumId][v.state.showThread] &&
             m('p', m.trust(util.Data.Threads[v.attrs.forumId][v.state.showThread].thread.mMsg)),
-            // m.trust is to render html content directly.
+          // m.trust is to render html content directly.
         ],
       ]),
   };
