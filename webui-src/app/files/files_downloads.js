@@ -169,5 +169,6 @@ const Component = () => {
 
 module.exports = {
   Component,
+  Downloads,
   list: Downloads.statusMap,
 };

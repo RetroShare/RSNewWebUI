@@ -295,7 +295,7 @@ const MyFilesTable = () => {
 const FriendsFilesTable = () => {
   return {
     view: (v) =>
-      m('table.myfiles', [
+      m('table.friendsfiles', [
         m('tr', [
           m('th', ''),
           m('th', 'Friends Directories'),

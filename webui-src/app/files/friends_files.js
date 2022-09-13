@@ -1,6 +1,8 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const util = require('files/files_util');
+const widget = require('widgets');
+const fileDown = require('files/files_downloads');
 
 function displayfiles() {
   const childrenList = []; // stores children details
@@ -75,26 +77,57 @@ function displayfiles() {
         isFile &&
           m(
             'td',
-            m(
-              'button',
-              {
-                style: { fontSize: '0.9em' },
-                onclick: async () => {
-                  haveFile
-                    ? ''
-                    : await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
-                        fileName: parStruct.details.name,
-                        hash: parStruct.details.hash,
-                        flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
-                        size: {
-                          xstr64: parStruct.details.size.xstr64,
-                        },
-                      });
-                },
-              },
+            // using the file from files_util to display download.
+            fileDown.list[parStruct.details.hash]
+              ? m(util.File, {
+                  info: fileDown.list[parStruct.details.hash],
+                  direction: 'down',
+                  transferred: fileDown.list[parStruct.details.hash].transfered.xint64,
+                  parts: [],
+                })
+              : m(
+                  'button',
+                  {
+                    style: { fontSize: '0.9em' },
+                    onclick: async () => {
+                      widget.popupMessage([
+                        m('p', 'Start Download?'),
+                        m(
+                          'button',
+                          {
+                            onclick: async () => {
+                              if (!haveFile) {
+                                const res = await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                                  fileName: parStruct.details.name,
+                                  hash: parStruct.details.hash,
+                                  flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                                  size: {
+                                    xstr64: parStruct.details.size.xstr64,
+                                  },
+                                });
+                                res.body.retval === false
+                                  ? widget.popupMessage([
+                                      m('h3', 'Error'),
+                                      m('hr'),
+                                      m('p', res.body.errorMessage),
+                                    ])
+                                  : widget.popupMessage([
+                                      m('h3', 'Success'),
+                                      m('hr'),
+                                      m('p', 'Download Started'),
+                                    ]);
+                                m.redraw();
+                              }
+                            },
+                          },
+                          'Start Download'
+                        ),
+                      ]);
+                    },
+                  },
 
-              haveFile ? 'Open File' : ['Download', m('i.fas.fa-download')]
-            )
+                  haveFile ? 'Open File' : ['Download', m('i.fas.fa-download')]
+                )
           ),
       ]),
       parStruct.showChild && // recursive call to show children

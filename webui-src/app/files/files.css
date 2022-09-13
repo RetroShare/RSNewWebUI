@@ -63,3 +63,18 @@ table.myfiles th:nth-child(2) {
 table.myfiles td:nth-child(2) {
   text-align: start;
 }
+table.friendsfiles td {
+  word-wrap: break-word;
+}
+table.friendsfiles th:nth-child(1) {
+  width: 2%;
+}
+table.friendsfiles th:nth-child(2) {
+  width: 50%;
+}
+table.friendsfiles th:nth-child(4) {
+  width: 40%;
+}
+table.friendsfiles td:nth-child(2) {
+  text-align: start;
+}

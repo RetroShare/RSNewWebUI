@@ -687,6 +687,7 @@ const PostView = () => {
         }
         voteIdentity = ownId[0];
       });
+      fileDown.Downloads.loadStatus(); // for retrieving downloading files.
     },
     view: (v) =>
       m('.widget', { key: v.attrs.msgId }, [
@@ -717,20 +718,54 @@ const PostView = () => {
                   'button',
                   {
                     style: { fontSize: '0.9em' },
-                    onclick: async () => {
-                      filesInfo[file.mHash]
-                        ? filesInfo[file.mHash].retval
-                          ? ''
-                          : (await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
-                              fileName: file.mName,
-                              hash: file.mHash,
-                              flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
-                              size: {
-                                xstr64: file.mSize.xstr64,
-                              },
-                            })) && m.redraw()
-                        : '';
-                    },
+                    onclick: async () =>
+                      widget.popupMessage([
+                        m('p', 'Start Download?'),
+                        m(
+                          'button',
+                          {
+                            onclick: async () => {
+                              if (filesInfo[file.mHash] && !filesInfo[file.mHash].retval) {
+                                const res = await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                                  fileName: file.mName,
+                                  hash: file.mHash,
+                                  flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                                  size: {
+                                    xstr64: file.mSize.xstr64,
+                                  },
+                                });
+                                res.body.retval === false
+                                  ? widget.popupMessage([
+                                      m('h3', 'Error'),
+                                      m('hr'),
+                                      m('p', res.body.errorMessage),
+                                    ])
+                                  : widget.popupMessage([
+                                      m('h3', 'Success'),
+                                      m('hr'),
+                                      m('p', 'Download Started'),
+                                    ]);
+                                m.redraw();
+                              }
+                            },
+                          },
+                          'Start Download'
+                        ),
+                      ]),
+                    //  {
+                    //   filesInfo[file.mHash]
+                    //     ? filesInfo[file.mHash].retval
+                    //       ? ''
+                    //       : (await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                    //           fileName: file.mName,
+                    //           hash: file.mHash,
+                    //           flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                    //           size: {
+                    //             xstr64: file.mSize.xstr64,
+                    //           },
+                    //         })) && m.redraw()
+                    //     : '';
+                    // },
                   },
                   filesInfo[file.mHash]
                     ? filesInfo[file.mHash].retval
