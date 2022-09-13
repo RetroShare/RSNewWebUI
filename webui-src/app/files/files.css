@@ -22,6 +22,14 @@
   float: right;
   margin-left: 15px;
 }
+.file-view select {
+  float: right;
+  margin-left: 15px;
+}
+.file-view label {
+  float: right;
+  margin-left: 15px;
+}
 span > i {
   margin-right: 5px;
 }
@@ -35,4 +43,38 @@ span > i {
   margin: 5px;
   width: 40%;
   box-shadow: 0 0 3px #aaa;
+}
+.file-node-panel {
+  position: relative;
+  bottom: 200px;
+  margin-left: 200px;
+  animation: fadein 0.5s;
+}
+
+table.myfiles td {
+  word-wrap: break-word;
+}
+table.myfiles th:nth-child(1) {
+  width: 2%;
+}
+table.myfiles th:nth-child(2) {
+  width: 50%;
+}
+table.myfiles td:nth-child(2) {
+  text-align: start;
+}
+table.friendsfiles td {
+  word-wrap: break-word;
+}
+table.friendsfiles th:nth-child(1) {
+  width: 2%;
+}
+table.friendsfiles th:nth-child(2) {
+  width: 50%;
+}
+table.friendsfiles th:nth-child(4) {
+  width: 40%;
+}
+table.friendsfiles td:nth-child(2) {
+  text-align: start;
 }

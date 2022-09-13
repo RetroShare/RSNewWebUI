@@ -17,7 +17,7 @@ const Layout = {
         tabs: Object.keys(sections),
         baseRoute: '/config/',
       }),
-      m('.node-panel', vnode.children),
+      m('.config-node-panel', vnode.children),
     ]),
 };
 

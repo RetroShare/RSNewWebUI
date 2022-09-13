@@ -6,6 +6,8 @@ const downloads = require('files/files_downloads');
 const uploads = require('files/files_uploads');
 const util = require('files/files_util');
 const search = require('files/files_search');
+const myfile = require('files/my_files');
+const friendfile = require('files/friends_files');
 
 const MyFiles = () => {
   return {
@@ -22,6 +24,8 @@ const MyFiles = () => {
 const sections = {
   files: MyFiles,
   search,
+  MyFiles: myfile,
+  FriendsFiles: friendfile,
 };
 
 const Layout = {
@@ -31,7 +35,7 @@ const Layout = {
         tabs: Object.keys(sections),
         baseRoute: '/files/',
       }),
-      m('.node-panel', vnode.children),
+      m('.file-node-panel', vnode.children),
     ]),
 };
 

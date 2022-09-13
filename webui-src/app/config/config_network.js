@@ -6,28 +6,16 @@ const util = require('config/config_util'); // for future use
 /* eslint-disable no-unused-vars */
 
 const SetNwMode = () => {
-  let mode = undefined;
-  let sslId = undefined;
-  const setMode = () => rs.rsJsonApiRequest('/');
+  let sslId;
 
   return {
-    oninit: util.getSslId().then((val) => {
-      sslId = val;
-      rs.rsJsonApiRequest('/');
-    }),
+    oninit: async () => {
+      // const res = await rs.rsJsonApiRequest('/rsPeers/getOwnId');
+      console.log(util.getSslId());
+    },
     view: () => [
       m('p', 'Network mode:'),
-      m(
-        'select',
-        {
-          oninput: (e) => (mode = e.target.value),
-          value: mode,
-          onchange: setMode,
-        },
-        ['Discovery on(recommended)', 'Discovery off'].map((val, i) =>
-          m('option[value=' + (i + 1) + ']', val)
-        )
-      ),
+      
     ],
   };
 };
@@ -130,7 +118,7 @@ const Component = () => {
         m('.grid-2col', [
           m(SetLimits),
           m(SetOpMode),
-          // m(SetNwMode),
+          m(SetNwMode),
         ]),
       ]),
   };

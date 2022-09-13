@@ -1,22 +1,34 @@
 const m = require('mithril');
 const rs = require('rswebui');
 
-const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this group
-const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
-const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; // means: you are subscribed to a group, which makes you a source for this group to your friend nodes.
+// rstypes.h:96
+const GROUP_SUBSCRIBE_ADMIN = 0x01; //  means: you have the admin key for this group
+const GROUP_SUBSCRIBE_PUBLISH = 0x02; //  means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
+const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; //  means: you are subscribed to a group, which makes you a source for this group to your friend nodes.
 const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
+
 const GROUP_MY_CHANNEL =
   GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
+
+// rsfiles.h:168
 const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
+
+// rsgxscommon.h:194
 const GXS_VOTE_DOWN = 0x0001;
 const GXS_VOTE_UP = 0x0002;
 
+//rsgxscircles.h:50
+const PUBLIC = 1; /// Public distribution
+const EXTERNAL = 2; /// Restricted to an external circle, based on GxsIds
+const NODES_GROUP = 3;
+
 const Data = {
-  DisplayChannels: {},
-  Posts: {},
-  Comments: {},
-  TopComments: {},
-  ParentCommentMap: {},
+  DisplayChannels: {}, // chanID -> channel info
+  Posts: {}, // chanID, PostID -> {post, isSearched}
+  Comments: {}, // threadID, msgID -> {Comment, showReplies}
+  TopComments: {}, // threadID, msgID -> comment(Top thread comment)
+  ParentCommentMap: {}, // stores replies of a comment threadID, msgID -> comment
+  Votes: {},
 };
 
 async function updatecontent(content, channelid) {
@@ -33,13 +45,15 @@ async function updatecontent(content, channelid) {
     Data.Comments[content.mThreadId][content.mMsgId] = {
       comment: res.body.comments[0],
       showReplies: false,
-    }; // Comments[post][comment]
+    }; //  Comments[post][comment]
     const comm = res.body.comments[0];
     if (Data.TopComments[comm.mMeta.mThreadId] === undefined) {
       Data.TopComments[comm.mMeta.mThreadId] = {};
     }
     if (comm.mMeta.mThreadId === comm.mMeta.mParentId) {
-      Data.TopComments[comm.mMeta.mThreadId][comm.mMeta.mMsgId] = comm; // pushing top comments respective to post
+      // this is a check for the top level comments
+      Data.TopComments[comm.mMeta.mThreadId][comm.mMeta.mMsgId] = comm;
+      //  pushing top comments respective to post
     } else {
       if (Data.ParentCommentMap[comm.mMeta.mParentId] === undefined) {
         Data.ParentCommentMap[comm.mMeta.mParentId] = {};
@@ -48,17 +62,23 @@ async function updatecontent(content, channelid) {
     }
   } else if (res.body.retval && res.body.votes.length > 0) {
     const vote = res.body.votes[0];
-    if (
-      Data.Comments[vote.mMeta.mThreadId] &&
-      Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId] // finding [post][comment]
-    ) {
-      if (vote.mVoteType === GXS_VOTE_UP) {
-        Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mUpVotes += 1;
-      }
-      if (vote.mVoteType === GXS_VOTE_DOWN) {
-        Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mDownVotes += 1;
-      }
-    }
+    Data.Votes[vote.mMeta.mMsgId] = vote;
+    // console.log(vote);
+    // if (
+    //   Data.Comments[vote.mMeta.mThreadId] &&
+    //   Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId] //  finding [post][comment]
+    // ) {
+    //   console.log(Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment);
+
+    //   if (vote.mVoteType === GXS_VOTE_UP) {
+    //     console.log(Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mUpVotes);
+    //     Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mUpVotes += 1;
+    //     console.log(Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mUpVotes);
+    //   }
+    //   if (vote.mVoteType === GXS_VOTE_DOWN) {
+    //     Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mDownVotes += 1;
+    //   }
+    // }
   }
 }
 
@@ -68,6 +88,7 @@ async function updatedisplaychannels(keyid, details) {
   });
   details = res1.body.channelsInfo[0];
   Data.DisplayChannels[keyid] = {
+    // struct for a channel
     name: details.mMeta.mGroupName,
     isSearched: true,
     description: details.mDescription,
@@ -76,6 +97,7 @@ async function updatedisplaychannels(keyid, details) {
     isSubscribed:
       details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED ||
       details.mMeta.mSubscribeFlags === GROUP_MY_CHANNEL,
+    mychannel: details.mMeta.mSubscribeFlags === GROUP_MY_CHANNEL,
     posts: details.mMeta.mVisibleMsgCount,
     activity: details.mMeta.mLastPost,
     created: details.mMeta.mPublishTs,
@@ -89,10 +111,36 @@ async function updatedisplaychannels(keyid, details) {
   });
 
   if (res2.body.retval) {
-    res2.body.summaries.map((content) => {
-      updatecontent(content, keyid);
+    res2.body.summaries.map(async (content) => {
+      await updatecontent(content, keyid);
     });
   }
+  console.log(Data.Votes);
+  // Data.Votes.length > 1 &&
+  Object.keys(Data.Votes).map((key, index) => {
+    console.log('hello');
+    if (
+      Data.Comments[Data.Votes[key].mMeta.mThreadId] &&
+      Data.Comments[Data.Votes[key].mMeta.mThreadId][Data.Votes[key].mMeta.mParentId] //  finding [post][comment]
+    ) {
+      console.log(
+        Data.Comments[Data.Votes[key].mMeta.mThreadId][Data.Votes[key].mMeta.mParentId].comment
+      );
+
+      if (Data.Votes[key].mVoteType === GXS_VOTE_UP) {
+        // console.log(Data.Comments[Data.Votes[key].mMeta.mThreadId][Data.Votes[key].mMeta.mParentId].comment.mUpVotes);
+        Data.Comments[Data.Votes[key].mMeta.mThreadId][
+          Data.Votes[key].mMeta.mParentId
+        ].comment.mUpVotes += 1;
+        // console.log(Data.Comments[Data.Votes[key].mMeta.mThreadId][Data.Votes[key].mMeta.mParentId].comment.mUpVotes);
+      }
+      if (Data.Votes[key].mVoteType === GXS_VOTE_DOWN) {
+        Data.Comments[Data.Votes[key].mMeta.mThreadId][
+          Data.Votes[key].mMeta.mParentId
+        ].comment.mDownVotes += 1;
+      }
+    }
+  });
 }
 const DisplayChannelsFromList = () => {
   return {
@@ -150,7 +198,6 @@ const CommentsTable = () => {
   };
 };
 
-
 const FilesTable = () => {
   return {
     oninit: (v) => {},
@@ -163,30 +210,13 @@ const FilesTable = () => {
 };
 
 function formatbytes(bytes, decimals = 2) {
+  // takes in size returns a string (size)(kb/gb/tb)
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
-
-function popupmessage(message) {
-  const container = document.getElementById('modal-container');
-  container.style.display = 'block';
-  m.render(
-    container,
-    m('.modal-content', [
-      m(
-        'button.red',
-        {
-          onclick: () => (container.style.display = 'none'),
-        },
-        m('i.fas.fa-times')
-      ),
-      message,
-    ])
-  );
 }
 
 const ChannelTable = () => {
@@ -196,6 +226,7 @@ const ChannelTable = () => {
   };
 };
 const SearchBar = () => {
+  // same search bar is used for both channels and posts
   let searchString = '';
   return {
     view: (v) =>
@@ -206,6 +237,7 @@ const SearchBar = () => {
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
           if (v.attrs.category.localeCompare('channels') === 0) {
+            // for channels
             for (const hash in Data.DisplayChannels) {
               if (Data.DisplayChannels[hash].name.toLowerCase().indexOf(searchString) > -1) {
                 Data.DisplayChannels[hash].isSearched = true;
@@ -215,6 +247,7 @@ const SearchBar = () => {
             }
           } else {
             for (const hash in Data.Posts[v.attrs.channelId]) {
+              // for posts
               if (
                 Data.Posts[v.attrs.channelId][hash].post.mMeta.mMsgName
                   .toLowerCase()
@@ -234,7 +267,6 @@ const SearchBar = () => {
 module.exports = {
   Data,
   SearchBar,
-  popupmessage,
   ChannelSummary,
   formatbytes,
   DisplayChannelsFromList,
@@ -249,5 +281,8 @@ module.exports = {
   GROUP_MY_CHANNEL,
   GXS_VOTE_DOWN,
   GXS_VOTE_UP,
+  PUBLIC,
+  EXTERNAL,
+  NODES_GROUP,
   RS_FILE_REQ_ANONYMOUS_ROUTING,
 };

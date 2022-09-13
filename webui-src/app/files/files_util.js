@@ -1,5 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const widget = require('widgets');
 
 const RS_FILE_CTRL_PAUSE = 0x00000100;
 const RS_FILE_CTRL_START = 0x00000200;
@@ -15,6 +16,7 @@ const FT_STATE_PAUSED = 0x0006;
 const FT_STATE_CHECKING_HASH = 0x0007;
 
 const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
+const RS_FILE_HINTS_REMOTE = 0x00000008;
 
 function makeFriendlyUnit(bytes) {
   let cnt = bytes;
@@ -52,7 +54,7 @@ function calcRemainingTime(bytes, rate) {
   }
 }
 
-function fileAction(hash, action) {
+async function fileAction(hash, action) {
   let actionHeader = '';
   const jsonParams = {
     hash,
@@ -82,7 +84,8 @@ function fileAction(hash, action) {
       console.error('Unknown action in Downloads.control()');
       return;
   }
-  rs.rsJsonApiRequest(actionHeader, jsonParams, () => {});
+  const res = await rs.rsJsonApiRequest(actionHeader, jsonParams, () => {});
+  return res.body.retval;
 }
 
 function actionButton(file, action) {
@@ -120,7 +123,28 @@ function actionButton(file, action) {
           title: 'cancel',
 
           onclick() {
-            fileAction(file.hash, 'cancel');
+            widget.popupMessage(
+              m('Cancelpop', [
+                m('p', 'Are you sure you want to cancel download?'),
+                m(
+                  'button',
+                  {
+                    onclick: async () => {
+                      const res = await fileAction(file.hash, 'cancel');
+                      if (res) {
+                        widget.popupMessage(m('p', 'Download Cancelled Successfully'));
+                      } else {
+                        widget.popupMessage(m('p', 'Download Cancel Failed'));
+                      }
+
+                      m.redraw();
+                    },
+                  },
+                  'Cancel'
+                ),
+              ])
+            );
+            // fileAction(file.hash, 'cancel');
           },
         },
         m('i.fas.fa-times')
@@ -151,7 +175,16 @@ const ProgressBar = () => {
   };
 };
 
+const chunkStrats = [
+  'CHUNK_STRATEGY_STREAMING',
+  'CHUNK_STRATEGY_RANDOM',
+  'CHUNK_STRATEGY_PROGRESSIVE',
+];
+const chunkStratsOptions = ['Streaming', 'Random', 'Progressive'];
+// rstypes.h :: 366
+
 const File = () => {
+  let chunkStrat;
   return {
     view: (v) =>
       m(
@@ -172,12 +205,30 @@ const File = () => {
                   v.attrs.info,
                   v.attrs.info.downloadStatus === FT_STATE_PAUSED ? 'resume' : 'pause'
                 ),
+
+                m(
+                  'select[id=chunkTag]',
+                  {
+                    value: chunkStrat,
+                    onchange: async (e) => {
+                      chunkStrat = chunkStrats[e.target.selectedIndex];
+                      const res = await rs.rsJsonApiRequest('/rsFiles/setChunkStrategy', {
+                        hash: v.attrs.info.hash,
+                        newStrategy: chunkStrat,
+                      });
+                    },
+                  },
+                  [chunkStratsOptions.map((opt) => m('option', { value: opt }, opt))]
+                ),
+                m('label[for=chunkTag]', 'Set Chunk Strategy: '),
               ],
           v.attrs.direction === 'up'
             ? []
             : m(ProgressBar, {
                 rate: (v.attrs.transferred / v.attrs.info.size.xint64) * 100,
               }),
+          m('span.filestat', m('i.fas.fa-download'), makeFriendlyUnit(v.attrs.transferred)),
+
           m('span.filestat', m('i.fas.fa-file'), makeFriendlyUnit(v.attrs.info.size.xint64)),
           m(
             'span.filestat',
@@ -208,7 +259,7 @@ const SearchBar = () => {
   let searchString = '';
   return {
     view: (v) =>
-      m('input[type=text][placeholder=search].searchbar', {
+      m('input[type=text][placeholder=SearchDownloads].searchbar', {
         value: searchString,
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
@@ -232,6 +283,37 @@ function compareArrays(big, small) {
     return !this.has(val);
   }, new Set(small));
 }
+const MyFilesTable = () => {
+  return {
+    view: (v) =>
+      m('table.myfiles', [
+        m('tr', [m('th', ''), m('th', 'My Directories'), m('th', 'Size')]),
+        v.children,
+      ]),
+  };
+};
+const FriendsFilesTable = () => {
+  return {
+    view: (v) =>
+      m('table.friendsfiles', [
+        m('tr', [
+          m('th', ''),
+          m('th', 'Friends Directories'),
+          m('th', 'Size'),
+          m('th', m('i.fas.fa-download')),
+        ]),
+        v.children,
+      ]),
+  };
+};
+function formatbytes(bytes, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
 
 module.exports = {
   RS_FILE_CTRL_PAUSE,
@@ -246,8 +328,12 @@ module.exports = {
   FT_STATE_PAUSED,
   FT_STATE_CHECKING_HASH,
   RS_FILE_REQ_ANONYMOUS_ROUTING,
+  RS_FILE_HINTS_REMOTE,
   makeFriendlyUnit,
   File,
   SearchBar,
   compareArrays,
+  MyFilesTable,
+  FriendsFilesTable,
+  formatbytes,
 };

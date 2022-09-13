@@ -1,6 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const util = require('channels/channels_util');
+const widget = require('widgets');
 const Data = util.Data;
 const peopleUtil = require('people/people_util');
 const sha1 = require('channels/sha1');
@@ -72,15 +73,164 @@ async function parsefile(file, type) {
   await chunkreaderblock(offset, chunkSize, file);
   return ansList;
 }
+const messageGroups = ['Public', 'Restricted Circle', 'Restricted Node Group'];
+const messageGroupsCode = [util.PUBLIC, util.EXTERNAL, util.NODES_GROUP]; //rsgxscirles.h:50
+
+function createchannel() {
+  let title;
+  let body;
+  let identity;
+  let thumbnail;
+  let selectedGroup = messageGroups[0];
+  let selectedGroupCode = messageGroupsCode[0];
+  let selectedCircle;
+  let circles;
+  return {
+    oninit: async (vnode) => {
+      if (vnode.attrs.authorId) {
+        identity = vnode.attrs.authorId[0];
+      }
+
+      const res = await rs.rsJsonApiRequest('/rsgxscircles/getCirclesSummaries');
+      if (res.body.retval) {
+        circles = res.body.circles;
+        selectedCircle = circles[0].mGroupName;
+      }
+    },
+    view: (vnode) =>
+      m('.widget', [
+        m('h3', 'Create Channel'),
+        m('hr'),
+        m('input[type=text][placeholder=Title]', {
+          style: { float: 'left' },
+          oninput: (e) => (title = e.target.value),
+        }),
+        m('div', { style: { float: 'right', marginTop: '10px', marginBottom: '10px' } }, [
+          m('label[for=thumbnail]', 'Thumbnail: '),
+          m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
+            onchange: async (e) => {
+              let reader = new FileReader();
+              reader.onloadend = function () {
+                thumbnail = reader.result.substring(reader.result.indexOf(',') + 1);
+              };
+              reader.readAsDataURL(e.target.files[0]);
+            },
+          }),
+        ]),
+
+        m('div', { style: { float: 'right', marginTop: '10px', marginBottom: '10px' } }, [
+          m('label[for=idtags]', 'Select identity: '),
+          m(
+            'select[id=idtags]',
+            {
+              value: identity,
+              onchange: (e) => {
+                identity = vnode.attrs.authorId[e.target.selectedIndex];
+              },
+            },
+            [
+              vnode.attrs.authorId &&
+                vnode.attrs.authorId.map((o) =>
+                  m(
+                    'option',
+                    { value: o },
+                    rs.userList.userMap[o]
+                      ? rs.userList.userMap[o].toLocaleString() + ' (' + o.slice(0, 8) + '...)'
+                      : 'No Signature'
+                  )
+                ),
+            ]
+          ),
+        ]),
+        m('div', { style: { float: 'left', marginTop: '10px', marginBottom: '10px' } }, [
+          m('label[for=mtags]', 'Message Distribution: '),
+          m(
+            'select[id=mtags]',
+            {
+              value: selectedGroup,
+              onchange: (e) => {
+                selectedGroup = messageGroups[e.target.selectedIndex];
+                selectedGroupCode = messageGroupsCode[e.target.selectedIndex];
+                widget.popupMessage(m(createchannel, { authorId: vnode.attrs.authorId }));
+              },
+            },
+            [messageGroups.map((group) => m('option', { value: group }, group))]
+          ),
+        ]),
+        circles &&
+          m(
+            'div',
+            {
+              style: {
+                float: 'left',
+                marginTop: '10px',
+                marginBottom: '10px',
+                display: selectedGroupCode === util.EXTERNAL ? 'block' : 'none',
+              },
+            },
+            [
+              m('label[for=circlestag]', 'Circles: '),
+              m(
+                'select[id=circlestag]',
+                {
+                  value: selectedCircle,
+                  onchange: (e) => {
+                    selectedCircle = circles[e.target.selectedIndex];
+                    console.log(selectedCircle);
+                    // selectedGroupCode = messageGroupsCode[e.target.selectedIndex];
+                  },
+                },
+                [
+                  circles.map((circle) =>
+                    m('option', { value: circle.mGroupName }, circle.mGroupName)
+                  ),
+                ]
+              ),
+            ]
+          ),
+        m('textarea[rows=5][placeholder=Description]', {
+          style: { width: '100%', display: 'block' },
+          oninput: (e) => (body = e.target.value),
+          value: body,
+        }),
+        m(
+          'button',
+          {
+            onclick: async () => {
+              const res = await rs.rsJsonApiRequest('/rsgxschannels/createChannelV2', {
+                name: title,
+                description: body,
+                thumbnail: { mData: { base64: thumbnail } },
+                ...(Number(identity) !== 0 && { authorId: identity }), //checks if some identity has to be assigned
+                circleType: selectedGroupCode,
+                ...(selectedGroupCode === util.EXTERNAL &&
+                  selectedCircle && { circleId: selectedCircle.mGroupId }), //checks if the selectedGroup code is EXTERNAL
+              });
+              if (res.body.retval) {
+                util.updatedisplaychannels(res.body.channelId);
+                m.redraw();
+              }
+              res.body.retval === false
+                ? widget.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                : widget.popupMessage([
+                    m('h3', 'Success'),
+                    m('hr'),
+                    m('p', 'Channel created successfully'),
+                  ]);
+            },
+          },
+          'Create'
+        ),
+      ]),
+  };
+}
 
 const AddPost = () => {
   let content = '';
   let ptitle = '';
   let pthumbnail = [];
   let pfiles = [];
-  let uploadFiles = false;
-  let uploadThumbnail = false;
-
+  let uploadFiles = true;
   return {
     view: (vnode) =>
       m('.widget', [
@@ -89,23 +239,18 @@ const AddPost = () => {
         m('label[for=thumbnail]', 'Thumbnail: '),
         m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
           onchange: async (e) => {
-            filesUploadHashes.Thumbnail = [];
-            pthumbnail = [];
-            const ansList = await parsefile(e.target.files[0], '');
-
-            if (filesUploadHashes.Thumbnail.length === e.target.files.length) {
-              pthumbnail.push({
-                name: e.target.files[0].name,
-                size: e.target.files[0].size,
-                hash: filesUploadHashes.Thumbnail[0],
-              });
-              uploadThumbnail = true;
-            }
+            let reader = new FileReader();
+            reader.onloadend = function () {
+              pthumbnail = reader.result.substring(reader.result.indexOf(',') + 1);
+            };
+            reader.readAsDataURL(e.target.files[0]); // converts into base64 string
           },
         }),
         m('label[for=browse]', 'Attachments: '),
         m('input[type=file][name=files][id=browse][multiple=multiple]', {
+          // attachments option wrong hash, not working
           onchange: async (e) => {
+            uploadFiles = false;
             filesUploadHashes.PostFiles = [];
             pfiles = [];
             for (let i = 0; i < e.target.files.length; i++) {
@@ -129,7 +274,7 @@ const AddPost = () => {
           oninput: (e) => (ptitle = e.target.value),
         }),
         m('textarea[rows=5]', {
-          style: {width: '90%', display: 'block'},
+          style: { width: '90%', display: 'block' },
           oninput: (e) => (content = e.target.value),
           value: content,
         }),
@@ -137,22 +282,24 @@ const AddPost = () => {
           'button',
           {
             onclick: async () => {
-              if (uploadFiles && uploadThumbnail) {
+              if (uploadFiles) {
                 console.log(vnode.attrs.chanId, ptitle, content, pfiles, pthumbnail);
                 const res = await rs.rsJsonApiRequest('/rsgxschannels/createPostV2', {
                   channelId: vnode.attrs.chanId,
                   title: ptitle,
                   mBody: content,
-                  files: pfiles,
-                  thumbnail: pthumbnail,
+                  files: pfiles, //does not work for now
+                  thumbnail: { mData: { base64: pthumbnail } },
                 });
                 res.body.retval === false
-                  ? util.m([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                  : util.m([
+                  ? widget.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                  : widget.popupMessage([
                       m('h3', 'Success'),
                       m('hr'),
                       m('p', 'Post added successfully'),
                     ]);
+                util.updatedisplaychannels(vnode.attrs.chanId);
+                m.redraw();
               }
             },
           },
@@ -167,6 +314,7 @@ const ChannelView = () => {
   let cimage = '';
   let cauthor = '';
   let csubscribed = {};
+  let mychannel = false;
   let cposts = 0;
   let plist = {};
   let createDate = {};
@@ -184,6 +332,7 @@ const ChannelView = () => {
           cauthor = 'Unknown';
         }
         csubscribed = Data.DisplayChannels[v.attrs.id].isSubscribed;
+        mychannel = Data.DisplayChannels[v.attrs.id].mychannel;
         cposts = Data.DisplayChannels[v.attrs.id].posts;
         createDate = Data.DisplayChannels[v.attrs.id].created;
         lastActivity = Data.DisplayChannels[v.attrs.id].activity;
@@ -228,7 +377,10 @@ const ChannelView = () => {
             csubscribed ? 'Subscribed' : 'Subscribe'
           ),
           m('img.channelpic', {
-            src: 'data:image/png;base64,' + cimage.mData.base64,
+            src:
+              cimage.mData.base64 === ''
+                ? 'data/streaming.png'
+                : 'data:image/png;base64,' + cimage.mData.base64,
           }),
           m('[id=channeldetails]', [
             m('p', m('b', 'Posts: '), cposts),
@@ -257,10 +409,12 @@ const ChannelView = () => {
               style: 'display:' + (csubscribed ? 'block' : 'none'),
             },
             m('h3', 'Posts'),
-            m('button', { onclick: () => util.m(m(AddPost, { chanId: v.attrs.id })) }, [
-              'Add Post',
-              m('i.fas.fa-edit'),
-            ]),
+            mychannel &&
+              m(
+                'button',
+                { onclick: () => widget.popupMessage(m(AddPost, { chanId: v.attrs.id })) },
+                ['Add Post', m('i.fas.fa-edit')]
+              ),
             m('hr'),
 
             m(
@@ -270,7 +424,7 @@ const ChannelView = () => {
                   'div',
                   {
                     class: 'card',
-                    style: 'display: ' + (plist[key].isSearched ? 'block' : 'none'),
+                    style: 'display: ' + (plist[key].isSearched ? 'block' : 'none'), // for search
                     onclick: () => {
                       m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
                         tab: m.route.param().tab,
@@ -282,7 +436,10 @@ const ChannelView = () => {
                   [
                     m('img', {
                       class: 'card-img',
-                      src: 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
+                      src:
+                        plist[key].post.mThumbnail.mData.base64 === ''
+                          ? 'data/streaming.png'
+                          : 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
 
                       alt: '',
                     }),
@@ -315,16 +472,42 @@ async function addvote(voteType, vchannelId, vpostId, vauthorId, vcommentId) {
 
 const AddComment = () => {
   let inputComment = '';
+  let identity;
   return {
+    oninit: (vnode) => {
+      if (vnode.attrs.authorId) {
+        identity = vnode.attrs.authorId[0];
+      }
+    },
     view: (vnode) =>
       m('.widget', [
         m('h3', 'Add Comment'),
+        m('label[for=tags]', 'Select identity'),
+        m(
+          'select[id=idtags]',
+          {
+            value: identity,
+            onchange: (e) => {
+              identity = vnode.attrs.authorId[e.target.selectedIndex];
+            },
+          },
+          [
+            vnode.attrs.authorId &&
+              vnode.attrs.authorId.map((o) =>
+                m(
+                  'option',
+                  { value: o },
+                  rs.userList.userMap[o].toLocaleString() + ' (' + o.slice(0, 8) + '...)'
+                )
+              ),
+          ]
+        ),
         m('hr'),
         (vnode.attrs.parent_comment !== '') > 0
-          ? [m('h5', 'Reply to comment: '), m('p', vnode.attrs.parent_comment)]
+          ? [m('h5', 'Reply to comment: '), m('p', vnode.attrs.parent_comment)] // if it is add reply option
           : '',
         m('textarea[rows=5]', {
-          style: {width: '90%', display: 'block'},
+          style: { width: '90%', display: 'block' },
           oninput: (e) => (inputComment = e.target.value),
           value: inputComment,
         }),
@@ -336,13 +519,13 @@ const AddComment = () => {
                 channelId: vnode.attrs.channelId,
                 threadId: vnode.attrs.threadId,
                 comment: inputComment,
-                authorId: vnode.attrs.authorId,
+                authorId: identity,
                 parentId: vnode.attrs.parentId,
               });
 
               res.body.retval === false
-                ? util.m([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                : util.m([
+                ? widget.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                : widget.popupMessage([
                     m('h3', 'Success'),
                     m('hr'),
                     m('p', 'Comment added successfully'),
@@ -357,9 +540,10 @@ const AddComment = () => {
   };
 };
 function displaycomment() {
+  // recursive function to display comments
   return {
     oninit: (v) => {},
-    view: ({ attrs: { commentStruct, identity, replyDepth } }) => {
+    view: ({ attrs: { commentStruct, identity, replyDepth, voteIdentity } }) => {
       const comment = commentStruct.comment;
       let parMap = {};
       if (Data.ParentCommentMap[comment.mMeta.mMsgId]) {
@@ -367,12 +551,12 @@ function displaycomment() {
       }
       return [
         m('tr', [
-          Object.keys(parMap).length
+          Object.keys(parMap).length // if it has replies
             ? m(
                 'td',
                 m('i.fas.fa-angle-right', {
                   class: 'fa-rotate-' + (commentStruct.showReplies ? '90' : '0'),
-                  style: 'margin-top:12px',
+                  style: 'cursor:pointer',
                   onclick: () => {
                     commentStruct.showReplies = !commentStruct.showReplies;
                   },
@@ -386,7 +570,7 @@ function displaycomment() {
               style: {
                 position: 'relative',
                 '--replyDepth': replyDepth,
-                left: 'calc(30px*var(--replyDepth))',
+                left: 'calc(30px*var(--replyDepth))', // shifts the reply by 30px
               },
             },
             [
@@ -397,7 +581,7 @@ function displaycomment() {
                   {
                     style: 'font-size:15px',
                     onclick: () =>
-                      util.m(
+                      widget.popupMessage(
                         m(AddComment, {
                           parent_comment: comment.mComment,
                           channelId: comment.mMeta.mGroupId,
@@ -409,36 +593,38 @@ function displaycomment() {
                   },
                   'Reply'
                 ),
-                m(
-                  'button',
-                  {
-                    style: 'font-size:15px',
-                    onclick: () =>
-                      addvote(
-                        util.GXS_VOTE_UP,
-                        comment.mMeta.mGroupId,
-                        comment.mMeta.mThreadId,
-                        identity,
-                        comment.mMeta.mMsgId
-                      ),
-                  },
-                  m('i.fas.fa-thumbs-up')
-                ),
-                m(
-                  'button',
-                  {
-                    style: 'font-size:15px',
-                    onclick: () =>
-                      addvote(
-                        util.GXS_VOTE_DOWN,
-                        comment.mMeta.mGroupId,
-                        comment.mMeta.mThreadId,
-                        identity,
-                        comment.mMeta.mMsgId
-                      ),
-                  },
-                  m('i.fas.fa-thumbs-down')
-                ),
+                voteIdentity &&
+                  m(
+                    'button',
+                    {
+                      style: 'font-size:15px',
+                      onclick: () =>
+                        addvote(
+                          util.GXS_VOTE_UP,
+                          comment.mMeta.mGroupId,
+                          comment.mMeta.mThreadId,
+                          voteIdentity,
+                          comment.mMeta.mMsgId
+                        ),
+                    },
+                    m('i.fas.fa-thumbs-up')
+                  ),
+                voteIdentity &&
+                  m(
+                    'button',
+                    {
+                      style: 'font-size:15px',
+                      onclick: () =>
+                        addvote(
+                          util.GXS_VOTE_DOWN,
+                          comment.mMeta.mGroupId,
+                          comment.mMeta.mThreadId,
+                          voteIdentity,
+                          comment.mMeta.mMsgId
+                        ),
+                    },
+                    m('i.fas.fa-thumbs-down')
+                  ),
               ]),
             ]
           ),
@@ -454,13 +640,14 @@ function displaycomment() {
           m('td', comment.mUpVotes),
           m('td', comment.mDownVotes),
         ]),
-        commentStruct.showReplies &&
+        commentStruct.showReplies && // recursive calls for the replies
           // parMap.map((value) =>
           Object.keys(parMap).map((key, index) =>
             m(displaycomment, {
               commentStruct: Data.Comments[parMap[key].mMeta.mThreadId][parMap[key].mMeta.mMsgId],
+              voteIdentity,
               identity,
-              replyDepth: replyDepth + 1,
+              replyDepth: replyDepth + 1, // for the css
             })
           ),
       ];
@@ -472,26 +659,35 @@ const PostView = () => {
   let post = {};
   let topComments = {};
   const filesInfo = {};
-  let ownId = {};
+  let voteIdentity;
+  let ownId;
   return {
-    oninit: (v) => {
+    oninit: async (v) => {
       if (Data.Posts[v.attrs.channelId] && Data.Posts[v.attrs.channelId][v.attrs.msgId]) {
         post = Data.Posts[v.attrs.channelId][v.attrs.msgId].post;
       }
       if (Data.TopComments[v.attrs.msgId]) {
-        topComments = Data.TopComments[v.attrs.msgId];
+        topComments = Data.TopComments[v.attrs.msgId]; // get all the top level parent comments
       }
       if (post) {
         post.mFiles.map(async (file) => {
           const res = await rs.rsJsonApiRequest('/rsfiles/alreadyHaveFile', {
+            // checks if the file is already there with the user
             hash: file.mHash,
           });
           filesInfo[file.mHash] = res.body;
         });
       }
-      peopleUtil.ownIds((data) => {
-        ownId = data[0];
+      await peopleUtil.ownIds((data) => {
+        ownId = data;
+        for (let i = 0; i < ownId.length; i++) {
+          if (Number(ownId[i]) === 0) {
+            ownId.splice(i, 1); // workaround for id '0'
+          }
+        }
+        voteIdentity = ownId[0];
       });
+      fileDown.Downloads.loadStatus(); // for retrieving downloading files.
     },
     view: (v) =>
       m('.widget', { key: v.attrs.msgId }, [
@@ -521,20 +717,55 @@ const PostView = () => {
                 m(
                   'button',
                   {
-                    onclick: async () => {
-                      filesInfo[file.mHash]
-                        ? filesInfo[file.mHash].retval
-                          ? ''
-                          : await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
-                              fileName: file.mName,
-                              hash: file.mHash,
-                              flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
-                              size: {
-                                xstr64: file.mSize.xstr64,
-                              },
-                            })
-                        : '';
-                    },
+                    style: { fontSize: '0.9em' },
+                    onclick: async () =>
+                      widget.popupMessage([
+                        m('p', 'Start Download?'),
+                        m(
+                          'button',
+                          {
+                            onclick: async () => {
+                              if (filesInfo[file.mHash] && !filesInfo[file.mHash].retval) {
+                                const res = await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                                  fileName: file.mName,
+                                  hash: file.mHash,
+                                  flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                                  size: {
+                                    xstr64: file.mSize.xstr64,
+                                  },
+                                });
+                                res.body.retval === false
+                                  ? widget.popupMessage([
+                                      m('h3', 'Error'),
+                                      m('hr'),
+                                      m('p', res.body.errorMessage),
+                                    ])
+                                  : widget.popupMessage([
+                                      m('h3', 'Success'),
+                                      m('hr'),
+                                      m('p', 'Download Started'),
+                                    ]);
+                                m.redraw();
+                              }
+                            },
+                          },
+                          'Start Download'
+                        ),
+                      ]),
+                    //  {
+                    //   filesInfo[file.mHash]
+                    //     ? filesInfo[file.mHash].retval
+                    //       ? ''
+                    //       : (await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                    //           fileName: file.mName,
+                    //           hash: file.mHash,
+                    //           flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                    //           size: {
+                    //             xstr64: file.mSize.xstr64,
+                    //           },
+                    //         })) && m.redraw()
+                    //     : '';
+                    // },
                   },
                   filesInfo[file.mHash]
                     ? filesInfo[file.mHash].retval
@@ -542,7 +773,7 @@ const PostView = () => {
                       : ['Download', m('i.fas.fa-download')]
                     : 'Please Wait...'
                 ),
-                fileDown.list[file.mHash] &&
+                fileDown.list[file.mHash] && // using the file from files_util to display download.
                   m(fileUtil.File, {
                     info: fileDown.list[file.mHash],
                     direction: 'down',
@@ -559,7 +790,7 @@ const PostView = () => {
           'button',
           {
             onclick: () => {
-              util.popupmessage(
+              widget.popupMessage(
                 m(AddComment, {
                   parent_comment: '',
                   channelId: v.attrs.channelId,
@@ -573,6 +804,32 @@ const PostView = () => {
           'Add Comment'
         ),
         m(
+          'label[for=idtags',
+          {
+            style: { marginLeft: '10px' },
+          },
+          'Voter ID: '
+        ),
+        m(
+          'select[id=idtags]',
+          {
+            value: voteIdentity,
+            onchange: (e) => {
+              voteIdentity = ownId[e.target.selectedIndex];
+            },
+          },
+          [
+            ownId &&
+              ownId.map((o) =>
+                m(
+                  'option',
+                  { value: o },
+                  rs.userList.userMap[o].toLocaleString() + ' (' + o.slice(0, 8) + '...)'
+                )
+              ),
+          ]
+        ),
+        m(
           util.CommentsTable,
           m(
             'tbody',
@@ -580,7 +837,9 @@ const PostView = () => {
               Data.Comments[topComments[key].mMeta.mThreadId] &&
               Data.Comments[topComments[key].mMeta.mThreadId][topComments[key].mMeta.mMsgId]
                 ? m(displaycomment, {
+                    // calls the recursive function for all the parents.
                     identity: ownId,
+                    voteIdentity,
                     commentStruct:
                       Data.Comments[topComments[key].mMeta.mThreadId][
                         topComments[key].mMeta.mMsgId
@@ -598,4 +857,5 @@ const PostView = () => {
 module.exports = {
   ChannelView,
   PostView,
+  createchannel,
 };
