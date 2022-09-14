@@ -176,7 +176,6 @@ function createchannel() {
                   value: selectedCircle,
                   onchange: (e) => {
                     selectedCircle = circles[e.target.selectedIndex];
-                    console.log(selectedCircle);
                     // selectedGroupCode = messageGroupsCode[e.target.selectedIndex];
                   },
                 },
@@ -283,7 +282,7 @@ const AddPost = () => {
           {
             onclick: async () => {
               if (uploadFiles) {
-                console.log(vnode.attrs.chanId, ptitle, content, pfiles, pthumbnail);
+                // console.log(vnode.attrs.chanId, ptitle, content, pfiles, pthumbnail);
                 const res = await rs.rsJsonApiRequest('/rsgxschannels/createPostV2', {
                   channelId: vnode.attrs.chanId,
                   title: ptitle,
@@ -545,9 +544,16 @@ function displaycomment() {
     oninit: (v) => {},
     view: ({ attrs: { commentStruct, identity, replyDepth, voteIdentity } }) => {
       const comment = commentStruct.comment;
+      let cUpVotes = 0; 
+      let cDownVotes = 0;
       let parMap = {};
       if (Data.ParentCommentMap[comment.mMeta.mMsgId]) {
         parMap = Data.ParentCommentMap[comment.mMeta.mMsgId];
+      }
+      if(Data.Votes[comment.mMeta.mThreadId] && Data.Votes[comment.mMeta.mThreadId][comment.mMeta.mMsgId])
+      {
+        cUpVotes = Data.Votes[comment.mMeta.mThreadId][comment.mMeta.mMsgId].upvotes;
+        cDownVotes = Data.Votes[comment.mMeta.mThreadId][comment.mMeta.mMsgId].downvotes;
       }
       return [
         m('tr', [
@@ -637,8 +643,8 @@ function displaycomment() {
               : 'undefined'
           ),
           m('td', comment.mScore),
-          m('td', comment.mUpVotes),
-          m('td', comment.mDownVotes),
+          m('td', cUpVotes),
+          m('td', cDownVotes),
         ]),
         commentStruct.showReplies && // recursive calls for the replies
           // parMap.map((value) =>
@@ -752,20 +758,6 @@ const PostView = () => {
                           'Start Download'
                         ),
                       ]),
-                    //  {
-                    //   filesInfo[file.mHash]
-                    //     ? filesInfo[file.mHash].retval
-                    //       ? ''
-                    //       : (await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
-                    //           fileName: file.mName,
-                    //           hash: file.mHash,
-                    //           flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
-                    //           size: {
-                    //             xstr64: file.mSize.xstr64,
-                    //           },
-                    //         })) && m.redraw()
-                    //     : '';
-                    // },
                   },
                   filesInfo[file.mHash]
                     ? filesInfo[file.mHash].retval
