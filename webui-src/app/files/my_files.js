@@ -25,6 +25,7 @@ function displayfiles() {
                     parStruct.details.children.map(async (child) => {
                       const res = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
                         handle: child.handle.xint64,
+                        flags: util.RS_FILE_HINTS_LOCAL,
                       });
                       childrenList.push(res.body.details);
                       loaded = true;
