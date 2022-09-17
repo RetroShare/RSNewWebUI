@@ -34,25 +34,19 @@ const SetNwMode = () => {
         }
       }
       if (details) {
-        if (
-          details.vs_dht === util.RS_VS_DHT_FULL &&
-          details.vs_disc === util.RS_VS_DISC_FULL
-        ) {
+        if (details.vs_dht === util.RS_VS_DHT_FULL && details.vs_disc === util.RS_VS_DISC_FULL) {
           selectedMode = networkModes[0];
-        }
-        else if (
+        } else if (
           details.vs_dht === util.RS_VS_DHT_OFF &&
           details.vs_disc === util.RS_VS_DISC_FULL
         ) {
           selectedMode = networkModes[1];
-        }
-        else if (
+        } else if (
           details.vs_dht === util.RS_VS_DHT_FULL &&
           details.vs_disc === util.RS_VS_DISC_OFF
         ) {
           selectedMode = networkModes[2];
-        }
-        else if (
+        } else if (
           details.vs_dht === util.RS_VS_DHT_OFF &&
           details.vs_disc === util.RS_VS_DISC_OFF
         ) {
@@ -235,16 +229,65 @@ Low traffic: 10% standard traffic and TODO: pause all file transfers\n`
   };
 };
 
-const Component = () => {
-  let details;
-  let sslId;
+const displayLocalIPAddress = () => {
   return {
+    view: (v) => v.attrs.details && [m('p', 'Local Address: '), m('p', v.attrs.details.localAddr)],
+  };
+};
+const displayExternalIPAddress = () => {
+  return {
+    view: (v) => v.attrs.details && [m('p', 'External Address: '), m('p', v.attrs.details.extAddr)],
+  };
+};
+
+const displayIPAddresses = () => {
+  return {
+    view: (v) =>
+      v.attrs.details && [
+        m('p', 'External Address: '),
+        m(
+          'ul',
+          {
+            style: { height: '200px', overflow: 'hidden', overflowY: 'scroll' },
+          },
+          v.attrs.details.ipAddressList.map((ip) => m('li', ip))
+        ),
+      ],
+  };
+};
+
+const Component = () => {
+  let sslId;
+  let details;
+  return {
+    oninit: async () => {
+      const res = await rs.rsJsonApiRequest('/rsaccounts/getCurrentAccountId');
+      if (res.body.retval) {
+        sslId = res.body.id;
+      }
+      if (sslId) {
+        const res2 = await rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
+          sslId: sslId,
+        });
+        if (res2.body.retval) {
+          details = res2.body.det;
+        }
+      }
+    },
     view: () =>
       m('.widget.widget-half', [
         m('h3', 'Network Configuration'),
         m('hr'),
 
-        m('.grid-2col', [m(SetLimits), m(SetOpMode), m(SetNwMode), m(SetNAT)]),
+        m('.grid-2col', [
+          m(SetNwMode),
+          m(SetNAT),
+          m(displayLocalIPAddress, { details }),
+          m(displayExternalIPAddress, { details }),
+          m(SetLimits),
+          m(SetOpMode),
+          m(displayIPAddresses, { details }),
+        ]),
       ]),
   };
 };
