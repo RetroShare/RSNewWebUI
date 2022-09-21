@@ -1,5 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const widget = require('widgets');
 
 const RS_MSG_BOXMASK = 0x000f;
 
@@ -30,37 +31,34 @@ const MessageSummary = () => {
   let msgStatus = '';
   let fromUserInfo = {};
   return {
-    oninit: (v) => {
-      rs.rsJsonApiRequest(
-        '/rsMsgs/getMessage',
-        {
-          msgId: v.attrs.details.msgId,
-        },
-        (data) => {
-          details = data.msg;
-          files = details.files;
+    oninit: async (v) => {
+      const res = await rs.rsJsonApiRequest('/rsMsgs/getMessage', {
+        msgId: v.attrs.details.msgId,
+      });
+      if (res.body.retval) {
+        details = res.body.msg;
+        files = details.files;
 
-          isStarred = (details.msgflags & 0xf00) === RS_MSG_STAR;
+        isStarred = (details.msgflags & 0xf00) === RS_MSG_STAR;
 
-          const flag = details.msgflags & 0xf0;
-          if (flag === RS_MSG_NEW || flag === RS_MSG_UNREAD_BY_USER) {
-            msgStatus = 'unread';
-          } else {
-            msgStatus = 'read';
-          }
+        const flag = details.msgflags & 0xf0;
+        if (flag === RS_MSG_NEW || flag === RS_MSG_UNREAD_BY_USER) {
+          msgStatus = 'unread';
+        } else {
+          msgStatus = 'read';
         }
-      ),
+      }
+      if (details && details.rsgxsid_srcId) {
         rs.rsJsonApiRequest(
           '/rsIdentity/getIdDetails',
           {
-            id: details.rsgxsid_srcId || details.rspeerid_srcId,
+            id: details.rsgxsid_srcId,
           },
           (data) => {
             fromUserInfo = data.details;
-            // console.log(data, details.rsgxsid_srcId, details.rspeerid_srcId);
-            // console.log(fromUserInfo);
           }
         );
+      }
     },
     view: (v) =>
       m(
@@ -147,21 +145,63 @@ const MessageView = () => {
             m('i.fas.fa-arrow-left')
           ),
           m('h3', details.title),
+          details.rsgxsid_srcId &&
+            m('from', { style: { display: 'block ruby' } }, [
+              m('p', { style: { fontWeight: 'bold' } }, 'From: '),
+              // m('p', 'hello'),
+              rs.userList.userMap[details.rsgxsid_srcId],
+            ]),
+          details.rsgxsid_msgto &&
+            m('to', { style: { display: 'block ruby' } }, [
+              m('p', { style: { fontWeight: 'bold' } }, 'To: '),
+              details.rsgxsid_msgto.map((id) => m('p', rs.userList.userMap[id] + ', ')),
+            ]),
+          details.rsgxsid_msgcc &&
+            details.rsgxsid_msgcc.length > 0 &&
+            m('cc', { style: { display: 'block ruby' } }, [
+              m('p', { style: { fontWeight: 'bold' } }, 'cc: '),
+              details.rsgxsid_msgcc.map((id) => m('p', rs.userList.userMap[id] + ', ')),
+            ]),
           m('button', 'Reply'),
           m('button', 'Reply All'),
           m('button', 'Forward'),
           m(
             'button',
             {
-              onclick: () => {
-                rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', {
-                  msgId: details.msgId,
-                  bTrash: true
-                }),
-                rs.rsJsonApiRequest('/rsMsgs/MessageDelete', {
-                  msgId: details.msgId,
-                });
-              },
+              onclick: () =>
+                widget.popupMessage([
+                  m('p', 'Are you sure you want to delete this mail?'),
+                  m(
+                    'button',
+                    {
+                      onclick: async () => {
+                        rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', {
+                          msgId: details.msgId,
+                          bTrash: true,
+                        });
+                        const res = await rs.rsJsonApiRequest('/rsMsgs/MessageDelete', {
+                          msgId: details.msgId,
+                        });
+                        res.body.retval === false
+                          ? widget.popupMessage([
+                              m('h3', 'Error'),
+                              m('hr'),
+                              m('p', res.body.errorMessage),
+                            ])
+                          : widget.popupMessage([
+                              m('h3', 'Success'),
+                              m('hr'),
+                              m('p', 'Mail Deleted.'),
+                            ]);
+                        m.redraw();
+                        m.route.set('/mail/:tab', {
+                          tab: m.route.param().tab,
+                        });
+                      },
+                    },
+                    'Delete'
+                  ),
+                ]),
             },
             'Delete'
           ),
