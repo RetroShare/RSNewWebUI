@@ -1,9 +1,9 @@
 .board-node-panel {
-    position: relative;
-    bottom: 200px;
-    margin-left: 200px;
-    animation: fadein 0.5s;
-  }
+  position: relative;
+  bottom: 200px;
+  margin-left: 200px;
+  animation: fadein 0.5s;
+}
 
 /* subject */
 table.boards th:nth-child(1) {
@@ -28,7 +28,7 @@ table.boards tr.hidden{
   display: none;
 }
 
-#searchboard{
+#searchboard {
   position:relative;
   margin-left: 250px;
 }
@@ -39,15 +39,16 @@ img.boardpic {
   width:150px;
   padding: 25px;
 }
-#boarddetails{
+#boarddetails {
   position: relative;
   margin-left: 150px;
+  padding: 10px;
 }
 .p{
   margin:0;
 }
 
-#toggleunsub{
+#toggleunsub {
   position: relative;
   background: gray;
 }
@@ -60,22 +61,23 @@ img.boardpic {
 
 .card {
   width: 150px;
-  height: 150px;
+  height: 200px;
   border: 2px solid gray;
   cursor: pointer;
   text-align: center;
 }
-.card-img{
+.card-img {
   width: 120px;
   height: 120px;
 }
-.card-title{
-  position: absolute;
+.card-title {
+  position: relative;
   bottom: 0px;
+  overflow: auto;
 }
 
 /* subject */
-table.comments th{
+table.comments th {
   height: 40px;
 }
 table.comments th:nth-child(1) {
@@ -89,14 +91,29 @@ table.comments td:nth-child(1){
   border-radius: 25px;
 
 }
-table.comments tr{
+table.comments tr {
   height: 40px;
 }
 
-#options{
+#options {
   width: 100px;
   text-align: center;
   font-size: medium;
   margin-left: 20px;
+  height: 40px;
+}
+
+#composepopup {
+  height: 80%;
+  width: 70%;
+  bottom: 50%;
+  right: 58%;
+}
+
+#mtags {
+  width: 160px;
+  text-align: center;
+  font-size: medium;
+  margin-left: 10px;
   height: 40px;
 }

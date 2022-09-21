@@ -4,6 +4,159 @@ const util = require('boards/boards_util');
 const Data = util.Data;
 const peopleUtil = require('people/people_util');
 
+const messageGroups = ['Public', 'Restricted Circle', 'Restricted Node Group'];
+const messageGroupsCode = [util.PUBLIC, util.EXTERNAL, util.NODES_GROUP]; //rsgxscirles.h:50
+
+function createboard() {
+  let title;
+  let body;
+  let identity;
+  let thumbnail;
+  let selectedGroup = messageGroups[0];
+  let selectedGroupCode = messageGroupsCode[0];
+  let selectedCircle;
+  let circles;
+  return {
+    oninit: async (vnode) => {
+      if (vnode.attrs.authorId) {
+        identity = vnode.attrs.authorId[0];
+      }
+
+      const res = await rs.rsJsonApiRequest('/rsgxscircles/getCirclesSummaries');
+      if (res.body.retval) {
+        circles = res.body.circles;
+        selectedCircle = circles[0].mGroupName;
+      }
+    },
+    view: (vnode) =>
+      m('.widget', [
+        m('h3', 'Create Board'),
+        m('hr'),
+        m('input[type=text][placeholder=Title]', {
+          style: { float: 'left' },
+          oninput: (e) => (title = e.target.value),
+        }),
+        m('div', { style: { float: 'right', marginTop: '10px', marginBottom: '10px' } }, [
+          m('label[for=thumbnail]', 'Thumbnail: '),
+          m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
+            onchange: async (e) => {
+              let reader = new FileReader();
+              reader.onloadend = function () {
+                thumbnail = reader.result.substring(reader.result.indexOf(',') + 1);
+              };
+              reader.readAsDataURL(e.target.files[0]);
+            },
+          }),
+        ]),
+
+        m('div', { style: { float: 'right', marginTop: '10px', marginBottom: '10px' } }, [
+          m('label[for=idtags]', 'Select identity: '),
+          m(
+            'select[id=idtags]',
+            {
+              value: identity,
+              onchange: (e) => {
+                identity = vnode.attrs.authorId[e.target.selectedIndex];
+              },
+            },
+            [
+              vnode.attrs.authorId &&
+                vnode.attrs.authorId.map((o) =>
+                  m(
+                    'option',
+                    { value: o },
+                    rs.userList.userMap[o]
+                      ? rs.userList.userMap[o].toLocaleString()
+                      : 'No Signature'
+                  )
+                ),
+            ]
+          ),
+        ]),
+        m('div', { style: { float: 'left', marginTop: '10px', marginBottom: '10px' } }, [
+          m('label[for=mtags]', 'Message Distribution: '),
+          m(
+            'select[id=mtags]',
+            {
+              value: selectedGroup,
+              onchange: (e) => {
+                selectedGroup = messageGroups[e.target.selectedIndex];
+                selectedGroupCode = messageGroupsCode[e.target.selectedIndex];
+                util.popupmessage(m(createboard, { authorId: vnode.attrs.authorId }));
+              },
+            },
+            [messageGroups.map((group) => m('option', { value: group }, group))]
+          ),
+        ]),
+        circles &&
+          m(
+            'div',
+            {
+              style: {
+                float: 'left',
+                marginTop: '10px',
+                marginBottom: '10px',
+                display: selectedGroupCode === util.EXTERNAL ? 'block' : 'none',
+              },
+            },
+            [
+              m('label[for=circlestag]', 'Circles: '),
+              m(
+                'select[id=circlestag]',
+                {
+                  value: selectedCircle,
+                  onchange: (e) => {
+                    selectedCircle = circles[e.target.selectedIndex];
+                    console.log(selectedCircle);
+                    // selectedGroupCode = messageGroupsCode[e.target.selectedIndex];
+                  },
+                },
+                [
+                  circles.map((circle) =>
+                    m('option', { value: circle.mGroupName }, circle.mGroupName)
+                  ),
+                ]
+              ),
+            ]
+          ),
+        m('textarea[rows=5][placeholder=Description]', {
+          style: { width: '100%', display: 'block' },
+          oninput: (e) => (body = e.target.value),
+          value: body,
+        }),
+        m(
+          'button',
+          {
+            onclick: async () => {
+              const res = await rs.rsJsonApiRequest('/rsposted/createBoardV2', {
+                name: title,
+                description: body,
+                thumbnail: { mData: { base64: thumbnail } },
+                ...(Number(identity) !== 0 && { authorId: identity }),
+                circleType: selectedGroupCode,
+                ...(selectedGroupCode === util.EXTERNAL &&
+                  selectedCircle && { circleId: selectedCircle.mGroupId }),
+              });
+              if (res.body.retval) {
+                util.updatedisplayboards(res.body.boardId);
+                m.redraw();
+              }
+              res.body.retval === false
+                ? util.popupmessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
+                : util.popupmessage([
+                    m('h3', 'Success'),
+                    m('hr'),
+                    m('p', 'Board created successfully'),
+                  ]);
+            },
+          },
+          'Create'
+        ),
+      ]),
+  };
+}
+
+
 const BoardView = () => {
   let bname = '';
   let bimage = '';
@@ -139,4 +292,5 @@ const BoardView = () => {
 
 module.exports = {
   BoardView,
+  createboard,
 };
