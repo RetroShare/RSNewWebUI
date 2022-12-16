@@ -2,6 +2,7 @@ const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
 
+// rsmsgs.h
 const RS_MSG_BOXMASK = 0x000f;
 
 const RS_MSG_INBOX = 0x00;
@@ -23,6 +24,8 @@ const RS_MSG_USER_REQUEST = 0x000400;
 const RS_MSG_FRIEND_RECOMMENDATION = 0x000800;
 const RS_MSG_PUBLISH_KEY = 0x020000;
 const RS_MSG_SYSTEM = RS_MSG_USER_REQUEST | RS_MSG_FRIEND_RECOMMENDATION | RS_MSG_PUBLISH_KEY;
+
+const BOX_ALL = 0x06;
 
 const MessageSummary = () => {
   let details = {};
@@ -48,11 +51,11 @@ const MessageSummary = () => {
           msgStatus = 'read';
         }
       }
-      if (details && details.rsgxsid_srcId) {
+      if (details && details.from && details.from._addr_string) {
         rs.rsJsonApiRequest(
           '/rsIdentity/getIdDetails',
           {
-            id: details.rsgxsid_srcId,
+            id: details.from._addr_string,
           },
           (data) => {
             fromUserInfo = data.details;
@@ -99,7 +102,8 @@ const MessageSummary = () => {
           ),
           m('td', files.length),
           m('td', details.title),
-          m('td', Number(details.rsgxsid_srcId) === 0 ? '[Unknown]' : fromUserInfo.mNickname),
+          fromUserInfo &&
+            m('td', Number(fromUserInfo.mId) === 0 ? '[Unknown]' : fromUserInfo.mNickname),
           m('td', new Date(details.ts * 1000).toLocaleString()),
         ]
       ),
@@ -292,4 +296,5 @@ module.exports = {
   RS_MSGTAGTYPE_PERSONAL,
   RS_MSGTAGTYPE_TODO,
   RS_MSGTAGTYPE_WORK,
+  BOX_ALL,
 };

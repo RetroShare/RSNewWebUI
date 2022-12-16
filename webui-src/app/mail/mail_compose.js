@@ -161,10 +161,9 @@ const Layout = () => {
                     }
                   }
                 }
-                console.log(subject);
                 const res = await rs.rsJsonApiRequest('/rsMsgs/sendMail', {
                   from: identity,
-                  subject: subject,
+                  subject,
                   mailBody: body,
                   to: toList,
                   cc: ccList,

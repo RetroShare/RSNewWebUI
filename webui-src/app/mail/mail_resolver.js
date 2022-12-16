@@ -20,7 +20,7 @@ const Messages = {
   todo: [],
   later: [],
   load() {
-    rs.rsJsonApiRequest('/rsMsgs/getMessageSummaries', {}, (data) => {
+    rs.rsJsonApiRequest('/rsMsgs/getMessageSummaries', { box: util.BOX_ALL }, (data) => {
       Messages.all = data.msgList;
       Messages.inbox = Messages.all.filter(
         (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_INBOX
@@ -34,33 +34,17 @@ const Messages = {
       Messages.drafts = Messages.all.filter(
         (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_DRAFTBOX
       );
-      Messages.trash = Messages.all.filter(
-        (msg) => (msg.msgflags & util.RS_MSG_TRASH)
-      );
-      Messages.starred = Messages.all.filter(
-        (msg) => (msg.msgflags & util.RS_MSG_STAR)
-       );
-      Messages.system = Messages.all.filter(
-        (msg) => (msg.msgflags & util.RS_MSG_SYSTEM)
-        );
-      Messages.spam = Messages.all.filter(
-        (msg) => (msg.msgflags & util.RS_MSG_SPAM)
-        );
+      Messages.trash = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_TRASH);
+      Messages.starred = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_STAR);
+      Messages.system = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_SYSTEM);
+      Messages.spam = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_SPAM);
       Messages.important = Messages.all.filter(
-        (msg) => (msg.msgflags & util.RS_MSGTAGTYPE_IMPORTANT)
-        );
-      Messages.work = Messages.all.filter(
-        (msg) => (msg.msgflags & util.RS_MSGTAGTYPE_WORK)
-        );
-      Messages.personal = Messages.all.filter(
-        (msg) => (msg.msgflags & util.RS_MSGTAGTYPE_PERSONAL)
-        );
-      Messages.todo = Messages.all.filter(
-        (msg) => (msg.msgflags & util.RS_MSGTAGTYPE_TODO)
-        );
-      Messages.later = Messages.all.filter(
-        (msg) => (msg.msgflags & util.RS_MSGTAGTYPE_LATER)
-        );
+        (msg) => msg.msgflags & util.RS_MSGTAGTYPE_IMPORTANT
+      );
+      Messages.work = Messages.all.filter((msg) => msg.msgflags & util.RS_MSGTAGTYPE_WORK);
+      Messages.personal = Messages.all.filter((msg) => msg.msgflags & util.RS_MSGTAGTYPE_PERSONAL);
+      Messages.todo = Messages.all.filter((msg) => msg.msgflags & util.RS_MSGTAGTYPE_TODO);
+      Messages.later = Messages.all.filter((msg) => msg.msgflags & util.RS_MSGTAGTYPE_LATER);
     });
   },
 };
@@ -81,26 +65,34 @@ const sectionsquickview = {
   todo: require('mail/mail_todo'),
   later: require('mail/mail_later'),
   personal: require('mail/mail_personal'),
-
 };
 const tagselect = {
   showval: 'Tags',
-  opts: ['Tags', 'Important', 'Work', 'Personal']
+  opts: ['Tags', 'Important', 'Work', 'Personal'],
 };
 const Layout = {
   oninit: Messages.load,
   view: (vnode) =>
-
     m('.tab-page', [
-      m('button[id=composebtn]', { onclick: () => { util.popupMessageCompose(m(compose)); } }, 'Compose'),
-      m('select[id=tags]', {
-        value: tagselect.showval,
-        onchange: (e) => {
-          tagselect.showval = tagselect.opts[e.target.selectedIndex];
-        }
-      }, [
-        tagselect.opts.map((o) => m('option', { value: o }, o.toLocaleString()))
-      ]),
+      m(
+        'button[id=composebtn]',
+        {
+          onclick: () => {
+            util.popupMessageCompose(m(compose));
+          },
+        },
+        'Compose'
+      ),
+      m(
+        'select[id=tags]',
+        {
+          value: tagselect.showval,
+          onchange: (e) => {
+            tagselect.showval = tagselect.opts[e.target.selectedIndex];
+          },
+        },
+        [tagselect.opts.map((o) => m('option', { value: o }, o.toLocaleString()))]
+      ),
       m(util.SearchBar, {
         list: {},
       }),
@@ -131,7 +123,7 @@ module.exports = {
     }
     return m(
       Layout,
-      m((sections[tab]) || (sectionsquickview[tab]), {
+      m(sections[tab] || sectionsquickview[tab], {
         list: Messages[tab].reverse(),
       })
     );
