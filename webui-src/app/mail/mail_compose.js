@@ -2,7 +2,6 @@ const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
 
-const peopleUtil = require('people/people_util');
 const util = require('mail/mail_util');
 
 const Data = {
@@ -12,25 +11,13 @@ const Data = {
 };
 const Layout = () => {
   let subject;
-  let ownId;
   let body;
   let identity;
-  let allUsers;
   return {
-    oninit: async () => {
-      await peopleUtil.ownIds((data) => {
-        ownId = data;
-        for (let i = 0; i < ownId.length; i++) {
-          if (Number(ownId[i]) === 0) {
-            ownId.splice(i, 1); // workaround for id '0'
-          }
-        }
-        identity = ownId[0];
-      });
-      allUsers = peopleUtil.sortUsers(rs.userList.users);
-      //   Data.Recepients = {};
+    oninit: async (v) => {
+      identity = v.attrs.ownId[0];
     },
-    view: () =>
+    view: (v) =>
       m('.widget', [
         m('h3', 'Compose a mail'),
         m('hr'),
@@ -45,8 +32,6 @@ const Layout = () => {
             style: {
               display: 'block ruby',
               float: 'right',
-              marginTop: '10px',
-              marginBottom: '10px',
             },
           },
           [
@@ -56,12 +41,12 @@ const Layout = () => {
               {
                 value: identity,
                 onchange: (e) => {
-                  identity = ownId[e.target.selectedIndex];
+                  identity = v.attrs.ownId[e.target.selectedIndex];
                 },
               },
               [
-                ownId &&
-                  ownId.map((o) =>
+                v.attrs.ownId &&
+                  v.attrs.ownId.map((o) =>
                     m(
                       'option',
                       { value: o },
@@ -77,10 +62,12 @@ const Layout = () => {
         m(
           'button',
           {
-            style: { float: 'left', marginTop: '10px', marginBottom: '10px' },
+            style: { float: 'left', display: 'block' },
             onclick: () => {
               Data.Recepients.push({ type: 0, receiverIndex: undefined, showRecepient: true });
-              util.popupMessageCompose(m(Layout));
+              util.popupMessageCompose(
+                m(Layout, { allUsers: v.attrs.allUsers, ownId: v.attrs.ownId })
+              );
             },
           },
           'Add Recepient'
@@ -101,18 +88,18 @@ const Layout = () => {
                 },
                 [Data.sendTypes && Data.sendTypes.map((o) => m('option', { value: o }, o))]
               ),
-              allUsers &&
+              v.attrs.allUsers &&
                 m(
                   'select[id=id]',
                   {
-                    value: allUsers[Data.Recepients[index].receiverIndex],
+                    value: v.attrs.allUsers[Data.Recepients[index].receiverIndex],
                     onchange: (e) => {
                       Data.Recepients[index].receiverIndex = e.target.selectedIndex;
                       console.log(Data.Recepients[index]);
                     },
                   },
                   [
-                    allUsers.map((o) =>
+                    v.attrs.allUsers.map((o) =>
                       m(
                         'option',
                         { value: o },
@@ -127,7 +114,9 @@ const Layout = () => {
                   style: { background: '#bd0909' },
                   onclick: () => {
                     Data.Recepients[index].showRecepient = false;
-                    util.popupMessageCompose(m(Layout));
+                    util.popupMessageCompose(
+                      m(Layout, { allUsers: v.attrs.allUsers, ownId: v.attrs.ownId })
+                    );
                   },
                 },
                 m('i.fas.fa-times')
@@ -141,7 +130,7 @@ const Layout = () => {
           value: body,
         }),
 
-        allUsers &&
+        v.attrs.allUsers &&
           m(
             'button',
             {
@@ -153,11 +142,11 @@ const Layout = () => {
                 for (let i = 0; i < Data.Recepients.length; i++) {
                   if (Data.Recepients[i].showRecepient && Data.Recepients[i].receiverIndex) {
                     if (Data.Recepients[i].type === 0) {
-                      toList.push(allUsers[Data.Recepients[i].receiverIndex].mGroupId);
+                      toList.push(v.attrs.allUsers[Data.Recepients[i].receiverIndex].mGroupId);
                     } else if (Data.Recepients[i].type === 1) {
-                      ccList.push(allUsers[Data.Recepients[i].receiverIndex].mGroupId);
+                      ccList.push(v.attrs.allUsers[Data.Recepients[i].receiverIndex].mGroupId);
                     } else if (Data.Recepients[i].type === 2) {
-                      bccList.push(allUsers[Data.Recepients[i].receiverIndex].mGroupId);
+                      bccList.push(v.attrs.allUsers[Data.Recepients[i].receiverIndex].mGroupId);
                     }
                   }
                 }

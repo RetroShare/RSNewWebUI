@@ -2,7 +2,13 @@ const m = require('mithril');
 const rs = require('rswebui');
 const util = require('mail/mail_util');
 const widget = require('widgets');
+const peopleUtil = require('people/people_util');
 const compose = require('mail/mail_compose');
+
+const composeData = {
+  allUsers: undefined,
+  ownId: undefined,
+};
 
 const Messages = {
   all: [],
@@ -72,7 +78,19 @@ const tagselect = {
   opts: ['Tags', 'Important', 'Work', 'Personal'],
 };
 const Layout = {
-  oninit: Messages.load,
+  oninit: async () => {
+    Messages.load();
+    await peopleUtil.ownIds(async (data) => {
+      composeData.ownId = await data;
+      for (let i = 0; i < composeData.ownId.length; i++) {
+        if (Number(composeData.ownId[i]) === 0) {
+          composeData.ownId.splice(i, 1); // workaround for id '0'
+        }
+      }
+      // identity = ownId[0];
+    });
+    composeData.allUsers = await peopleUtil.sortUsers(rs.userList.users);
+  },
   view: (vnode) => {
     const sectionsSize = {
       inbox: Messages.inbox.length,
@@ -91,14 +109,18 @@ const Layout = {
       later: Messages.later.length,
       personal: Messages.personal.length,
     };
+
     return [
       m('.tab-page', [
         m(
           'button[id=composebtn]',
           {
-            onclick: () => {
-              util.popupMessageCompose(m(compose));
-            },
+            onclick: () =>
+              composeData.allUsers &&
+              composeData.ownId &&
+              util.popupMessageCompose(
+                m(compose, { allUsers: composeData.allUsers, ownId: composeData.ownId })
+              ),
           },
           'Compose'
         ),
@@ -132,6 +154,7 @@ const Layout = {
 };
 
 module.exports = {
+  composeData,
   view: (v) => {
     const tab = v.attrs.tab;
     // TODO: utilize multiple routing params
