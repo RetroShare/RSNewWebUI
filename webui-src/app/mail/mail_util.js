@@ -274,11 +274,69 @@ function popupMessageCompose(message) {
     ])
   );
 }
+const activeSideLink = {
+  sideactive: 0,
+  quicksideactive: -1,
+};
+const Sidebar = () => {
+  return {
+    view: (v) =>
+      m(
+        '.sidebar',
+        v.attrs.tabs.map((panelName, index) =>
+          m(
+            m.route.Link,
+            {
+              class: index === activeSideLink.sideactive ? 'selected-sidebar-link' : '',
+              onclick: () => {
+                activeSideLink.sideactive = index;
+                activeSideLink.quicksideactive = -1;
+              },
+              href: v.attrs.baseRoute + panelName,
+            },
+            v.attrs.size[panelName] > 0
+              ? panelName + ' (' + v.attrs.size[panelName] + ')'
+              : panelName
+          )
+        )
+      ),
+  };
+};
+const SidebarQuickView = () => {
+  // for the Mail tab, to be moved later.
+  let quickactive = -1;
+  return {
+    view: (v) =>
+      m(
+        '.sidebarquickview',
+        m('h4', 'Quick View'),
+        v.attrs.tabs.map((panelName, index) =>
+          m(
+            m.route.Link,
+            {
+              class:
+                index === activeSideLink.quicksideactive ? 'selected-sidebarquickview-link' : '',
+              onclick: () => {
+                activeSideLink.quicksideactive = index;
+                activeSideLink.sideactive = -1;
+              },
+              href: v.attrs.baseRoute + panelName,
+            },
+            v.attrs.size[panelName] > 0
+              ? panelName + ' (' + v.attrs.size[panelName] + ')'
+              : panelName
+          )
+        )
+      ),
+  };
+};
 module.exports = {
   MessageSummary,
   MessageView,
   Table,
   SearchBar,
+  Sidebar,
+  SidebarQuickView,
   popupMessageCompose,
   RS_MSG_BOXMASK,
   RS_MSG_INBOX,

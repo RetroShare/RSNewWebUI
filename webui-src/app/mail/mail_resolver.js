@@ -38,13 +38,14 @@ const Messages = {
       Messages.starred = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_STAR);
       Messages.system = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_SYSTEM);
       Messages.spam = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_SPAM);
-      Messages.important = Messages.all.filter(
-        (msg) => msg.msgflags & util.RS_MSGTAGTYPE_IMPORTANT
-      );
-      Messages.work = Messages.all.filter((msg) => msg.msgflags & util.RS_MSGTAGTYPE_WORK);
-      Messages.personal = Messages.all.filter((msg) => msg.msgflags & util.RS_MSGTAGTYPE_PERSONAL);
-      Messages.todo = Messages.all.filter((msg) => msg.msgflags & util.RS_MSGTAGTYPE_TODO);
-      Messages.later = Messages.all.filter((msg) => msg.msgflags & util.RS_MSGTAGTYPE_LATER);
+
+      // Messages.important = Messages.all.filter(
+      //   (msg) => msg.msgflags & util.RS_MSGTAGTYPE_IMPORTANT
+      // );
+      // Messages.work = Messages.all.filter((msg) => msg.msgflags & util.RS_MSGTAGTYPE_WORK);
+      // Messages.personal = Messages.all.filter((msg) => msg.msgflags & util.RS_MSGTAGTYPE_PERSONAL);
+      // Messages.todo = Messages.all.filter((msg) => msg.msgflags & util.RS_MSGTAGTYPE_TODO);
+      // Messages.later = Messages.all.filter((msg) => msg.msgflags & util.RS_MSGTAGTYPE_LATER);
     });
   },
 };
@@ -72,40 +73,62 @@ const tagselect = {
 };
 const Layout = {
   oninit: Messages.load,
-  view: (vnode) =>
-    m('.tab-page', [
-      m(
-        'button[id=composebtn]',
-        {
-          onclick: () => {
-            util.popupMessageCompose(m(compose));
+  view: (vnode) => {
+    const sectionsSize = {
+      inbox: Messages.inbox.length,
+      outbox: Messages.outbox.length,
+      drafts: Messages.drafts.length,
+      sent: Messages.sent.length,
+      trash: Messages.trash.length,
+    };
+    const sectionsquickviewSize = {
+      starred: Messages.starred.length,
+      system: Messages.system.length,
+      spam: Messages.spam.length,
+      important: Messages.important.length,
+      work: Messages.work.length,
+      todo: Messages.todo.length,
+      later: Messages.later.length,
+      personal: Messages.personal.length,
+    };
+    return [
+      m('.tab-page', [
+        m(
+          'button[id=composebtn]',
+          {
+            onclick: () => {
+              util.popupMessageCompose(m(compose));
+            },
           },
-        },
-        'Compose'
-      ),
-      m(
-        'select[id=tags]',
-        {
-          value: tagselect.showval,
-          onchange: (e) => {
-            tagselect.showval = tagselect.opts[e.target.selectedIndex];
+          'Compose'
+        ),
+        m(
+          'select[id=tags]',
+          {
+            value: tagselect.showval,
+            onchange: (e) => {
+              tagselect.showval = tagselect.opts[e.target.selectedIndex];
+            },
           },
-        },
-        [tagselect.opts.map((o) => m('option', { value: o }, o.toLocaleString()))]
-      ),
-      m(util.SearchBar, {
-        list: {},
-      }),
-      m(widget.Sidebar, {
-        tabs: Object.keys(sections),
-        baseRoute: '/mail/',
-      }),
-      m(widget.SidebarQuickView, {
-        tabs: Object.keys(sectionsquickview),
-        baseRoute: '/mail/',
-      }),
-      m('.mail-node-panel', vnode.children),
-    ]),
+          [tagselect.opts.map((o) => m('option', { value: o }, o.toLocaleString()))]
+        ),
+        m(util.SearchBar, {
+          list: {},
+        }),
+        m(util.Sidebar, {
+          tabs: Object.keys(sections),
+          size: sectionsSize,
+          baseRoute: '/mail/',
+        }),
+        m(util.SidebarQuickView, {
+          tabs: Object.keys(sectionsquickview),
+          size: sectionsquickviewSize,
+          baseRoute: '/mail/',
+        }),
+        m('.mail-node-panel', vnode.children),
+      ]),
+    ];
+  },
 };
 
 module.exports = {
