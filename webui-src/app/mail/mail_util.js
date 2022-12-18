@@ -25,14 +25,18 @@ const RS_MSG_FRIEND_RECOMMENDATION = 0x000800;
 const RS_MSG_PUBLISH_KEY = 0x020000;
 const RS_MSG_SYSTEM = RS_MSG_USER_REQUEST | RS_MSG_FRIEND_RECOMMENDATION | RS_MSG_PUBLISH_KEY;
 
+const MSG_ADDRESS_MODE_TO = 0x01;
+const MSG_ADDRESS_MODE_CC = 0x02;
+const MSG_ADDRESS_MODE_BCC = 0x03;
+
 const BOX_ALL = 0x06;
 
 const MessageSummary = () => {
   let details = {};
-  let files = [];
-  let isStarred = undefined;
+  let files;
+  let isStarred = false;
   let msgStatus = '';
-  let fromUserInfo = {};
+  let fromUserInfo;
   return {
     oninit: async (v) => {
       const res = await rs.rsJsonApiRequest('/rsMsgs/getMessage', {
@@ -100,7 +104,7 @@ const MessageSummary = () => {
               m('i.fas.fa-star')
             )
           ),
-          m('td', files.length),
+          files && m('td', files.length),
           m('td', details.title),
           fromUserInfo &&
             m('td', Number(fromUserInfo.mId) === 0 ? '[Unknown]' : fromUserInfo.mNickname),
@@ -113,24 +117,40 @@ const MessageSummary = () => {
 const MessageView = () => {
   let details = {};
   let message = '';
+  let toList = {};
+  let ccList = {};
+  let bccList = {};
+
   return {
-    oninit: (v) =>
-      rs.rsJsonApiRequest(
-        '/rsMsgs/getMessage',
-        {
-          msgId: v.attrs.id,
-        },
-        (data) => {
-          details = data.msg;
-          // regex to detect html tags
-          // better regex?  /<[a-z][\s\S]*>/gi
-          if (/<\/*[a-z][^>]+?>/gi.test(details.msg)) {
-            message = details.msg;
-          } else {
-            message = '<p style="white-space: pre">' + details.msg + '</p>';
-          }
+    oninit: async (v) => {
+      const res = await rs.rsJsonApiRequest('/rsMsgs/getMessage', {
+        msgId: v.attrs.id,
+      });
+      if (res.body.retval) {
+        details = res.body.msg;
+        // regex to detect html tags
+        // better regex?  /<[a-z][\s\S]*>/gi
+        if (/<\/*[a-z][^>]+?>/gi.test(details.msg)) {
+          message = details.msg;
+        } else {
+          message = '<p style="white-space: pre">' + details.msg + '</p>';
         }
-      ),
+      }
+      if (details && details.destinations) {
+        details.destinations.map((destDetail) => {
+          if (destDetail._mode === MSG_ADDRESS_MODE_TO && !toList[destDetail._addr_string]) {
+            toList[destDetail._addr_string] = destDetail;
+          } else if (destDetail._mode === MSG_ADDRESS_MODE_CC && !ccList[destDetail._addr_string]) {
+            ccList[destDetail._addr_string] = destDetail;
+          } else if (
+            destDetail._mode === MSG_ADDRESS_MODE_BCC &&
+            !bccList[destDetail._addr_string]
+          ) {
+            bccList[destDetail._addr_string] = destDetail;
+          }
+        });
+      }
+    },
     view: (v) =>
       m(
         '.widget.msgview',
@@ -149,22 +169,28 @@ const MessageView = () => {
             m('i.fas.fa-arrow-left')
           ),
           m('h3', details.title),
-          details.rsgxsid_srcId &&
+          details.from &&
             m('from', { style: { display: 'block ruby' } }, [
               m('p', { style: { fontWeight: 'bold' } }, 'From: '),
-              // m('p', 'hello'),
-              rs.userList.userMap[details.rsgxsid_srcId],
+              rs.userList.userMap[details.from._addr_string],
             ]),
-          details.rsgxsid_msgto &&
+          toList &&
+            Object.keys(toList).length > 0 &&
             m('to', { style: { display: 'block ruby' } }, [
               m('p', { style: { fontWeight: 'bold' } }, 'To: '),
-              details.rsgxsid_msgto.map((id) => m('p', rs.userList.userMap[id] + ', ')),
+              Object.keys(toList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
             ]),
-          details.rsgxsid_msgcc &&
-            details.rsgxsid_msgcc.length > 0 &&
+          ccList &&
+            Object.keys(ccList).length > 0 &&
             m('cc', { style: { display: 'block ruby' } }, [
-              m('p', { style: { fontWeight: 'bold' } }, 'cc: '),
-              details.rsgxsid_msgcc.map((id) => m('p', rs.userList.userMap[id] + ', ')),
+              m('p', { style: { fontWeight: 'bold' } }, 'CC: '),
+              Object.keys(ccList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
+            ]),
+          bccList &&
+            Object.keys(bccList).length > 0 &&
+            m('bcc', { style: { display: 'block ruby' } }, [
+              m('p', { style: { fontWeight: 'bold' } }, 'BCC: '),
+              Object.keys(bccList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
             ]),
           m('button', 'Reply'),
           m('button', 'Reply All'),
@@ -210,6 +236,7 @@ const MessageView = () => {
             'Delete'
           ),
           m('hr'),
+
           m(
             'iframe[title=message].msg',
             {
