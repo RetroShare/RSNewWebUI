@@ -17,6 +17,7 @@ const FT_STATE_CHECKING_HASH = 0x0007;
 
 const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
 const RS_FILE_HINTS_REMOTE = 0x00000008;
+const RS_FILE_HINTS_LOCAL = 0x00000004;
 
 function makeFriendlyUnit(bytes) {
   let cnt = bytes;
@@ -329,6 +330,7 @@ module.exports = {
   FT_STATE_CHECKING_HASH,
   RS_FILE_REQ_ANONYMOUS_ROUTING,
   RS_FILE_HINTS_REMOTE,
+  RS_FILE_HINTS_LOCAL,
   makeFriendlyUnit,
   File,
   SearchBar,
