@@ -62,23 +62,20 @@ async function updatecontent(content, channelid) {
     }
   } else if (res.body.retval && res.body.votes.length > 0) {
     const vote = res.body.votes[0];
-    Data.Votes[vote.mMeta.mMsgId] = vote;
-    // console.log(vote);
-    // if (
-    //   Data.Comments[vote.mMeta.mThreadId] &&
-    //   Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId] //  finding [post][comment]
-    // ) {
-    //   console.log(Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment);
 
-    //   if (vote.mVoteType === GXS_VOTE_UP) {
-    //     console.log(Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mUpVotes);
-    //     Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mUpVotes += 1;
-    //     console.log(Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mUpVotes);
-    //   }
-    //   if (vote.mVoteType === GXS_VOTE_DOWN) {
-    //     Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].comment.mDownVotes += 1;
-    //   }
-    // }
+    if (Data.Votes[vote.mMeta.mThreadId] === undefined) {
+      Data.Votes[vote.mMeta.mThreadId] = {};
+    }
+    if (Data.Votes[vote.mMeta.mThreadId][vote.mMeta.mParentId] === undefined) {
+      Data.Votes[vote.mMeta.mThreadId][vote.mMeta.mParentId] = { upvotes: 0, downvotes: 0 };
+    }
+    if (vote.mVoteType === GXS_VOTE_UP) {
+      Data.Votes[vote.mMeta.mThreadId][vote.mMeta.mParentId].upvotes += 1;
+    }
+
+    if (vote.mVoteType === GXS_VOTE_DOWN) {
+      Data.Votes[vote.mMeta.mThreadId][vote.mMeta.mParentId].downvotes += 1;
+    }
   }
 }
 
@@ -115,32 +112,6 @@ async function updatedisplaychannels(keyid, details) {
       await updatecontent(content, keyid);
     });
   }
-  console.log(Data.Votes);
-  // Data.Votes.length > 1 &&
-  Object.keys(Data.Votes).map((key, index) => {
-    console.log('hello');
-    if (
-      Data.Comments[Data.Votes[key].mMeta.mThreadId] &&
-      Data.Comments[Data.Votes[key].mMeta.mThreadId][Data.Votes[key].mMeta.mParentId] //  finding [post][comment]
-    ) {
-      console.log(
-        Data.Comments[Data.Votes[key].mMeta.mThreadId][Data.Votes[key].mMeta.mParentId].comment
-      );
-
-      if (Data.Votes[key].mVoteType === GXS_VOTE_UP) {
-        // console.log(Data.Comments[Data.Votes[key].mMeta.mThreadId][Data.Votes[key].mMeta.mParentId].comment.mUpVotes);
-        Data.Comments[Data.Votes[key].mMeta.mThreadId][
-          Data.Votes[key].mMeta.mParentId
-        ].comment.mUpVotes += 1;
-        // console.log(Data.Comments[Data.Votes[key].mMeta.mThreadId][Data.Votes[key].mMeta.mParentId].comment.mUpVotes);
-      }
-      if (Data.Votes[key].mVoteType === GXS_VOTE_DOWN) {
-        Data.Comments[Data.Votes[key].mMeta.mThreadId][
-          Data.Votes[key].mMeta.mParentId
-        ].comment.mDownVotes += 1;
-      }
-    }
-  });
 }
 const DisplayChannelsFromList = () => {
   return {

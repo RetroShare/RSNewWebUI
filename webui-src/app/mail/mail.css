@@ -93,7 +93,7 @@ iframe.msg {
 }
 .mail-node-panel {
   position: relative;
-  bottom: 650px;
+  bottom: 680px;
   margin-left: 200px;
   animation: fadein 0.5s;
 }
