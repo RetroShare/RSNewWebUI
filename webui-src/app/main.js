@@ -27,9 +27,16 @@ const navIcon = {
 
 const navbar = () => {
   return {
-    view: (vnode) =>
-      m(
-        'nav.tab-menu',
+    view: (vnode) => m(
+      'nav.tab-menu',
+      [
+        m('.nav-logo', [
+          m('img', {
+            src: '../data/retroshare.svg',
+            alt: 'retroshare_icon',
+          }),
+          m('h4', 'Retroshare'),
+        ]),
         Object.keys(vnode.attrs.links).map((linkName, i) => {
           const active = m.route.get().split('/')[1] === linkName;
           return m(
@@ -38,10 +45,11 @@ const navbar = () => {
               href: vnode.attrs.links[linkName],
               class: (active ? 'selected-tab-item' : '') + ' tab-menu-item',
             },
-            [navIcon[linkName], linkName]
+            [navIcon[linkName], m('p[style="margin: 0; align-self: end"]', linkName)]
           );
         })
-      ),
+      ]
+    ),
   };
 };
 
