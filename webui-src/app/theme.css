@@ -139,6 +139,7 @@ hr {
   font-size: 1.1rem;
   border-radius: 5px;
   border: none;
+  resize: none;
 }
 
 .logo {
@@ -153,7 +154,6 @@ hr {
 .webhelp {
   background: whitesmoke;
   font-size: 0.8rem;
-
   border-radius: 5px;
   display: flex;
   justify-content: start;
@@ -162,6 +162,7 @@ hr {
   border-radius: 5px;
   border: 1px solid black;
   padding: 0px 10px;
+  cursor: pointer;
 }
 .webhelp > i {
   margin-right: 1.2px;
@@ -255,7 +256,9 @@ hr {
   width: 40%;
   /*height: 40%;*/
   min-height: 250px;
-  transform: translate(60%, 50%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background-color: white;
   padding: 2em;
   border-radius: 20px;
