@@ -88,11 +88,15 @@ const webhelp = () => {
 const ConfirmCopied = () => {
   return {
     view: () => [
-      m('h3', 'Copy to Clipboard'),
+      m('h3', 'Copied to Clipboard'),
       m('hr'),
       m(
-        'p',
-        'Your Retroshare ID is copied to Clipboard, paste and send it to your friend via email or some other way'
+        'p[style="margin: 12px 0 4px"]',
+        'Your Retroshare ID has been copied to Clipboard.'
+      ),
+      m(
+        'p[style="margin: 4px 0 12px"]',
+        'Now, you can paste and send it to your friend via email or some other way.'
       ),
       m('button', {}, 'Ok'),
     ],
@@ -104,7 +108,7 @@ const retroshareId = () => {
     view(v) {
       return m('.retroshareID', [
         m('i.fas .fa-copy', {
-          style: 'color: #3ba4d7;margin-right:3px',
+          style: 'color: #3ba4d7; margin-right: 3px; cursor: pointer',
           onclick: () => {
             document.getElementById('retroId').select();
             document.execCommand('copy');
@@ -119,6 +123,9 @@ const retroshareId = () => {
             rows: 1,
             cols: v.attrs.ownCert.substring(31).length + 2,
             placeholder: 'certificate',
+            onclick: () => {
+              document.getElementById('retroId').select();
+            },
           },
           v.attrs.ownCert.substring(31)
         ),
@@ -217,52 +224,52 @@ function confirmAddPrompt(details, cert, long) {
 
     long
       ? m(
-          'button',
-          {
-            onclick: async () =>{
-              const res = await rs.rsJsonApiRequest('/rsPeers/loadCertificateFromString', { cert });
-                if (res.body.retval) {
-                  widget.popupMessage([
-                    m('h3', 'Successful'),
-                    m('hr'),
-                    m('p', 'Successfully added friend.'),
-                  ]);
-                } else {
-                  widget.popupMessage([
-                    m('h3', 'Error'),
-                    m('hr'),
-                    m('p', 'An error occoured during adding. Friend not added.'),
-                  ]);
-                }
+        'button',
+        {
+          onclick: async () => {
+            const res = await rs.rsJsonApiRequest('/rsPeers/loadCertificateFromString', { cert });
+            if (res.body.retval) {
+              widget.popupMessage([
+                m('h3', 'Successful'),
+                m('hr'),
+                m('p', 'Successfully added friend.'),
+              ]);
+            } else {
+              widget.popupMessage([
+                m('h3', 'Error'),
+                m('hr'),
+                m('p', 'An error occoured during adding. Friend not added.'),
+              ]);
+            }
           },
         },
-          'Finish'
-        )
+        'Finish'
+      )
       : m(
-          'button',
-          {
-            onclick: async () => {
-              const res = await rs.rsJsonApiRequest('/rsPeers/addSslOnlyFriend', {
-                sslId: details.id,
-                pgpId: details.gpg_id,
-              });
-              if (res.body.retval) {
-                widget.popupMessage([
-                  m('h3', 'Successful'),
-                  m('hr'),
-                  m('p', 'Successfully added friend.'),
-                ]);
-              } else {
-                widget.popupMessage([
-                  m('h3', 'Error'),
-                  m('hr'),
-                  m('p', 'An error occoured during adding. Friend not added.'),
-                ]);
-              }
-            },
+        'button',
+        {
+          onclick: async () => {
+            const res = await rs.rsJsonApiRequest('/rsPeers/addSslOnlyFriend', {
+              sslId: details.id,
+              pgpId: details.gpg_id,
+            });
+            if (res.body.retval) {
+              widget.popupMessage([
+                m('h3', 'Successful'),
+                m('hr'),
+                m('p', 'Successfully added friend.'),
+              ]);
+            } else {
+              widget.popupMessage([
+                m('h3', 'Error'),
+                m('hr'),
+                m('p', 'An error occoured during adding. Friend not added.'),
+              ]);
+            }
           },
-          'Finish'
-        ),
+        },
+        'Finish'
+      ),
   ]);
 }
 
@@ -306,7 +313,7 @@ const AddFriend = () => {
         m('h3', 'Add friend'),
         m(
           'p',
-          'Did you recieve a certificate from a friend? You can also drag and drop the file below'
+          'Did you recieve a certificate from a friend?'
         ),
         m('hr'),
         m(
@@ -319,8 +326,8 @@ const AddFriend = () => {
             // Styling element when file is dragged
             style: vnode.state.isDragged
               ? {
-                  border: '5px solid #3ba4d7',
-                }
+                border: '5px solid #3ba4d7',
+              }
               : {},
 
             ondragover: (e) => e.preventDefault(),
@@ -332,19 +339,20 @@ const AddFriend = () => {
           },
 
           [
+            m('p[style="margin: 16px 0 4px; font-size: 12px;"]', 'You can directly upload or Drag and drop the file below'),
             m('input[type=file][name=certificate]', {
               onchange: (e) => {
                 // Note: this one is for the 'browse' button
                 loadFileContents(e.target.files || e.dataTransfer.files);
               },
             }),
-            'Or paste the certificate here',
-            m('textarea[rows=5][style="width: 90%; display: block;"]', {
+            m('p[style="width: 100%; text-align: center; margin: 5px 0;"]', 'OR'),
+            m('textarea[rows=5][placeholder="Paste the certificate here"][style="width: 100%; display: block; resize: vertical;"]', {
               oninput: (e) => (certificate = e.target.value),
               value: certificate,
             }),
             m(
-              'button',
+              'button[style="margin-top: 10px;"]',
               {
                 onclick: () => addFriendFromCert(certificate),
               },
