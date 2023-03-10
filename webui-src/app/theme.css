@@ -356,40 +356,61 @@ Target specific sections
 }
 
 /* Navbar */
+.nav-logo {
+  width: 9rem;
+  padding: 1.2rem 0;
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+.nav-logo img {
+  width: 1.6rem;
+}
+.nav-logo h4 {
+  margin: 0;
+  color: white;
+  align-self: end;
+}
 nav.tab-menu {
-  border-right: 5px solid #3ba4d7;
-  background-color: #333;
+  border-right: 4px solid #3ba4d7;
+  background-color: #14141B;
   box-shadow: 0 5px 5px #aaa;
   float: left;
   display: flex;
   flex-direction: column;
   align-items: center;
   height: 100%;
+  padding: 0.5rem 0.4rem;
   margin-right: 0rem;
 }
 .tab-menu-item {
-  width: 6rem;
+  width: 10rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
 }
 a.tab-menu-item {
-  padding: 1em;
+  margin: 0.2rem;
+  padding: 0.7rem 0.4rem;
   text-align: center;
   text-decoration: none;
   color: #ccc;
   font-size: 1em;
   /* CSS capitalization is magical! */
   text-transform: capitalize;
-  transition: all 0.5s;
+  transition: all 300ms;
   /* To vertically stack child nodes */
   display: inline-flex;
   flex-direction: row;
 }
 .tab-menu-item:hover {
-  background-color: #999;
+  background-color: #FFFFFF15;
 }
 
 .tab-menu-item.selected-tab-item {
-  background-color: #3ba4d7;
   color: white;
+  background-color: #FFFFFF20;
+  font-weight: medium;
 }
 .sidebar {
   height: 30%;
@@ -447,5 +468,9 @@ a.tab-menu-item {
 }
 
 i.sidenav-icon {
-  padding-right: 1rem;
+  width: 2.5rem;
+  height: 1.4rem;
+  display: grid;
+  place-items: center;
+  padding-right: 0.5rem;
 }

@@ -217,52 +217,52 @@ function confirmAddPrompt(details, cert, long) {
 
     long
       ? m(
-          'button',
-          {
-            onclick: async () =>{
-              const res = await rs.rsJsonApiRequest('/rsPeers/loadCertificateFromString', { cert });
-                if (res.body.retval) {
-                  widget.popupMessage([
-                    m('h3', 'Successful'),
-                    m('hr'),
-                    m('p', 'Successfully added friend.'),
-                  ]);
-                } else {
-                  widget.popupMessage([
-                    m('h3', 'Error'),
-                    m('hr'),
-                    m('p', 'An error occoured during adding. Friend not added.'),
-                  ]);
-                }
+        'button',
+        {
+          onclick: async () => {
+            const res = await rs.rsJsonApiRequest('/rsPeers/loadCertificateFromString', { cert });
+            if (res.body.retval) {
+              widget.popupMessage([
+                m('h3', 'Successful'),
+                m('hr'),
+                m('p', 'Successfully added friend.'),
+              ]);
+            } else {
+              widget.popupMessage([
+                m('h3', 'Error'),
+                m('hr'),
+                m('p', 'An error occoured during adding. Friend not added.'),
+              ]);
+            }
           },
         },
-          'Finish'
-        )
+        'Finish'
+      )
       : m(
-          'button',
-          {
-            onclick: async () => {
-              const res = await rs.rsJsonApiRequest('/rsPeers/addSslOnlyFriend', {
-                sslId: details.id,
-                pgpId: details.gpg_id,
-              });
-              if (res.body.retval) {
-                widget.popupMessage([
-                  m('h3', 'Successful'),
-                  m('hr'),
-                  m('p', 'Successfully added friend.'),
-                ]);
-              } else {
-                widget.popupMessage([
-                  m('h3', 'Error'),
-                  m('hr'),
-                  m('p', 'An error occoured during adding. Friend not added.'),
-                ]);
-              }
-            },
+        'button',
+        {
+          onclick: async () => {
+            const res = await rs.rsJsonApiRequest('/rsPeers/addSslOnlyFriend', {
+              sslId: details.id,
+              pgpId: details.gpg_id,
+            });
+            if (res.body.retval) {
+              widget.popupMessage([
+                m('h3', 'Successful'),
+                m('hr'),
+                m('p', 'Successfully added friend.'),
+              ]);
+            } else {
+              widget.popupMessage([
+                m('h3', 'Error'),
+                m('hr'),
+                m('p', 'An error occoured during adding. Friend not added.'),
+              ]);
+            }
           },
-          'Finish'
-        ),
+        },
+        'Finish'
+      ),
   ]);
 }
 
@@ -319,8 +319,8 @@ const AddFriend = () => {
             // Styling element when file is dragged
             style: vnode.state.isDragged
               ? {
-                  border: '5px solid #3ba4d7',
-                }
+                border: '5px solid #3ba4d7',
+              }
               : {},
 
             ondragover: (e) => e.preventDefault(),
