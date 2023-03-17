@@ -61,6 +61,24 @@ input.star-check:checked + label.star-check {
   color: #fcba03;
 }
 
+/* mail_util.js styles */
+.button-container {
+  display: flex;
+}
+.truncate {
+  display: flex;
+  width: 70vw;
+  height: 1rem;
+  flex-wrap: wrap;
+  gap: 4px;
+  overflow: hidden;
+}
+#show-more, #show-less {
+  font-size: 0.8em;
+  width: 100px;
+  height: max-content;
+}
+
 iframe.msg {
   border: 0;
   width: 100%;
@@ -89,7 +107,7 @@ iframe.msg {
   width: 70%;
   bottom: 50%;
   right: 58%;
-  
+
 }
 .mail-node-panel {
   position: relative;

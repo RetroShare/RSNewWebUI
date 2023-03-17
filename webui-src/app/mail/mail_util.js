@@ -177,9 +177,27 @@ const MessageView = () => {
           ]),
           toList &&
           Object.keys(toList).length > 0 &&
+          // TODO: optimize javascript for show-more and show-less working
           m('to', { style: { display: 'block ruby' } }, [
             m('p', { style: { fontWeight: 'bold' } }, 'To: '),
-            Object.keys(toList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
+            m('div.truncate[id=truncate]',
+              Object.keys(toList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
+            ),
+            m('button[id=show-more]', {
+              style: { display: Object.keys(toList).length > 10 ? 'block' : 'none' },
+              onclick: () => {
+                document.querySelector('#show-more').style.display = 'none';
+                document.querySelector('#truncate').style.height = 'max-content';
+                document.querySelector('#show-less').style.display = 'block';
+              }
+            }, 'Show More'),
+            m('button[id=show-less][style="display: none;"]', {
+              onclick: () => {
+                document.querySelector('#show-more').style.display = 'block';
+                document.querySelector('#truncate').style.height = '1rem';
+                document.querySelector('#show-less').style.display = 'none';
+              }
+            }, 'Show Less'),
           ]),
           ccList &&
           Object.keys(ccList).length > 0 &&
