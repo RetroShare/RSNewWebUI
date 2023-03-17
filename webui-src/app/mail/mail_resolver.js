@@ -20,6 +20,7 @@ const Messages = {
   starred: [],
   system: [],
   spam: [],
+  attachment: [],
   important: [],
   work: [],
   personal: [],
@@ -45,6 +46,8 @@ const Messages = {
       Messages.system = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_SYSTEM);
       Messages.spam = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_SPAM);
 
+      Messages.attachment = Messages.all.filter((msg) => msg.count);
+
       // Messages.important = Messages.all.filter(
       //   (msg) => msg.msgflags & util.RS_MSGTAGTYPE_IMPORTANT
       // );
@@ -67,6 +70,7 @@ const sectionsquickview = {
   starred: require('mail/mail_starred'),
   system: require('mail/mail_system'),
   spam: require('mail/mail_spam'),
+  attachment: require('mail/mail_attachment'),
   important: require('mail/mail_important'),
   work: require('mail/mail_work'),
   todo: require('mail/mail_todo'),
@@ -103,6 +107,7 @@ const Layout = {
       starred: Messages.starred.length,
       system: Messages.system.length,
       spam: Messages.spam.length,
+      attachment: Messages.attachment.length,
       important: Messages.important.length,
       work: Messages.work.length,
       todo: Messages.todo.length,
