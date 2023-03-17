@@ -106,8 +106,9 @@ const MessageSummary = () => {
           ),
           files && m('td', files.length),
           m('td', details.title),
-          fromUserInfo &&
-            m('td', Number(fromUserInfo.mId) === 0 ? '[Unknown]' : fromUserInfo.mNickname),
+          fromUserInfo
+            ? m('td', Number(fromUserInfo.mId) === 0 ? '[Unknown]' : fromUserInfo.mNickname)
+            : m('td', '[Unknown]'),
           m('td', new Date(details.ts * 1000).toLocaleString()),
         ]
       ),
@@ -170,28 +171,28 @@ const MessageView = () => {
           ),
           m('h3', details.title),
           details.from &&
-            m('from', { style: { display: 'block ruby' } }, [
-              m('p', { style: { fontWeight: 'bold' } }, 'From: '),
-              rs.userList.userMap[details.from._addr_string],
-            ]),
+          m('from', { style: { display: 'block ruby' } }, [
+            m('p', { style: { fontWeight: 'bold' } }, 'From: '),
+            rs.userList.userMap[details.from._addr_string],
+          ]),
           toList &&
-            Object.keys(toList).length > 0 &&
-            m('to', { style: { display: 'block ruby' } }, [
-              m('p', { style: { fontWeight: 'bold' } }, 'To: '),
-              Object.keys(toList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
-            ]),
+          Object.keys(toList).length > 0 &&
+          m('to', { style: { display: 'block ruby' } }, [
+            m('p', { style: { fontWeight: 'bold' } }, 'To: '),
+            Object.keys(toList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
+          ]),
           ccList &&
-            Object.keys(ccList).length > 0 &&
-            m('cc', { style: { display: 'block ruby' } }, [
-              m('p', { style: { fontWeight: 'bold' } }, 'CC: '),
-              Object.keys(ccList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
-            ]),
+          Object.keys(ccList).length > 0 &&
+          m('cc', { style: { display: 'block ruby' } }, [
+            m('p', { style: { fontWeight: 'bold' } }, 'CC: '),
+            Object.keys(ccList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
+          ]),
           bccList &&
-            Object.keys(bccList).length > 0 &&
-            m('bcc', { style: { display: 'block ruby' } }, [
-              m('p', { style: { fontWeight: 'bold' } }, 'BCC: '),
-              Object.keys(bccList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
-            ]),
+          Object.keys(bccList).length > 0 &&
+          m('bcc', { style: { display: 'block ruby' } }, [
+            m('p', { style: { fontWeight: 'bold' } }, 'BCC: '),
+            Object.keys(bccList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
+          ]),
           m('button', 'Reply'),
           m('button', 'Reply All'),
           m('button', 'Forward'),
@@ -214,15 +215,15 @@ const MessageView = () => {
                         });
                         res.body.retval === false
                           ? widget.popupMessage([
-                              m('h3', 'Error'),
-                              m('hr'),
-                              m('p', res.body.errorMessage),
-                            ])
+                            m('h3', 'Error'),
+                            m('hr'),
+                            m('p', res.body.errorMessage),
+                          ])
                           : widget.popupMessage([
-                              m('h3', 'Success'),
-                              m('hr'),
-                              m('p', 'Mail Deleted.'),
-                            ]);
+                            m('h3', 'Success'),
+                            m('hr'),
+                            m('p', 'Mail Deleted.'),
+                          ]);
                         m.redraw();
                         m.route.set('/mail/:tab', {
                           tab: m.route.param().tab,
@@ -251,7 +252,7 @@ const MessageView = () => {
 
 const Table = () => {
   return {
-    oninit: (v) => {},
+    oninit: (v) => { },
     view: (v) =>
       m('table.mails', [
         m('tr', [
