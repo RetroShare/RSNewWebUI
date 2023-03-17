@@ -15,17 +15,10 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.       #
 ################################################################################
 
+!include("../retroshare.pri"): warning("Could not include file retroshare.pri")
+
 TEMPLATE = app
 CONFIG -= qt
-
-webui_files.path = "$${DATA_DIR}/webui"
-webui_files.files = webui/app.js webui/app.css webui/index.html
-INSTALLS += webui_files
-
-webui_img_files.path = "$${DATA_DIR}/webui/img"
-webui_img_files.files = ../retroshare-gui/src/gui/images/logo/logo_splash.png
-
-INSTALLS += webui_img_files
 
 # create dummy files, we need it to include files on first try
 
@@ -42,25 +35,6 @@ WEBUI_SRC_JS += webui-src/app/mithril.js
 WEBUI_SRC_JS += webui-src/app/login.js
 WEBUI_SRC_JS += webui-src/app/main.js
 WEBUI_SRC_JS += webui-src/app/home.js
-
-#	  WEBUI_SRC_JS += webui-src/app/peers.js
-#	  WEBUI_SRC_JS += webui-src/app/menudef.js
-#	  WEBUI_SRC_JS += webui-src/app/menu.js
-#	  WEBUI_SRC_JS += webui-src/app/retroshare.js
-#	  WEBUI_SRC_JS += webui-src/app/accountselect.js
-#	  WEBUI_SRC_JS += webui-src/app/adddownloads.js
-#	  WEBUI_SRC_JS += webui-src/app/addidentity.js
-#	  WEBUI_SRC_JS += webui-src/app/addpeer.js
-#	  WEBUI_SRC_JS += webui-src/app/chat.js
-#	  WEBUI_SRC_JS += webui-src/app/createlogin.js
-#	  WEBUI_SRC_JS += webui-src/app/forums.js
-#	  WEBUI_SRC_JS += webui-src/app/identities.js
-#	  WEBUI_SRC_JS += webui-src/app/search.js
-#	  WEBUI_SRC_JS += webui-src/app/searchresult.js
-#	  WEBUI_SRC_JS += webui-src/app/servicecontrol.js
-#	  WEBUI_SRC_JS += webui-src/app/settings.js
-#	  WEBUI_SRC_JS += webui-src/app/waiting.js
-#         WEBUI_SRC_JS += webui-src/app/downloads.js
 
 WEBUI_SRC_CSS  = $$WEBUI_SRC_SCRIPT
 WEBUI_SRC_CSS += webui-src/app/green-black.scss
@@ -91,3 +65,27 @@ create_webfiles_css.CONFIG = combine no_link
 QMAKE_EXTRA_COMPILERS += create_webfiles_html create_webfiles_js create_webfiles_css 
 
 system(cp -r data webui/)
+
+webui_css_files.path  = "$${RS_DATA_DIR}/webui/css/"
+webui_css_files.files = webui/css/fontawesome.css \
+                        webui/css/solid.css
+                  
+webui_base_files.path  = "$${RS_DATA_DIR}/webui/"
+webui_base_files.files = webui/app.css \
+                         webui/app.js \
+                         webui/index.html 
+
+webui_data_files.path  = "$${RS_DATA_DIR}/webui/data/"
+webui_data_files.files = webui/data/retroshare.svg \
+                         webui/data/streaming.png 
+
+webui_font_files.path  = "$${RS_DATA_DIR}/webui/webfonts/"
+webui_font_files.files = webui/webfonts/fa-solid-900.eot \
+                         webui/webfonts/fa-solid-900.svg \
+                         webui/webfonts/fa-solid-900.ttf \
+                         webui/webfonts/fa-solid-900.woff \
+                         webui/webfonts/fa-solid-900.woff2 
+
+INSTALLS += webui_base_files webui_css_files webui_font_files webui_data_files 
+
+
