@@ -1,11 +1,11 @@
 const m = require('mithril');
 const rs = require('rswebui');
 
-const displayErrorMessage = function (message) {
+const displayErrorMessage = function(message) {
   m.render(document.getElementById('error'), message);
 };
 
-const verifyLogin = async function (uname, passwd, url, displayAuthError = true) {
+const verifyLogin = async function(uname, passwd, url, displayAuthError = true) {
   const loginHeader = {
     Authorization: 'Basic ' + btoa(uname + ':' + passwd),
   };
@@ -16,7 +16,7 @@ const verifyLogin = async function (uname, passwd, url, displayAuthError = true)
   rs.setKeys('', '', url, false);
   rs.logon(
     loginHeader,
-    displayAuthError ? displayErrorMessage : () => {},
+    displayAuthError ? displayErrorMessage : () => { },
     displayErrorMessage,
     () => {
       rs.setKeys(uname, passwd, url);
@@ -33,9 +33,9 @@ function loginComponent() {
     urlParams.get('Url') || window.location.protocol === 'file:'
       ? 'http://127.0.0.1:9092'
       : window.location.protocol +
-        '//' +
-        window.location.host +
-        window.location.pathname.replace('/index.html', '');
+      '//' +
+      window.location.host +
+      window.location.pathname.replace('/index.html', '');
   let withOptions = false;
   const logo = () =>
     m('img.logo[width=30%]', {
@@ -52,7 +52,7 @@ function loginComponent() {
     });
   const buttonLogin = () =>
     m(
-      'button.submit-btn',
+      'button[type=submit].submit-btn',
       {
         id: 'loginBtn',
         onclick: () => verifyLogin(uname, passwd, url),
@@ -100,19 +100,19 @@ function loginComponent() {
     oninit: () => verifyLogin(uname, passwd, url, false),
     view: () => {
       return m(
-        '.login-page',
+        'form.login-page',
         m(
           '.login-container',
           withOptions
             ? [
-                logo(),
-                m('.extra', [m('label', 'Username:'), m('br'), inputName()]),
-                m('.extra', [m('label', 'Password:'), m('br'), inputPassword()]),
-                m('.extra', [m('label', 'Url:'), m('br'), inputUrl()]),
-                linkOptions('hide'),
-                buttonLogin(),
-                textError(),
-              ]
+              logo(),
+              m('.extra', [m('label', 'Username:'), m('br'), inputName()]),
+              m('.extra', [m('label', 'Password:'), m('br'), inputPassword()]),
+              m('.extra', [m('label', 'Url:'), m('br'), inputUrl()]),
+              linkOptions('hide'),
+              buttonLogin(),
+              textError(),
+            ]
             : [logo(), inputPassword(), linkOptions('show'), buttonLogin(), textError()]
         )
       );
