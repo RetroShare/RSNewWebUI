@@ -3,15 +3,24 @@ REM create webfiles from sources at compile time (works without npm/node.js)
 
 setlocal enabledelayedexpansion
 
-set publicdest=%1\webui
-set src=%1\webui-src
+set src=%~dp0..\..\webui-src
 
-if "%1" == "" set publicdest=..\..\webui&&set src=..
+rem Output destination
+if "%~1" == "" (
+	set publicdest=%~dp0..\..\webui
+) else (
+	set publicdest=%~1\webui
+)
 
 if exist "%publicdest%"	echo remove existing %publicdest%&&rd %publicdest% /S /Q
 
 echo mkdir %publicdest%
 md %publicdest%
+
+rem Make full path
+pushd %publicdest%
+set publicdest=%cd%
+popd
 
 echo building app.js
 echo - copy template.js ...
