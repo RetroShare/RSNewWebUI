@@ -65,6 +65,7 @@ function loginComponent() {
       id: 'password',
       type: 'password',
       placeholder: 'Password',
+      oncreate: (e) => e.dom.focus(),
       onchange: (e) => (passwd = e.target.value),
       onkeydown: (e) => {
         if (e.keyCode === 13) {
