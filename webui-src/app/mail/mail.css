@@ -67,7 +67,7 @@ input.star-check:checked + label.star-check {
 }
 .truncate {
   display: flex;
-  width: 70vw;
+  width: 65vw;
   height: 1rem;
   flex-wrap: wrap;
   gap: 4px;
@@ -114,4 +114,13 @@ iframe.msg {
   bottom: 680px;
   margin-left: 200px;
   animation: fadein 0.5s;
+}
+
+.msgHeader {
+  display: flex;
+}
+
+.msgHeaderDetails {
+  display: flex;
+  flex-direction: column;
 }

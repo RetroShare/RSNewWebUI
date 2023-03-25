@@ -29,26 +29,26 @@ const SignedIdentiy = () => {
 
               owns.ids.length > 0
                 ? rs.rsJsonApiRequest(
-                    '/rsIdentity/createIdentity',
-                    {
-                      id: owns.ids[0],
-                      name: v.attrs.name,
-                      pseudonimous: false,
-                      pgpPassword: passphase,
-                    },
-                    (data) => {
-                      const message = data.retval
-                        ? 'Successfully created identity.'
-                        : 'An error occured while creating identity.';
-                      console.log(message);
-                      widget.popupMessage([m('h3', 'Create new Identity'), m('hr'), message]);
-                    }
-                  )
+                  '/rsIdentity/createIdentity',
+                  {
+                    id: owns.ids[0],
+                    name: v.attrs.name,
+                    pseudonimous: false,
+                    pgpPassword: passphase,
+                  },
+                  (data) => {
+                    const message = data.retval
+                      ? 'Successfully created identity.'
+                      : 'An error occured while creating identity.';
+                    console.log(message);
+                    widget.popupMessage([m('h3', 'Create new Identity'), m('hr'), message]);
+                  }
+                )
                 : widget.popupMessage([
-                    m('h3', 'Create new Identity'),
-                    m('hr'),
-                    'An error occured while creating identity.',
-                  ]);
+                  m('h3', 'Create new Identity'),
+                  m('hr'),
+                  'An error occured while creating identity.',
+                ]);
             });
           },
         },
@@ -99,10 +99,10 @@ const CreateIdentity = () => {
       m(
         'p',
         'You can have one or more identities. ' +
-          'They are used when you chat in lobbies, ' +
-          'forums and channel comments. ' +
-          'They act as the destination for distant chat and ' +
-          'the Retroshare distant mail system.'
+        'They are used when you chat in lobbies, ' +
+        'forums and channel comments. ' +
+        'They act as the destination for distant chat and ' +
+        'the Retroshare distant mail system.'
       ),
       m(
         'button',
@@ -111,18 +111,18 @@ const CreateIdentity = () => {
             !pseudonimous
               ? widget.popupMessage(m(SignedIdentiy, { name }))
               : rs.rsJsonApiRequest(
-                  '/rsIdentity/createIdentity',
-                  {
-                    name,
-                    pseudonimous,
-                  },
-                  (data) => {
-                    const message = data.retval
-                      ? 'Successfully created identity.'
-                      : 'An error occured while creating identity.';
-                    widget.popupMessage([m('h3', 'Create new Identity'), m('hr'), message]);
-                  }
-                );
+                '/rsIdentity/createIdentity',
+                {
+                  name,
+                  pseudonimous,
+                },
+                (data) => {
+                  const message = data.retval
+                    ? 'Successfully created identity.'
+                    : 'An error occured while creating identity.';
+                  widget.popupMessage([m('h3', 'Create new Identity'), m('hr'), message]);
+                }
+              );
           },
         },
         'Create'
@@ -192,28 +192,28 @@ const EditIdentity = () => {
           onclick: () => {
             !peopleUtil.checksudo(v.attrs.details.mPgpId)
               ? widget.popupMessage([
-                  m(SignedEditIdentity, {
-                    name,
-                    details: v.attrs.details,
-                  }),
-                ])
+                m(SignedEditIdentity, {
+                  name,
+                  details: v.attrs.details,
+                }),
+              ])
               : rs.rsJsonApiRequest(
-                  '/rsIdentity/updateIdentity',
-                  {
-                    id: v.attrs.details.mId,
+                '/rsIdentity/updateIdentity',
+                {
+                  id: v.attrs.details.mId,
 
-                    name,
+                  name,
 
-                    // avatar: v.attrs.details.mAvatar.mData.base64,
-                    pseudonimous: true,
-                  },
-                  (data) => {
-                    const message = data.retval
-                      ? 'Successfully Updated identity.'
-                      : 'An error occured while updating  identity.';
-                    widget.popupMessage([m('h3', 'Update Identity'), m('hr'), message]);
-                  }
-                );
+                  // avatar: v.attrs.details.mAvatar.mData.base64,
+                  pseudonimous: true,
+                },
+                (data) => {
+                  const message = data.retval
+                    ? 'Successfully Updated identity.'
+                    : 'An error occured while updating  identity.';
+                  widget.popupMessage([m('h3', 'Update Identity'), m('hr'), message]);
+                }
+              );
           },
         },
         'Save'
@@ -276,7 +276,8 @@ const Identity = () => {
         },
         [
           m('h4', details.mNickname),
-          m(peopleUtil.UserAvatar, { avatar: details.mAvatar }),
+          details.mNickname &&
+          m(peopleUtil.UserAvatar, { avatar: details.mAvatar, firstLetter: details.mNickname.slice(0, 1).toUpperCase() }),
           m('.details', [
             m('p', 'ID:'),
             m('p', details.mId),

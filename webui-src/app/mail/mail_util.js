@@ -1,6 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
+const peopleUtil = require('people/people_util');
 
 // rsmsgs.h
 const RS_MSG_BOXMASK = 0x000f;
@@ -151,6 +152,15 @@ const MessageView = () => {
           }
         });
       }
+      rs.rsJsonApiRequest(
+        '/rsIdentity/getIdDetails',
+        {
+          id: details.from._addr_string,
+        },
+        (data) => {
+          details = { ...details, avatar: data.details.mAvatar };
+        }
+      );
     },
     view: (v) =>
       m(
@@ -170,46 +180,52 @@ const MessageView = () => {
             m('i.fas.fa-arrow-left')
           ),
           m('h3', details.title),
-          details.from &&
-          m('from', { style: { display: 'block ruby' } }, [
-            m('p', { style: { fontWeight: 'bold' } }, 'From: '),
-            rs.userList.userMap[details.from._addr_string],
-          ]),
-          toList &&
-          Object.keys(toList).length > 0 &&
-          // TODO: optimize javascript for show-more and show-less working
-          m('to', { style: { display: 'block ruby' } }, [
-            m('p', { style: { fontWeight: 'bold' } }, 'To: '),
-            m('div.truncate[id=truncate]',
-              Object.keys(toList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
-            ),
-            m('button[id=show-more]', {
-              style: { display: Object.keys(toList).length > 10 ? 'block' : 'none' },
-              onclick: () => {
-                document.querySelector('#show-more').style.display = 'none';
-                document.querySelector('#truncate').style.height = 'max-content';
-                document.querySelector('#show-less').style.display = 'block';
-              }
-            }, 'Show More'),
-            m('button[id=show-less][style="display: none;"]', {
-              onclick: () => {
-                document.querySelector('#show-more').style.display = 'block';
-                document.querySelector('#truncate').style.height = '1rem';
-                document.querySelector('#show-less').style.display = 'none';
-              }
-            }, 'Show Less'),
-          ]),
-          ccList &&
-          Object.keys(ccList).length > 0 &&
-          m('cc', { style: { display: 'block ruby' } }, [
-            m('p', { style: { fontWeight: 'bold' } }, 'CC: '),
-            Object.keys(ccList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
-          ]),
-          bccList &&
-          Object.keys(bccList).length > 0 &&
-          m('bcc', { style: { display: 'block ruby' } }, [
-            m('p', { style: { fontWeight: 'bold' } }, 'BCC: '),
-            Object.keys(bccList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
+          m('.msgHeader', [
+            details.from &&
+            m(peopleUtil.UserAvatar, { avatar: details.avatar, firstLetter: rs.userList.userMap[details.from._addr_string] ? rs.userList.userMap[details.from._addr_string].slice(0, 1).toUpperCase() : '' }),
+            m('.msgHeaderDetails', [
+              details.from &&
+              m('from', { style: { display: 'block ruby' } }, [
+                m('p', { style: { fontWeight: 'bold' } }, 'From: '),
+                rs.userList.userMap[details.from._addr_string],
+              ]),
+              toList &&
+              Object.keys(toList).length > 0 &&
+              // TODO: optimize javascript for show-more and show-less working
+              m('to', { style: { display: 'block ruby' } }, [
+                m('p', { style: { fontWeight: 'bold' } }, 'To: '),
+                m('div.truncate[id=truncate]',
+                  Object.keys(toList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
+                ),
+                m('button[id=show-more]', {
+                  style: { display: Object.keys(toList).length > 10 ? 'block' : 'none' },
+                  onclick: () => {
+                    document.querySelector('#show-more').style.display = 'none';
+                    document.querySelector('#truncate').style.height = 'max-content';
+                    document.querySelector('#show-less').style.display = 'block';
+                  }
+                }, 'Show More'),
+                m('button[id=show-less][style="display: none;"]', {
+                  onclick: () => {
+                    document.querySelector('#show-more').style.display = 'block';
+                    document.querySelector('#truncate').style.height = '1rem';
+                    document.querySelector('#show-less').style.display = 'none';
+                  }
+                }, 'Show Less'),
+              ]),
+              ccList &&
+              Object.keys(ccList).length > 0 &&
+              m('cc', { style: { display: 'block ruby' } }, [
+                m('p', { style: { fontWeight: 'bold' } }, 'CC: '),
+                Object.keys(ccList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
+              ]),
+              bccList &&
+              Object.keys(bccList).length > 0 &&
+              m('bcc', { style: { display: 'block ruby' } }, [
+                m('p', { style: { fontWeight: 'bold' } }, 'BCC: '),
+                Object.keys(bccList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
+              ]),
+            ])
           ]),
           m('button', 'Reply'),
           m('button', 'Reply All'),
