@@ -2,12 +2,12 @@
 
 # create webfiles from sources at compile time (works without npm/node.js)
 
+src=$(readlink -f $(dirname $0))/../../webui-src
+
 if [ "$1" = "" ]; then
-	publicdest=../../webui
-	src=..
+	publicdest=$(readlink -f $(dirname $0))/../../webui
 else
 	publicdest=$1/webui
-	src=$1/webui-src
 fi
 
 if [ "$2" = "" ]; then
