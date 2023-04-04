@@ -1,0 +1,17 @@
+@charset "UTF-8";
+
+// 1. Configuration and helpers
+@use "abstracts";
+
+// 2. Base stuff
+@use "base";
+
+// 3. Components
+@use "components";
+
+// 4. Layout-related sections
+@use "layouts";
+
+// 5. Page-specific styles
+@use "pages";
+

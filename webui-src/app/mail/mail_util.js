@@ -208,7 +208,7 @@ const MessageView = () => {
                 m('button[id=show-less][style="display: none;"]', {
                   onclick: () => {
                     document.querySelector('#show-more').style.display = 'block';
-                    document.querySelector('#truncate').style.height = '1rem';
+                    document.querySelector('#truncate').style.height = '22px';
                     document.querySelector('#show-less').style.display = 'none';
                   }
                 }, 'Show Less'),

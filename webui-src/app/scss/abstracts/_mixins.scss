@@ -1,0 +1,20 @@
+// -----------------------------------------------------------------------------
+// This file contains all application-wide Sass mixins.
+// -----------------------------------------------------------------------------
+
+/// Button Mixin
+@mixin button($bg-color) {
+  color: white;
+  background: $bg-color;
+  font-size: 1.2em;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: inset -3px -3px 0 darken($color: $bg-color, $amount: 20);
+
+  &:active {
+    outline: none;
+    box-shadow: inset 3px 3px 0 darken($color: $bg-color, $amount: 20);
+  }
+}

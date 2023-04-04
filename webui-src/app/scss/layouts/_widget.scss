@@ -1,0 +1,17 @@
+.widget {
+  margin: 1em;
+  padding: 1em;
+  border-radius: 10px;
+  background-color: white;
+}
+.widget > p {
+  font-size: 0.9em;
+  color: #666;
+}
+.widget .tooltip {
+  float: right;
+}
+.widget-half {
+  max-width: 50%;
+}
+

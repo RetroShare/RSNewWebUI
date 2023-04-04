@@ -68,7 +68,7 @@ input.star-check:checked + label.star-check {
 .truncate {
   display: flex;
   width: 65vw;
-  height: 1rem;
+  height: 22px;
   flex-wrap: wrap;
   gap: 4px;
   overflow: hidden;
@@ -111,7 +111,7 @@ iframe.msg {
 }
 .mail-node-panel {
   position: relative;
-  bottom: 680px;
+  bottom: 755px;
   margin-left: 200px;
   animation: fadein 0.5s;
 }
