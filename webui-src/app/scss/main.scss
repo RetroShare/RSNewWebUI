@@ -3,15 +3,18 @@
 // 1. Configuration and helpers
 @use "abstracts";
 
-// 2. Base stuff
+// 2. Vendors specific files
+@use "vendors";
+
+// 3. Base stuff
 @use "base";
 
-// 3. Components
+// 4. Components
 @use "components";
 
-// 4. Layout-related sections
+// 5. Layout-related sections
 @use "layouts";
 
-// 5. Page-specific styles
+// 6. Page-specific styles
 @use "pages";
 
