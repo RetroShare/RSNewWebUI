@@ -29,10 +29,7 @@ WEBUI_SRC_JS += $$PWD/webui-src/app/login.js
 WEBUI_SRC_JS += $$PWD/webui-src/app/main.js
 WEBUI_SRC_JS += $$PWD/webui-src/app/home.js
 
-WEBUI_SRC_CSS += $$PWD/webui-src/app/green-black.scss
-WEBUI_SRC_CSS += $$PWD/webui-src/app/_reset.scss
-WEBUI_SRC_CSS += $$PWD/webui-src/app/_chat.sass
-WEBUI_SRC_CSS += $$PWD/webui-src/app/main.sass
+WEBUI_SRC_CSS += $$PWD/webui-src/styles/app.css
 
 WEBUI_SRC_DATA += $$PWD/data/retroshare.svg
 

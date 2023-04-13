@@ -1,0 +1,127 @@
+/* Navbar */
+.nav-logo {
+  width: 130px;
+  padding: 1.2rem 0;
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+.nav-logo img {
+  width: 1.6rem;
+}
+.nav-logo h4 {
+  color: white;
+  align-self: end;
+}
+nav.tab-menu {
+  border-right: 4px solid #3ba4d7;
+  background-color: #14141B;
+  box-shadow: 0 5px 5px #aaa;
+  float: left;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  padding: 8px 6px;
+  margin-right: 0rem;
+}
+.tab-menu-item {
+  width: 10rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+}
+a.tab-menu-item {
+  margin: 4px;
+  padding: 10px;
+  text-align: center;
+  text-decoration: none;
+  color: #ccc;
+  font-size: 0.875em;
+  /* CSS capitalization is magical! */
+  text-transform: capitalize;
+  transition: all 300ms;
+  /* To vertically stack child nodes */
+  display: inline-flex;
+  flex-direction: row;
+}
+.tab-menu-item:hover {
+  background-color: #FFFFFF15;
+}
+
+.tab-menu-item.selected-tab-item {
+  color: #99DEFF;
+  background-color: #89BEFA20;
+  font-weight: medium;
+}
+.sidebar {
+  height: 30%;
+  width: 200px;
+  background-color: white;
+}
+.sidebar a {
+  text-decoration: none;
+  text-transform: capitalize;
+  padding: 1em;
+  cursor: pointer;
+  display: block;
+  font-size: 0.95em;
+  color: #999;
+}
+.sidebar a:hover {
+  color: #222;
+}
+.sidebar .selected-sidebar-link {
+  font-weight: bold;
+  color: #222;
+  border-left: 5px solid #3ba4d7;
+  animation: expand-left-border 0.1s;
+}
+.sidebarquickview {
+  height: 30%;
+  width: 200px;
+  top: 300px;
+  background-color: white;
+}
+.sidebarquickview a {
+  text-decoration: none;
+  text-transform: capitalize;
+  padding: 1em;
+  cursor: pointer;
+  display: block;
+  font-size: 0.95em;
+  color: #999;
+}
+.sidebarquickview a:hover {
+  color: #222;
+}
+.sidebarquickview .selected-sidebarquickview-link {
+  font-weight: bold;
+  color: #222;
+  border-left: 5px solid #3ba4d7;
+  animation: expand-left-border 0.1s;
+}
+/* Content adjacent to sidebar */
+.node-panel {
+  position: relative;
+  bottom: 155px;
+  margin-left: 200px;
+  animation: fadein 0.5s;
+}
+
+i.sidenav-icon {
+  width: 2.5rem;
+  height: 1.4rem;
+  display: grid;
+  place-items: center;
+  padding-right: 0.5rem;
+}
+
+@keyframes expand-left-border {
+  from {
+    border-left: 0;
+  }
+  to {
+    border-left: 5px solid #3ba4d7;
+  }
+}

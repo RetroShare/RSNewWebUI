@@ -1,0 +1,23 @@
+.progressbar {
+  width: 100%;
+  border-radius: 500px;
+  background-color: #eef3f6;
+  position: relative;
+  text-align: left;
+}
+.progressbar:before {
+  position: absolute;
+  text-align: center;
+  left: 0;
+  right: 0;
+}
+.progress-status {
+  display: inline-block;
+  height: 100%;
+  padding: 5px;
+  border-radius: 500px;
+  color: #000;
+  background-color: #3ba4d7;
+  text-align: center;
+}
+

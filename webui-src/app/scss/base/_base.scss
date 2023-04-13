@@ -1,0 +1,149 @@
+/******************************
+General site-wide rules
+******************************/
+
+#main {
+  height: 100vh;
+}
+
+/* Main base div for tabs used by m.route */
+.content {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Main tab content */
+#tab-content {
+  height: 100%;
+  background-color: #eef3f6;
+  overflow: auto;
+}
+/* Individual tab pages */
+.tab-page {
+  animation: fadein 0.5s;
+}
+
+input[type='text'],
+input[type='password'],
+input[type='number'],
+textarea {
+  box-sizing: border-box;
+  background: white;
+  max-width: 100%;
+  font-size: 1.2em;
+  font-weight: 400;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 0.5em;
+  /* Disable chromium's focused element hinting*/
+  outline: none;
+}
+input:focus {
+  border: 1px solid #3ba4d7;
+  box-shadow: inset 0 0 5px #ccc;
+}
+input.stretched {
+  width: 90%;
+}
+input.small {
+  max-width: 70%;
+  font-size: 1em;
+  padding: 0.1em;
+}
+input.searchbar {
+  display: block;
+  margin: 0.9em 0 0 0.9em;
+}
+
+table {
+  padding: 20px;
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  color: #333;
+  font-size: 1.2em;
+}
+table th {
+  font-weight: 100;
+  font-size: 1.3em;
+  color: black;
+  border-bottom: 2px solid #eee;
+}
+table tr {
+  border-bottom: 1px solid #eee;
+}
+
+h3 {
+  font-size: 2em;
+  font-weight: 100;
+  color: #444;
+}
+hr {
+  margin-left: 0;
+  color: #aaa;
+}
+
+.grid-2col {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-row-gap: 16px;
+  justify-content: start;
+}
+.grid-2col input[type='checkbox'] {
+  margin-top: 20px;
+}
+
+.error {
+  color: red;
+}
+
+.tooltip {
+  color: #333;
+  /*display: inline-block;*/
+  position: relative;
+}
+.tooltiptext {
+  visibility: hidden;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  min-width: 250px;
+  margin-left: -120px;
+  z-index: 1;
+  color: #ccc;
+  background-color: #333;
+  font-size: 0.9em;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 5px;
+}
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  animation: fadein 0.5s;
+}
+
+/******************************
+Animations
+******************************/
+
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.fadein {
+  animation: fadein 0.5s;
+}
+
+@keyframes swipe-from-left {
+  from {
+    margin-left: 100%;
+  }
+  to {
+    margin-left: 0;
+  }
+}

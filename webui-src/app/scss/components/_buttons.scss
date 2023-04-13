@@ -1,0 +1,12 @@
+// -----------------------------------------------------------------------------
+// This file contains all application-wide button styles.
+// -----------------------------------------------------------------------------
+@use "../abstracts" as *;
+
+button {
+  @include button($primary-color);
+}
+button.red {
+  @include button($red-color);
+}
+
