@@ -13,7 +13,7 @@
     "document": "readonly"
   },
   "parserOptions": {
-    "ecmaVersion": 2018
+    "ecmaVersion": 2020
   },
   "ignorePatterns": ["mithril.js", "assets/*", "make-src/*"],
   "rules": {
