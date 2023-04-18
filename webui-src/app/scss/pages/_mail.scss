@@ -73,7 +73,8 @@ input.star-check:checked + label.star-check {
   gap: 4px;
   overflow: hidden;
 }
-#show-more, #show-less {
+#show-more,
+#show-less {
   font-size: 0.8em;
   width: 100px;
   height: max-content;
@@ -84,30 +85,29 @@ iframe.msg {
   width: 100%;
   height: 450px;
 }
-#composebtn{
+#composebtn {
   text-align: center;
   width: 200px;
   height: 50px;
   /* float: left; */
 }
-#searchmail{
+#searchmail {
   float: right;
   position: relative;
   margin-right: 20px;
 }
-#tags{
+#tags {
   width: 200px;
   text-align: center;
   font-size: medium;
   margin-left: 20px;
   height: 40px;
 }
-#composepopup{
+#composepopup {
   height: 80%;
   width: 70%;
   bottom: 50%;
   right: 58%;
-
 }
 .mail-node-panel {
   position: relative;
@@ -123,4 +123,24 @@ iframe.msg {
 .msgHeaderDetails {
   display: flex;
   flex-direction: column;
+}
+
+// Download Files
+.attachment-container {
+  max-height: 20vh;
+  height: auto;
+  overflow-y: scroll;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  & .attachment {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+
+    & .detail span {
+      margin-left: 4px;
+    }
+  }
 }
