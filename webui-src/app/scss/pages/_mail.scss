@@ -1,3 +1,5 @@
+@use '../abstracts' as *;
+
 /* star */
 table.mails th:nth-child(1) {
   width: 5%;
@@ -125,9 +127,8 @@ iframe.msg {
   flex-direction: column;
 }
 
-// Download Files
+// Normal mail attachment view
 .attachment-container {
-  max-height: 20vh;
   height: auto;
   overflow-y: scroll;
   display: flex;
@@ -141,6 +142,26 @@ iframe.msg {
 
     & .detail span {
       margin-left: 4px;
+    }
+  }
+}
+
+// Attachment Section attachment view
+.msg-attachment-container {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+
+  & .view {
+    height: max-content;
+    border: 1px solid $primary-color;
+    border-radius: 4px;
+    display: flex;
+
+    & * {
+      padding: 4px 12px;
+      border-radius: 4px;
     }
   }
 }

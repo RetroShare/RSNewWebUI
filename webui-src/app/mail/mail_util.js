@@ -117,6 +117,53 @@ const MessageSummary = () => {
   };
 };
 
+const AttachmentSection = () => {
+  return {
+    view: (v) =>
+      m('.attachment-container', [
+        v.attrs.files.map((item) =>
+          m('.attachment', [
+            m('.detail', [m('i.fas.fa-file'), m('span', item.fname)]),
+            m(
+              'button',
+              {
+                onclick: () => {
+                  try {
+                    rs.rsJsonApiRequest(
+                      '/rsFiles/FileRequest',
+                      {
+                        fileName: item.fname,
+                        hash: item.hash,
+                        flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                        size: {
+                          xstr64: item.size.xstr64,
+                        },
+                      },
+                      (status) => {
+                        status.retval
+                          ? widget.popupMessage([
+                              m('i.fas.fa-file-medical'),
+                              m('h3', 'File is being downloaded!'),
+                            ])
+                          : widget.popupMessage([
+                              m('i.fas.fa-file-medical'),
+                              m('h3', 'File is already downloaded!'),
+                            ]);
+                      }
+                    );
+                  } catch (error) {
+                    console.log('error: ', error);
+                  }
+                },
+              },
+              m('i.fas.fa-download')
+            ),
+          ])
+        ),
+      ]),
+  };
+};
+
 const MessageView = () => {
   let details = {};
   let files = [];
@@ -288,52 +335,13 @@ const MessageView = () => {
             },
             message
           ),
-          files.length > 0 &&
-            m('', [
-              m('hr'),
-              m('h3', 'Attachments'),
-              m('.attachment-container', [
-                files.map((item) =>
-                  m('.attachment', [
-                    m('.detail', [m('i.fas.fa-file'), m('span', item.fname)]),
-                    m(
-                      'button',
-                      {
-                        onclick: () => {
-                          try {
-                            rs.rsJsonApiRequest(
-                              '/rsFiles/FileRequest',
-                              {
-                                fileName: item.fname,
-                                hash: item.hash,
-                                flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
-                                size: {
-                                  xstr64: item.size.xstr64,
-                                },
-                              },
-                              (status) => {
-                                status.retval
-                                  ? widget.popupMessage([
-                                      m('i.fas.fa-file-medical'),
-                                      m('h3', 'File is being downloaded!'),
-                                    ])
-                                  : widget.popupMessage([
-                                      m('i.fas.fa-file-medical'),
-                                      m('h3', 'File is already downloaded!'),
-                                    ]);
-                              }
-                            );
-                          } catch (error) {
-                            console.log('error: ', error);
-                          }
-                        },
-                      },
-                      m('i.fas.fa-download')
-                    ),
-                  ])
-                ),
-              ]),
-            ]),
+          files.length > 0 && [
+            m('hr'),
+            m('h3', 'Attachments'),
+            m(AttachmentSection, {
+              files,
+            }),
+          ],
         ]
       ),
   };
@@ -450,6 +458,7 @@ const SidebarQuickView = () => {
 module.exports = {
   MessageSummary,
   MessageView,
+  AttachmentSection,
   Table,
   SearchBar,
   Sidebar,
