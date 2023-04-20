@@ -121,9 +121,34 @@ const AttachmentSection = () => {
   return {
     view: (v) =>
       m('.attachment-container', [
+        m('.attachment-header', [
+          m('h4', 'File Name'),
+          m('h4', 'From'),
+          m('h4', 'Size'),
+          m('h4', 'Date'),
+          m('h4', 'Download'),
+        ]),
         v.attrs.files.map((item) =>
           m('.attachment', [
-            m('.detail', [m('i.fas.fa-file'), m('span', item.fname)]),
+            m('.attachment__name', [
+              m('i.fas.fa-file'),
+              m('span', item.fname.substring(0, 40) + (item.fname.length > 40 ? '...' : '')),
+            ]),
+            m(
+              '.attachment__from',
+              rs.userList.userMap[item.from._addr_string]
+                ? rs.userList.userMap[item.from._addr_string]
+                : '[Unknown]'
+            ),
+            m(
+              '.attachment__size',
+              item.size.xint64 / 1024 > 1024
+                ? item.size.xint64 / 1024 / 1024 > 1024
+                  ? (item.size.xint64 / 1024 / 1024 / 1024).toFixed(2) + ' GB'
+                  : (item.size.xint64 / 1024 / 1024).toFixed(2) + ' MB'
+                : (item.size.xint64 / 1024).toFixed(2) + ' KB'
+            ),
+            m('.attachment__date', new Date(item.ts * 1000).toLocaleString()),
             m(
               'button',
               {
@@ -156,7 +181,7 @@ const AttachmentSection = () => {
                   }
                 },
               },
-              m('i.fas.fa-download')
+              'Download'
             ),
           ])
         ),
@@ -166,8 +191,8 @@ const AttachmentSection = () => {
 
 const MessageView = () => {
   let details = {};
-  let files = [];
   let message = '';
+  const files = [];
   const toList = {};
   const ccList = {};
   const bccList = {};
@@ -179,7 +204,9 @@ const MessageView = () => {
       });
       if (res.body.retval) {
         details = res.body.msg;
-        files = details.files;
+        res.body.msg.files.forEach((element) => {
+          files.push({ ...element, from: res.body.msg.from, ts: res.body.msg.ts });
+        });
         // regex to detect html tags
         // better regex?  /<[a-z][\s\S]*>/gi
         message = /<\/*[a-z][^>]+?>/gi.test(details.msg)

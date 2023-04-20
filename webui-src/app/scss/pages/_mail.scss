@@ -135,13 +135,42 @@ iframe.msg {
   flex-direction: column;
   gap: 2px;
 
-  & .attachment {
+  .attachment-header {
     display: flex;
     width: 100%;
     justify-content: space-between;
 
-    & .detail span {
-      margin-left: 4px;
+    h4 {
+      font-size: 1.25rem;
+      &:nth-child(1) {
+        flex-basis: 40%;
+      }
+
+      &:nth-child(2),
+      &:nth-child(3),
+      &:nth-child(4) {
+        flex-basis: 15%;
+      }
+    }
+  }
+
+  .attachment {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+
+    &__name {
+      flex-basis: 40%;
+
+      span {
+        margin-left: 4px;
+      }
+    }
+
+    &__from,
+    &__size,
+    &__date {
+      flex-basis: 15%;
     }
   }
 }

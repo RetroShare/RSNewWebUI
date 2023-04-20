@@ -13,7 +13,9 @@ const Layout = () => {
           msgId: element.msgId,
         });
         if (res.body.retval) {
-          files.push(...res.body.msg.files);
+          res.body.msg.files.forEach((element) => {
+            files.push({ ...element, from: res.body.msg.from, ts: res.body.msg.ts });
+          });
         }
       });
     },
