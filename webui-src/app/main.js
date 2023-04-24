@@ -26,30 +26,62 @@ const navIcon = {
 };
 
 const navbar = () => {
+  let toggleNav = false;
   return {
-    view: (vnode) => m(
-      'nav.tab-menu',
-      [
-        m('.nav-logo', [
-          m('img', {
-            src: '../data/retroshare.svg',
-            alt: 'retroshare_icon',
+    view: (vnode) =>
+      m('nav.menu', {}, [
+        m(
+          '.menu__logo',
+          {
+            style: { width: toggleNav ? '25px' : '130px' },
+          },
+          [
+            m('img', {
+              src: '../data/retroshare.svg',
+              alt: 'retroshare_icon',
+            }),
+            m(
+              'h4',
+              {
+                style: { display: toggleNav ? 'none' : 'block' },
+              },
+              'Retroshare'
+            ),
+          ]
+        ),
+        m('.menu__box', [
+          Object.keys(vnode.attrs.links).map((linkName, i) => {
+            const active = m.route.get().split('/')[1] === linkName;
+            return m(
+              m.route.Link,
+              {
+                href: vnode.attrs.links[linkName],
+                class: 'item' + (active ? ' item-selected' : ''),
+                style: { width: toggleNav ? '2.25rem' : '10rem' },
+              },
+              [
+                navIcon[linkName],
+                m(
+                  'p[style="margin: 0; align-self: end"]',
+                  {
+                    style: { display: toggleNav ? 'none' : 'block' },
+                  },
+                  linkName
+                ),
+              ]
+            );
           }),
-          m('h4', 'Retroshare'),
-        ]),
-        Object.keys(vnode.attrs.links).map((linkName, i) => {
-          const active = m.route.get().split('/')[1] === linkName;
-          return m(
-            m.route.Link,
+          m(
+            'button.toggle-nav',
             {
-              href: vnode.attrs.links[linkName],
-              class: (active ? 'selected-tab-item' : '') + ' tab-menu-item',
+              onclick: () => (toggleNav = !toggleNav),
             },
-            [navIcon[linkName], m('p[style="margin: 0; align-self: end"]', linkName)]
-          );
-        })
-      ]
-    ),
+            m('i.fas.fa-angle-double-right', {
+              style: { rotate: toggleNav ? '0deg' : '180deg' },
+            })
+          ),
+        ]),
+      ]),
   };
 };
 
@@ -135,7 +167,6 @@ m.route(document.getElementById('main'), '/', {
   },
   '/boards/:tab/:mGroupId/:mMsgId': {
     render: (v) => m(Layout, m(boards, v.attrs)),
-
   },
   '/config/:tab': {
     render: (v) => m(Layout, m(config, v.attrs)),
