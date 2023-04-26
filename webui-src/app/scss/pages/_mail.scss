@@ -1,72 +1,79 @@
 @use '../abstracts' as *;
 
-/* star */
-table.mails th:nth-child(1) {
-  width: 5%;
-  color: #fcba03;
-}
-/* attachments */
-table.mails th:nth-child(2) {
-  width: 5%;
-  color: grey;
-}
-/* subject */
-table.mails th:nth-child(3) {
-  width: 50%;
-  text-align: start;
-}
-/* From */
-table.mails th:nth-child(4) {
-  width: 20%;
-  text-align: start;
-}
-/* date */
-table.mails th:nth-child(5) {
-  width: 20%;
-  text-align: start;
+table.mails {
+  & th {
+    /* star */
+    &:nth-child(1) {
+      width: 5%;
+      color: $golden-yellow-color;
+    }
+    /* attachments */
+    &:nth-child(2) {
+      width: 5%;
+      color: darken($light-color, 50%);
+    }
+    /* subject */
+    &:nth-child(3) {
+      width: 50%;
+      text-align: start;
+    }
+    /* From */
+    &:nth-child(4),
+    /* date */
+    &:nth-child(5) {
+      width: 20%;
+      text-align: start;
+    }
+  }
+
+  & td {
+    /* subject */
+    &:nth-child(3) {
+      text-align: start;
+      /* Truncate text with '...' */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    /* From */
+    &:nth-child(4),
+    /* date */
+    &:nth-child(5) {
+      text-align: start;
+    }
+  }
+
+  & tr {
+    &:hover {
+      background-color: $light-color;
+      cursor: pointer;
+    }
+    &.unread {
+      color: black;
+      background-color: $light-color;
+    }
+  }
+
+  //Remove hover effects from the table head
+  & > tr:hover {
+    cursor: auto;
+    background-color: white;
+  }
 }
 
-/* subject */
-table.mails td:nth-child(3) {
-  text-align: start;
-  /* Truncate text with '...' */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-/* From */
-table.mails td:nth-child(4) {
-  text-align: start;
-}
-/* date */
-table.mails td:nth-child(5) {
-  text-align: start;
-}
-
-table.mails tr:hover {
-  background-color: #eef3f6;
-  cursor: pointer;
-}
-table.mails tr.unread {
-  color: black;
-  background-color: #eef3f6;
-}
 /* hide checkbox */
 input.star-check {
   display: none;
-}
-/* use label with 'for' to manipulate checkbox */
-input.star-check + label.star-check {
-  color: grey;
-}
-input.star-check:checked + label.star-check {
-  color: #fcba03;
+  /* use label with 'for' to manipulate checkbox */
+  & + label.star-check {
+    color: grey;
+  }
+  &:checked + label.star-check {
+    color: $golden-yellow-color;
+  }
 }
 
 /* mail_util.js styles */
-.button-container {
-  display: flex;
-}
 .truncate {
   display: flex;
   width: 65vw;
@@ -128,42 +135,56 @@ iframe.msg {
 }
 
 // Normal mail attachment view
-.attachment-container {
+table.attachment-container {
   height: auto;
   overflow-y: scroll;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding: 0;
+
+  & > tr {
+    border: 0;
+  }
 
   .attachment-header {
     display: flex;
     width: 100%;
     justify-content: space-between;
 
-    h4 {
-      font-size: 1.25rem;
-      &:nth-child(1) {
-        flex-basis: 40%;
-      }
+    th {
+      font-size: 1.5rem;
+      text-align: start;
 
+      &:nth-child(1) {
+        flex-basis: 45%;
+      }
       &:nth-child(2),
       &:nth-child(3),
       &:nth-child(4) {
         flex-basis: 15%;
       }
+      &:nth-child(5) {
+        text-align: center;
+        flex-basis: 10%;
+      }
     }
   }
 
   .attachment {
-    display: flex;
     width: 100%;
+    display: flex;
     justify-content: space-between;
+    text-align: start;
 
     &__name {
-      flex-basis: 40%;
+      flex-basis: 45%;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
 
       span {
-        margin-left: 4px;
+        margin-left: 8px;
       }
     }
 
@@ -171,6 +192,16 @@ iframe.msg {
     &__size,
     &__date {
       flex-basis: 15%;
+    }
+    & td:nth-child(5) {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-basis: 10%;
+
+      & button {
+        font-size: inherit;
+      }
     }
   }
 }
@@ -182,7 +213,7 @@ iframe.msg {
   justify-content: space-between;
   align-items: center;
 
-  & .view {
+  & .view-toggle {
     height: max-content;
     border: 1px solid $primary-color;
     border-radius: 4px;

@@ -33,6 +33,16 @@ const MSG_ADDRESS_MODE_BCC = 0x03;
 
 const BOX_ALL = 0x06;
 
+// Utility functions
+const humanReadableSize = (fileSize) => {
+  return fileSize / 1024 > 1024
+    ? fileSize / 1024 / 1024 > 1024
+      ? (fileSize / 1024 / 1024 / 1024).toFixed(2) + ' GB'
+      : (fileSize / 1024 / 1024).toFixed(2) + ' MB'
+    : (fileSize / 1024).toFixed(2) + ' KB';
+};
+
+// Layouts
 const MessageSummary = () => {
   let details = {};
   let files;
@@ -108,9 +118,10 @@ const MessageSummary = () => {
           ),
           files && m('td', files.length),
           m('td', details.title),
-          fromUserInfo
-            ? m('td', Number(fromUserInfo.mId) === 0 ? '[Unknown]' : fromUserInfo.mNickname)
-            : m('td', '[Unknown]'),
+          m(
+            'td',
+            fromUserInfo && Number(fromUserInfo.mId) !== 0 ? fromUserInfo.mNickname : '[Unknown]'
+          ),
           m('td', new Date(details.ts * 1000).toLocaleString()),
         ]
       ),
@@ -120,70 +131,66 @@ const MessageSummary = () => {
 const AttachmentSection = () => {
   return {
     view: (v) =>
-      m('.attachment-container', [
-        m('.attachment-header', [
-          m('h4', 'File Name'),
-          m('h4', 'From'),
-          m('h4', 'Size'),
-          m('h4', 'Date'),
-          m('h4', 'Download'),
+      m('table.attachment-container', [
+        m('tr.attachment-header', [
+          m('th', 'File Name'),
+          m('th', 'From'),
+          m('th', 'Size'),
+          m('th', 'Date'),
+          m('th', 'Download'),
         ]),
-        v.attrs.files.map((item) =>
-          m('.attachment', [
-            m('.attachment__name', [
-              m('i.fas.fa-file'),
-              m('span', item.fname.substring(0, 40) + (item.fname.length > 40 ? '...' : '')),
-            ]),
-            m(
-              '.attachment__from',
-              rs.userList.userMap[item.from._addr_string]
-                ? rs.userList.userMap[item.from._addr_string]
-                : '[Unknown]'
-            ),
-            m(
-              '.attachment__size',
-              item.size.xint64 / 1024 > 1024
-                ? item.size.xint64 / 1024 / 1024 > 1024
-                  ? (item.size.xint64 / 1024 / 1024 / 1024).toFixed(2) + ' GB'
-                  : (item.size.xint64 / 1024 / 1024).toFixed(2) + ' MB'
-                : (item.size.xint64 / 1024).toFixed(2) + ' KB'
-            ),
-            m('.attachment__date', new Date(item.ts * 1000).toLocaleString()),
-            m(
-              'button',
-              {
-                onclick: () => {
-                  try {
-                    rs.rsJsonApiRequest(
-                      '/rsFiles/FileRequest',
-                      {
-                        fileName: item.fname,
-                        hash: item.hash,
-                        flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
-                        size: {
-                          xstr64: item.size.xstr64,
-                        },
-                      },
-                      (status) => {
-                        status.retval
-                          ? widget.popupMessage([
-                              m('i.fas.fa-file-medical'),
-                              m('h3', 'File is being downloaded!'),
-                            ])
-                          : widget.popupMessage([
-                              m('i.fas.fa-file-medical'),
-                              m('h3', 'File is already downloaded!'),
-                            ]);
+        m(
+          'tbody',
+          v.attrs.files.map((item) =>
+            m('tr.attachment', [
+              m('td.attachment__name', [m('i.fas.fa-file'), m('span', item.fname)]),
+              m(
+                'td.attachment__from',
+                rs.userList.userMap[item.from._addr_string]
+                  ? rs.userList.userMap[item.from._addr_string]
+                  : '[Unknown]'
+              ),
+              m('td.attachment__size', humanReadableSize(item.size.xint64)),
+              m('td.attachment__date', new Date(item.ts * 1000).toLocaleString()),
+              m(
+                'td',
+                m(
+                  'button',
+                  {
+                    onclick: () => {
+                      try {
+                        rs.rsJsonApiRequest(
+                          '/rsFiles/FileRequest',
+                          {
+                            fileName: item.fname,
+                            hash: item.hash,
+                            flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                            size: {
+                              xstr64: item.size.xstr64,
+                            },
+                          },
+                          (status) => {
+                            status.retval
+                              ? widget.popupMessage([
+                                  m('i.fas.fa-file-medical'),
+                                  m('h3', 'File is being downloaded!'),
+                                ])
+                              : widget.popupMessage([
+                                  m('i.fas.fa-file-medical'),
+                                  m('h3', 'File is already downloaded!'),
+                                ]);
+                          }
+                        );
+                      } catch (error) {
+                        console.log('error: ', error);
                       }
-                    );
-                  } catch (error) {
-                    console.log('error: ', error);
-                  }
-                },
-              },
-              'Download'
-            ),
-          ])
+                    },
+                  },
+                  'Download'
+                )
+              ),
+            ])
+          )
         ),
       ]),
   };
@@ -376,7 +383,6 @@ const MessageView = () => {
 
 const Table = () => {
   return {
-    oninit: (v) => {},
     view: (v) =>
       m('table.mails', [
         m('tr', [
@@ -390,6 +396,7 @@ const Table = () => {
       ]),
   };
 };
+
 const SearchBar = () => {
   let searchString = '';
   return {
@@ -409,6 +416,7 @@ const SearchBar = () => {
       }),
   };
 };
+
 function popupMessageCompose(message) {
   const container = document.getElementById('modal-container');
   container.style.display = 'block';
@@ -426,10 +434,12 @@ function popupMessageCompose(message) {
     ])
   );
 }
+
 const activeSideLink = {
   sideactive: 0,
   quicksideactive: -1,
 };
+
 const Sidebar = () => {
   return {
     view: (v) =>
@@ -454,6 +464,7 @@ const Sidebar = () => {
       ),
   };
 };
+
 const SidebarQuickView = () => {
   // for the Mail tab, to be moved later.
   let quickactive = -1;
@@ -482,6 +493,7 @@ const SidebarQuickView = () => {
       ),
   };
 };
+
 module.exports = {
   MessageSummary,
   MessageView,
