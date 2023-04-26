@@ -26,62 +26,44 @@ const navIcon = {
 };
 
 const navbar = () => {
-  let toggleNav = false;
+  let isCollapsed = false;
   return {
     view: (vnode) =>
-      m('nav.menu', {}, [
-        m(
-          '.menu__logo',
-          {
-            style: { width: toggleNav ? '25px' : '130px' },
-          },
-          [
+      m(
+        'nav.nav-menu',
+        {
+          class: isCollapsed ? 'collapsed' : '',
+        },
+        [
+          m('.nav-menu__logo', [
             m('img', {
               src: '../data/retroshare.svg',
               alt: 'retroshare_icon',
             }),
+            m('h4', 'Retroshare'),
+          ]),
+          m('.nav-menu__box', [
+            Object.keys(vnode.attrs.links).map((linkName, i) => {
+              const active = m.route.get().split('/')[1] === linkName;
+              return m(
+                m.route.Link,
+                {
+                  href: vnode.attrs.links[linkName],
+                  class: 'item' + (active ? ' item-selected' : ''),
+                },
+                [navIcon[linkName], m('p[style="margin: 0; align-self: end"]', linkName)]
+              );
+            }),
             m(
-              'h4',
+              'button.toggle-nav',
               {
-                style: { display: toggleNav ? 'none' : 'block' },
+                onclick: () => (isCollapsed = !isCollapsed),
               },
-              'Retroshare'
+              m('i.fas.fa-angle-double-left')
             ),
-          ]
-        ),
-        m('.menu__box', [
-          Object.keys(vnode.attrs.links).map((linkName, i) => {
-            const active = m.route.get().split('/')[1] === linkName;
-            return m(
-              m.route.Link,
-              {
-                href: vnode.attrs.links[linkName],
-                class: 'item' + (active ? ' item-selected' : ''),
-                style: { width: toggleNav ? '2.25rem' : '10rem' },
-              },
-              [
-                navIcon[linkName],
-                m(
-                  'p[style="margin: 0; align-self: end"]',
-                  {
-                    style: { display: toggleNav ? 'none' : 'block' },
-                  },
-                  linkName
-                ),
-              ]
-            );
-          }),
-          m(
-            'button.toggle-nav',
-            {
-              onclick: () => (toggleNav = !toggleNav),
-            },
-            m('i.fas.fa-angle-double-right', {
-              style: { rotate: toggleNav ? '0deg' : '180deg' },
-            })
-          ),
-        ]),
-      ]),
+          ]),
+        ]
+      ),
   };
 };
 
