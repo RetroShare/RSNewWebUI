@@ -4,7 +4,7 @@ const util = require('mail/mail_util');
 
 const Layout = () => {
   const files = [];
-  let changeView = false;
+  let viewChanged = false;
 
   return {
     oninit: (v) => {
@@ -22,28 +22,28 @@ const Layout = () => {
     view: (v) => [
       m('.widget', [
         m('div.msg-attachment-container', [
-          m('h3', 'Attachment'),
-          m('.view', [
+          m('h3', 'Attachments'),
+          m('.view-toggle', [
             m(
               '.mail-view',
               {
-                onclick: () => (changeView = false),
-                style: { backgroundColor: changeView ? '#fff' : '#019DFF' },
+                onclick: () => (viewChanged = false),
+                style: { backgroundColor: viewChanged ? '#fff' : '#019DFF' },
               },
               m('i.fas.fa-mail-bulk')
             ),
             m(
               '.attachment-view',
               {
-                onclick: () => (changeView = true),
-                style: { backgroundColor: changeView ? '#019DFF' : '#fff' },
+                onclick: () => (viewChanged = true),
+                style: { backgroundColor: viewChanged ? '#019DFF' : '#fff' },
               },
               m('i.fas.fa-file')
             ),
           ]),
         ]),
         m('hr'),
-        changeView
+        viewChanged
           ? m(util.AttachmentSection, {
               files,
             })
