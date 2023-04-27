@@ -1,37 +1,103 @@
+@use '../abstracts/' as *;
+
 /* Navbar */
-.nav-logo {
-  width: 130px;
-  padding: 1.2rem 0;
-  display: flex;
-  gap: 0.3rem;
-  align-items: center;
-}
-.nav-logo img {
-  width: 1.6rem;
-}
-.nav-logo h4 {
-  color: white;
-  align-self: end;
-}
-nav.tab-menu {
-  border-right: 4px solid #3ba4d7;
-  background-color: #14141B;
-  box-shadow: 0 5px 5px #aaa;
+.nav-menu {
+  background-color: $dark-color;
+  box-shadow: 0 5px 5px #222;
   float: left;
   display: flex;
   flex-direction: column;
   align-items: center;
   height: 100%;
-  padding: 8px 6px;
+  padding: 8px 4px;
   margin-right: 0rem;
+
+  &__logo {
+    width: 130px;
+    padding: 1.2rem 0;
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+    overflow: hidden;
+
+    img {
+      width: 1.6rem;
+    }
+
+    h4 {
+      color: white;
+      align-self: end;
+    }
+  }
+
+  &__box {
+    padding-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    .item {
+      width: 10rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+
+      &:hover {
+        background-color: transparentize($light-color, 0.85);
+      }
+    }
+
+    .item.item-selected {
+      color: $primary-light-color;
+      background-color: transparentize($primary-light-color, 0.85);
+      font-weight: medium;
+    }
+
+    button.toggle-nav {
+      display: none;
+      font-size: 14px;
+      position: absolute;
+      padding: 0;
+      top: 0;
+      right: -1rem;
+      background: lighten($primary-color, 15%);
+      width: 1.5rem;
+      height: 1.5rem;
+      aspect-ratio: 1;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+      box-shadow: none;
+    }
+  }
+
+  &.collapsed {
+    .nav-menu__logo {
+      width: 25px;
+      & h4 {
+        display: none;
+      }
+    }
+    .nav-menu__box {
+      .item {
+        width: 2.25rem;
+        & p {
+          display: none;
+        }
+      }
+    }
+    button i {
+      rotate: 180deg;
+    }
+  }
+
+  // only show toggle button when sidebar is hovered
+  &:hover button.toggle-nav {
+    display: flex;
+  }
 }
-.tab-menu-item {
-  width: 10rem;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-}
-a.tab-menu-item {
+a.item {
   margin: 4px;
   padding: 10px;
   text-align: center;
@@ -45,15 +111,7 @@ a.tab-menu-item {
   display: inline-flex;
   flex-direction: row;
 }
-.tab-menu-item:hover {
-  background-color: #FFFFFF15;
-}
 
-.tab-menu-item.selected-tab-item {
-  color: #99DEFF;
-  background-color: #89BEFA20;
-  font-weight: medium;
-}
 .sidebar {
   height: 30%;
   width: 200px;

@@ -26,30 +26,44 @@ const navIcon = {
 };
 
 const navbar = () => {
+  let isCollapsed = false;
   return {
-    view: (vnode) => m(
-      'nav.tab-menu',
-      [
-        m('.nav-logo', [
-          m('img', {
-            src: '../data/retroshare.svg',
-            alt: 'retroshare_icon',
-          }),
-          m('h4', 'Retroshare'),
-        ]),
-        Object.keys(vnode.attrs.links).map((linkName, i) => {
-          const active = m.route.get().split('/')[1] === linkName;
-          return m(
-            m.route.Link,
-            {
-              href: vnode.attrs.links[linkName],
-              class: (active ? 'selected-tab-item' : '') + ' tab-menu-item',
-            },
-            [navIcon[linkName], m('p[style="margin: 0; align-self: end"]', linkName)]
-          );
-        })
-      ]
-    ),
+    view: (vnode) =>
+      m(
+        'nav.nav-menu',
+        {
+          class: isCollapsed ? 'collapsed' : '',
+        },
+        [
+          m('.nav-menu__logo', [
+            m('img', {
+              src: '../data/retroshare.svg',
+              alt: 'retroshare_icon',
+            }),
+            m('h4', 'Retroshare'),
+          ]),
+          m('.nav-menu__box', [
+            Object.keys(vnode.attrs.links).map((linkName, i) => {
+              const active = m.route.get().split('/')[1] === linkName;
+              return m(
+                m.route.Link,
+                {
+                  href: vnode.attrs.links[linkName],
+                  class: 'item' + (active ? ' item-selected' : ''),
+                },
+                [navIcon[linkName], m('p[style="margin: 0; align-self: end"]', linkName)]
+              );
+            }),
+            m(
+              'button.toggle-nav',
+              {
+                onclick: () => (isCollapsed = !isCollapsed),
+              },
+              m('i.fas.fa-angle-double-left')
+            ),
+          ]),
+        ]
+      ),
   };
 };
 
@@ -135,7 +149,6 @@ m.route(document.getElementById('main'), '/', {
   },
   '/boards/:tab/:mGroupId/:mMsgId': {
     render: (v) => m(Layout, m(boards, v.attrs)),
-
   },
   '/config/:tab': {
     render: (v) => m(Layout, m(config, v.attrs)),
