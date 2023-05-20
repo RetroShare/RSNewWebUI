@@ -1,5 +1,71 @@
-
 const m = require('mithril');
+const futil = require('files/files_util');
+
+const RsEventsType = {
+  NONE: 0, // Used internally to detect invalid event type passed
+
+  // @see RsBroadcastDiscovery
+  BROADCAST_DISCOVERY: 1,
+
+  // @see RsDiscPendingPgpReceivedEvent
+  GOSSIP_DISCOVERY: 2,
+
+  // @see AuthSSL
+  AUTHSSL_CONNECTION_AUTENTICATION: 3,
+
+  // @see pqissl
+  PEER_CONNECTION: 4,
+
+  // @see RsGxsChanges, used also in @see RsGxsBroadcast
+  GXS_CHANGES: 5,
+
+  // Emitted when a peer state changes, @see RsPeers
+  PEER_STATE_CHANGED: 6,
+
+  // @see RsMailStatusEvent
+  MAIL_STATUS: 7,
+
+  // @see RsGxsCircleEvent
+  GXS_CIRCLES: 8,
+
+  // @see RsGxsChannelEvent
+  GXS_CHANNELS: 9,
+
+  // @see RsGxsForumEvent
+  GXS_FORUMS: 10,
+
+  // @see RsGxsPostedEvent
+  GXS_POSTED: 11,
+
+  // @see RsGxsPostedEvent
+  GXS_IDENTITY: 12,
+
+  // @see RsFiles @deprecated
+  SHARED_DIRECTORIES: 13,
+
+  // @see RsFiles
+  FILE_TRANSFER: 14,
+
+  // @see RsMsgs
+  CHAT_MESSAGE: 15,
+
+  // @see rspeers.h
+  NETWORK: 16,
+
+  // @see RsMailTagEvent
+  MAIL_TAG: 17,
+
+  /** Emitted to update library clients about file hashing being completed */
+  FILE_HASHING_COMPLETED: 20,
+
+  // @see rspeers.h
+  TOR_MANAGER: 21,
+
+  // @see rsfriendserver.h
+  FRIEND_SERVER: 22,
+
+  // _MAX //used internally, keep last
+};
 
 const API_URL = 'http://127.0.0.1:9092';
 const loginKey = {
@@ -104,7 +170,19 @@ function deeperIfExist(map, key, action) {
 
 const eventQueue = {
   events: {
-    15: {
+    [RsEventsType.FILE_TRANSFER]: {
+      handler: (event) => {
+        console.log('search results : ', event);
+
+        // if request item doesn't already exists in Object then create new item
+        if (!Object.prototype.hasOwnProperty.call(futil.proxyObj, event.mRequestId)) {
+          futil.proxyObj[event.mRequestId] = [];
+        }
+
+        futil.proxyObj[event.mRequestId].push(...event.mResults);
+      },
+    },
+    [RsEventsType.CHAT_MESSAGE]: {
       // Chat-Messages
       types: {
         //                #define RS_CHAT_TYPE_PUBLIC  1
@@ -140,7 +218,7 @@ const eventQueue = {
         }),
       notify: () => {},
     },
-    8: {
+    [RsEventsType.GXS_CIRCLES]: {
       // Circles (ignore in the meantime)
       handler: (event, owner) => {},
     },
@@ -218,28 +296,27 @@ function startEventQueue(
         if (currIndex > lastIndex) {
           const parts = xhr.responseText.substring(lastIndex, currIndex);
           lastIndex = currIndex;
-          for (const data of parts
+          parts
             .trim()
             .split('\n\n')
             .filter((e) => e.startsWith('data: {'))
             .map((e) => e.substr(6))
-            .map(JSON.parse)) {
-            if (Object.prototype.hasOwnProperty.call(data, 'retval')) {
-              console.info(
-                info + ' [' + data.retval.errorCategory + '] ' + data.retval.errorMessage
-              );
-              if (data.retval.errorNumber === 0) {
-                successful();
-              } else {
-                displayErrorMessage(
-                  info + ' failed: [' + data.retval.errorCategory + '] ' + data.retval.errorMessage
+            .map(JSON.parse)
+            .forEach((data) => {
+              if (Object.prototype.hasOwnProperty.call(data, 'retval')) {
+                console.info(
+                  info + ' [' + data.retval.errorCategory + '] ' + data.retval.errorMessage
                 );
+                data.retval.errorNumber === 0
+                  ? successful()
+                  : displayErrorMessage(
+                      `${info} failed: [${data.retval.errorCategory}] ${data.retval.errorMessage}`
+                    );
+              } else if (Object.prototype.hasOwnProperty.call(data, 'event')) {
+                data.event.queueSize = currIndex;
+                eventQueue.handler(data.event);
               }
-            } else if (Object.prototype.hasOwnProperty.call(data, 'event')) {
-              data.event.queueSize = currIndex;
-              eventQueue.handler(data.event);
-            }
-          }
+            });
           if (currIndex > 1e5) {
             // max 100 kB eventQueue
             startEventQueue('restart queue');

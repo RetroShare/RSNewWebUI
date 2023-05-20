@@ -122,6 +122,9 @@ m.route(document.getElementById('main'), '/', {
   '/files/:tab': {
     render: (v) => m(Layout, m(files, v.attrs)),
   },
+  '/files/:tab/:resultId': {
+    render: (v) => m(Layout, m(files, v.attrs)),
+  },
   '/channels/:tab': {
     render: (v) => m(Layout, m(channels, v.attrs)),
   },

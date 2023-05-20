@@ -1,3 +1,5 @@
+@use '../abstracts/variables' as *;
+
 .file-view {
   width: 90%;
   border-radius: 10px;
@@ -77,4 +79,46 @@ table.friendsfiles th:nth-child(4) {
 }
 table.friendsfiles td:nth-child(2) {
   text-align: start;
+}
+
+// File Search
+.file-search {
+  padding: 8px;
+  border: 1px solid transparentize($dark-color, 0.8);
+  border-radius: 6px;
+
+  &-container {
+    display: flex;
+    justify-content: space-between;
+
+    h4 {
+      font-size: 1.5rem;
+    }
+
+    &__search-terms {
+      flex-basis: 20%;
+      & .search-terms-container {
+        display: flex;
+        flex-direction: column;
+
+        & a {
+          font-size: 1.2rem;
+          text-decoration: none;
+          color: $dark-color;
+
+          &.selected {
+            color: $primary-color;
+          }
+        }
+      }
+    }
+
+    &__search-results {
+      flex-basis: 80%;
+    }
+
+    &__results {
+      padding: 4px;
+    }
+  }
 }

@@ -1,43 +1,89 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const futil = require('files/files_util');
 
 let matchString = '';
+const reqObj = {};
+
+async function handleSubmit() {
+  await rs
+    .rsJsonApiRequest('/rsFiles/turtleSearch', { matchString })
+    .then((res) => {
+      reqObj[res.body.retval] = matchString;
+    })
+    .catch((error) => console.log(error));
+}
+
 const SearchBar = () => {
-  let headers = {};
   return {
-    oninit: () => {
-      headers['Accept'] = 'application/json';
-      if (rs.loginKey.isVerified) {
-        headers['Authorization'] = 'Basic ' + btoa(rs.loginKey.username + ':' + rs.loginKey.passwd);
-      }
-    },
     view: () =>
-      m('input[type=text][placeholder=search]', {
-        value: matchString,
-        oninput: (e) => (matchString = e.target.value),
-        onchange: (e) => {
-          console.log('searching for string: ', matchString);
-          let source = new EventSource('http://127.0.0.1:9092/rsFiles/turtleSearchRequest', {
-            headers,
-            // withCredentials: true,
-          });
-          // rs.rsJsonApiRequest(
-          //   '/rsfiles/turtleSearchRequest',
-          //   {
-          //     matchString,
-          //   },
-          //   (data, stat) => {
-          //     console.log('got: ', stat, ' data: ', data);
-          //   }
-          // );
+      m(
+        'form',
+        {
+          onsubmit: handleSubmit,
         },
-      }),
+        [
+          m('input[type=text][placeholder=search]', {
+            value: matchString,
+            oninput: (e) => (matchString = e.target.value),
+          }),
+          m('button[type=submit]', 'Submit'),
+        ]
+      ),
   };
 };
 
 const Layout = () => {
+  console.log(futil.proxyObj, Object.keys(reqObj));
+  setTimeout(() => {
+    console.log(futil.proxyObj, Object.keys(reqObj));
+  }, 30000);
+  let active = 0;
+  let currentItem = 0;
   return {
-    view: (vnode) => m('.widget', [m('h3', 'Search'), m('hr'), m(SearchBar)]),
+    view: (vnode) =>
+      m('.widget', [
+        m('h3', 'Search'),
+        m('hr'),
+        m(SearchBar),
+        m(
+          'div.file-search',
+          m('div.file-search-container', [
+            m('div.file-search-container__search-terms', [
+              m('h4', 'Search Terms'),
+              m(
+                'div.search-terms-container',
+                Object.keys(reqObj).map((item, index) => {
+                  return m(
+                    m.route.Link,
+                    {
+                      class: active === index ? 'selected' : '',
+                      onclick: () => {
+                        active = index;
+                        currentItem = item;
+                      },
+                      href: '/files/search/' + item,
+                    },
+                    reqObj[item]
+                  );
+                })
+              ),
+            ]),
+            m('div.file-search-container__search-results', [
+              m('h4', 'Search Results'),
+              Object.keys(futil.proxyObj).length === 0
+                ? m('p', 'Nothing Searched')
+                : m(
+                    'div.search-results-container',
+                    futil.proxyObj[currentItem] === undefined &&
+                      futil.proxyObj[currentItem].length === 0
+                      ? 'Fetching Results...'
+                      : futil.proxyObj[currentItem].map((item) => m('p', item.fName))
+                  ),
+            ]),
+          ])
+        ),
+      ]),
   };
 };
 
