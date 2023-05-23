@@ -82,43 +82,98 @@ table.friendsfiles td:nth-child(2) {
 }
 
 // File Search
-.file-search {
+.file-search-container {
+  margin-top: 1rem;
   padding: 8px;
+  display: flex;
+  gap: 8px;
   border: 1px solid transparentize($dark-color, 0.8);
   border-radius: 6px;
 
-  &-container {
-    display: flex;
-    justify-content: space-between;
+  h4 {
+    font-size: 1.25rem;
+  }
 
-    h4 {
-      font-size: 1.5rem;
-    }
+  &__keywords {
+    flex-basis: 15%;
+    border-right: 1px solid transparentize($dark-color, 0.9);
 
-    &__search-terms {
-      flex-basis: 20%;
-      & .search-terms-container {
-        display: flex;
-        flex-direction: column;
+    & .keywords-container {
+      display: flex;
+      flex-direction: column;
 
-        & a {
-          font-size: 1.2rem;
-          text-decoration: none;
-          color: $dark-color;
+      & a {
+        font-size: 1.2rem;
+        text-decoration: none;
+        color: $dark-color;
 
-          &.selected {
-            color: $primary-color;
-          }
+        &.selected {
+          color: $primary-color;
         }
       }
     }
+  }
 
-    &__search-results {
-      flex-basis: 80%;
-    }
+  &__results {
+    flex-basis: 85%;
 
-    &__results {
-      padding: 4px;
+    & .results-container {
+      & .results-header {
+        & tr {
+          display: flex;
+          & th {
+            font-size: 1.25rem;
+            font-weight: bold;
+
+            &:nth-child(1) {
+              flex-basis: 40%;
+              text-align: left;
+            }
+            &:nth-child(2) {
+              flex-basis: 10%;
+            }
+            &:nth-child(3) {
+              flex-basis: 40%;
+              text-align: left;
+            }
+            &:nth-child(4) {
+              flex-basis: 10%;
+              text-align: right;
+            }
+          }
+        }
+      }
+      & .results {
+        & tr {
+          display: flex;
+          & .results {
+            &__hash,
+            &__name {
+              text-align: left;
+              flex-basis: 40%;
+              overflow: hidden;
+              white-space: nowrap;
+              text-overflow: ellipsis;
+
+              span {
+                margin-left: 8px;
+              }
+            }
+            &__size {
+              flex-basis: 10%;
+            }
+            &__download {
+              flex-basis: 10%;
+              display: flex;
+              justify-content: end;
+              align-items: center;
+            }
+          }
+        }
+      }
+      & button {
+        font-size: 1rem;
+      }
     }
   }
 }

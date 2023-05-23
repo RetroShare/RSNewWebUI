@@ -1,6 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const futil = require('files/files_util');
+const widget = require('widgets');
 
 let matchString = '';
 const reqObj = {};
@@ -34,10 +35,6 @@ const SearchBar = () => {
 };
 
 const Layout = () => {
-  console.log(futil.proxyObj, Object.keys(reqObj));
-  setTimeout(() => {
-    console.log(futil.proxyObj, Object.keys(reqObj));
-  }, 30000);
   let active = 0;
   let currentItem = 0;
   return {
@@ -46,43 +43,93 @@ const Layout = () => {
         m('h3', 'Search'),
         m('hr'),
         m(SearchBar),
-        m(
-          'div.file-search',
-          m('div.file-search-container', [
-            m('div.file-search-container__search-terms', [
-              m('h4', 'Search Terms'),
-              m(
-                'div.search-terms-container',
-                Object.keys(reqObj).map((item, index) => {
-                  return m(
-                    m.route.Link,
-                    {
-                      class: active === index ? 'selected' : '',
-                      onclick: () => {
-                        active = index;
-                        currentItem = item;
-                      },
-                      href: '/files/search/' + item,
+        m('div.file-search-container', [
+          m('div.file-search-container__keywords', [
+            m('h4', 'Keywords'),
+            m(
+              'div.keywords-container',
+              Object.keys(reqObj).map((item, index) => {
+                return m(
+                  m.route.Link,
+                  {
+                    class: active === index ? 'selected' : '',
+                    onclick: () => {
+                      active = index;
+                      currentItem = item;
                     },
-                    reqObj[item]
-                  );
-                })
-              ),
-            ]),
-            m('div.file-search-container__search-results', [
-              m('h4', 'Search Results'),
-              Object.keys(futil.proxyObj).length === 0
-                ? m('p', 'Nothing Searched')
-                : m(
-                    'div.search-results-container',
+                    href: '/files/search/' + item,
+                  },
+                  reqObj[item]
+                );
+              })
+            ),
+          ]),
+          m('div.file-search-container__results', [
+            Object.keys(futil.proxyObj).length === 0
+              ? m('h4', 'Results')
+              : m('table.results-container', [
+                  m(
+                    'thead.results-header',
+                    m('tr', [
+                      m('th', 'Name'),
+                      m('th', 'Size'),
+                      m('th', 'Hash'),
+                      m('th', 'Download'),
+                    ])
+                  ),
+                  m(
+                    'tbody.results',
                     futil.proxyObj[currentItem] === undefined &&
                       futil.proxyObj[currentItem].length === 0
                       ? 'Fetching Results...'
-                      : futil.proxyObj[currentItem].map((item) => m('p', item.fName))
+                      : futil.proxyObj[currentItem].map((item) =>
+                          m('tr', [
+                            m('td.results__name', [m('i.fas.fa-file'), m('span', item.fName)]),
+                            m('td.results__size', futil.makeFriendlyUnit(item.fSize.xstr64)),
+                            m('td.results__hash', item.fHash),
+                            m(
+                              'td.results__download',
+                              m(
+                                'button',
+                                {
+                                  onclick: () => {
+                                    try {
+                                      rs.rsJsonApiRequest(
+                                        '/rsFiles/FileRequest',
+                                        {
+                                          fileName: item.fName,
+                                          hash: item.fHash,
+                                          flags: futil.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                                          size: {
+                                            xstr64: item.fSize.xstr64,
+                                          },
+                                        },
+                                        (status) => {
+                                          status.retval
+                                            ? widget.popupMessage([
+                                                m('i.fas.fa-file-medical'),
+                                                m('h3', 'File is being downloaded!'),
+                                              ])
+                                            : widget.popupMessage([
+                                                m('i.fas.fa-file-medical'),
+                                                m('h3', 'File is already downloaded!'),
+                                              ]);
+                                        }
+                                      );
+                                    } catch (error) {
+                                      console.log('error in sending download request: ', error);
+                                    }
+                                  },
+                                },
+                                'Download'
+                              )
+                            ),
+                          ])
+                        )
                   ),
-            ]),
-          ])
-        ),
+                ]),
+          ]),
+        ]),
       ]),
   };
 };
