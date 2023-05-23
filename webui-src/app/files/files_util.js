@@ -19,8 +19,6 @@ const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
 const RS_FILE_HINTS_REMOTE = 0x00000008;
 const RS_FILE_HINTS_LOCAL = 0x00000004;
 
-// const RS_FILE_TRANSFER = 14;
-
 const createArrayProxy = (arr, onChange) => {
   return new Proxy(arr, {
     set: (target, property, value, reciever) => {
@@ -29,11 +27,6 @@ const createArrayProxy = (arr, onChange) => {
         onChange();
       }
       return success;
-    },
-    apply: (target, thisArg, args) => {
-      const result = Reflect.apply(target, thisArg, args);
-      onChange();
-      return result;
     },
   });
 };
