@@ -11,8 +11,8 @@ async function handleSubmit() {
   await rs
     .rsJsonApiRequest('/rsFiles/turtleSearch', { matchString })
     .then((res) => {
-      reqObj[res.body.retval] = matchString;
-      currentItem = res.body.retval;
+      reqObj['_' + res.body.retval] = matchString;
+      currentItem = '_' + res.body.retval;
     })
     .catch((error) => console.log(error));
 }
@@ -50,7 +50,7 @@ const Layout = () => {
             m(
               'div.keywords-container',
               Object.keys(reqObj)
-                .sort((a, b) => reqObj[a] > reqObj[b])
+                .reverse()
                 .map((item, index) => {
                   return m(
                     m.route.Link,
@@ -82,10 +82,10 @@ const Layout = () => {
                   ),
                   m(
                     'tbody.results',
-                    futil.proxyObj[currentItem] === undefined &&
-                      futil.proxyObj[currentItem].length === 0
+                    futil.proxyObj[currentItem.slice(1)] === undefined &&
+                      futil.proxyObj[currentItem.slice(1)].length === 0
                       ? 'Fetching Results...'
-                      : futil.proxyObj[currentItem].map((item) =>
+                      : futil.proxyObj[currentItem.slice(1)].map((item) =>
                           m('tr', [
                             m('td.results__name', [m('i.fas.fa-file'), m('span', item.fName)]),
                             m('td.results__size', futil.makeFriendlyUnit(item.fSize.xstr64)),
