@@ -5,12 +5,14 @@ const widget = require('widgets');
 
 let matchString = '';
 const reqObj = {};
+let currentItem = 0;
 
 async function handleSubmit() {
   await rs
     .rsJsonApiRequest('/rsFiles/turtleSearch', { matchString })
     .then((res) => {
       reqObj[res.body.retval] = matchString;
+      currentItem = res.body.retval;
     })
     .catch((error) => console.log(error));
 }
@@ -36,7 +38,6 @@ const SearchBar = () => {
 
 const Layout = () => {
   let active = 0;
-  let currentItem = 0;
   return {
     view: (vnode) =>
       m('.widget', [
@@ -48,20 +49,22 @@ const Layout = () => {
             m('h4', 'Keywords'),
             m(
               'div.keywords-container',
-              Object.keys(reqObj).map((item, index) => {
-                return m(
-                  m.route.Link,
-                  {
-                    class: active === index ? 'selected' : '',
-                    onclick: () => {
-                      active = index;
-                      currentItem = item;
+              Object.keys(reqObj)
+                .sort((a, b) => reqObj[a] > reqObj[b])
+                .map((item, index) => {
+                  return m(
+                    m.route.Link,
+                    {
+                      class: active === index ? 'selected' : '',
+                      onclick: () => {
+                        active = index;
+                        currentItem = item;
+                      },
+                      href: '/files/search/' + item,
                     },
-                    href: '/files/search/' + item,
-                  },
-                  reqObj[item]
-                );
-              })
+                    reqObj[item]
+                  );
+                })
             ),
           ]),
           m('div.file-search-container__results', [
