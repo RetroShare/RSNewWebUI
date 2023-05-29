@@ -1,6 +1,54 @@
+@use '../abstracts/variables' as *;
+
 .config-node-panel {
-    position: relative;
-    bottom: 250px;
-    margin-left: 200px;
-    animation: fadein 0.5s;
+  position: relative;
+  bottom: 250px;
+  margin-left: 200px;
+  animation: fadein 0.5s;
+}
+
+.message-tags {
+  padding: 8px;
+  border: 1px solid transparentize($dark-color, 0.8);
+  border-radius: 6px;
+  &-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    & button {
+      height: max-content;
+    }
   }
+  &__container {
+    display: flex;
+    flex-direction: column;
+    & .tag-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border-bottom: 1px solid transparentize($dark-color, 0.9);
+      padding: 2px 0;
+
+      &:last-child {
+        border: none;
+      }
+      &__color {
+        width: 20px;
+        height: 20px;
+        aspect-ratio: 1;
+      }
+      &__name {
+        font-size: 1.25rem;
+      }
+      &__modify {
+        margin-left: auto;
+        font-size: 0.75rem;
+        display: flex;
+        gap: 4px;
+      }
+      &:hover {
+        background-color: $light-color;
+      }
+    }
+  }
+}
