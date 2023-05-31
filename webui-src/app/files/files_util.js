@@ -19,6 +19,42 @@ const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
 const RS_FILE_HINTS_REMOTE = 0x00000008;
 const RS_FILE_HINTS_LOCAL = 0x00000004;
 
+const createArrayProxy = (arr, onChange) => {
+  return new Proxy(arr, {
+    set: (target, property, value, reciever) => {
+      const success = Reflect.set(target, property, value, reciever);
+      if (success && onChange) {
+        onChange();
+      }
+      return success;
+    },
+  });
+};
+
+const createProxy = (obj, onChange) => {
+  return new Proxy(obj, {
+    get: (target, property, reciever) => {
+      const value = Reflect.get(target, property, reciever);
+      return typeof value === 'object' && value !== null
+        ? Array.isArray(value)
+          ? createArrayProxy(value, onChange)
+          : createProxy(value, onChange)
+        : value;
+    },
+    set: (target, property, value, reciever) => {
+      const success = Reflect.set(target, property, value, reciever);
+      if (success && onChange) {
+        onChange();
+      }
+      return success;
+    },
+  });
+};
+
+const proxyObj = createProxy({}, () => {
+  m.redraw();
+});
+
 function makeFriendlyUnit(bytes) {
   let cnt = bytes;
   for (const s of ['', 'k', 'M', 'G']) {
@@ -338,4 +374,5 @@ module.exports = {
   MyFilesTable,
   FriendsFilesTable,
   formatbytes,
+  proxyObj,
 };

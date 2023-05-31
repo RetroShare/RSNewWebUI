@@ -1,3 +1,5 @@
+@use '../abstracts/variables' as *;
+
 .file-view {
   width: 90%;
   border-radius: 10px;
@@ -77,4 +79,101 @@ table.friendsfiles th:nth-child(4) {
 }
 table.friendsfiles td:nth-child(2) {
   text-align: start;
+}
+
+// File Search
+.file-search-container {
+  margin-top: 1rem;
+  padding: 8px;
+  display: flex;
+  gap: 8px;
+  border: 1px solid transparentize($dark-color, 0.8);
+  border-radius: 6px;
+
+  h4 {
+    font-size: 1.25rem;
+  }
+
+  &__keywords {
+    flex-basis: 15%;
+    border-right: 1px solid transparentize($dark-color, 0.9);
+
+    & .keywords-container {
+      display: flex;
+      flex-direction: column;
+
+      & a {
+        font-size: 1.2rem;
+        text-decoration: none;
+        color: $dark-color;
+
+        &.selected {
+          color: $primary-color;
+        }
+      }
+    }
+  }
+
+  &__results {
+    flex-basis: 85%;
+
+    & .results-container {
+      & .results-header {
+        & tr {
+          display: flex;
+          & th {
+            font-size: 1.25rem;
+            font-weight: bold;
+
+            &:nth-child(1) {
+              flex-basis: 40%;
+              text-align: left;
+            }
+            &:nth-child(2) {
+              flex-basis: 10%;
+            }
+            &:nth-child(3) {
+              flex-basis: 40%;
+              text-align: left;
+            }
+            &:nth-child(4) {
+              flex-basis: 10%;
+              text-align: right;
+            }
+          }
+        }
+      }
+      & .results {
+        & tr {
+          display: flex;
+          & .results {
+            &__hash,
+            &__name {
+              text-align: left;
+              flex-basis: 40%;
+              overflow: hidden;
+              white-space: nowrap;
+              text-overflow: ellipsis;
+
+              span {
+                margin-left: 8px;
+              }
+            }
+            &__size {
+              flex-basis: 10%;
+            }
+            &__download {
+              flex-basis: 10%;
+              display: flex;
+              justify-content: end;
+              align-items: center;
+            }
+          }
+        }
+      }
+      & button {
+        font-size: 1rem;
+      }
+    }
+  }
 }
