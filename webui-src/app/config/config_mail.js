@@ -11,19 +11,23 @@ const msgTagObj = {
 let tagArr = [];
 
 async function handleSubmit(tagId) {
-  msgTagObj.tagId = tagId === undefined ? util.getRandomId(tagArr) : tagId;
-  await rs.rsJsonApiRequest('/rsMsgs/setMessageTagType', {
-    tagId: msgTagObj.tagId,
-    text: msgTagObj.tagName,
-    rgb_color: parseInt(msgTagObj.tagColor.substring(1), 16),
+  const modalContainer = document.getElementById('modal-container');
+  msgTagObj.tagId = typeof tagId === 'number' ? tagId : util.getRandomId(tagArr);
+  let tagNameAlreadyExists = false;
+  tagArr.forEach((item) => {
+    if (item.value.first === msgTagObj.tagName) tagNameAlreadyExists = true;
   });
-  await rs
-    .rsJsonApiRequest('/rsMsgs/getMessageTagTypes')
-    .then((res) => (tagArr = res.body.tags.types));
-  // reset to default values
-  msgTagObj.tagId = 100;
-  msgTagObj.tagName = '';
-  msgTagObj.tagColor = '';
+  if (tagNameAlreadyExists) {
+    alert('Tag Name Already Exists');
+  } else {
+    rs.rsJsonApiRequest('/rsMsgs/setMessageTagType', {
+      tagId: msgTagObj.tagId,
+      text: msgTagObj.tagName,
+      rgb_color: parseInt(msgTagObj.tagColor.substring(1), 16),
+    });
+    modalContainer.style.display = 'none';
+    rs.rsJsonApiRequest('/rsMsgs/getMessageTagTypes').then((res) => (tagArr = res.body.tags.types));
+  }
 }
 
 const MessageTagForm = () => {
@@ -31,7 +35,7 @@ const MessageTagForm = () => {
     view: (v) => {
       const isCreateForm = v.attrs.tagItem === undefined;
       return m(
-        'form.message-tags-form',
+        'form.mail-tags-form',
         {
           onsubmit: isCreateForm ? handleSubmit : () => handleSubmit(v.attrs.tagItem.key),
         },
@@ -41,16 +45,14 @@ const MessageTagForm = () => {
           m('.input-field', [
             m('label[for=tagName]', 'Enter Tag Name'),
             m('input[type=text][id=tagName][placeholder="enter tag name"]', {
-              value: isCreateForm ? msgTagObj.tagName : v.attrs.tagItem.value.first,
+              value: msgTagObj.tagName,
               oninput: (e) => (msgTagObj.tagName = e.target.value),
             }),
           ]),
           m('.input-field', [
             m('label[for=tagColor]', 'Choose Tag Color'),
             m('input[type=color][id=tagColor]', {
-              value: isCreateForm
-                ? msgTagObj.tagColor
-                : `#${v.attrs.tagItem.value.second.toString(16).padStart(6, '0')}`,
+              value: msgTagObj.tagColor,
               oninput: (e) => (msgTagObj.tagColor = e.target.value),
             }),
           ]),
@@ -63,20 +65,68 @@ const MessageTagForm = () => {
 };
 
 const Mail = () => {
+  let distantMessagingPermissionFlag = 0;
   return {
-    oninit: async () => {
-      await rs
-        .rsJsonApiRequest('/rsMsgs/getMessageTagTypes')
-        .then((res) => (tagArr = res.body.tags.types));
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsMsgs/getMessageTagTypes').then(
+        (res) => (tagArr = res.body.tags.types)
+      );
+      rs.rsJsonApiRequest('/rsMsgs/getDistantMessagingPermissionFlags').then(
+        (res) => (distantMessagingPermissionFlag = res.body.retval)
+      );
     },
     view: () =>
-      m('.widget.widget-half', [
-        m('.message-tags-heading', [
-          m('h3', 'Message Tags'),
+      m('.widget.widget-half.mail', [
+        m('.mail-tags__heading', m('h3', 'Distant Messages')),
+        m('hr'),
+        m('.permission-flag', [
+          m('p', 'Accept encrypted distant messages from: '),
+          m(
+            'select[id=setDistantMessagingPermission]',
+            {
+              value: distantMessagingPermissionFlag,
+              oninput: (e) => (distantMessagingPermissionFlag = e.target.value),
+              onchange: () => {
+                rs.rsJsonApiRequest('/rsMsgs/setDistantMessagingPermissionFlags', {
+                  flags: parseInt(distantMessagingPermissionFlag),
+                });
+              },
+            },
+            [
+              m(
+                'option',
+                {
+                  value: util.RS_DISTANT_MESSAGING_PERMISSION_FLAG_FILTER_NONE,
+                },
+                'Everybody'
+              ),
+              m(
+                'option',
+                {
+                  value: util.RS_DISTANT_MESSAGING_PERMISSION_FLAG_FILTER_NON_CONTACTS,
+                },
+                'Contacts'
+              ),
+              m(
+                'option',
+                {
+                  value: util.RS_DISTANT_MESSAGING_PERMISSION_FLAG_FILTER_EVERYBODY,
+                },
+                'Nobody'
+              ),
+            ]
+          ),
+        ]),
+        m('br'),
+        m('.mail-tags__heading', [
+          m('h3', 'Mail Tags'),
           m(
             'button',
             {
               onclick: () => {
+                // set form fields to default values
+                msgTagObj.tagName = '';
+                msgTagObj.tagColor = '';
                 widget.popupMessage(m(MessageTagForm));
               },
             },
@@ -85,11 +135,11 @@ const Mail = () => {
         ]),
         m('hr'),
         m(
-          'div.message-tags',
+          'div.mail-tags',
           tagArr.length === 0
             ? m('h4', 'No Message Tags')
             : m(
-                'div.message-tags__container',
+                'div.mail-tags__container',
                 tagArr.map((tag) =>
                   m('.tag-item', { key: tag.key }, [
                     m('div.tag-item__color', {
@@ -103,6 +153,10 @@ const Mail = () => {
                         'button',
                         {
                           onclick: () => {
+                            msgTagObj.tagName = tag.value.first;
+                            msgTagObj.tagColor = `#${tag.value.second
+                              .toString(16)
+                              .padStart(6, '0')}`;
                             widget.popupMessage(m(MessageTagForm, { tagItem: tag }));
                           },
                         },
@@ -111,12 +165,13 @@ const Mail = () => {
                       m(
                         'button.red',
                         {
-                          onclick: async () => {
-                            const res = await rs.rsJsonApiRequest('/rsMsgs/removeMessageTagType', {
+                          onclick: () => {
+                            rs.rsJsonApiRequest('/rsMsgs/removeMessageTagType', {
                               tagId: tag.key,
+                            }).then((res) => {
+                              if (res.body.retval)
+                                tagArr = tagArr.filter((item) => item.key !== tag.key);
                             });
-                            if (res.body.retval)
-                              tagArr = tagArr.filter((item) => item.key !== tag.key);
                           },
                         },
                         m('i.fas.fa-trash')
