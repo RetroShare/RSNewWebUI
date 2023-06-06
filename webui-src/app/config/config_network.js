@@ -13,8 +13,8 @@ const networkModes = [
 ];
 
 const SetNwMode = () => {
-  let vs_disc = 0;
-  let vs_dht = 0;
+  let vsDisc = 0;
+  let vsDht = 0;
   let selectedMode;
   let sslId;
   let details;
@@ -27,7 +27,7 @@ const SetNwMode = () => {
       }
       if (sslId) {
         const res2 = await rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
-          sslId: sslId,
+          sslId,
         });
         if (res2.body.retval) {
           details = res2.body.det;
@@ -54,48 +54,49 @@ const SetNwMode = () => {
         }
       }
     },
-    view: (vnode) => [
+    view: () => [
       m('p', 'Network mode:'),
       m(
         'select',
         {
           value: selectedMode,
-          onchange: async (e) => {
+          onchange: (e) => {
             selectedMode = networkModes[e.target.selectedIndex];
             if (e.target.selectedIndex === 0) {
-              vs_disc = util.RS_VS_DISC_FULL;
-              vs_dht = util.RS_VS_DHT_FULL;
               // Public: DHT & Discovery
+              vsDisc = util.RS_VS_DISC_FULL;
+              vsDht = util.RS_VS_DHT_FULL;
             } else if (e.target.selectedIndex === 1) {
-              vs_disc = util.RS_VS_DISC_FULL;
-              vs_dht = util.RS_VS_DHT_OFF;
               // Private: Discovery only
+              vsDisc = util.RS_VS_DISC_FULL;
+              vsDht = util.RS_VS_DHT_OFF;
             } else if (e.target.selectedIndex === 2) {
-              vs_disc = util.RS_VS_DISC_OFF;
-              vs_dht = util.RS_VS_DHT_FULL;
               // Inverted: DHT only
+              vsDisc = util.RS_VS_DISC_OFF;
+              vsDht = util.RS_VS_DHT_FULL;
             } else if (e.target.selectedIndex === 3) {
-              vs_disc = util.RS_VS_DISC_OFF;
-              vs_dht = util.RS_VS_DHT_OFF;
               // Dark Net: None
+              vsDisc = util.RS_VS_DISC_OFF;
+              vsDht = util.RS_VS_DHT_OFF;
             }
             if (sslId) {
-              const res2 = await rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
-                sslId: sslId,
+              rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
+                sslId,
+              }).then((res) => {
+                if (res.body.retval) {
+                  details = res.body.det;
+                }
               });
-              if (res2.body.retval) {
-                details = res2.body.det;
-              }
             }
             if (
               details &&
-              (vs_dht != details.vs_dht || vs_disc != details.vs_disc) &&
+              (vsDht !== details.vs_dht || vsDisc !== details.vs_disc) &&
               sslId !== undefined
             ) {
-              const res = await rs.rsJsonApiRequest('/rsPeers/setVisState', {
-                sslId: sslId,
-                vsDisc: vs_disc,
-                vsDht: vs_dht,
+              rs.rsJsonApiRequest('/rsPeers/setVisState', {
+                sslId,
+                vsDisc,
+                vsDht,
               });
             }
           },
@@ -141,6 +142,7 @@ const SetNAT = () => {
     ],
   };
 };
+
 const SetLimits = () => {
   let dlim = undefined;
   let ulim = undefined;
@@ -210,8 +212,8 @@ const SetOpMode = () => {
         'Operating mode:',
         util.tooltip(
           `No Anon D/L: Switches off file forwarding\n
-Gaming Mode: 25% standard traffic and TODO: Reduced popups\n
-Low traffic: 10% standard traffic and TODO: pause all file transfers\n`
+          Gaming Mode: 25% standard traffic and TODO: Reduced popups\n
+          Low traffic: 10% standard traffic and TODO: pause all file transfers\n`
         )
       ),
       m(
@@ -246,13 +248,104 @@ const displayIPAddresses = () => {
       v.attrs.details && [
         m('p', 'External Address: '),
         m(
-          'ul',
-          {
-            style: { height: '200px', overflow: 'hidden', overflowY: 'scroll' },
-          },
+          'ul.external-address',
           v.attrs.details.ipAddressList.map((ip) => m('li', ip))
         ),
       ],
+  };
+};
+
+const SetDynamicDNS = () => {
+  // There needs to be a GetDynamicDNS api which can retrieve the Dynamic DNS
+  // value to be shown in the webui
+  let addr = '';
+  let sslId = '';
+  return {
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsaccounts/getCurrentAccountId').then((res) => {
+        if (res.body.retval) {
+          sslId = res.body.id;
+        }
+      });
+    },
+    view: () => [
+      m('p', 'Set Dynamic DNS:'),
+      m('input[type=text]', {
+        val: addr,
+        oninput: (e) => (addr = e.target.value),
+        onchange: () => {
+          rs.rsJsonApiRequest('/rsPeers/setDynDNS', {
+            sslId,
+            addr,
+          });
+        },
+      }),
+    ],
+  };
+};
+
+const SetProxyServer = () => {
+  const proxyServerObj = {
+    tor: {},
+    i2p: {},
+  };
+  const handleProxyChange = (isTor) => {
+    rs.rsJsonApiRequest('/rsPeers/setProxyServer', {
+      type: isTor ? util.RS_HIDDEN_TYPE_TOR : util.RS_HIDDEN_TYPE_I2P,
+      addr: isTor ? proxyServerObj.tor.addr : proxyServerObj.i2p.addr,
+      port: isTor ? proxyServerObj.tor.port : proxyServerObj.i2p.port,
+    });
+  };
+  return {
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsPeers/getProxyServer', {
+        type: util.RS_HIDDEN_TYPE_TOR,
+      }).then((res) => {
+        if (res.body.retval) {
+          proxyServerObj.tor = res.body;
+        }
+      });
+      rs.rsJsonApiRequest('/rsPeers/getProxyServer', {
+        type: util.RS_HIDDEN_TYPE_I2P,
+      }).then((res) => {
+        if (res.body.retval) {
+          proxyServerObj.i2p = res.body;
+        }
+      });
+    },
+    view: () =>
+      m('.proxy-server', [
+        m(
+          'p',
+          'Configure your TOR and I2P SOCKS proxy here. It will allow you to also connect to hidden nodes.'
+        ),
+        m('.proxy-server__tor', [
+          m('h4', 'Tor Socks Proxy: '),
+          m('input[type=text]', {
+            value: proxyServerObj.tor.addr,
+            oninput: (e) => (proxyServerObj.tor.addr = e.target.value),
+            onchange: () => handleProxyChange(true),
+          }),
+          m('input[type=number]', {
+            value: proxyServerObj.tor.port,
+            oninput: (e) => (proxyServerObj.tor.port = parseInt(e.target.value)),
+            onchange: () => handleProxyChange(true),
+          }),
+        ]),
+        m('.proxy-server__i2p', [
+          m('h4', 'I2P Socks Proxy: '),
+          m('input[type=text]', {
+            value: proxyServerObj.i2p.addr,
+            oninput: (e) => (proxyServerObj.i2p.addr = e.target.value),
+            onchange: () => handleProxyChange(false),
+          }),
+          m('input[type=number]', {
+            value: proxyServerObj.i2p.port,
+            oninput: (e) => (proxyServerObj.i2p.port = parseInt(e.target.value)),
+            onchange: () => handleProxyChange(false),
+          }),
+        ]),
+      ]),
   };
 };
 
@@ -260,35 +353,46 @@ const Component = () => {
   let sslId;
   let details;
   return {
-    oninit: async () => {
-      const res = await rs.rsJsonApiRequest('/rsaccounts/getCurrentAccountId');
-      if (res.body.retval) {
-        sslId = res.body.id;
-      }
-      if (sslId) {
-        const res2 = await rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
-          sslId: sslId,
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId')
+        .then((res) => {
+          if (res.body.retval) {
+            sslId = res.body.id;
+          }
+        })
+        .then(() => {
+          if (sslId) {
+            rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
+              sslId,
+            }).then((res) => {
+              if (res.body.retval) {
+                details = res.body.det;
+              }
+            });
+          }
         });
-        if (res2.body.retval) {
-          details = res2.body.det;
-        }
-      }
     },
-    view: () =>
+    view: () => [
       m('.widget.widget-half', [
         m('h3', 'Network Configuration'),
         m('hr'),
-
         m('.grid-2col', [
           m(SetNwMode),
           m(SetNAT),
           m(displayLocalIPAddress, { details }),
           m(displayExternalIPAddress, { details }),
+          m(SetDynamicDNS, { sslId }),
           m(SetLimits),
           m(SetOpMode),
           m(displayIPAddresses, { details }),
         ]),
       ]),
+      m('.widget.widget-half', [
+        m('h3', 'Hidden Service Configuration'),
+        m('hr'),
+        m('.grid-2col', [m(SetProxyServer)]),
+      ]),
+    ],
   };
 };
 

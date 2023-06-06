@@ -2,7 +2,7 @@
 
 .config-node-panel {
   position: relative;
-  bottom: 250px;
+  bottom: 320px;
   margin-left: 200px;
   animation: fadein 0.5s;
 }
@@ -63,5 +63,30 @@
   margin-bottom: 0.5rem;
   label {
     margin-right: 0.5rem;
+  }
+}
+
+.external-address {
+  margin: 0;
+  padding-left: 1rem;
+  height: 100px;
+  overflow: hidden scroll;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.proxy-server {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  &__tor,
+  &__i2p {
+    & > h4 {
+      margin-bottom: 0.25rem;
+    }
+    & > input {
+      margin-right: 0.5rem;
+    }
   }
 }
