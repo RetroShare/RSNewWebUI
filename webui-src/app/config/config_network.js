@@ -284,33 +284,28 @@ const SetDynamicDNS = () => {
   };
 };
 
-const SetProxyServer = () => {
-  const proxyServerObj = {
+const SetSocksProxy = () => {
+  const socksProxyObj = {
     tor: {},
     i2p: {},
   };
-  const handleProxyChange = (isTor) => {
+  const handleProxyChange = (proxyItem) => {
     rs.rsJsonApiRequest('/rsPeers/setProxyServer', {
-      type: isTor ? util.RS_HIDDEN_TYPE_TOR : util.RS_HIDDEN_TYPE_I2P,
-      addr: isTor ? proxyServerObj.tor.addr : proxyServerObj.i2p.addr,
-      port: isTor ? proxyServerObj.tor.port : proxyServerObj.i2p.port,
+      type: util[`RS_HIDDEN_TYPE_${proxyItem.toUpperCase()}`],
+      addr: socksProxyObj[proxyItem].addr,
+      port: socksProxyObj[proxyItem].port,
     });
   };
   return {
     oninit: () => {
-      rs.rsJsonApiRequest('/rsPeers/getProxyServer', {
-        type: util.RS_HIDDEN_TYPE_TOR,
-      }).then((res) => {
-        if (res.body.retval) {
-          proxyServerObj.tor = res.body;
-        }
-      });
-      rs.rsJsonApiRequest('/rsPeers/getProxyServer', {
-        type: util.RS_HIDDEN_TYPE_I2P,
-      }).then((res) => {
-        if (res.body.retval) {
-          proxyServerObj.i2p = res.body;
-        }
+      Object.keys(socksProxyObj).forEach((proxyItem) => {
+        rs.rsJsonApiRequest('/rsPeers/getProxyServer', {
+          type: util[`RS_HIDDEN_TYPE_${proxyItem.toUpperCase()}`],
+        }).then((res) => {
+          if (res.body.retval) {
+            socksProxyObj[proxyItem] = res.body;
+          }
+        });
       });
     },
     view: () =>
@@ -319,32 +314,21 @@ const SetProxyServer = () => {
           'p',
           'Configure your TOR and I2P SOCKS proxy here. It will allow you to also connect to hidden nodes.'
         ),
-        m('.proxy-server__tor', [
-          m('h4', 'Tor Socks Proxy: '),
-          m('input[type=text]', {
-            value: proxyServerObj.tor.addr,
-            oninput: (e) => (proxyServerObj.tor.addr = e.target.value),
-            onchange: () => handleProxyChange(true),
-          }),
-          m('input[type=number]', {
-            value: proxyServerObj.tor.port,
-            oninput: (e) => (proxyServerObj.tor.port = parseInt(e.target.value)),
-            onchange: () => handleProxyChange(true),
-          }),
-        ]),
-        m('.proxy-server__i2p', [
-          m('h4', 'I2P Socks Proxy: '),
-          m('input[type=text]', {
-            value: proxyServerObj.i2p.addr,
-            oninput: (e) => (proxyServerObj.i2p.addr = e.target.value),
-            onchange: () => handleProxyChange(false),
-          }),
-          m('input[type=number]', {
-            value: proxyServerObj.i2p.port,
-            oninput: (e) => (proxyServerObj.i2p.port = parseInt(e.target.value)),
-            onchange: () => handleProxyChange(false),
-          }),
-        ]),
+        Object.keys(socksProxyObj).map((proxyItem) => {
+          return m(`.proxy-server__${proxyItem}`, [
+            m('h4', `${proxyItem.toUpperCase()} Socks Proxy: `),
+            m('input[type=text]', {
+              value: socksProxyObj[proxyItem].addr,
+              oninput: (e) => (socksProxyObj[proxyItem].addr = e.target.value),
+              onchange: () => handleProxyChange(proxyItem),
+            }),
+            m('input[type=number]', {
+              value: socksProxyObj[proxyItem].port,
+              oninput: (e) => (socksProxyObj[proxyItem].port = parseInt(e.target.value)),
+              onchange: () => handleProxyChange(proxyItem),
+            }),
+          ]);
+        }),
       ]),
   };
 };
@@ -390,7 +374,7 @@ const Component = () => {
       m('.widget.widget-half', [
         m('h3', 'Hidden Service Configuration'),
         m('hr'),
-        m('.grid-2col', [m(SetProxyServer)]),
+        m('.grid-2col', [m(SetSocksProxy)]),
       ]),
     ],
   };
