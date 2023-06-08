@@ -5,34 +5,20 @@ const util = require('config/config_util'); // for future use
 
 /* eslint-disable no-unused-vars */
 
-const networkModes = [
-  'Public: DHT & Discovery',
-  'Private: Discovery only',
-  'Inverted: DHT only',
-  'Dark Net: None',
-];
-
 const SetNwMode = () => {
+  const networkModes = [
+    'Public: DHT & Discovery',
+    'Private: Discovery only',
+    'Inverted: DHT only',
+    'Dark Net: None',
+  ];
+
   let vsDisc = 0;
   let vsDht = 0;
   let selectedMode;
-  let sslId;
-  let details;
 
   return {
-    oninit: async () => {
-      const res = await rs.rsJsonApiRequest('/rsaccounts/getCurrentAccountId');
-      if (res.body.retval) {
-        sslId = res.body.id;
-      }
-      if (sslId) {
-        const res2 = await rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
-          sslId,
-        });
-        if (res2.body.retval) {
-          details = res2.body.det;
-        }
-      }
+    view: ({ attrs: { sslId, details } }) => {
       if (details) {
         if (details.vs_dht === util.RS_VS_DHT_FULL && details.vs_disc === util.RS_VS_DISC_FULL) {
           selectedMode = networkModes[0];
@@ -53,57 +39,48 @@ const SetNwMode = () => {
           selectedMode = networkModes[3];
         }
       }
-    },
-    view: () => [
-      m('p', 'Network mode:'),
-      m(
-        'select',
-        {
-          value: selectedMode,
-          onchange: (e) => {
-            selectedMode = networkModes[e.target.selectedIndex];
-            if (e.target.selectedIndex === 0) {
-              // Public: DHT & Discovery
-              vsDisc = util.RS_VS_DISC_FULL;
-              vsDht = util.RS_VS_DHT_FULL;
-            } else if (e.target.selectedIndex === 1) {
-              // Private: Discovery only
-              vsDisc = util.RS_VS_DISC_FULL;
-              vsDht = util.RS_VS_DHT_OFF;
-            } else if (e.target.selectedIndex === 2) {
-              // Inverted: DHT only
-              vsDisc = util.RS_VS_DISC_OFF;
-              vsDht = util.RS_VS_DHT_FULL;
-            } else if (e.target.selectedIndex === 3) {
-              // Dark Net: None
-              vsDisc = util.RS_VS_DISC_OFF;
-              vsDht = util.RS_VS_DHT_OFF;
-            }
-            if (sslId) {
-              rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
-                sslId,
-              }).then((res) => {
-                if (res.body.retval) {
-                  details = res.body.det;
-                }
-              });
-            }
-            if (
-              details &&
-              (vsDht !== details.vs_dht || vsDisc !== details.vs_disc) &&
-              sslId !== undefined
-            ) {
-              rs.rsJsonApiRequest('/rsPeers/setVisState', {
-                sslId,
-                vsDisc,
-                vsDht,
-              });
-            }
+      return [
+        m('p', 'Network mode:'),
+        m(
+          'select',
+          {
+            value: selectedMode,
+            onchange: (e) => {
+              selectedMode = networkModes[e.target.selectedIndex];
+              if (e.target.selectedIndex === 0) {
+                // Public: DHT & Discovery
+                vsDisc = util.RS_VS_DISC_FULL;
+                vsDht = util.RS_VS_DHT_FULL;
+              } else if (e.target.selectedIndex === 1) {
+                // Private: Discovery only
+                vsDisc = util.RS_VS_DISC_FULL;
+                vsDht = util.RS_VS_DHT_OFF;
+              } else if (e.target.selectedIndex === 2) {
+                // Inverted: DHT only
+                vsDisc = util.RS_VS_DISC_OFF;
+                vsDht = util.RS_VS_DHT_FULL;
+              } else if (e.target.selectedIndex === 3) {
+                // Dark Net: None
+                vsDisc = util.RS_VS_DISC_OFF;
+                vsDht = util.RS_VS_DHT_OFF;
+              }
+              if (
+                details &&
+                (vsDht !== details.vs_dht || vsDisc !== details.vs_disc) &&
+                sslId !== undefined
+              ) {
+                rs.rsJsonApiRequest('/rsPeers/setVisState', {
+                  sslId,
+                  vsDisc,
+                  vsDht,
+                });
+              }
+            },
           },
-        },
-        [networkModes.map((o) => m('option', { value: o }, o))]
-      ),
-    ],
+          [networkModes.map((o) => m('option', { value: o }, o))]
+        ),
+      ];
+    },
   };
 };
 
@@ -233,54 +210,50 @@ const SetOpMode = () => {
 
 const displayLocalIPAddress = () => {
   return {
-    view: (v) => v.attrs.details && [m('p', 'Local Address: '), m('p', v.attrs.details.localAddr)],
+    view: ({ attrs: { details } }) =>
+      details && [m('p', 'Local Address: '), m('p', details.localAddr)],
   };
 };
 const displayExternalIPAddress = () => {
   return {
-    view: (v) => v.attrs.details && [m('p', 'External Address: '), m('p', v.attrs.details.extAddr)],
+    view: ({ attrs: { details } }) =>
+      details && [m('p', 'External Address: '), m('p', details.extAddr)],
   };
 };
 
 const displayIPAddresses = () => {
   return {
-    view: (v) =>
-      v.attrs.details && [
+    view: ({ attrs: { details } }) =>
+      details && [
         m('p', 'External Address: '),
         m(
           'ul.external-address',
-          v.attrs.details.ipAddressList.map((ip) => m('li', ip))
+          details.ipAddressList.map((ip) => m('li', ip))
         ),
       ],
   };
 };
 
 const SetDynamicDNS = () => {
-  // There needs to be a GetDynamicDNS api which can retrieve the Dynamic DNS
-  // value to be shown in the webui
-  let addr = '';
-  let sslId = '';
   return {
-    oninit: () => {
-      rs.rsJsonApiRequest('/rsaccounts/getCurrentAccountId').then((res) => {
-        if (res.body.retval) {
-          sslId = res.body.id;
-        }
-      });
+    view: ({ attrs: { sslId, details } }) => {
+      let addr = details ? details.dyndns : '';
+      return (
+        sslId && [
+          m('p', 'Set Dynamic DNS:'),
+          m('input[type=text]', {
+            value: addr,
+            oninput: (e) => (addr = e.target.value),
+            onchange: () => {
+              rs.rsJsonApiRequest('/rsPeers/setDynDNS', {
+                sslId,
+                addr,
+              });
+            },
+          }),
+        ]
+      );
     },
-    view: () => [
-      m('p', 'Set Dynamic DNS:'),
-      m('input[type=text]', {
-        val: addr,
-        oninput: (e) => (addr = e.target.value),
-        onchange: () => {
-          rs.rsJsonApiRequest('/rsPeers/setDynDNS', {
-            sslId,
-            addr,
-          });
-        },
-      }),
-    ],
   };
 };
 
@@ -361,11 +334,11 @@ const Component = () => {
         m('h3', 'Network Configuration'),
         m('hr'),
         m('.grid-2col', [
-          m(SetNwMode),
+          m(SetNwMode, { sslId, details }),
           m(SetNAT),
           m(displayLocalIPAddress, { details }),
           m(displayExternalIPAddress, { details }),
-          m(SetDynamicDNS, { sslId }),
+          m(SetDynamicDNS, { sslId, details }),
           m(SetLimits),
           m(SetOpMode),
           m(displayIPAddresses, { details }),
