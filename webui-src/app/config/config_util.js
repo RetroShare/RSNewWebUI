@@ -24,6 +24,11 @@ const RS_HIDDEN_TYPE_UNKNOWN = 1;
 const RS_HIDDEN_TYPE_TOR = 2;
 const RS_HIDDEN_TYPE_I2P = 4;
 
+/* NAT Net Mode */
+const RS_NETMODE_UDP = 1;
+const RS_NETMODE_UPNP = 2;
+const RS_NETMODE_EXT = 3;
+
 function getRandomId(tagArr) {
   const random = Math.floor(Math.random() * (MAX_TAG_ID_VAL - MIN_TAG_ID_VAL) + MIN_TAG_ID_VAL);
   tagArr.forEach((tag) => {
@@ -54,4 +59,7 @@ module.exports = {
   RS_HIDDEN_TYPE_UNKNOWN,
   RS_HIDDEN_TYPE_TOR,
   RS_HIDDEN_TYPE_I2P,
+  RS_NETMODE_UDP,
+  RS_NETMODE_UPNP,
+  RS_NETMODE_EXT,
 };

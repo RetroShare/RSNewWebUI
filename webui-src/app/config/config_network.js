@@ -99,17 +99,22 @@ const SetNwMode = () => {
   };
 };
 
-const NATmodes = ['Automatic (UPnP)', 'FireWalled', 'Manually Forwarded Port'];
 const SetNAT = () => {
   let sslId;
-  let selectedMode = NATmodes[0];
+  let netMode;
 
   return {
     oninit: () => {
-      rs.rsJsonApiRequest('/rsIdentity/GetOwnSignedIds').then((res) => {
+      rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId').then((res) => {
         if (res.body.retval) {
-          sslId = res.body.ids[0];
-          console.log(res, sslId);
+          sslId = res.body.id;
+          rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
+            sslId,
+          }).then((res) => {
+            if (res.body.retval) {
+              netMode = res.body.det.netMode;
+            }
+          });
         }
       });
     },
@@ -118,20 +123,20 @@ const SetNAT = () => {
       m(
         'select',
         {
-          value: selectedMode,
-          onchange: (e) => {
-            selectedMode = NATmodes[e.target.selectedIndex];
-            // console.log(selectedMode, e.target.selectedIndex);
-            if (e.target.selectedIndex === 0) {
-              // Automatic (UPnP)
-            } else if (e.target.selectedIndex === 1) {
-              // FireWalled
-            } else if (e.target.selectedIndex === 2) {
-              // Manually Forwarded Port
-            }
+          value: netMode,
+          oninput: (e) => (netMode = e.target.value),
+          onchange: () => {
+            rs.rsJsonApiRequest('/rsPeers/setNetworkMode', {
+              sslId,
+              netMode,
+            });
           },
         },
-        [NATmodes.map((o) => m('option', { value: o }, o))]
+        [
+          m('option', { value: util.RS_NETMODE_UPNP }, 'Automatic (UPnP)'),
+          m('option', { value: util.RS_NETMODE_UDP }, 'FireWalled'),
+          m('option', { value: util.RS_NETMODE_EXT }, 'Manually Forwarded Port'),
+        ]
       ),
     ],
   };
@@ -286,20 +291,24 @@ const SetSocksProxy = () => {
     tor: {},
     i2p: {},
   };
+  const fetchOutgoing = () => {
+    Object.keys(socksProxyObj).forEach((proxyItem) => {
+      fetch(`http://${socksProxyObj[proxyItem].addr}:${socksProxyObj[proxyItem].port}`)
+        .then(() => {
+          socksProxyObj[proxyItem].outgoing = true;
+          m.redraw();
+        })
+        .catch(() => {
+          socksProxyObj[proxyItem].outgoing = false;
+        });
+    });
+  };
   const handleProxyChange = (proxyItem) => {
     rs.rsJsonApiRequest('/rsPeers/setProxyServer', {
       type: util[`RS_HIDDEN_TYPE_${proxyItem.toUpperCase()}`],
       addr: socksProxyObj[proxyItem].addr,
       port: socksProxyObj[proxyItem].port,
-    }).then(() =>
-      fetch(`http://${socksProxyObj[proxyItem].addr}:${socksProxyObj[proxyItem].port}`)
-        .then(() => {
-          socksProxyObj[proxyItem].outgoing = true;
-        })
-        .catch(() => {
-          socksProxyObj[proxyItem].outgoing = false;
-        })
-    );
+    }).then(fetchOutgoing);
   };
   return {
     oninit: () => {
@@ -312,15 +321,7 @@ const SetSocksProxy = () => {
               socksProxyObj[proxyItem] = res.body;
             }
           })
-          .then(() =>
-            fetch(`http://${socksProxyObj[proxyItem].addr}:${socksProxyObj[proxyItem].port}`)
-              .then(() => {
-                socksProxyObj[proxyItem].outgoing = true;
-              })
-              .catch(() => {
-                socksProxyObj[proxyItem].outgoing = false;
-              })
-          );
+          .then(fetchOutgoing);
       });
     },
     view: () =>
