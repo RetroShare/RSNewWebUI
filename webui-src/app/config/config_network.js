@@ -3,8 +3,6 @@ const rs = require('rswebui');
 
 const util = require('config/config_util'); // for future use
 
-/* eslint-disable no-unused-vars */
-
 const SetNwMode = () => {
   const networkModes = [
     'Public: DHT & Discovery',
@@ -16,29 +14,46 @@ const SetNwMode = () => {
   let vsDisc = 0;
   let vsDht = 0;
   let selectedMode;
+  let sslId = '';
+  let details = {};
 
   return {
-    view: ({ attrs: { sslId, details } }) => {
-      if (details) {
-        if (details.vs_dht === util.RS_VS_DHT_FULL && details.vs_disc === util.RS_VS_DISC_FULL) {
-          selectedMode = networkModes[0];
-        } else if (
-          details.vs_dht === util.RS_VS_DHT_OFF &&
-          details.vs_disc === util.RS_VS_DISC_FULL
-        ) {
-          selectedMode = networkModes[1];
-        } else if (
-          details.vs_dht === util.RS_VS_DHT_FULL &&
-          details.vs_disc === util.RS_VS_DISC_OFF
-        ) {
-          selectedMode = networkModes[2];
-        } else if (
-          details.vs_dht === util.RS_VS_DHT_OFF &&
-          details.vs_disc === util.RS_VS_DISC_OFF
-        ) {
-          selectedMode = networkModes[3];
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId').then((res) => {
+        if (res.body.retval) {
+          sslId = res.body.id;
+          rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
+            sslId,
+          }).then((res) => {
+            if (res.body.retval) {
+              details = res.body.det;
+              if (
+                details.vs_dht === util.RS_VS_DHT_FULL &&
+                details.vs_disc === util.RS_VS_DISC_FULL
+              ) {
+                selectedMode = networkModes[0];
+              } else if (
+                details.vs_dht === util.RS_VS_DHT_OFF &&
+                details.vs_disc === util.RS_VS_DISC_FULL
+              ) {
+                selectedMode = networkModes[1];
+              } else if (
+                details.vs_dht === util.RS_VS_DHT_FULL &&
+                details.vs_disc === util.RS_VS_DISC_OFF
+              ) {
+                selectedMode = networkModes[2];
+              } else if (
+                details.vs_dht === util.RS_VS_DHT_OFF &&
+                details.vs_disc === util.RS_VS_DISC_OFF
+              ) {
+                selectedMode = networkModes[3];
+              }
+            }
+          });
         }
-      }
+      });
+    },
+    view: () => {
       return [
         m('p', 'Network mode:'),
         m(
@@ -90,11 +105,13 @@ const SetNAT = () => {
   let selectedMode = NATmodes[0];
 
   return {
-    oninit: async () => {
-      const res = await rs.rsJsonApiRequest('/rsIdentity/GetOwnSignedIds');
-      if (res.body.retval) {
-        sslId = res.body.ids[0];
-      }
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsIdentity/GetOwnSignedIds').then((res) => {
+        if (res.body.retval) {
+          sslId = res.body.ids[0];
+          console.log(res, sslId);
+        }
+      });
     },
     view: () => [
       m('p', 'NAT:'),
@@ -173,13 +190,9 @@ const SetLimits = () => {
 const SetOpMode = () => {
   let opmode = undefined;
   const setmode = () =>
-    rs.rsJsonApiRequest(
-      '/rsconfig/SetOperatingMode',
-      {
-        opMode: Number(opmode),
-      },
-      () => {}
-    );
+    rs.rsJsonApiRequest('/rsconfig/SetOperatingMode', {
+      opMode: Number(opmode),
+    });
   return {
     oninit: () =>
       rs.rsJsonApiRequest('/rsConfig/getOperatingMode', {}, (data) => (opmode = data.retval)),
@@ -201,7 +214,7 @@ const SetOpMode = () => {
           onchange: setmode,
         },
         ['Normal', 'No Anon D/L', 'Gaming', 'Low traffic'].map((val, i) =>
-          m('option[value=' + (i + 1) + ']', val)
+          m(`option[value=${i + 1}]`, val)
         )
       ),
     ],
@@ -235,25 +248,36 @@ const displayIPAddresses = () => {
 };
 
 const SetDynamicDNS = () => {
+  let addr = '';
+  let sslId = '';
   return {
-    view: ({ attrs: { sslId, details } }) => {
-      let addr = details ? details.dyndns : '';
-      return (
-        sslId && [
-          m('p', 'Set Dynamic DNS:'),
-          m('input[type=text]', {
-            value: addr,
-            oninput: (e) => (addr = e.target.value),
-            onchange: () => {
-              rs.rsJsonApiRequest('/rsPeers/setDynDNS', {
-                sslId,
-                addr,
-              });
-            },
-          }),
-        ]
-      );
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId').then((res) => {
+        if (res.body.retval) {
+          sslId = res.body.id;
+          rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
+            sslId,
+          }).then((res) => {
+            if (res.body.retval) {
+              addr = res.body.det.dyndns;
+            }
+          });
+        }
+      });
     },
+    view: () => [
+      m('p', 'Set Dynamic DNS:'),
+      m('input[type=text]', {
+        value: addr,
+        oninput: (e) => (addr = e.target.value),
+        onchange: () => {
+          rs.rsJsonApiRequest('/rsPeers/setDynDNS', {
+            sslId,
+            addr,
+          });
+        },
+      }),
+    ],
   };
 };
 
@@ -267,18 +291,36 @@ const SetSocksProxy = () => {
       type: util[`RS_HIDDEN_TYPE_${proxyItem.toUpperCase()}`],
       addr: socksProxyObj[proxyItem].addr,
       port: socksProxyObj[proxyItem].port,
-    });
+    }).then(() =>
+      fetch(`http://${socksProxyObj[proxyItem].addr}:${socksProxyObj[proxyItem].port}`)
+        .then(() => {
+          socksProxyObj[proxyItem].outgoing = true;
+        })
+        .catch(() => {
+          socksProxyObj[proxyItem].outgoing = false;
+        })
+    );
   };
   return {
     oninit: () => {
       Object.keys(socksProxyObj).forEach((proxyItem) => {
         rs.rsJsonApiRequest('/rsPeers/getProxyServer', {
           type: util[`RS_HIDDEN_TYPE_${proxyItem.toUpperCase()}`],
-        }).then((res) => {
-          if (res.body.retval) {
-            socksProxyObj[proxyItem] = res.body;
-          }
-        });
+        })
+          .then((res) => {
+            if (res.body.retval) {
+              socksProxyObj[proxyItem] = res.body;
+            }
+          })
+          .then(() =>
+            fetch(`http://${socksProxyObj[proxyItem].addr}:${socksProxyObj[proxyItem].port}`)
+              .then(() => {
+                socksProxyObj[proxyItem].outgoing = true;
+              })
+              .catch(() => {
+                socksProxyObj[proxyItem].outgoing = false;
+              })
+          );
       });
     },
     view: () =>
@@ -300,6 +342,20 @@ const SetSocksProxy = () => {
               oninput: (e) => (socksProxyObj[proxyItem].port = parseInt(e.target.value)),
               onchange: () => handleProxyChange(proxyItem),
             }),
+            socksProxyObj[proxyItem].outgoing !== undefined &&
+              m('.proxy-outgoing', [
+                m('.proxy-outgoing__status', {
+                  style: {
+                    backgroundColor: socksProxyObj[proxyItem].outgoing ? '#00dd44' : '#808080',
+                  },
+                }),
+                m(
+                  'p',
+                  `${proxyItem.toUpperCase()} outgoing ${
+                    socksProxyObj[proxyItem].outgoing ? 'on' : 'off'
+                  }`
+                ),
+              ]),
           ]);
         }),
       ]),
@@ -307,38 +363,31 @@ const SetSocksProxy = () => {
 };
 
 const Component = () => {
-  let sslId;
   let details;
   return {
     oninit: () => {
-      rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId')
-        .then((res) => {
-          if (res.body.retval) {
-            sslId = res.body.id;
-          }
-        })
-        .then(() => {
-          if (sslId) {
-            rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
-              sslId,
-            }).then((res) => {
-              if (res.body.retval) {
-                details = res.body.det;
-              }
-            });
-          }
-        });
+      rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId').then((res) => {
+        if (res.body.retval) {
+          rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
+            sslId: res.body.id,
+          }).then((res) => {
+            if (res.body.retval) {
+              details = res.body.det;
+            }
+          });
+        }
+      });
     },
     view: () => [
       m('.widget.widget-half', [
         m('h3', 'Network Configuration'),
         m('hr'),
         m('.grid-2col', [
-          m(SetNwMode, { sslId, details }),
+          m(SetNwMode),
           m(SetNAT),
           m(displayLocalIPAddress, { details }),
           m(displayExternalIPAddress, { details }),
-          m(SetDynamicDNS, { sslId, details }),
+          m(SetDynamicDNS),
           m(SetLimits),
           m(SetOpMode),
           m(displayIPAddresses, { details }),

@@ -88,5 +88,17 @@
     & > input {
       margin-right: 0.5rem;
     }
+    .proxy-outgoing {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      &__status {
+        width: 1rem;
+        height: 1rem;
+        aspect-ratio: 1;
+        border: 1px solid black;
+        border-radius: 50%;
+      }
+    }
   }
 }
