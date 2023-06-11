@@ -33,7 +33,7 @@ function getRandomId(tagArr) {
   const random = Math.floor(Math.random() * (MAX_TAG_ID_VAL - MIN_TAG_ID_VAL) + MIN_TAG_ID_VAL);
   tagArr.forEach((tag) => {
     if (tag.key === random) {
-      return getRandomId();
+      return getRandomId(tagArr);
     }
   });
   return random;
