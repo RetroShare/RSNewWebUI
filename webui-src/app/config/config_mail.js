@@ -82,7 +82,7 @@ const Mail = () => {
         m('.permission-flag', [
           m('p', 'Accept encrypted distant messages from: '),
           m(
-            'select[id=setDistantMessagingPermission]',
+            'select',
             {
               value: distantMessagingPermissionFlag,
               oninput: (e) => (distantMessagingPermissionFlag = e.target.value),
