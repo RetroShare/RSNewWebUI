@@ -3,144 +3,145 @@ const rs = require('rswebui');
 
 const util = require('config/config_util'); // for future use
 
-/* eslint-disable no-unused-vars */
-
-const networkModes = [
-  'Public: DHT & Discovery',
-  'Private: Discovery only',
-  'Inverted: DHT only',
-  'Dark Net: None',
-];
-
 const SetNwMode = () => {
-  let vs_disc = 0;
-  let vs_dht = 0;
+  const networkModes = [
+    'Public: DHT & Discovery',
+    'Private: Discovery only',
+    'Inverted: DHT only',
+    'Dark Net: None',
+  ];
+
+  let vsDisc = 0;
+  let vsDht = 0;
   let selectedMode;
-  let sslId;
-  let details;
+  let sslId = '';
+  let details = {};
 
   return {
-    oninit: async () => {
-      const res = await rs.rsJsonApiRequest('/rsaccounts/getCurrentAccountId');
-      if (res.body.retval) {
-        sslId = res.body.id;
-      }
-      if (sslId) {
-        const res2 = await rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
-          sslId: sslId,
-        });
-        if (res2.body.retval) {
-          details = res2.body.det;
-        }
-      }
-      if (details) {
-        if (details.vs_dht === util.RS_VS_DHT_FULL && details.vs_disc === util.RS_VS_DISC_FULL) {
-          selectedMode = networkModes[0];
-        } else if (
-          details.vs_dht === util.RS_VS_DHT_OFF &&
-          details.vs_disc === util.RS_VS_DISC_FULL
-        ) {
-          selectedMode = networkModes[1];
-        } else if (
-          details.vs_dht === util.RS_VS_DHT_FULL &&
-          details.vs_disc === util.RS_VS_DISC_OFF
-        ) {
-          selectedMode = networkModes[2];
-        } else if (
-          details.vs_dht === util.RS_VS_DHT_OFF &&
-          details.vs_disc === util.RS_VS_DISC_OFF
-        ) {
-          selectedMode = networkModes[3];
-        }
-      }
-    },
-    view: (vnode) => [
-      m('p', 'Network mode:'),
-      m(
-        'select',
-        {
-          value: selectedMode,
-          onchange: async (e) => {
-            selectedMode = networkModes[e.target.selectedIndex];
-            if (e.target.selectedIndex === 0) {
-              vs_disc = util.RS_VS_DISC_FULL;
-              vs_dht = util.RS_VS_DHT_FULL;
-              // Public: DHT & Discovery
-            } else if (e.target.selectedIndex === 1) {
-              vs_disc = util.RS_VS_DISC_FULL;
-              vs_dht = util.RS_VS_DHT_OFF;
-              // Private: Discovery only
-            } else if (e.target.selectedIndex === 2) {
-              vs_disc = util.RS_VS_DISC_OFF;
-              vs_dht = util.RS_VS_DHT_FULL;
-              // Inverted: DHT only
-            } else if (e.target.selectedIndex === 3) {
-              vs_disc = util.RS_VS_DISC_OFF;
-              vs_dht = util.RS_VS_DHT_OFF;
-              // Dark Net: None
-            }
-            if (sslId) {
-              const res2 = await rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
-                sslId: sslId,
-              });
-              if (res2.body.retval) {
-                details = res2.body.det;
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId').then((res) => {
+        if (res.body.retval) {
+          sslId = res.body.id;
+          rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
+            sslId,
+          }).then((res) => {
+            if (res.body.retval) {
+              details = res.body.det;
+              if (
+                details.vs_dht === util.RS_VS_DHT_FULL &&
+                details.vs_disc === util.RS_VS_DISC_FULL
+              ) {
+                selectedMode = networkModes[0];
+              } else if (
+                details.vs_dht === util.RS_VS_DHT_OFF &&
+                details.vs_disc === util.RS_VS_DISC_FULL
+              ) {
+                selectedMode = networkModes[1];
+              } else if (
+                details.vs_dht === util.RS_VS_DHT_FULL &&
+                details.vs_disc === util.RS_VS_DISC_OFF
+              ) {
+                selectedMode = networkModes[2];
+              } else if (
+                details.vs_dht === util.RS_VS_DHT_OFF &&
+                details.vs_disc === util.RS_VS_DISC_OFF
+              ) {
+                selectedMode = networkModes[3];
               }
             }
-            if (
-              details &&
-              (vs_dht != details.vs_dht || vs_disc != details.vs_disc) &&
-              sslId !== undefined
-            ) {
-              const res = await rs.rsJsonApiRequest('/rsPeers/setVisState', {
-                sslId: sslId,
-                vsDisc: vs_disc,
-                vsDht: vs_dht,
-              });
-            }
+          });
+        }
+      });
+    },
+    view: () => {
+      return [
+        m('p', 'Network mode:'),
+        m(
+          'select',
+          {
+            value: selectedMode,
+            onchange: (e) => {
+              selectedMode = networkModes[e.target.selectedIndex];
+              if (e.target.selectedIndex === 0) {
+                // Public: DHT & Discovery
+                vsDisc = util.RS_VS_DISC_FULL;
+                vsDht = util.RS_VS_DHT_FULL;
+              } else if (e.target.selectedIndex === 1) {
+                // Private: Discovery only
+                vsDisc = util.RS_VS_DISC_FULL;
+                vsDht = util.RS_VS_DHT_OFF;
+              } else if (e.target.selectedIndex === 2) {
+                // Inverted: DHT only
+                vsDisc = util.RS_VS_DISC_OFF;
+                vsDht = util.RS_VS_DHT_FULL;
+              } else if (e.target.selectedIndex === 3) {
+                // Dark Net: None
+                vsDisc = util.RS_VS_DISC_OFF;
+                vsDht = util.RS_VS_DHT_OFF;
+              }
+              if (
+                details &&
+                (vsDht !== details.vs_dht || vsDisc !== details.vs_disc) &&
+                sslId !== undefined
+              ) {
+                rs.rsJsonApiRequest('/rsPeers/setVisState', {
+                  sslId,
+                  vsDisc,
+                  vsDht,
+                });
+              }
+            },
           },
-        },
-        [networkModes.map((o) => m('option', { value: o }, o))]
-      ),
-    ],
+          [networkModes.map((o) => m('option', { value: o }, o))]
+        ),
+      ];
+    },
   };
 };
 
-const NATmodes = ['Automatic (UPnP)', 'FireWalled', 'Manually Forwarded Port'];
 const SetNAT = () => {
   let sslId;
-  let selectedMode = NATmodes[0];
+  let netMode;
 
   return {
-    oninit: async () => {
-      const res = await rs.rsJsonApiRequest('/rsIdentity/GetOwnSignedIds');
-      if (res.body.retval) {
-        sslId = res.body.ids[0];
-      }
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId').then((res) => {
+        if (res.body.retval) {
+          sslId = res.body.id;
+          rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
+            sslId,
+          }).then((res) => {
+            if (res.body.retval) {
+              netMode = res.body.det.netMode;
+            }
+          });
+        }
+      });
     },
     view: () => [
       m('p', 'NAT:'),
       m(
         'select',
         {
-          value: selectedMode,
-          onchange: (e) => {
-            selectedMode = NATmodes[e.target.selectedIndex];
-            // console.log(selectedMode, e.target.selectedIndex);
-            if (e.target.selectedIndex === 0) {
-              // Automatic (UPnP)
-            } else if (e.target.selectedIndex === 1) {
-              // FireWalled
-            } else if (e.target.selectedIndex === 2) {
-              // Manually Forwarded Port
-            }
+          value: netMode,
+          oninput: (e) => (netMode = e.target.value),
+          onchange: () => {
+            rs.rsJsonApiRequest('/rsPeers/setNetworkMode', {
+              sslId,
+              netMode,
+            });
           },
         },
-        [NATmodes.map((o) => m('option', { value: o }, o))]
+        [
+          m('option', { value: util.RS_NETMODE_UPNP }, 'Automatic (UPnP)'),
+          m('option', { value: util.RS_NETMODE_UDP }, 'FireWalled'),
+          m('option', { value: util.RS_NETMODE_EXT }, 'Manually Forwarded Port'),
+        ]
       ),
     ],
   };
 };
+
 const SetLimits = () => {
   let dlim = undefined;
   let ulim = undefined;
@@ -194,13 +195,9 @@ const SetLimits = () => {
 const SetOpMode = () => {
   let opmode = undefined;
   const setmode = () =>
-    rs.rsJsonApiRequest(
-      '/rsconfig/SetOperatingMode',
-      {
-        opMode: Number(opmode),
-      },
-      () => {}
-    );
+    rs.rsJsonApiRequest('/rsconfig/SetOperatingMode', {
+      opMode: Number(opmode),
+    });
   return {
     oninit: () =>
       rs.rsJsonApiRequest('/rsConfig/getOperatingMode', {}, (data) => (opmode = data.retval)),
@@ -210,8 +207,8 @@ const SetOpMode = () => {
         'Operating mode:',
         util.tooltip(
           `No Anon D/L: Switches off file forwarding\n
-Gaming Mode: 25% standard traffic and TODO: Reduced popups\n
-Low traffic: 10% standard traffic and TODO: pause all file transfers\n`
+          Gaming Mode: 25% standard traffic and TODO: Reduced popups\n
+          Low traffic: 10% standard traffic and TODO: pause all file transfers\n`
         )
       ),
       m(
@@ -222,7 +219,7 @@ Low traffic: 10% standard traffic and TODO: pause all file transfers\n`
           onchange: setmode,
         },
         ['Normal', 'No Anon D/L', 'Gaming', 'Low traffic'].map((val, i) =>
-          m('option[value=' + (i + 1) + ']', val)
+          m(`option[value=${i + 1}]`, val)
         )
       ),
     ],
@@ -231,64 +228,178 @@ Low traffic: 10% standard traffic and TODO: pause all file transfers\n`
 
 const displayLocalIPAddress = () => {
   return {
-    view: (v) => v.attrs.details && [m('p', 'Local Address: '), m('p', v.attrs.details.localAddr)],
+    view: ({ attrs: { details } }) =>
+      details && [m('p', 'Local Address: '), m('p', details.localAddr)],
   };
 };
 const displayExternalIPAddress = () => {
   return {
-    view: (v) => v.attrs.details && [m('p', 'External Address: '), m('p', v.attrs.details.extAddr)],
+    view: ({ attrs: { details } }) =>
+      details && [m('p', 'External Address: '), m('p', details.extAddr)],
   };
 };
 
 const displayIPAddresses = () => {
   return {
-    view: (v) =>
-      v.attrs.details && [
+    view: ({ attrs: { details } }) =>
+      details && [
         m('p', 'External Address: '),
         m(
-          'ul',
-          {
-            style: { height: '200px', overflow: 'hidden', overflowY: 'scroll' },
-          },
-          v.attrs.details.ipAddressList.map((ip) => m('li', ip))
+          'ul.external-address',
+          details.ipAddressList.map((ip) => m('li', ip))
         ),
       ],
   };
 };
 
-const Component = () => {
-  let sslId;
-  let details;
+const SetDynamicDNS = () => {
+  let addr = '';
+  let sslId = '';
   return {
-    oninit: async () => {
-      const res = await rs.rsJsonApiRequest('/rsaccounts/getCurrentAccountId');
-      if (res.body.retval) {
-        sslId = res.body.id;
-      }
-      if (sslId) {
-        const res2 = await rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
-          sslId: sslId,
-        });
-        if (res2.body.retval) {
-          details = res2.body.det;
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId').then((res) => {
+        if (res.body.retval) {
+          sslId = res.body.id;
+          rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
+            sslId,
+          }).then((res) => {
+            if (res.body.retval) {
+              addr = res.body.det.dyndns;
+            }
+          });
         }
-      }
+      });
+    },
+    view: () => [
+      m('p', 'Set Dynamic DNS:'),
+      m('input[type=text]', {
+        value: addr,
+        oninput: (e) => (addr = e.target.value),
+        onchange: () => {
+          rs.rsJsonApiRequest('/rsPeers/setDynDNS', {
+            sslId,
+            addr,
+          });
+        },
+      }),
+    ],
+  };
+};
+
+const SetSocksProxy = () => {
+  const socksProxyObj = {
+    tor: {},
+    i2p: {},
+  };
+  const fetchOutgoing = () => {
+    Object.keys(socksProxyObj).forEach((proxyItem) => {
+      fetch(`http://${socksProxyObj[proxyItem].addr}:${socksProxyObj[proxyItem].port}`)
+        .then(() => {
+          socksProxyObj[proxyItem].outgoing = true;
+          m.redraw();
+        })
+        .catch(() => {
+          socksProxyObj[proxyItem].outgoing = false;
+        });
+    });
+  };
+  const handleProxyChange = (proxyItem) => {
+    rs.rsJsonApiRequest('/rsPeers/setProxyServer', {
+      type: util[`RS_HIDDEN_TYPE_${proxyItem.toUpperCase()}`],
+      addr: socksProxyObj[proxyItem].addr,
+      port: socksProxyObj[proxyItem].port,
+    }).then(fetchOutgoing);
+  };
+  return {
+    oninit: () => {
+      Object.keys(socksProxyObj).forEach((proxyItem) => {
+        rs.rsJsonApiRequest('/rsPeers/getProxyServer', {
+          type: util[`RS_HIDDEN_TYPE_${proxyItem.toUpperCase()}`],
+        })
+          .then((res) => {
+            if (res.body.retval) {
+              socksProxyObj[proxyItem] = res.body;
+            }
+          })
+          .then(fetchOutgoing);
+      });
     },
     view: () =>
+      m('.proxy-server', [
+        m(
+          'p',
+          'Configure your TOR and I2P SOCKS proxy here. It will allow you to also connect to hidden nodes.'
+        ),
+        Object.keys(socksProxyObj).map((proxyItem) => {
+          return m(`.proxy-server__${proxyItem}`, [
+            m('h4', `${proxyItem.toUpperCase()} Socks Proxy: `),
+            m('input[type=text]', {
+              value: socksProxyObj[proxyItem].addr,
+              oninput: (e) => (socksProxyObj[proxyItem].addr = e.target.value),
+              onchange: () => handleProxyChange(proxyItem),
+            }),
+            m('input[type=number]', {
+              value: socksProxyObj[proxyItem].port,
+              oninput: (e) => (socksProxyObj[proxyItem].port = parseInt(e.target.value)),
+              onchange: () => handleProxyChange(proxyItem),
+            }),
+            socksProxyObj[proxyItem].outgoing !== undefined &&
+              m('.proxy-outgoing', [
+                m('.proxy-outgoing__status', {
+                  style: {
+                    backgroundColor: socksProxyObj[proxyItem].outgoing ? '#00dd44' : '#808080',
+                  },
+                }),
+                m(
+                  'p',
+                  `${proxyItem.toUpperCase()} outgoing ${
+                    socksProxyObj[proxyItem].outgoing ? 'on' : 'off'
+                  }`
+                ),
+              ]),
+          ]);
+        }),
+      ]),
+  };
+};
+
+const Component = () => {
+  let details;
+  return {
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId').then((res) => {
+        if (res.body.retval) {
+          rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
+            sslId: res.body.id,
+          }).then((res) => {
+            if (res.body.retval) {
+              details = res.body.det;
+            }
+          });
+        }
+      });
+    },
+    view: () => [
       m('.widget.widget-half', [
         m('h3', 'Network Configuration'),
         m('hr'),
-
         m('.grid-2col', [
           m(SetNwMode),
           m(SetNAT),
           m(displayLocalIPAddress, { details }),
           m(displayExternalIPAddress, { details }),
+          m(SetDynamicDNS),
           m(SetLimits),
           m(SetOpMode),
           m(displayIPAddresses, { details }),
         ]),
       ]),
+      m('.widget.widget-half', [
+        m('h3', 'Hidden Service Configuration'),
+        m('hr'),
+        m('.grid-2col', [m(SetSocksProxy)]),
+      ]),
+    ],
   };
 };
 

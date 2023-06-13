@@ -1,4 +1,5 @@
 const m = require('mithril');
+const rs = require('rswebui');
 
 const widget = require('widgets');
 
@@ -8,6 +9,7 @@ const sections = {
   services: require('config/config_services'),
   files: require('config/config_files'),
   people: require('config/config_people'),
+  mail: require('config/config_mail'),
 };
 
 const Layout = {

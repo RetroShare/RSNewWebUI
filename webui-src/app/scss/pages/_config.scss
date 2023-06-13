@@ -1,6 +1,104 @@
+@use '../abstracts/variables' as *;
+
 .config-node-panel {
-    position: relative;
-    bottom: 250px;
-    margin-left: 200px;
-    animation: fadein 0.5s;
+  position: relative;
+  bottom: 320px;
+  margin-left: 200px;
+  animation: fadein 0.5s;
+}
+
+.mail {
+  .permission-flag {
+    display: flex;
+    gap: 1rem;
   }
+  &-tags {
+    padding: 8px;
+    border: 1px solid transparentize($dark-color, 0.8);
+    border-radius: 6px;
+    &__heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      & button {
+        height: max-content;
+      }
+    }
+    &__container {
+      display: flex;
+      flex-direction: column;
+      & .tag-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        border-bottom: 1px solid transparentize($dark-color, 0.9);
+        padding: 2px 0;
+
+        &:last-child {
+          border: none;
+        }
+        &__color {
+          width: 20px;
+          height: 20px;
+          aspect-ratio: 1;
+        }
+        &__name {
+          font-size: 1.25rem;
+        }
+        &__modify {
+          margin-left: auto;
+          font-size: 0.75rem;
+          display: flex;
+          gap: 4px;
+        }
+        &:hover {
+          background-color: $light-color;
+        }
+      }
+    }
+  }
+}
+
+.mail-tags-form .input-field {
+  margin-bottom: 0.5rem;
+  label {
+    margin-right: 0.5rem;
+  }
+}
+
+.external-address {
+  margin: 0;
+  padding-left: 1rem;
+  height: 100px;
+  overflow: hidden scroll;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.proxy-server {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  &__tor,
+  &__i2p {
+    & > h4 {
+      margin-bottom: 0.25rem;
+    }
+    & > input {
+      margin-right: 0.5rem;
+    }
+    .proxy-outgoing {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      &__status {
+        width: 1rem;
+        height: 1rem;
+        aspect-ratio: 1;
+        border: 1px solid black;
+        border-radius: 50%;
+      }
+    }
+  }
+}
