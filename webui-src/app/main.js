@@ -51,7 +51,7 @@ const navbar = () => {
                   href: vnode.attrs.links[linkName],
                   class: 'item' + (active ? ' item-selected' : ''),
                 },
-                [navIcon[linkName], m('p[style="margin: 0; align-self: end"]', linkName)]
+                [navIcon[linkName], m('p', linkName)]
               );
             }),
             m(

@@ -16,11 +16,12 @@ General site-wide rules
 #tab-content {
   height: 100%;
   background-color: #eef3f6;
-  overflow: auto;
 }
 /* Individual tab pages */
 .tab-page {
-  animation: fadein 0.5s;
+  height: 100%;
+  animation: fadein 0.3s;
+  overflow: auto;
 }
 
 input[type='text'],
