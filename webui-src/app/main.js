@@ -85,7 +85,7 @@ const Layout = () => {
             config: '/config/network',
           },
         }),
-        m('#tab-content', vnode.children),
+        m('.tab-content', vnode.children),
       ]),
   };
 };

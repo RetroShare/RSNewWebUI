@@ -125,9 +125,8 @@ const FriendsList = () => {
     },
     view: () =>
       m('.widget', [
-        m('h3', 'Friend nodes'),
+        m('.widget__heading', [m('h3', 'Friend nodes'), m(SearchBar)]),
         m('hr'),
-
         Object.entries(Data.gpgDetails)
           .sort((a, b) => {
             return a[1].isOnline === b[1].isOnline ? 0 : a[1].isOnline ? -1 : 1;
@@ -142,7 +141,7 @@ const FriendsList = () => {
 
 const Layout = () => {
   return {
-    view: () => m('.tab-page', [m(SearchBar), m(FriendsList)]),
+    view: () => m('.node-panel', m(FriendsList)),
   };
 };
 

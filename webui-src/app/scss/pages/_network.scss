@@ -5,44 +5,41 @@
   padding: 20px;
   border: 1px solid #aaa;
   border-radius: 20px;
-}
-.friend i {
-  float: left;
-  padding: 0 10px;
-  cursor: pointer;
-}
-.friend h4 {
-  margin-bottom: 5px;
-}
-.friend p {
-  margin: 0;
-}
-.friend button {
-  font-size: 0.9em;
-}
-.friend.hidden {
-  display: none;
-}
-.friend .brief-info.online {
-  color: green;
-}
+  & i {
+    float: left;
+    padding: 0 10px;
+    cursor: pointer;
+  }
+  & h4 {
+    margin-bottom: 5px;
+  }
+  & button {
+    font-size: 0.9em;
+  }
+  &.hidden {
+    display: none;
+  }
+  & .brief-info.online {
+    color: green;
+  }
 
-.friend .location {
-  margin: 5px;
-  border-top: 1px solid #bbb;
-  display: grid;
-  grid-template-columns: auto auto;
-  justify-content: start;
-}
-.friend .brief-info {
-  display: flex;
-  align-items: center;
-  justify-self: start;
-}
+  & .location {
+    margin: 5px;
+    border-top: 1px solid #bbb;
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: start;
+  }
+  & .brief-info {
+    display: flex;
+    align-items: center;
+    justify-self: start;
+  }
 
-.friend .fa-times-circle {
-  color: #555;
-}
-.friend .fa-check-circle {
-  color: green;
+  & .fa-times-circle {
+    color: #555;
+  }
+  & .fa-check-circle {
+    color: green;
+  }
 }

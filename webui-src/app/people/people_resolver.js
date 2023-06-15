@@ -8,14 +8,13 @@ const sections = {
 };
 
 const Layout = {
-  view: (vnode) =>
-    m('.tab-page', [
-      m(widget.Sidebar, {
-        tabs: Object.keys(sections),
-        baseRoute: '/people/',
-      }),
-      m('.node-panel .', vnode.children),
-    ]),
+  view: (vnode) => [
+    m(widget.Sidebar, {
+      tabs: Object.keys(sections),
+      baseRoute: '/people/',
+    }),
+    m('.node-panel .', vnode.children),
+  ],
 };
 
 module.exports = {

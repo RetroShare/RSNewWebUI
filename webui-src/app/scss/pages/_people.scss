@@ -5,16 +5,19 @@
   padding: 10px;
   border: 1px solid #aaa;
   border-radius: 20px;
-}
-.identity > h4 {
-  margin: 5px;
-  font-size: 1.3em;
-}
-.identity p {
-  margin: 0;
-}
-.identity button {
-  font-size: 0.9em;
+  & > h4 {
+    margin: 5px;
+    font-size: 1.3em;
+  }
+  & button {
+    font-size: 0.9em;
+  }
+  & .details {
+    display: grid;
+    grid-template-columns: 140px auto;
+    grid-row-gap: 5px;
+    justify-content: left;
+  }
 }
 
 .defaultAvatar {
@@ -25,11 +28,11 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-}
-.defaultAvatar p {
-  font-weight: 900;
-  color: #666F7F;
-  transform: translateY(1px);
+  & p {
+    font-weight: 900;
+    color: #666f7f;
+    transform: translateY(1px);
+  }
 }
 img.avatar {
   display: block;
@@ -39,21 +42,14 @@ img.avatar {
   border-radius: 50%;
 }
 
-.identity .details {
-  display: grid;
-  grid-template-columns: 140px auto;
-  grid-row-gap: 5px;
-  justify-content: left;
-}
-
 .counter {
   margin-left: 0.5em;
-}
-.counter:before {
-  content: '(';
-}
-.counter:after {
-  content: ')';
+  &:before {
+    content: '(';
+  }
+  &:after {
+    content: ')';
+  }
 }
 
 .chatInit {

@@ -7,7 +7,10 @@ const MyContacts = () => {
   return {
     view: () => {
       return m('.widget', [
-        m('h3', 'MyContacts', m('span.counter', list.length)),
+        m('.widget__heading', [
+          m('h3', 'MyContacts', m('span.counter', list.length)),
+          m(peopleUtil.SearchBar),
+        ]),
         m('hr'),
         list.map((id) => m(peopleUtil.regularcontactInfo, { id })),
       ]);
@@ -15,12 +18,8 @@ const MyContacts = () => {
   };
 };
 
-const Layout = {
-  view: (vnode) => m('.tab-page', [m(peopleUtil.SearchBar), m(MyContacts)]),
-};
-
 module.exports = {
-  view: (vnode) => {
-    return m(Layout);
+  view: () => {
+    return m(MyContacts);
   },
 };

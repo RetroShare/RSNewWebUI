@@ -98,6 +98,7 @@
     display: flex;
   }
 }
+
 a.item {
   margin: 4px;
   padding: 10px;
@@ -112,57 +113,55 @@ a.item {
 }
 
 .sidebar {
-  height: 30%;
   width: 200px;
   background-color: white;
-}
-.sidebar a {
-  text-decoration: none;
-  text-transform: capitalize;
-  padding: 1em;
-  cursor: pointer;
-  display: block;
-  font-size: 0.95em;
-  color: #999;
-}
-.sidebar a:hover {
-  color: #222;
-}
-.sidebar .selected-sidebar-link {
-  font-weight: bold;
-  color: #222;
-  border-left: 5px solid #3ba4d7;
-  animation: expand-left-border 0.1s;
+  & a {
+    text-decoration: none;
+    text-transform: capitalize;
+    padding: 1em;
+    cursor: pointer;
+    display: block;
+    font-size: 0.95em;
+    color: #999;
+    &:hover {
+      color: #222;
+    }
+  }
+  & .selected-sidebar-link {
+    font-weight: bold;
+    color: #222;
+    border-left: 5px solid #3ba4d7;
+    animation: expand-left-border 0.1s;
+  }
 }
 .sidebarquickview {
   height: 30%;
   width: 200px;
   top: 300px;
   background-color: white;
-}
-.sidebarquickview a {
-  text-decoration: none;
-  text-transform: capitalize;
-  padding: 1em;
-  cursor: pointer;
-  display: block;
-  font-size: 0.95em;
-  color: #999;
-}
-.sidebarquickview a:hover {
-  color: #222;
-}
-.sidebarquickview .selected-sidebarquickview-link {
-  font-weight: bold;
-  color: #222;
-  border-left: 5px solid #3ba4d7;
-  animation: expand-left-border 0.1s;
+  & a {
+    text-decoration: none;
+    text-transform: capitalize;
+    padding: 1em;
+    cursor: pointer;
+    display: block;
+    font-size: 0.95em;
+    color: #999;
+    & a:hover {
+      color: #222;
+    }
+  }
+  & .selected-sidebarquickview-link {
+    font-weight: bold;
+    color: #222;
+    border-left: 5px solid #3ba4d7;
+    animation: expand-left-border 0.1s;
+  }
 }
 /* Content adjacent to sidebar */
 .node-panel {
-  position: relative;
-  bottom: 155px;
-  margin-left: 200px;
+  width: 100%;
+  padding: 0.5rem;
   animation: fadein 0.5s;
 }
 

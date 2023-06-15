@@ -1,17 +1,22 @@
 .widget {
-  margin: 1em;
+  height: 100%;
   padding: 1em;
-  border-radius: 10px;
+  border-radius: 8px;
   background-color: white;
+  overflow: scroll;
+  &__heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  & > p {
+    font-size: 0.9em;
+    color: #666;
+  }
+  & .tooltip {
+    float: right;
+  }
+  &-half {
+    max-width: 50%;
+  }
 }
-.widget > p {
-  font-size: 0.9em;
-  color: #666;
-}
-.widget .tooltip {
-  float: right;
-}
-.widget-half {
-  max-width: 50%;
-}
-

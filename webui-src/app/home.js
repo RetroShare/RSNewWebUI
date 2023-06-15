@@ -311,7 +311,7 @@ const Certificate = () => {
 
 const Layout = () => {
   return {
-    view: () => m('.tab-page', [m(Certificate)]),
+    view: () => m(Certificate),
   };
 };
 
