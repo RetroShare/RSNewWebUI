@@ -126,15 +126,16 @@ const FriendsList = () => {
     view: () =>
       m('.widget', [
         m('.widget__heading', [m('h3', 'Friend nodes'), m(SearchBar)]),
-        m('hr'),
-        Object.entries(Data.gpgDetails)
-          .sort((a, b) => {
-            return a[1].isOnline === b[1].isOnline ? 0 : a[1].isOnline ? -1 : 1;
-          })
-          .map((item) => {
-            const id = item[0];
-            return m(Friend, { id });
-          }),
+        m('.widget__body', [
+          Object.entries(Data.gpgDetails)
+            .sort((a, b) => {
+              return a[1].isOnline === b[1].isOnline ? 0 : a[1].isOnline ? -1 : 1;
+            })
+            .map((item) => {
+              const id = item[0];
+              return m(Friend, { id });
+            }),
+        ]),
       ]),
   };
 };

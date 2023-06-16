@@ -12,8 +12,7 @@ const AllContacts = () => {
           m('h3', 'Contacts', m('span.counter', list.length)),
           m(peopleUtil.SearchBar),
         ]),
-        m('hr'),
-        list.map((id) => m(peopleUtil.regularcontactInfo, { id })),
+        m('.widget__body', [list.map((id) => m(peopleUtil.regularcontactInfo, { id }))]),
       ]);
     },
   };

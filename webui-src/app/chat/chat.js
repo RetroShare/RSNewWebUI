@@ -297,7 +297,6 @@ const LobbyList = {
     const lobbytagname = vnode.attrs.lobbytagname;
     const onclick = vnode.attrs.onclick || (() => null);
     return [
-      m('hr'),
       vnode.attrs.rooms.map((info) =>
         m(Lobby, {
           info,
@@ -327,12 +326,14 @@ const SubscribedLeftLobbies = {
 const SubscribedLobbies = {
   view() {
     return m('.widget', [
-      m('h3', 'Subscribed chat rooms'),
-      m(LobbyList, {
-        rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)),
-        tagname: '.lobby.subscribed',
-        onclick: ChatLobbyModel.switchToEvent,
-      }),
+      m('.widget__heading', m('h3', 'Subscribed chat rooms')),
+      m('.widget__body', [
+        m(LobbyList, {
+          rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)),
+          tagname: '.lobby.subscribed',
+          onclick: ChatLobbyModel.switchToEvent,
+        }),
+      ]),
     ]);
   },
 };
@@ -355,12 +356,14 @@ const PublicLeftLobbies = {
 
 const PublicLobbies = () => {
   return m('.widget', [
-    m('h3', 'Public chat rooms'),
-    m(LobbyList, {
-      rooms: ChatRoomsModel.allRooms.filter((info) => !ChatRoomsModel.subscribed(info)),
-      tagname: '.lobby.public',
-      onclick: ChatLobbyModel.setupEvent,
-    }),
+    m('.widget__heading', m('h3', 'Public chat rooms')),
+    m('.widget__body', [
+      m(LobbyList, {
+        rooms: ChatRoomsModel.allRooms.filter((info) => !ChatRoomsModel.subscribed(info)),
+        tagname: '.lobby.public',
+        onclick: ChatLobbyModel.setupEvent,
+      }),
+    ]),
   ]);
 };
 
@@ -405,7 +408,7 @@ const LobbyName = () => {
 
 const Layout = () => {
   return {
-    view: () => m('.tab-page', [m(SubscribedLobbies), PublicLobbies()]),
+    view: () => m('.node-panel', [m(SubscribedLobbies), PublicLobbies()]),
   };
 };
 
@@ -413,7 +416,7 @@ const LayoutSingle = () => {
   return {
     oninit: () => ChatLobbyModel.loadLobby(m.route.param('lobby')),
     view: (vnode) =>
-      m('.tab-page', [
+      m('.node-panel', [
         LobbyName(),
         m('.lobbies', m(SubscribedLeftLobbies), m(PublicLeftLobbies)),
         m('.messages', ChatLobbyModel.messages),
@@ -442,7 +445,7 @@ const LayoutSetup = () => {
   return {
     oninit: () => peopleUtil.ownIds((data) => (ownIds = data)),
     view: (vnode) =>
-      m('.tab-page', [
+      m('.node-panel', [
         LobbyName(),
         m('.lobbies', m(SubscribedLeftLobbies), m(PublicLeftLobbies)),
         m('.setup', [
@@ -475,7 +478,7 @@ const LayoutCreateDistant = () => {
   return {
     oninit: () => peopleUtil.ownIds((data) => (ownIds = data)),
     view: (vnode) =>
-      m('.tab-page', [
+      m('.node-panel', [
         m('.createDistantChat', [
           'choose identitiy to chat with ',
           rs.userList.username(m.route.param('lobby')),

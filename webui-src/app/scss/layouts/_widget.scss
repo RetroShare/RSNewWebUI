@@ -1,13 +1,22 @@
 .widget {
   height: 100%;
-  padding: 1em;
-  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   background-color: white;
+  border-radius: 6px;
   overflow: scroll;
   &__heading {
+    padding-bottom: 0.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 2px solid #999;
+  }
+  &__body {
+    height: 100%;
+    overflow: scroll;
   }
   & > p {
     font-size: 0.9em;
