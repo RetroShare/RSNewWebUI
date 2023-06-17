@@ -8,11 +8,7 @@ const Downloads = {
   hashes: [],
 
   async loadHashes() {
-    const res = await rs.rsJsonApiRequest(
-      '/rsFiles/FileDownloads',
-      {},
-      (d) => (Downloads.hashes = d.hashs)
-    );
+    await rs.rsJsonApiRequest('/rsFiles/FileDownloads', {}, (d) => (Downloads.hashes = d.hashs));
   },
 
   async loadStatus() {
@@ -137,33 +133,38 @@ const Component = () => {
       });
       Downloads.resetSearch();
     },
-    view: () =>
-      m('.widget', [
-        m('h3', 'Downloads (' + Downloads.hashes.length + ' files)'),
-        m('hr'),
-        m(
-          'button',
-          {
-            onclick: () => widget.popupMessage(m(NewFileDialog)),
-          },
-          'Add new file'
-        ),
-        m(
-          'button',
-          {
-            onclick: () => rs.rsJsonApiRequest('/rsFiles/FileClearCompleted'),
-          },
-          'Clear completed'
-        ),
-        Object.keys(Downloads.statusMap).map((hash) =>
-          m(util.File, {
-            info: Downloads.statusMap[hash],
-            direction: 'down',
-            transferred: Downloads.statusMap[hash].transfered.xint64,
-            parts: [],
-          })
-        ),
+    view: () => [
+      m('.widget__body-heading', [
+        m('h3', 'Downloads (' + (Downloads.hashes && Downloads.hashes.length) + ' files)'),
+        m('.action', [
+          m(
+            'button',
+            {
+              onclick: () => widget.popupMessage(m(NewFileDialog)),
+            },
+            'Add new file'
+          ),
+          m(
+            'button',
+            {
+              onclick: () => rs.rsJsonApiRequest('/rsFiles/FileClearCompleted'),
+            },
+            'Clear completed'
+          ),
+        ]),
       ]),
+      m('.widget__body-content', [
+        Downloads.statusMap &&
+          Object.keys(Downloads.statusMap).map((hash) =>
+            m(util.File, {
+              info: Downloads.statusMap[hash],
+              direction: 'down',
+              transferred: Downloads.statusMap[hash].transfered.xint64,
+              parts: [],
+            })
+          ),
+      ]),
+    ],
   };
 };
 

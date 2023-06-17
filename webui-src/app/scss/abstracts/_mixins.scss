@@ -6,8 +6,8 @@
 @mixin button($bg-color) {
   color: white;
   background: $bg-color;
-  font-size: 1.2em;
-  padding: 5px 10px;
+  font-size: 1rem;
+  padding: 0.4rem 1rem;
   border: 0;
   border-radius: 5px;
   cursor: pointer;

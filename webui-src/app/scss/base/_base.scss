@@ -35,7 +35,7 @@ textarea {
   font-weight: 400;
   border: 1px solid #ccc;
   border-radius: 5px;
-  padding: 0.5rem;
+  padding: 0.4rem 0.8rem;
   /* Disable chromium's focused element hinting*/
   outline: transparent;
 }
@@ -49,11 +49,10 @@ input {
   }
   &.small {
     max-width: 70%;
-    font-size: 1em;
-    padding: 0.1em;
+    padding: 0.1rem;
   }
   &.searchbar {
-    display: block;
+    width: 40%;
   }
 }
 

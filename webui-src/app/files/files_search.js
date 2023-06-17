@@ -4,13 +4,13 @@ const futil = require('files/files_util');
 const widget = require('widgets');
 
 let matchString = '';
-const reqObj = {};
 let currentItem = 0;
+const reqObj = {};
 
-async function handleSubmit() {
-  await rs
-    .rsJsonApiRequest('/rsFiles/turtleSearch', { matchString })
+function handleSubmit() {
+  rs.rsJsonApiRequest('/rsFiles/turtleSearch', { matchString })
     .then((res) => {
+      // Add prefix to obj keys so that javascript doesn't sort them
       reqObj['_' + res.body.retval] = matchString;
       currentItem = '_' + res.body.retval;
     })
@@ -21,16 +21,16 @@ const SearchBar = () => {
   return {
     view: () =>
       m(
-        'form',
+        'form.search-form',
         {
           onsubmit: handleSubmit,
         },
         [
-          m('input[type=text][placeholder=search]', {
+          m('input[type=text][placeholder=search keyword]', {
             value: matchString,
             oninput: (e) => (matchString = e.target.value),
           }),
-          m('button[type=submit]', 'Submit'),
+          m('button[type=submit]', m('i.fas.fa-search')),
         ]
       ),
   };
@@ -39,14 +39,12 @@ const SearchBar = () => {
 const Layout = () => {
   let active = 0;
   return {
-    view: (vnode) =>
-      m('.widget', [
-        m('h3', 'Search'),
-        m('hr'),
-        m(SearchBar),
+    view: () => [
+      m('.widget__heading', [m('h3', 'Search'), m(SearchBar)]),
+      m('.widget__body', [
         m('div.file-search-container', [
           m('div.file-search-container__keywords', [
-            m('h4', 'Keywords'),
+            m('h5.bold', 'Keywords'),
             m(
               'div.keywords-container',
               Object.keys(reqObj)
@@ -69,7 +67,7 @@ const Layout = () => {
           ]),
           m('div.file-search-container__results', [
             Object.keys(futil.proxyObj).length === 0
-              ? m('h4', 'Results')
+              ? m('h5.bold', 'Results')
               : m('table.results-container', [
                   m(
                     'thead.results-header',
@@ -96,32 +94,28 @@ const Layout = () => {
                                 'button',
                                 {
                                   onclick: () => {
-                                    try {
-                                      rs.rsJsonApiRequest(
-                                        '/rsFiles/FileRequest',
-                                        {
-                                          fileName: item.fName,
-                                          hash: item.fHash,
-                                          flags: futil.RS_FILE_REQ_ANONYMOUS_ROUTING,
-                                          size: {
-                                            xstr64: item.fSize.xstr64,
-                                          },
-                                        },
-                                        (status) => {
-                                          status.retval
-                                            ? widget.popupMessage([
-                                                m('i.fas.fa-file-medical'),
-                                                m('h3', 'File is being downloaded!'),
-                                              ])
-                                            : widget.popupMessage([
-                                                m('i.fas.fa-file-medical'),
-                                                m('h3', 'File is already downloaded!'),
-                                              ]);
-                                        }
-                                      );
-                                    } catch (error) {
-                                      console.log('error in sending download request: ', error);
-                                    }
+                                    rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                                      fileName: item.fName,
+                                      hash: item.fHash,
+                                      flags: futil.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                                      size: {
+                                        xstr64: item.fSize.xstr64,
+                                      },
+                                    })
+                                      .then((res) => {
+                                        res.retval
+                                          ? widget.popupMessage([
+                                              m('i.fas.fa-file-medical'),
+                                              m('h3', 'File is being downloaded!'),
+                                            ])
+                                          : widget.popupMessage([
+                                              m('i.fas.fa-file-medical'),
+                                              m('h3', 'File is already downloaded!'),
+                                            ]);
+                                      })
+                                      .catch((error) => {
+                                        console.log('error in sending download request: ', error);
+                                      });
                                   },
                                 },
                                 'Download'
@@ -134,6 +128,7 @@ const Layout = () => {
           ]),
         ]),
       ]),
+    ],
   };
 };
 

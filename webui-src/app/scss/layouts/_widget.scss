@@ -16,7 +16,22 @@
   }
   &__body {
     height: 100%;
+    display: flex;
+    flex-direction: column;
     overflow: scroll;
+    &-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      & .action {
+        display: flex;
+        gap: 0.5rem;
+      }
+    }
+    &-content {
+      height: 100%;
+      overflow: scroll;
+    }
   }
   & > p {
     font-size: 0.9em;

@@ -145,15 +145,14 @@ const Layout = () => {
   //  let root_handle;
   let parent;
   return {
-    oninit: async () => {
-      const res = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
         flags: util.RS_FILE_HINTS_REMOTE,
-      });
-      parent = res;
+      }).then((res) => (parent = res));
     },
-    view: (v) => [
-      m('.widget', [
-        m('h3', 'Friends Files'),
+    view: () => [
+      m('.widget__heading', [m('h3', 'Friends Files')]),
+      m('.widget__body', [
         m(
           util.FriendsFilesTable,
           m(
