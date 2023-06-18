@@ -4,8 +4,19 @@ const util = require('files/files_util');
 const widget = require('widgets');
 
 const Downloads = {
+  strategies: {},
   statusMap: {},
   hashes: [],
+
+  loadStrategy() {
+    rs.rsJsonApiRequest('/rsFiles/FileDownloads', {}, (d) =>
+      d.hashs.map((hash) => {
+        rs.rsJsonApiRequest('/rsFiles/getChunkStrategy', { hash }).then(
+          (res) => (Downloads.strategies[hash] = res.body.retval)
+        );
+      })
+    );
+  },
 
   async loadHashes() {
     await rs.rsJsonApiRequest('/rsFiles/FileDownloads', {}, (d) => (Downloads.hashes = d.hashs));
@@ -128,6 +139,7 @@ const NewFileDialog = () => {
 const Component = () => {
   return {
     oninit: () => {
+      Downloads.loadStrategy();
       rs.setBackgroundTask(Downloads.loadStatus, 1000, () => {
         return m.route.get() === '/files/files';
       });
@@ -158,6 +170,7 @@ const Component = () => {
           Object.keys(Downloads.statusMap).map((hash) =>
             m(util.File, {
               info: Downloads.statusMap[hash],
+              strategy: Downloads.strategies[hash],
               direction: 'down',
               transferred: Downloads.statusMap[hash].transfered.xint64,
               parts: [],

@@ -203,19 +203,19 @@ const ProgressBar = () => {
   };
 };
 
-const chunkStrats = [
-  'CHUNK_STRATEGY_STREAMING',
-  'CHUNK_STRATEGY_RANDOM',
-  'CHUNK_STRATEGY_PROGRESSIVE',
-];
-const chunkStratsOptions = ['Streaming', 'Random', 'Progressive'];
+const chunkStrats = {
+  0: 'Streaming', // CHUNK_STRATEGY_STREAMING
+  1: 'Random', // CHUNK_STRATEGY_RANDOM
+  2: 'Progressive', // CHUNK_STRATEGY_PROGRESSIVE
+};
 // rstypes.h :: 366
 
 const File = () => {
   let chunkStrat;
   return {
-    view: (v) =>
-      m(
+    view: (v) => {
+      chunkStrat = v.attrs && v.attrs.strategy;
+      return m(
         '.file-view',
         {
           key: v.attrs.info.hash,
@@ -234,14 +234,18 @@ const File = () => {
                   {
                     value: chunkStrat,
                     onchange: (e) => {
-                      chunkStrat = chunkStrats[e.target.selectedIndex];
+                      chunkStrat = Object.keys(chunkStrats)[e.target.selectedIndex];
                       rs.rsJsonApiRequest('/rsFiles/setChunkStrategy', {
                         hash: v.attrs.info.hash,
                         newStrategy: chunkStrat,
                       });
                     },
                   },
-                  [chunkStratsOptions.map((opt) => m('option', { value: opt }, opt))]
+                  [
+                    Object.keys(chunkStrats).map((opt) =>
+                      m('option', { value: opt }, chunkStrats[opt])
+                    ),
+                  ]
                 ),
               ]),
             ],
@@ -292,7 +296,8 @@ const File = () => {
             ]),
           ]),
         ]
-      ),
+      );
+    },
   };
 };
 
