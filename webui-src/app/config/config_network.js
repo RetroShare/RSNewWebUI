@@ -332,7 +332,7 @@ const SetSocksProxy = () => {
         ),
         Object.keys(socksProxyObj).map((proxyItem) => {
           return m(`.proxy-server__${proxyItem}`, [
-            m('h4', `${proxyItem.toUpperCase()} Socks Proxy: `),
+            m('h6', `${proxyItem.toUpperCase()} Socks Proxy: `),
             m('input[type=text]', {
               value: socksProxyObj[proxyItem].addr,
               oninput: (e) => (socksProxyObj[proxyItem].addr = e.target.value),
@@ -379,27 +379,24 @@ const Component = () => {
         }
       });
     },
-    view: () => [
-      m('.widget.widget-half', [
-        m('h3', 'Network Configuration'),
-        m('hr'),
-        m('.grid-2col', [
-          m(SetNwMode),
-          m(SetNAT),
-          m(displayLocalIPAddress, { details }),
-          m(displayExternalIPAddress, { details }),
-          m(SetDynamicDNS),
-          m(SetLimits),
-          m(SetOpMode),
-          m(displayIPAddresses, { details }),
+    view: () =>
+      m('.widget', [
+        m('.widget__heading', m('h3', 'Network Configuration')),
+        m('.widget__body', [
+          m('.grid-2col', [
+            m(SetNwMode),
+            m(SetNAT),
+            m(displayLocalIPAddress, { details }),
+            m(displayExternalIPAddress, { details }),
+            m(SetDynamicDNS),
+            m(SetLimits),
+            m(SetOpMode),
+            m(displayIPAddresses, { details }),
+          ]),
+          m('.widget__heading', m('h3', 'Hidden Service Configuration')),
+          m('.widget__body', [m('.grid-2col', [m(SetSocksProxy)])]),
         ]),
       ]),
-      m('.widget.widget-half', [
-        m('h3', 'Hidden Service Configuration'),
-        m('hr'),
-        m('.grid-2col', [m(SetSocksProxy)]),
-      ]),
-    ],
   };
 };
 

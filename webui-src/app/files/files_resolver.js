@@ -13,6 +13,7 @@ const MyFiles = () => {
   return {
     view: () => [
       m('.widget__heading', [
+        m('h3', 'File Transfers'),
         m(util.SearchBar, {
           list: Object.assign({}, downloads.list, uploads.list),
         }),

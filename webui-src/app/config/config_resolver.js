@@ -13,14 +13,13 @@ const sections = {
 };
 
 const Layout = {
-  view: (vnode) =>
-    m('.tab-page', [
-      m(widget.Sidebar, {
-        tabs: Object.keys(sections),
-        baseRoute: '/config/',
-      }),
-      m('.config-node-panel', vnode.children),
-    ]),
+  view: (vnode) => [
+    m(widget.Sidebar, {
+      tabs: Object.keys(sections),
+      baseRoute: '/config/',
+    }),
+    m('.node-panel', vnode.children),
+  ],
 };
 
 module.exports = {

@@ -5,13 +5,12 @@ const SharedDirectories = () => {
   let directories = [];
   return {
     dirs: [],
-    oninit: (vnode) => {
+    oninit: () => {
       rs.rsJsonApiRequest('/rsFiles/getSharedDirectories', {}, (data) => (directories = data.dirs));
     },
-    view: (vnode) =>
-      m('.widget', [
-        m('h3', 'Shared Directories'),
-        m('hr'),
+    view: () =>
+      m('.widget__body-box', [
+        m('.widget__heading', m('h3', 'Shared Directories')),
         directories.map((dir) =>
           m('input[type=text].stretched', {
             value: dir.filename,
@@ -26,22 +25,17 @@ const DownloadDirectory = () => {
   const setDir = () => {
     // const path = document.getElementById('dl-dir-input').value; // unused?
 
-    rs.rsJsonApiRequest(
-      'rsFiles/setDownloadDirectory',
-      {
-        path: dlDir,
-      },
-      () => {}
-    );
+    rs.rsJsonApiRequest('rsFiles/setDownloadDirectory', {
+      path: dlDir,
+    });
   };
   return {
-    oninit: (vnode) => {
+    oninit: () => {
       rs.rsJsonApiRequest('/rsFiles/getDownloadDirectory', {}, (data) => (dlDir = data.retval));
     },
-    view: (vnode) =>
-      m('.widget', [
-        m('h3', 'Downloads Directory'),
-        m('hr'),
+    view: () =>
+      m('.widget__body-box', [
+        m('.widget__heading', m('h3', 'Downloads Directory')),
         m('input[type=text].stretched#dl-dir-input', {
           oninput: (e) => (dlDir = e.target.value),
           value: dlDir,
@@ -56,25 +50,20 @@ const PartialsDirectory = () => {
   const setDir = () => {
     // const path = document.getElementById('partial-dir-input').value; // unused?
 
-    rs.rsJsonApiRequest(
-      'rsFiles/setPartialsDirectory',
-      {
-        path: partialsDir,
-      },
-      () => {}
-    );
+    rs.rsJsonApiRequest('rsFiles/setPartialsDirectory', {
+      path: partialsDir,
+    });
   };
   return {
-    oninit: (vnode) =>
+    oninit: () =>
       rs.rsJsonApiRequest(
         '/rsFiles/getPartialsDirectory',
         {},
         (data) => (partialsDir = data.retval)
       ),
-    view: (vnode) =>
-      m('.widget.widget-halfwidth', [
-        m('h3', 'Partials Directory'),
-        m('hr'),
+    view: () =>
+      m('.widget__body-box', [
+        m('.widget__heading', m('h3', 'Partials Directory')),
         m('input[type=text].stretched#partial-dir-input', {
           oninput: (e) => (partialsDir = e.target.value),
           value: partialsDir,
@@ -88,30 +77,21 @@ const TransferOptions = () => {
   let strategy = undefined;
   let diskLimit = undefined;
   const setChunkStrat = () =>
-    rs.rsJsonApiRequest(
-      '/rsFiles/setDefaultChunkStrategy',
-      {
-        strategy: Number(strategy),
-      },
-      () => {}
-    );
+    rs.rsJsonApiRequest('/rsFiles/setDefaultChunkStrategy', {
+      strategy: Number(strategy),
+    });
   const setFreeLimit = () =>
-    rs.rsJsonApiRequest(
-      '/rsFiles/setFreeDiskSpaceLimit',
-      {
-        MinimumFreeMB: diskLimit,
-      },
-      () => {}
-    );
+    rs.rsJsonApiRequest('/rsFiles/setFreeDiskSpaceLimit', {
+      MinimumFreeMB: diskLimit,
+    });
   return {
-    oninit: (vnode) => {
+    oninit: () => {
       rs.rsJsonApiRequest('/rsFiles/defaultChunkStrategy', {}, (data) => (strategy = data.retval));
       rs.rsJsonApiRequest('/rsFiles/freeDiskSpaceLimit', {}, (data) => (diskLimit = data.retval));
     },
-    view: (vnode) =>
-      m('.widget.widget-half', [
-        m('h3', 'Transfer options'),
-        m('hr'),
+    view: () =>
+      m('.widget__body-box', [
+        m('.widget__heading', m('h3', 'Transfer options')),
         m('.grid-2col', [
           m('p', 'Default chunk strategy:'),
           m(
@@ -138,12 +118,16 @@ const TransferOptions = () => {
 
 const Layout = () => {
   return {
-    view: (vnode) => [
-      m(SharedDirectories),
-      m(DownloadDirectory),
-      m(PartialsDirectory),
-      m(TransferOptions),
-    ],
+    view: () =>
+      m('.widget', [
+        m('.widget__heading', m('h3', 'Files Configuration')),
+        m('.widget__body.config-files', [
+          m(SharedDirectories),
+          m(DownloadDirectory),
+          m(PartialsDirectory),
+          m(TransferOptions),
+        ]),
+      ]),
   };
 };
 

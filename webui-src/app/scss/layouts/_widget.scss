@@ -8,7 +8,7 @@
   border-radius: 6px;
   overflow: scroll;
   &__heading {
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -31,6 +31,11 @@
     &-content {
       height: 100%;
       overflow: scroll;
+    }
+    &-box {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
   }
   & > p {
