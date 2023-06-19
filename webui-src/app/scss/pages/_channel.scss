@@ -1,110 +1,150 @@
-.channel-node-panel {
-  position: relative;
-  bottom: 200px;
-  margin-left: 200px;
-  animation: fadein 0.5s;
+@use '../abstracts/colors' as *;
+
+.channel {
+  display: flex;
+  margin-top: 0.5rem;
+  padding: 1rem;
+  border: 1px solid transparentize($dark-color, 0.9);
+  border-radius: 4px;
+  &-heading {
+    display: flex;
+    justify-content: space-between;
+  }
+  &__details {
+    flex-basis: 40%;
+    display: flex;
+    gap: 0.5rem;
+    & img {
+      object-fit: contain;
+    }
+  }
+  &__desc {
+    flex-basis: 60%;
+  }
 }
 
-/* subject */
-table.channels th:nth-child(1) {
-  width: 50%;
-  text-align: start;
-}
-/* subject */
-table.channels td:nth-child(1) {
-  text-align: start;
-  /* Truncate text with '...' */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.posts {
+  height: 100%;
+  margin-top: 1rem;
+  flex-direction: column;
+  overflow: scroll;
+  &__heading {
+    display: flex;
+    justify-content: space-between;
+  }
+  &-container {
+    height: 100%;
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 2rem;
+    border: 1px solid transparentize($dark-color, 0.9);
+    border-radius: 4px;
+    overflow: scroll;
+    &-card {
+      min-height: 240px;
+      flex-direction: column;
+      border: 1px solid transparentize($dark-color, 0.5);
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      & img {
+        flex-basis: 90%;
+        object-fit: cover;
+      }
+      & p {
+        padding: 0 0.125rem;
+        flex-basis: 10%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
 }
 
-table.channels tr:hover {
-  background-color: #eef3f6;
-  cursor: pointer;
+.file-section {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
 }
 
-table.channels tr.hidden {
-  display: none;
+.comments-section {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: space-between;
+  &__menu {
+    display: flex;
+    gap: 1rem;
+    &-id {
+      display: flex;
+      gap: 0.25rem;
+      align-items: center;
+    }
+  }
 }
 
-#searchchannel {
-  position: relative;
-  margin-left: 250px;
-  /* top: px; */
-}
-
-img.channelpic {
-  float: left;
-  height: 150px;
-  width: 150px;
-  padding: 25px;
-}
-#channeldetails {
-  position: relative;
-  margin-left: 150px;
-  padding: 10px;
-}
-.p {
-  margin: 0;
-}
 #toggleunsub {
   position: relative;
   background: gray;
 }
 
-#grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 100px;
-}
-
-.card {
-  width: 150px;
-  height: 200px;
-  border: 2px solid gray;
-  cursor: pointer;
-  text-align: center;
-}
-.card-img {
-  width: 120px;
-  height: 120px;
-}
-.card-title {
-  position: relative;
-  bottom: 0px;
-  overflow: auto;
+/* subject */
+table.channels {
+  & th:nth-child(1) {
+    width: 50%;
+    text-align: start;
+  }
+  /* subject */
+  & td:nth-child(1) {
+    text-align: start;
+    /* Truncate text with '...' */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  & tr:hover {
+    background-color: #eef3f6;
+    cursor: pointer;
+  }
+  & tr.hidden {
+    display: none;
+  }
 }
 
 /* subject */
-table.comments th {
-  height: 40px;
-}
-table.comments th:nth-child(1) {
-  width: 2%;
-}
-table.comments th:nth-child(2) {
-  width: 40%;
-}
-table.comments td {
-  word-wrap: break-word;
-}
-table.comments td:nth-child(2) {
-  text-align: start;
-  border: 3px solid lightskyblue;
-  border-radius: 25px;
-}
-table.comments tr {
-  height: 40px;
-}
-table.files th:nth-child(1) {
-  width: 40%;
-}
-table.files th:nth-child(3) {
-  width: 50%;
-}
-table.files td {
-  word-wrap: break-word;
+table {
+  padding: 0.5rem;
+  &.comments {
+    border: 1px solid #eee;
+    & th {
+      height: 40px;
+      &:nth-child(1) {
+        width: 2%;
+      }
+      &:nth-child(2) {
+        width: 40%;
+      }
+    }
+    & td {
+      word-wrap: break-word;
+      &:nth-child(2) {
+        text-align: start;
+      }
+    }
+  }
+  &.files {
+    & th:first-child {
+      text-align: start;
+      width: 60%;
+    }
+    & tr td:first-child {
+      text-align: start;
+    }
+    & td {
+      word-wrap: break-word;
+    }
+  }
 }
 /* #options{
   width: 100px;

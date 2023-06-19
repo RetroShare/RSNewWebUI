@@ -1,6 +1,4 @@
 const m = require('mithril');
-const rs = require('rswebui');
-
 const widget = require('widgets');
 
 const sections = {

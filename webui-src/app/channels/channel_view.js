@@ -74,7 +74,7 @@ async function parsefile(file, type) {
   return ansList;
 }
 const messageGroups = ['Public', 'Restricted Circle', 'Restricted Node Group'];
-const messageGroupsCode = [util.PUBLIC, util.EXTERNAL, util.NODES_GROUP]; //rsgxscirles.h:50
+const messageGroupsCode = [util.PUBLIC, util.EXTERNAL, util.NODES_GROUP]; // rsgxscirles.h:50
 
 function createchannel() {
   let title;
@@ -200,10 +200,10 @@ function createchannel() {
                 name: title,
                 description: body,
                 thumbnail: { mData: { base64: thumbnail } },
-                ...(Number(identity) !== 0 && { authorId: identity }), //checks if some identity has to be assigned
+                ...(Number(identity) !== 0 && { authorId: identity }), // checks if some identity has to be assigned
                 circleType: selectedGroupCode,
                 ...(selectedGroupCode === util.EXTERNAL &&
-                  selectedCircle && { circleId: selectedCircle.mGroupId }), //checks if the selectedGroup code is EXTERNAL
+                  selectedCircle && { circleId: selectedCircle.mGroupId }), // checks if the selectedGroup code is EXTERNAL
               });
               if (res.body.retval) {
                 util.updatedisplaychannels(res.body.channelId);
@@ -287,7 +287,7 @@ const AddPost = () => {
                   channelId: vnode.attrs.chanId,
                   title: ptitle,
                   mBody: content,
-                  files: pfiles, //does not work for now
+                  files: pfiles, // does not work for now
                   thumbnail: { mData: { base64: pthumbnail } },
                 });
                 res.body.retval === false
@@ -340,90 +340,95 @@ const ChannelView = () => {
         plist = Data.Posts[v.attrs.id];
       }
     },
-    view: (v) =>
+    view: (v) => [
       m(
-        '.widget',
+        'a[title=Back]',
         {
-          key: v.attrs.id,
+          onclick: () =>
+            m.route.set('/channels/:tab', {
+              tab: m.route.param().tab,
+            }),
         },
-        [
-          m(
-            'a[title=Back]',
-            {
-              onclick: () =>
-                m.route.set('/channels/:tab', {
-                  tab: m.route.param().tab,
-                }),
+        m('i.fas.fa-arrow-left')
+      ),
+      m('.widget__heading', [
+        m('h3', cname),
+        m(
+          'button',
+          {
+            onclick: async () => {
+              const res = await rs.rsJsonApiRequest('/rsgxschannels/subscribeToChannel', {
+                channelId: v.attrs.id,
+                subscribe: !csubscribed,
+              });
+              if (res.body.retval) {
+                csubscribed = !csubscribed;
+                Data.DisplayChannels[v.attrs.id].isSubscribed = csubscribed;
+              }
             },
-            m('i.fas.fa-arrow-left')
-          ),
-          m('h3', cname),
-
-          m(
-            'button',
-            {
-              onclick: async () => {
-                const res = await rs.rsJsonApiRequest('/rsgxschannels/subscribeToChannel', {
-                  channelId: v.attrs.id,
-                  subscribe: !csubscribed,
-                });
-                if (res.body.retval) {
-                  csubscribed = !csubscribed;
-                  Data.DisplayChannels[v.attrs.id].isSubscribed = csubscribed;
-                }
-              },
-            },
-            csubscribed ? 'Subscribed' : 'Subscribe'
-          ),
-          m('img.channelpic', {
-            src:
-              cimage.mData.base64 === ''
-                ? 'data/streaming.png'
-                : 'data:image/png;base64,' + cimage.mData.base64,
-          }),
-          m('[id=channeldetails]', [
-            m('p', m('b', 'Posts: '), cposts),
-            m(
-              'p',
-              m('b', 'Date created: '),
-              typeof createDate === 'object'
-                ? new Date(createDate.xint64 * 1000).toLocaleString()
-                : 'undefined'
-            ),
-            m('p', m('b', 'Admin: '), cauthor),
-            m(
-              'p',
-              m('b', 'Last activity: '),
-              typeof lastActivity === 'object'
-                ? new Date(lastActivity.xint64 * 1000).toLocaleString()
-                : 'undefined'
-            ),
+          },
+          csubscribed ? 'Subscribed' : 'Subscribe'
+        ),
+      ]),
+      m('.widget__body', [
+        m('.channel', [
+          m('.channel__details', [
+            m('img', {
+              src:
+                cimage.mData.base64 === ''
+                  ? 'data/streaming.png'
+                  : 'data:image/png;base64,' + cimage.mData.base64,
+            }),
+            m('.channel__details-info', [
+              m('div', [m('b', 'Posts: '), m('span', cposts)]),
+              m('div', [
+                m('b', 'Date created: '),
+                m(
+                  'span',
+                  typeof createDate === 'object'
+                    ? new Date(createDate.xint64 * 1000).toLocaleString()
+                    : 'Unknown'
+                ),
+              ]),
+              m('div', [m('b', 'Admin: '), m('span', cauthor)]),
+              m('div', [
+                m('b', 'Last activity: '),
+                m(
+                  'span',
+                  typeof lastActivity === 'object'
+                    ? new Date(lastActivity.xint64 * 1000).toLocaleString()
+                    : 'Unknown'
+                ),
+              ]),
+            ]),
           ]),
-          m('hr'),
-          m('channeldesc', m('b', 'Description: '), Data.DisplayChannels[v.attrs.id].description),
-          m('hr'),
-          m(
-            'postdetails',
-            {
-              style: 'display:' + (csubscribed ? 'block' : 'none'),
-            },
-            m('h3', 'Posts'),
-            mychannel &&
-              m(
-                'button',
-                { onclick: () => widget.popupMessage(m(AddPost, { chanId: v.attrs.id })) },
-                ['Add Post', m('i.fas.fa-edit')]
-              ),
-            m('hr'),
-
+          m('.channel__desc', [
+            m('b', 'Description: '),
+            m('span', Data.DisplayChannels[v.attrs.id].description || 'No Description'),
+          ]),
+        ]),
+        m(
+          '.posts',
+          {
+            style: 'display: ' + (csubscribed ? 'flex' : 'none'),
+          },
+          [
+            m('.posts__heading', [
+              m('h3', 'Posts'),
+              mychannel &&
+                m(
+                  'button',
+                  { onclick: () => widget.popupMessage(m(AddPost, { chanId: v.attrs.id })) },
+                  ['Add Post', m('i.fas.fa-edit')]
+                ),
+            ]),
             m(
-              '[id=grid]',
+              '.posts-container',
               Object.keys(plist).map((key, index) => [
                 m(
-                  'div',
+                  '.posts-container-card',
                   {
-                    class: 'card',
-                    style: 'display: ' + (plist[key].isSearched ? 'block' : 'none'), // for search
+                    style: 'display: ' + (plist[key].isSearched ? 'flex' : 'none'), // for search
                     onclick: () => {
                       m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
                         tab: m.route.param().tab,
@@ -434,24 +439,21 @@ const ChannelView = () => {
                   },
                   [
                     m('img', {
-                      class: 'card-img',
                       src:
                         plist[key].post.mThumbnail.mData.base64 === ''
                           ? 'data/streaming.png'
                           : 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
-
                       alt: '',
                     }),
-                    m('div', { class: 'card-info' }, [
-                      m('h4', { class: 'card-title' }, plist[key].post.mMeta.mMsgName),
-                    ]),
+                    m('p', plist[key].post.mMeta.mMsgName),
                   ]
                 ),
               ])
-            )
-          ),
-        ]
-      ),
+            ),
+          ]
+        ),
+      ]),
+    ],
   };
 };
 
@@ -544,14 +546,16 @@ function displaycomment() {
     oninit: (v) => {},
     view: ({ attrs: { commentStruct, identity, replyDepth, voteIdentity } }) => {
       const comment = commentStruct.comment;
-      let cUpVotes = 0; 
+      let cUpVotes = 0;
       let cDownVotes = 0;
       let parMap = {};
       if (Data.ParentCommentMap[comment.mMeta.mMsgId]) {
         parMap = Data.ParentCommentMap[comment.mMeta.mMsgId];
       }
-      if(Data.Votes[comment.mMeta.mThreadId] && Data.Votes[comment.mMeta.mThreadId][comment.mMeta.mMsgId])
-      {
+      if (
+        Data.Votes[comment.mMeta.mThreadId] &&
+        Data.Votes[comment.mMeta.mThreadId][comment.mMeta.mMsgId]
+      ) {
         cUpVotes = Data.Votes[comment.mMeta.mThreadId][comment.mMeta.mMsgId].upvotes;
         cDownVotes = Data.Votes[comment.mMeta.mThreadId][comment.mMeta.mMsgId].downvotes;
       }
@@ -695,132 +699,132 @@ const PostView = () => {
       });
       fileDown.Downloads.loadStatus(); // for retrieving downloading files.
     },
-    view: (v) =>
-      m('.widget', { key: v.attrs.msgId }, [
-        m(
-          'a[title=Back]',
-          {
-            onclick: () =>
-              m.route.set('/channels/:tab/:mGroupId', {
-                tab: m.route.param().tab,
-                mGroupId: m.route.param().mGroupId,
-              }),
-          },
-          m('i.fas.fa-arrow-left')
-        ),
-        m('h3', post.mMeta.mMsgName),
-        m('p', m.trust(post.mMsg)),
-        m('hr'),
-        m('h3', 'Files(' + post.mAttachmentCount + ')'),
-        m(
-          util.FilesTable,
+    view: (v) => [
+      m(
+        'a[title=Back]',
+        {
+          onclick: () =>
+            m.route.set('/channels/:tab/:mGroupId', {
+              tab: m.route.param().tab,
+              mGroupId: m.route.param().mGroupId,
+            }),
+        },
+        m('i.fas.fa-arrow-left')
+      ),
+      m('.widget__heading', m('h3', post.mMeta.mMsgName)),
+      m('.widget__body', [
+        m('p', { style: { whiteSpace: 'normal' } }, m.trust(post.mMsg)),
+        m('.file-section', [
+          m('h3', 'Files(' + post.mAttachmentCount + ')'),
           m(
-            'tbody',
-            post.mFiles.map((file) =>
-              m('tr', [
-                m('td', file.mName),
-                m('td', util.formatbytes(file.mSize.xint64)),
-                m(
-                  'button',
-                  {
-                    style: { fontSize: '0.9em' },
-                    onclick: async () =>
-                      widget.popupMessage([
-                        m('p', 'Start Download?'),
-                        m(
-                          'button',
-                          {
-                            onclick: async () => {
-                              if (filesInfo[file.mHash] && !filesInfo[file.mHash].retval) {
-                                const res = await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
-                                  fileName: file.mName,
-                                  hash: file.mHash,
-                                  flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
-                                  size: {
-                                    xstr64: file.mSize.xstr64,
-                                  },
-                                });
-                                res.body.retval === false
-                                  ? widget.popupMessage([
-                                      m('h3', 'Error'),
-                                      m('hr'),
-                                      m('p', res.body.errorMessage),
-                                    ])
-                                  : widget.popupMessage([
-                                      m('h3', 'Success'),
-                                      m('hr'),
-                                      m('p', 'Download Started'),
-                                    ]);
-                                m.redraw();
-                              }
+            util.FilesTable,
+            m(
+              'tbody',
+              post.mFiles.map((file) =>
+                m('tr', [
+                  m('td', file.mName),
+                  m('td', util.formatbytes(file.mSize.xint64)),
+                  m(
+                    'button',
+                    {
+                      style: { fontSize: '0.9em' },
+                      onclick: async () =>
+                        widget.popupMessage([
+                          m('p', 'Start Download?'),
+                          m(
+                            'button',
+                            {
+                              onclick: async () => {
+                                if (filesInfo[file.mHash] && !filesInfo[file.mHash].retval) {
+                                  const res = await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                                    fileName: file.mName,
+                                    hash: file.mHash,
+                                    flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                                    size: {
+                                      xstr64: file.mSize.xstr64,
+                                    },
+                                  });
+                                  res.body.retval === false
+                                    ? widget.popupMessage([
+                                        m('h3', 'Error'),
+                                        m('hr'),
+                                        m('p', res.body.errorMessage),
+                                      ])
+                                    : widget.popupMessage([
+                                        m('h3', 'Success'),
+                                        m('hr'),
+                                        m('p', 'Download Started'),
+                                      ]);
+                                  m.redraw();
+                                }
+                              },
                             },
-                          },
-                          'Start Download'
-                        ),
-                      ]),
-                  },
-                  filesInfo[file.mHash]
-                    ? filesInfo[file.mHash].retval
-                      ? 'Open File'
-                      : ['Download', m('i.fas.fa-download')]
-                    : 'Please Wait...'
-                ),
-                fileDown.list[file.mHash] && // using the file from files_util to display download.
-                  m(fileUtil.File, {
-                    info: fileDown.list[file.mHash],
-                    direction: 'down',
-                    transferred: fileDown.list[file.mHash].transfered.xint64,
-                    parts: [],
-                  }),
-              ])
+                            'Start Download'
+                          ),
+                        ]),
+                    },
+                    filesInfo[file.mHash]
+                      ? filesInfo[file.mHash].retval
+                        ? 'Open File'
+                        : ['Download', m('i.fas.fa-download')]
+                      : 'Please Wait...'
+                  ),
+                  fileDown.list[file.mHash] && // using the file from files_util to display download.
+                    m(fileUtil.File, {
+                      info: fileDown.list[file.mHash],
+                      direction: 'down',
+                      transferred: fileDown.list[file.mHash].transfered.xint64,
+                      parts: [],
+                    }),
+                ])
+              )
             )
-          )
-        ),
-        m('hr'),
-        m('h3', 'Comments'),
-        m(
-          'button',
-          {
-            onclick: () => {
-              widget.popupMessage(
-                m(AddComment, {
-                  parent_comment: '',
-                  channelId: v.attrs.channelId,
-                  authorId: ownId,
-                  threadId: v.attrs.msgId,
-                  parentId: v.attrs.msgId,
-                })
-              );
-            },
-          },
-          'Add Comment'
-        ),
-        m(
-          'label[for=idtags',
-          {
-            style: { marginLeft: '10px' },
-          },
-          'Voter ID: '
-        ),
-        m(
-          'select[id=idtags]',
-          {
-            value: voteIdentity,
-            onchange: (e) => {
-              voteIdentity = ownId[e.target.selectedIndex];
-            },
-          },
-          [
-            ownId &&
-              ownId.map((o) =>
-                m(
-                  'option',
-                  { value: o },
-                  rs.userList.userMap[o].toLocaleString() + ' (' + o.slice(0, 8) + '...)'
-                )
+          ),
+        ]),
+        m('.comments-section', [
+          m('h3', 'Comments'),
+          m('.comments-section__menu', [
+            m(
+              'button',
+              {
+                onclick: () => {
+                  widget.popupMessage(
+                    m(AddComment, {
+                      parent_comment: '',
+                      channelId: v.attrs.channelId,
+                      authorId: ownId,
+                      threadId: v.attrs.msgId,
+                      parentId: v.attrs.msgId,
+                    })
+                  );
+                },
+              },
+              'Add Comment'
+            ),
+            m('.comments-section__menu-id', [
+              m('label[for=idtags', 'Voter ID: '),
+              m(
+                'select[id=idtags]',
+                {
+                  value: voteIdentity,
+                  onchange: (e) => {
+                    voteIdentity = ownId[e.target.selectedIndex];
+                  },
+                },
+                [
+                  ownId &&
+                    ownId.map((o) =>
+                      m(
+                        'option',
+                        { value: o },
+                        `${rs.userList.userMap[o].toLocaleString()} (${o.slice(0, 8)}...)`
+                      )
+                    ),
+                ]
               ),
-          ]
-        ),
+            ]),
+          ]),
+        ]),
         m(
           util.CommentsTable,
           m(
@@ -843,6 +847,7 @@ const PostView = () => {
           )
         ),
       ]),
+    ],
   };
 };
 

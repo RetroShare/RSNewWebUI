@@ -17,9 +17,9 @@ const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
 const GXS_VOTE_DOWN = 0x0001;
 const GXS_VOTE_UP = 0x0002;
 
-//rsgxscircles.h:50
-const PUBLIC = 1; /// Public distribution
-const EXTERNAL = 2; /// Restricted to an external circle, based on GxsIds
+// rsgxscircles.h:50
+const PUBLIC = 1; // Public distribution
+const EXTERNAL = 2; // Restricted to an external circle, based on GxsIds
 const NODES_GROUP = 3;
 
 const Data = {
@@ -201,7 +201,7 @@ const SearchBar = () => {
   let searchString = '';
   return {
     view: (v) =>
-      m('input[type=text][id=searchchannel][placeholder=Search Subject].searchbar', {
+      m('input[type=text][placeholder=Search Subject].searchbar', {
         value: searchString,
         placeholder:
           v.attrs.category.localeCompare('channels') === 0 ? 'Search Channels' : 'Search Posts',
