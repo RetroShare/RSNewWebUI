@@ -62,7 +62,7 @@ const Layout = () => {
     // onupdate: getChannels.load,
     view: (vnode) =>
       m('.widget', [
-        m('.channel-heading', [
+        m('.top-heading', [
           m(
             'button',
             {

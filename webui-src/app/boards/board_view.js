@@ -2,10 +2,9 @@ const m = require('mithril');
 const rs = require('rswebui');
 const util = require('boards/boards_util');
 const Data = util.Data;
-const peopleUtil = require('people/people_util');
 
 const messageGroups = ['Public', 'Restricted Circle', 'Restricted Node Group'];
-const messageGroupsCode = [util.PUBLIC, util.EXTERNAL, util.NODES_GROUP]; //rsgxscirles.h:50
+const messageGroupsCode = [util.PUBLIC, util.EXTERNAL, util.NODES_GROUP]; // rsgxscirles.h:50
 
 function createboard() {
   let title;
@@ -156,7 +155,6 @@ function createboard() {
   };
 }
 
-
 const BoardView = () => {
   let bname = '';
   let bimage = '';
@@ -187,108 +185,112 @@ const BoardView = () => {
         plist = Data.Posts[v.attrs.id];
       }
     },
-    view: (v) =>
+    view: (v) => [
       m(
-        '.widget',
+        'a[title=Back]',
         {
-          key: v.attrs.id,
+          onclick: () =>
+            m.route.set('/boards/:tab', {
+              tab: m.route.param().tab,
+            }),
         },
-        [
-          m(
-            'a[title=Back]',
-            {
-              onclick: () =>
-                m.route.set('/boards/:tab', {
-                  tab: m.route.param().tab,
-                }),
-            },
-            m('i.fas.fa-arrow-left')
-          ),
-          m('h3', bname),
-
-          m(
-            'button',
-            {
-              onclick: async () => {
-                const res = await rs.rsJsonApiRequest('/rsposted/subscribeToBoard', {
-                  boardId: v.attrs.id,
-                  subscribe: !bsubscribed,
-                });
-                if (res.body.retval) {
-                  bsubscribed = !bsubscribed;
-                  Data.DisplayBoards[v.attrs.id].isSubscribed = bsubscribed;
-                }
-              },
-            },
-            bsubscribed ? 'Subscribed' : 'Subscribe'
-          ),
-          m('img.boardpic', {
-            src: 'data:image/png;base64,' + bimage.mData.base64,
-          }),
-          m('[id=boarddetails]', [
-            m('p', m('b', 'Posts: '), bposts),
-            m(
-              'p',
-              m('b', 'Date created: '),
-              typeof createDate === 'object'
-                ? new Date(createDate.xint64 * 1000).toLocaleString()
-                : 'undefined'
-            ),
-            m('p', m('b', 'Admin: '), bauthor),
-            m(
-              'p',
-              m('b', 'Last activity: '),
-              typeof lastActivity === 'object'
-                ? new Date(lastActivity.xint64 * 1000).toLocaleString()
-                : 'undefined'
-            ),
-          ]),
-          m('hr'),
-          m('boarddesc', m('b', 'Description: '), Data.DisplayBoards[v.attrs.id].description),
-          m('hr'),
-          m(
-            'postdetails',
-            {
-              style: 'display:' + (bsubscribed ? 'block' : 'none'),
-            },
-            m('h3', 'Posts'),
-
-            m(
-              '[id=grid]',
-              Object.keys(plist).map((key, index) => [
-                m(
-                  'div',
-                  {
-                    class: 'card',
-                    style: 'display: ' + (plist[key].isSearched? 'block': 'none'),
-                    onclick: () => {
-                      m.route.set('/boards/:tab/:mGroupId/:mMsgId', {
-                        tab: m.route.param().tab,
-                        mGroupId: v.attrs.id,
-                        mMsgId: key,
-                      });
-                    },
-                  },
-                  [
-                    m('img', {
-                      class: 'card-img',
-                      src: 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
-
-                      alt: 'No Thumbnail',
-                    }),
-                    m('div', { class: 'card-info' }, [
-                      m('h4', { class: 'card-title' }, plist[key].post.mMeta.mMsgName),
-                    ]),
-                  ]
-                ),
-              ])
-            )
-          ),
-        ]
+        m('i.fas.fa-arrow-left')
       ),
+      m('.widget__heading', [
+        m('h3', bname),
+        m(
+          'button',
+          {
+            onclick: async () => {
+              const res = await rs.rsJsonApiRequest('/rsposted/subscribeToBoard', {
+                boardId: v.attrs.id,
+                subscribe: !bsubscribed,
+              });
+              if (res.body.retval) {
+                bsubscribed = !bsubscribed;
+                Data.DisplayBoards[v.attrs.id].isSubscribed = bsubscribed;
+              }
+            },
+          },
+          bsubscribed ? 'Subscribed' : 'Subscribe'
+        ),
+      ]),
+      m('.widget__body', [
+        m('.media-item', [
+          m('.media-item__details', [
+            m('img', {
+              src:
+                bimage.mData.base64 === ''
+                  ? 'data/streaming.png'
+                  : `data:image/png;base64,${bimage.mData.base64}`,
+            }),
+            m('.media-item__details-info', [
+              m('div', [m('b', 'Posts: '), m('span', bposts)]),
+              m('div', [
+                m('b', 'Date created: '),
+                m(
+                  'span',
+                  typeof createDate === 'object'
+                    ? new Date(createDate.xint64 * 1000).toLocaleString()
+                    : 'Unknown'
+                ),
+              ]),
+              m('div', [m('b', 'Admin: '), m('span', bauthor)]),
+              m('div', [
+                m('b', 'Last activity: '),
+                m(
+                  'span',
+                  typeof lastActivity === 'object'
+                    ? new Date(lastActivity.xint64 * 1000).toLocaleString()
+                    : 'Unknown'
+                ),
+              ]),
+            ]),
+          ]),
+          m('.media-item__desc', [
+            m('b', 'Description: '),
+            m('span', Data.DisplayBoards[v.attrs.id].description || 'No Description'),
+          ]),
+        ]),
+        m(
+          '.posts',
+          {
+            style: 'display:' + (bsubscribed ? 'flex' : 'none'),
+          },
+          m('.posts__heading', m('h3', 'Posts')),
+          m(
+            '.posts-container',
+            Object.keys(plist).map((key, index) => [
+              m(
+                '.posts-container-card',
+                {
+                  style: 'display: ' + (plist[key].isSearched ? 'flex' : 'none'),
+                  onclick: () => {
+                    m.route.set('/boards/:tab/:mGroupId/:mMsgId', {
+                      tab: m.route.param().tab,
+                      mGroupId: v.attrs.id,
+                      mMsgId: key,
+                    });
+                  },
+                },
+                [
+                  m('img', {
+                    src:
+                      plist[key].post.mThumbnail.mData.base64 === ''
+                        ? 'data/streaming.png'
+                        : 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
+                    alt: 'No Thumbnail',
+                  }),
+                  m('p', plist[key].post.mMeta.mMsgName),
+                ]
+              ),
+            ])
+          )
+        ),
+      ]),
+    ],
   };
 };
-
 
 module.exports = {
   BoardView,

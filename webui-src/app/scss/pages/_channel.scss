@@ -1,68 +1,5 @@
 @use '../abstracts/colors' as *;
 
-.channel {
-  display: flex;
-  margin-top: 0.5rem;
-  padding: 1rem;
-  border: 1px solid transparentize($dark-color, 0.9);
-  border-radius: 4px;
-  &-heading {
-    display: flex;
-    justify-content: space-between;
-  }
-  &__details {
-    flex-basis: 40%;
-    display: flex;
-    gap: 0.5rem;
-    & img {
-      object-fit: contain;
-    }
-  }
-  &__desc {
-    flex-basis: 60%;
-  }
-}
-
-.posts {
-  height: 100%;
-  margin-top: 1rem;
-  flex-direction: column;
-  overflow: scroll;
-  &__heading {
-    display: flex;
-    justify-content: space-between;
-  }
-  &-container {
-    height: 100%;
-    padding: 1rem;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 2rem;
-    border: 1px solid transparentize($dark-color, 0.9);
-    border-radius: 4px;
-    overflow: scroll;
-    &-card {
-      min-height: 240px;
-      flex-direction: column;
-      border: 1px solid transparentize($dark-color, 0.5);
-      border-radius: 4px;
-      cursor: pointer;
-      text-align: center;
-      & img {
-        flex-basis: 90%;
-        object-fit: cover;
-      }
-      & p {
-        padding: 0 0.125rem;
-        flex-basis: 10%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-    }
-  }
-}
-
 .file-section {
   margin-top: 2rem;
   display: flex;
@@ -104,7 +41,7 @@ table.channels {
     text-overflow: ellipsis;
   }
   & tr:hover {
-    background-color: #eef3f6;
+    background-color: $light-color;
     cursor: pointer;
   }
   & tr.hidden {

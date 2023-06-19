@@ -7,6 +7,10 @@
   background-color: white;
   border-radius: 6px;
   overflow: scroll;
+  & .top-heading {
+    display: flex;
+    justify-content: space-between;
+  }
   &__heading {
     padding-bottom: 0.25rem;
     display: flex;

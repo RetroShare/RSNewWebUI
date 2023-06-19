@@ -371,15 +371,15 @@ const ChannelView = () => {
         ),
       ]),
       m('.widget__body', [
-        m('.channel', [
-          m('.channel__details', [
+        m('.media-item', [
+          m('.media-item__details', [
             m('img', {
               src:
                 cimage.mData.base64 === ''
                   ? 'data/streaming.png'
-                  : 'data:image/png;base64,' + cimage.mData.base64,
+                  : `data:image/png;base64,${cimage.mData.base64}`,
             }),
-            m('.channel__details-info', [
+            m('.media-item__details-info', [
               m('div', [m('b', 'Posts: '), m('span', cposts)]),
               m('div', [
                 m('b', 'Date created: '),
@@ -402,7 +402,7 @@ const ChannelView = () => {
               ]),
             ]),
           ]),
-          m('.channel__desc', [
+          m('.media-item__desc', [
             m('b', 'Description: '),
             m('span', Data.DisplayChannels[v.attrs.id].description || 'No Description'),
           ]),
@@ -443,7 +443,7 @@ const ChannelView = () => {
                         plist[key].post.mThumbnail.mData.base64 === ''
                           ? 'data/streaming.png'
                           : 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
-                      alt: '',
+                      alt: 'No Thumbnail',
                     }),
                     m('p', plist[key].post.mMeta.mMsgName),
                   ]
