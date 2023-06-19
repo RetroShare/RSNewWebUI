@@ -86,7 +86,6 @@ async function updatedisplayforums(keyid, details = {}) {
 
 const DisplayForumsFromList = () => {
   return {
-    oninit: (v) => {},
     view: (v) =>
       m(
         'tr',
@@ -115,7 +114,6 @@ const ForumSummary = () => {
       keyid = v.attrs.details.mGroupId;
       updatedisplayforums(keyid);
     },
-
     view: (v) => {},
   };
 };

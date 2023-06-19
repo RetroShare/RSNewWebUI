@@ -50,51 +50,49 @@ const Layout = () => {
       });
     },
     view: (vnode) =>
-      m('.tab-page', [
-        m(util.SearchBar, {
-          list: getForums.All,
-        }),
-        m(
-          'button',
-          {
-            style: { fontSize: '1.2em', width: '200px' },
-            onclick: () =>
-              util.popupmessage(
-                m(viewUtil.createforum, {
-                  authorId: ownId,
-                })
-              ),
-          },
-          'Create Forum'
-        ),
-        m(widget.Sidebar, {
-          tabs: Object.keys(sections),
-          baseRoute: '/forums/',
-        }),
-        m(
-          '.forums-node-panel',
-
-          Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId') // thread's view
-            ? m(viewUtil.ThreadView, {
-                msgId: vnode.attrs.pathInfo.mMsgId,
-                forumId: vnode.attrs.pathInfo.mGroupId,
-              })
-            : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId') // Forum's view
-            ? m(viewUtil.ForumView, {
-                id: vnode.attrs.pathInfo.mGroupId,
-              })
-            : m(sections[vnode.attrs.pathInfo.tab], {
-                list: getForums[vnode.attrs.pathInfo.tab],
-              })
-        ),
+      m('.widget', [
+        m('.top-heading', [
+          m(
+            'button',
+            {
+              onclick: () =>
+                ownId &&
+                util.popupmessage(
+                  m(viewUtil.createforum, {
+                    authorId: ownId,
+                  })
+                ),
+            },
+            'Create Forum'
+          ),
+          m(util.SearchBar, {
+            list: getForums.All,
+          }),
+        ]),
+        Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId') // thread's view
+          ? m(viewUtil.ThreadView, {
+              msgId: vnode.attrs.pathInfo.mMsgId,
+              forumId: vnode.attrs.pathInfo.mGroupId,
+            })
+          : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId') // Forum's view
+          ? m(viewUtil.ForumView, {
+              id: vnode.attrs.pathInfo.mGroupId,
+            })
+          : m(sections[vnode.attrs.pathInfo.tab], {
+              list: getForums[vnode.attrs.pathInfo.tab],
+            }),
       ]),
   };
 };
 
 module.exports = {
   view: (vnode) => {
-    return m(Layout, {
-      pathInfo: vnode.attrs,
-    });
+    return [
+      m(widget.Sidebar, {
+        tabs: Object.keys(sections),
+        baseRoute: '/forums/',
+      }),
+      m('.node-panel', m(Layout, { pathInfo: vnode.attrs })),
+    ];
   },
 };

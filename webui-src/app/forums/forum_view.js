@@ -123,7 +123,7 @@ const EditThread = () => {
               const res = await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
                 forumId: vnode.attrs.forumId,
                 mBody: body,
-                title: title,
+                title,
                 authorId: vnode.attrs.authorId,
                 parentId: vnode.attrs.current_parent,
                 origPostId: vnode.attrs.current_msgid,
@@ -198,14 +198,14 @@ const AddThread = () => {
                   ? await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
                       forumId: vnode.attrs.forumId,
                       mBody: body,
-                      title: title,
+                      title,
                       authorId: identity,
                       parentId: vnode.attrs.parentId,
                     })
                   : await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
                       forumId: vnode.attrs.forumId,
                       mBody: body,
-                      title: title,
+                      title,
                       authorId: identity,
                     });
 
@@ -479,126 +479,117 @@ const ForumView = () => {
         }
       });
     },
-    view: (v) =>
+    view: (v) => [
       m(
-        '.widget',
+        'a[title=Back]',
         {
-          key: v.attrs.id,
+          onclick: () =>
+            m.route.set('/forums/:tab', {
+              tab: m.route.param().tab,
+            }),
         },
-        [
-          m(
-            'a[title=Back]',
-            {
-              onclick: () =>
-                m.route.set('/forums/:tab', {
-                  tab: m.route.param().tab,
-                }),
-            },
-            m('i.fas.fa-arrow-left')
-          ),
+        m('i.fas.fa-arrow-left')
+      ),
 
-          m('h3', fname),
-          m(
-            'button',
-            {
-              onclick: async () => {
-                const res = await rs.rsJsonApiRequest('/rsgxsforums/subscribeToForum', {
+      m('h3', fname),
+      m(
+        'button',
+        {
+          onclick: async () => {
+            const res = await rs.rsJsonApiRequest('/rsgxsforums/subscribeToForum', {
+              forumId: v.attrs.id,
+              subscribe: !fsubscribed,
+            });
+            if (res.body.retval) {
+              fsubscribed = !fsubscribed;
+              util.Data.DisplayForums[v.attrs.id].isSubscribed = fsubscribed;
+            }
+          },
+        },
+        fsubscribed ? 'Subscribed' : 'Subscribe'
+      ),
+      m('[id=forumdetails]', [
+        m(
+          'p',
+          m('b', 'Date created: '),
+          typeof createDate === 'object'
+            ? new Date(createDate.xint64 * 1000).toLocaleString()
+            : 'undefined'
+        ),
+        m('p', m('b', 'Admin: '), fauthor),
+        m(
+          'p',
+          m('b', 'Last activity: '),
+          typeof lastActivity === 'object'
+            ? new Date(lastActivity.xint64 * 1000).toLocaleString()
+            : 'undefined'
+        ),
+      ]),
+      m('hr'),
+      m('forumdesc', m('b', 'Description: '), util.Data.DisplayForums[v.attrs.id].description),
+      m('hr'),
+      m(
+        'threaddetails',
+        {
+          style: 'display:' + (fsubscribed ? 'block' : 'none'),
+        },
+        m('h3', 'Threads'),
+        m(
+          'button',
+          {
+            onclick: () => {
+              util.popupmessage(
+                m(AddThread, {
+                  parent_thread: '',
                   forumId: v.attrs.id,
-                  subscribe: !fsubscribed,
-                });
-                if (res.body.retval) {
-                  fsubscribed = !fsubscribed;
-                  util.Data.DisplayForums[v.attrs.id].isSubscribed = fsubscribed;
-                }
-              },
+                  authorId: ownId,
+                  parentId: '',
+                })
+              );
             },
-            fsubscribed ? 'Subscribed' : 'Subscribe'
-          ),
-          m('[id=forumdetails]', [
-            m(
-              'p',
-              m('b', 'Date created: '),
-              typeof createDate === 'object'
-                ? new Date(createDate.xint64 * 1000).toLocaleString()
-                : 'undefined'
-            ),
-            m('p', m('b', 'Admin: '), fauthor),
-            m(
-              'p',
-              m('b', 'Last activity: '),
-              typeof lastActivity === 'object'
-                ? new Date(lastActivity.xint64 * 1000).toLocaleString()
-                : 'undefined'
-            ),
-          ]),
-          m('hr'),
-          m('forumdesc', m('b', 'Description: '), util.Data.DisplayForums[v.attrs.id].description),
-          m('hr'),
+          },
+          ['New Thread', m('i.fas.fa-pencil-alt')]
+        ),
+        m('hr'),
+        m(
+          util.ThreadsTable,
           m(
-            'threaddetails',
-            {
-              style: 'display:' + (fsubscribed ? 'block' : 'none'),
-            },
-            m('h3', 'Threads'),
-            m(
-              'button',
-              {
-                onclick: () => {
-                  util.popupmessage(
-                    m(AddThread, {
-                      parent_thread: '',
-                      forumId: v.attrs.id,
-                      authorId: ownId,
-                      parentId: '',
-                    })
-                  );
-                },
-              },
-              ['New Thread', m('i.fas.fa-pencil-alt')]
-            ),
-            m('hr'),
-            m(
-              util.ThreadsTable,
+            'tbody',
+            Object.keys(topThreads).map((key, index) =>
               m(
-                'tbody',
-                Object.keys(topThreads).map((key, index) =>
+                'tr',
+                {
+                  style:
+                    topThreads[key].mMsgStatus === util.THREAD_UNREAD ? { fontWeight: 'bold' } : '',
+                  onclick: () => {
+                    m.route.set('/forums/:tab/:mGroupId/:mMsgId', {
+                      tab: m.route.param().tab,
+                      mGroupId: v.attrs.id,
+                      mMsgId: topThreads[key].mOrigMsgId,
+                    });
+                  },
+                },
+                [
+                  m('td', topThreads[key].mMsgName),
                   m(
-                    'tr',
-                    {
-                      style:
-                        topThreads[key].mMsgStatus === util.THREAD_UNREAD
-                          ? { fontWeight: 'bold' }
-                          : '',
-                      onclick: () => {
-                        m.route.set('/forums/:tab/:mGroupId/:mMsgId', {
-                          tab: m.route.param().tab,
-                          mGroupId: v.attrs.id,
-                          mMsgId: topThreads[key].mOrigMsgId,
-                        });
-                      },
-                    },
-                    [
-                      m('td', topThreads[key].mMsgName),
-                      m(
-                        'td',
-                        typeof topThreads[key].mPublishTs === 'object'
-                          ? new Date(topThreads[key].mPublishTs.xint64 * 1000).toLocaleString()
-                          : 'undefined'
-                      ),
-                      m(
-                        'td',
-                        rs.userList.userMap[topThreads[key].mAuthorId]
-                          ? rs.userList.userMap[topThreads[key].mAuthorId]
-                          : 'Unknown'
-                      ),
-                    ]
-                  )
-                )
+                    'td',
+                    typeof topThreads[key].mPublishTs === 'object'
+                      ? new Date(topThreads[key].mPublishTs.xint64 * 1000).toLocaleString()
+                      : 'undefined'
+                  ),
+                  m(
+                    'td',
+                    rs.userList.userMap[topThreads[key].mAuthorId]
+                      ? rs.userList.userMap[topThreads[key].mAuthorId]
+                      : 'Unknown'
+                  ),
+                ]
               )
             )
-          ),
-        ]
+          )
+        )
       ),
+    ],
   };
 };
 

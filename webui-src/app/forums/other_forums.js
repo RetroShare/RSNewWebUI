@@ -2,7 +2,7 @@ const m = require('mithril');
 
 const Layout = () => {
   return {
-    view: () => [m('.widget', [m('h2', 'Other Forums'), m('hr')])],
+    view: () => [m('.widget__heading', m('h3', 'Other Forums'))],
   };
 };
 
