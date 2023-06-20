@@ -40,7 +40,7 @@ const navbar = () => {
               src: '../data/retroshare.svg',
               alt: 'retroshare_icon',
             }),
-            m('h4', 'Retroshare'),
+            m('h5', 'Retroshare'),
           ]),
           m('.nav-menu__box', [
             Object.keys(vnode.attrs.links).map((linkName, i) => {

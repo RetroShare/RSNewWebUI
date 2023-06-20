@@ -23,8 +23,7 @@
       width: 1.6rem;
     }
 
-    h4 {
-      font-size: 1.3rem;
+    h5 {
       line-height: 1;
       color: white;
     }
@@ -135,17 +134,14 @@ a.item {
   }
 }
 .sidebarquickview {
-  height: 30%;
-  width: 200px;
-  top: 300px;
-  background-color: white;
+  & > h6 {
+    padding: 0.5rem;
+  }
   & a {
     text-decoration: none;
     text-transform: capitalize;
-    padding: 1em;
-    cursor: pointer;
+    padding: 0.5rem 1rem;
     display: block;
-    font-size: 0.95em;
     color: #999;
     & a:hover {
       color: #222;
