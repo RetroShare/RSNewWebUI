@@ -4,7 +4,7 @@
   height: 100%;
   margin-top: 1rem;
   flex-direction: column;
-  overflow: scroll;
+  overflow: auto;
   &__heading {
     display: flex;
     justify-content: space-between;
@@ -17,7 +17,7 @@
     gap: 2rem;
     border: 1px solid transparentize($dark-color, 0.9);
     border-radius: 4px;
-    overflow: scroll;
+    overflow: auto;
     &-card {
       min-height: 240px;
       flex-direction: column;

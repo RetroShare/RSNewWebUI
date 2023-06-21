@@ -81,7 +81,7 @@ table.friendsfiles td:nth-child(2) {
   border: 1px solid transparentize($dark-color, 0.8);
   border-radius: 6px;
   height: 100%;
-  overflow: scroll;
+  overflow: auto;
 
   &__keywords {
     flex-basis: 15%;
@@ -106,7 +106,7 @@ table.friendsfiles td:nth-child(2) {
   &__results {
     flex-basis: 85%;
     height: 100%;
-    overflow: scroll;
+    overflow: auto;
 
     & .results-container {
       & .results-header {
@@ -136,7 +136,7 @@ table.friendsfiles td:nth-child(2) {
       }
       & .results {
         height: 100%;
-        overflow: scroll;
+        overflow: auto;
         & tr {
           display: flex;
           & .results {

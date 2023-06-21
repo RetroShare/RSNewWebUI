@@ -16,7 +16,7 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  overflow: scroll;
+  overflow: auto;
   &-nav {
     display: flex;
     justify-content: space-between;
@@ -30,6 +30,9 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    & > h3 {
+      line-height: 1;
+    }
     & .msg-details {
       display: flex;
       gap: 1rem;
@@ -48,7 +51,7 @@
   }
   &__body {
     height: 100%;
-    overflow: scroll;
+    overflow: auto;
     iframe {
       width: 100%;
       height: 98%;
@@ -57,12 +60,12 @@
   }
   &__attachment {
     height: 50%;
-    overflow: scroll;
+    overflow: auto;
     display: flex;
     flex-direction: column;
     &-items {
       height: 100%;
-      overflow: scroll;
+      overflow: auto;
     }
   }
 }
@@ -238,7 +241,7 @@ table.attachment-container {
       flex-basis: 10%;
 
       & button {
-        font-size: inherit;
+        font-size: 0.875rem;
       }
     }
   }

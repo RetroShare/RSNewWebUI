@@ -21,7 +21,7 @@ General site-wide rules
   display: flex;
   background-color: $light-color;
   animation: fadein 0.3s;
-  overflow: scroll;
+  overflow: auto;
 }
 
 input[type='text'],

@@ -60,7 +60,7 @@
   margin: 0;
   padding-left: 1rem;
   height: 100px;
-  overflow: hidden scroll;
+  overflow: hidden auto;
   &::-webkit-scrollbar {
     display: none;
   }

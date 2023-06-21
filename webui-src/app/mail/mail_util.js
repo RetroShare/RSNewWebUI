@@ -337,7 +337,7 @@ const MessageView = () => {
                         onclick: () => {
                           document.querySelector('#show-more').style.display = 'none';
                           document.querySelector('#truncate').style.height = '6rem';
-                          document.querySelector('#truncate').style.overflow = 'scroll';
+                          document.querySelector('#truncate').style.overflow = 'auto';
                           document.querySelector('#show-less').style.display = 'block';
                         },
                       },
