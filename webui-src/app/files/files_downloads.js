@@ -11,9 +11,9 @@ const Downloads = {
   loadStrategy() {
     rs.rsJsonApiRequest('/rsFiles/FileDownloads', {}, (d) =>
       d.hashs.map((hash) => {
-        rs.rsJsonApiRequest('/rsFiles/getChunkStrategy', { hash }).then(
-          (res) => (Downloads.strategies[hash] = res.body.retval)
-        );
+        rs.rsJsonApiRequest('/rsFiles/getChunkStrategy', { hash }).then((res) => {
+          if (res.body.retval) Downloads.strategies[hash] = res.body.s;
+        });
       })
     );
   },
