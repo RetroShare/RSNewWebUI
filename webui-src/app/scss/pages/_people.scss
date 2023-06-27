@@ -21,8 +21,8 @@
 }
 
 .defaultAvatar {
-  width: 50px;
-  height: 50px;
+  width: 3rem;
+  height: 3rem;
   aspect-ratio: 1;
   background: lightsteelblue;
   border-radius: 50%;
@@ -36,7 +36,7 @@
 }
 img.avatar {
   display: block;
-  width: 50px;
+  width: 3rem;
   height: max-content;
   aspect-ratio: 1;
   margin-right: 0.3em;
