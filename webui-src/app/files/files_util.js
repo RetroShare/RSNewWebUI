@@ -234,7 +234,7 @@ const File = () => {
                   {
                     value: chunkStrat,
                     onchange: (e) => {
-                      chunkStrat = Object.keys(chunkStrats)[e.target.selectedIndex];
+                      chunkStrat = e.target.selectedIndex;
                       rs.rsJsonApiRequest('/rsFiles/setChunkStrategy', {
                         hash: v.attrs.info.hash,
                         newStrategy: chunkStrat,
