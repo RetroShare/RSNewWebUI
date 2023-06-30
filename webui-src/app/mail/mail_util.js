@@ -442,7 +442,7 @@ function popupMessageCompose(message) {
     container,
     m('.modal-content[id=composepopup]', [
       m(
-        'button.red',
+        'button.red.close-btn',
         {
           onclick: () => (container.style.display = 'none'),
         },

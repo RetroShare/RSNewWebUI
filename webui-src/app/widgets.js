@@ -52,7 +52,7 @@ function popupMessage(message) {
     container,
     m('.modal-content', [
       m(
-        'button.red',
+        'button.red.close-btn',
         {
           onclick: () => (container.style.display = 'none'),
         },
