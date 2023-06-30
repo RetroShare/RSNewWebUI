@@ -25,8 +25,10 @@ const Layout = () => {
         console.log(inputList);
         m.redraw();
       }
-      function handleClick(e) {
-        console.log(e.target.value);
+      function handleClick(e, item) {
+        console.log(e.target.value, item);
+        recipients.to.push(item);
+        m.redraw();
       }
       return m('.widget', [
         m('.widget__heading', m('h3', 'Compose a mail')),
@@ -66,7 +68,9 @@ const Layout = () => {
                 }),
                 m('ul#to-list[autocomplete=off]', [
                   inputList && inputList.length > 0
-                    ? inputList.map((item) => m('li', { onclick: handleClick }, item.mGroupName))
+                    ? inputList.map((item) =>
+                        m('li', { onclick: (e) => handleClick(e, item) }, item.mGroupName)
+                      )
                     : m('li', 'No Item'),
                 ]),
               ]),
