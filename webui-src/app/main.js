@@ -69,11 +69,6 @@ const navbar = () => {
 
 const Layout = () => {
   return {
-    oninit: () => {
-      document.documentElement.style.fontSize =
-        localStorage.getItem('rsBaseFontSize') ||
-        window.getComputedStyle(document.body).getPropertyValue('font-size');
-    },
     view: (vnode) => [
       m('.content', [
         m(navbar, {

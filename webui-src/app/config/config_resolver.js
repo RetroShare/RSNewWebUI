@@ -8,7 +8,6 @@ const sections = {
   files: require('config/config_files'),
   people: require('config/config_people'),
   mail: require('config/config_mail'),
-  appearance: require('config/config_appearance'),
 };
 
 const Layout = {
