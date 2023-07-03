@@ -24,10 +24,19 @@ const RS_HIDDEN_TYPE_UNKNOWN = 1;
 const RS_HIDDEN_TYPE_TOR = 2;
 const RS_HIDDEN_TYPE_I2P = 4;
 
-/* NAT Net Mode */
+// NAT Net Mode
 const RS_NETMODE_UDP = 1;
 const RS_NETMODE_UPNP = 2;
 const RS_NETMODE_EXT = 3;
+
+// Default Encryption Policy
+const RS_FILE_CTRL_ENCRYPTION_POLICY_STRICT = 1;
+const RS_FILE_CTRL_ENCRYPTION_POLICY_PERMISSIVE = 2;
+
+// Direct Download Permission
+const RS_FILE_PERM_DIRECT_DL_YES = 1;
+const RS_FILE_PERM_DIRECT_DL_NO = 2;
+const RS_FILE_PERM_DIRECT_DL_PER_USER = 3;
 
 function getRandomId(tagArr) {
   const random = Math.floor(Math.random() * (MAX_TAG_ID_VAL - MIN_TAG_ID_VAL) + MIN_TAG_ID_VAL);
@@ -62,4 +71,9 @@ module.exports = {
   RS_NETMODE_UDP,
   RS_NETMODE_UPNP,
   RS_NETMODE_EXT,
+  RS_FILE_CTRL_ENCRYPTION_POLICY_STRICT,
+  RS_FILE_CTRL_ENCRYPTION_POLICY_PERMISSIVE,
+  RS_FILE_PERM_DIRECT_DL_YES,
+  RS_FILE_PERM_DIRECT_DL_NO,
+  RS_FILE_PERM_DIRECT_DL_PER_USER,
 };
