@@ -13,40 +13,74 @@
 }
 
 .compose-mail {
-  gap: 0.5rem;
   &__from {
+    padding-bottom: 0.5rem;
     display: flex;
     justify-content: space-between;
+    border-bottom: 2px solid $light-color;
   }
   &__recipients {
+    padding: 0.5rem 0;
     display: flex;
     gap: 0.5rem;
-    &-list {
-      display: flex;
-      gap: 0.25rem;
-      flex-wrap: wrap;
-    }
-    &-to {
+    border-bottom: 2px solid $light-color;
+    .recipients__to {
       width: 100%;
-      box-shadow: none;
-      border: 0;
-      border-radius: 0;
       display: flex;
-      flex-direction: column;
-      .recipient-input {
-        position: relative;
-        input[type='text'] {
-          width: 100%;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      &__selected {
+        padding: 0.25rem 0.5rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        border: 1px solid $light-color;
+        border-radius: 3px;
+        cursor: default;
+        & i {
+          cursor: pointer;
+          padding: 0.25rem;
         }
-        &__list {
+      }
+      &__input {
+        display: flex;
+        position: relative;
+        flex-grow: 1;
+        &-field {
+          flex-grow: 1;
+          min-width: 200px;
+          padding: 0;
+          border: none;
+          box-shadow: none;
+          &:focus + .recipients__to__input-list {
+            display: flex;
+          }
+        }
+        &-list {
           position: absolute;
-          padding: 0.5rem;
+          top: 1.5rem;
+          padding: 0;
           width: 100%;
           max-height: 15rem;
-          background: $light-color;
           flex-direction: column;
           overflow: auto;
           display: none;
+          background: white;
+          border-bottom: 1px solid $light-color;
+          &:hover {
+            display: flex;
+          }
+          & li {
+            list-style: none;
+            padding: 0.5rem;
+            cursor: pointer;
+            background: white;
+            border: 1px solid $light-color;
+            border-top: 0px;
+            &:hover {
+              background: $light-color;
+            }
+          }
         }
       }
     }
@@ -54,21 +88,27 @@
       padding: 0.125rem 0.5rem;
     }
   }
-  &__subject {
-    margin-top: 0.5rem;
-    padding: 0.5rem 0 0;
+  input[type='text'].compose-mail__subject {
+    padding: 0.5rem 0;
     border: none;
     box-shadow: none;
-    border-top: 2px solid $light-color;
+    border-bottom: 2px solid $light-color;
     border-radius: 0;
   }
   &__message {
-    padding: 0.5rem 0 0;
+    padding: 0.5rem 0;
     border: none;
     height: 100%;
-    border-top: 2px solid $light-color;
     border-radius: 0;
     resize: none;
+  }
+  &__send-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    & i {
+      transform: translateY(-1px);
+    }
   }
 }
 
@@ -318,5 +358,30 @@ table.attachment-container {
   & * {
     padding: 4px 12px;
     border-radius: 4px;
+  }
+}
+
+.composePopupOverlay {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  background-color: rgba(0, 0, 0, 0.2);
+  .composePopup {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 80%;
+    height: 80%;
+    & > .widget {
+      padding: 2rem;
+    }
+    & .close-btn {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+    }
   }
 }

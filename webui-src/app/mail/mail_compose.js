@@ -14,21 +14,22 @@ const Layout = () => {
     bcc: [],
   };
   return {
-    oninit: (v) => (identity = v.attrs.ownId[0]),
+    oninit: (v) => {
+      identity = v.attrs.ownId[0];
+      inputList = v.attrs.allUsers;
+    },
     view: (v) => {
       function handleInput(e) {
         inputTo = e.target.value;
-        console.log(inputTo);
         inputList = v.attrs.allUsers.filter((item) =>
           item.mGroupName.toLowerCase().includes(e.target.value.toLowerCase())
         );
-        console.log(inputList);
-        m.redraw();
       }
-      function handleClick(e, item) {
-        console.log(e.target.value, item);
+      function handleClick(item) {
         recipients.to.push(item);
-        m.redraw();
+        // reset values
+        inputTo = '';
+        inputList = v.attrs.allUsers;
       }
       return m('.widget', [
         m('.widget__heading', m('h3', 'Compose a mail')),
@@ -55,59 +56,70 @@ const Layout = () => {
           ]),
           m('.compose-mail__recipients', [
             m('label.bold', 'To: '),
-            m('.compose-mail__recipients-to', [
-              recipients.to.length > 0 &&
-                m(
-                  'ul.selected',
-                  recipients.to && [recipients.to.map((to) => m('li', to.mGroupName))]
+            m('.recipients__to', [
+              recipients.to &&
+                recipients.to.length > 0 &&
+                recipients.to.map((recipient) =>
+                  m('.recipients__to__selected', [
+                    m('span', recipient.mGroupName),
+                    m('i.fas.fa-times', {
+                      onclick: () => {
+                        recipients.to = recipients.to.filter(
+                          (item) => item.mGroupId !== recipient.mGroupId
+                        );
+                        m.redraw();
+                      },
+                    }),
+                  ])
                 ),
-              m('.recipient-input', [
-                m('input[type=text][list=to-list]', {
+              m('.recipients__to__input', [
+                m('input[type=text].recipients__to__input-field', {
                   value: inputTo,
                   oninput: handleInput,
                 }),
-                m('ul#to-list[autocomplete=off]', [
+                m('ul.recipients__to__input-list[autocomplete=off]', [
                   inputList && inputList.length > 0
                     ? inputList.map((item) =>
-                        m('li', { onclick: (e) => handleClick(e, item) }, item.mGroupName)
+                        m('li', { onclick: () => handleClick(item) }, item.mGroupName)
                       )
                     : m('li', 'No Item'),
                 ]),
               ]),
             ]),
           ]),
-          m('input[type=text][placeholder=Subject].compose-mail__subject', {
+          m('input.compose-mail__subject[type=text][placeholder=Subject]', {
             oninput: (e) => (subject = e.target.value),
           }),
-          m('textarea[placeholder=Message].compose-mail__message', {
+          m('textarea.compose-mail__message[placeholder=Message]', {
             oninput: (e) => (mailBody = e.target.value),
             value: mailBody,
           }),
           v.attrs.allUsers &&
             m(
-              'button',
+              'button.compose-mail__send-btn',
               {
                 onclick: () => {
+                  const to = recipients.to.map((toItem) => toItem.mGroupId);
+                  const cc = recipients.cc.map((toItem) => toItem.mGroupId);
+                  const bcc = recipients.bcc.map((toItem) => toItem.mGroupId);
                   rs.rsJsonApiRequest('/rsMsgs/sendMail', {
                     from: identity,
                     subject,
                     mailBody,
-                    to: recipients.to,
-                    cc: recipients.cc,
-                    bcc: recipients.bcc,
+                    to,
+                    cc,
+                    bcc,
                   }).then((res) => {
                     if (res.body.retval) {
                       recipients.to = [];
                       recipients.cc = [];
                       recipients.bcc = [];
+                      subject = '';
+                      mailBody = '';
                       m.redraw();
                     }
                     res.body.retval !== 1
-                      ? widget.popupMessage([
-                          m('h3', 'Error'),
-                          m('hr'),
-                          m('p', res.body.errorMessage),
-                        ])
+                      ? widget.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMsg)])
                       : widget.popupMessage([
                           m('h3', 'Success'),
                           m('hr'),
@@ -116,7 +128,7 @@ const Layout = () => {
                   });
                 },
               },
-              'Send'
+              [m('span', 'Send Mail'), m('i.fas.fa-paper-plane')]
             ),
         ]),
       ]);

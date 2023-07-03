@@ -74,7 +74,7 @@ const Layout = () => {
         localStorage.getItem('rsBaseFontSize') ||
         window.getComputedStyle(document.body).getPropertyValue('font-size');
     },
-    view: (vnode) =>
+    view: (vnode) => [
       m('.content', [
         m(navbar, {
           links: {
@@ -92,6 +92,9 @@ const Layout = () => {
         }),
         m('.tab-content', vnode.children),
       ]),
+      m('#notification-container'),
+      m('#modal-container'),
+    ],
   };
 };
 

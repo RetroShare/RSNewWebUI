@@ -435,24 +435,6 @@ const SearchBar = () => {
   };
 };
 
-function popupMessageCompose(message) {
-  const container = document.getElementById('modal-container');
-  container.style.display = 'block';
-  m.render(
-    container,
-    m('.modal-content[id=composepopup]', [
-      m(
-        'button.red.close-btn',
-        {
-          onclick: () => (container.style.display = 'none'),
-        },
-        m('i.fas.fa-times')
-      ),
-      message,
-    ])
-  );
-}
-
 const activeSideLink = {
   sideactive: 0,
   quicksideactive: -1,
@@ -519,7 +501,6 @@ module.exports = {
   SearchBar,
   Sidebar,
   SidebarQuickView,
-  popupMessageCompose,
   RS_MSG_BOXMASK,
   RS_MSG_INBOX,
   RS_MSG_SENTBOX,
