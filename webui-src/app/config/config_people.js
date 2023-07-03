@@ -38,76 +38,77 @@ const Reputation = () => {
     },
     view: (vnode) =>
       m('.widget', [
-        m('h3', 'Reputation'),
-        m('hr'),
-        m('.grid-2col', [
-          m('p', 'Use "positive" as the default opinion for contacts(instead of neutral):'),
-          m('input[type=checkbox]', {
-            checked: usePositiveDefault,
-            oninput: (e) => {
-              usePositiveDefault = e.target.checked;
-              rs.rsJsonApiRequest(
-                '/rsreputations/setAutoPositiveOpinionForContacts',
-                {
-                  b: usePositiveDefault,
-                },
-                () => {}
-              );
-            },
-          }),
-          m('p', 'Automatically add identities owned by friend nodes to my contacts:'),
-          m('input[type=checkbox]', {
-            checked: addFriendIdAsContacts,
-            oninput: (e) => {
-              addFriendIdAsContacts = e.target.checked;
-              rs.rsJsonApiRequest(
-                '/rsIdentity/setAutoAddFriendIdsAsContact',
-                {
-                  enabled: addFriendIdAsContacts,
-                },
-                () => {}
-              );
-            },
-          }),
-          m('p', 'Difference in votes (+/-) to rate an ID positively:'),
-          m('input[type=number]', {
-            oninput: (e) => (positiveThreshold = e.target.value),
-            value: positiveThreshold,
-            onchange: () =>
-              rs.rsJsonApiRequest(
-                '/rsreputations/setThresholdForRemotelyPositiveReputation',
-                {
-                  thresh: positiveThreshold,
-                },
-                () => {}
-              ),
-          }),
-          m('p', 'Difference in votes (+/-) to rate an ID negatively:'),
-          m('input[type=number]', {
-            oninput: (e) => (negativeThreshold = e.target.value),
-            value: negativeThreshold,
-            onchange: () =>
-              rs.rsJsonApiRequest(
-                '/rsreputations/setThresholdForRemotelyNegativeReputation',
-                {
-                  thresh: negativeThreshold,
-                },
-                () => {}
-              ),
-          }),
-          m('p', 'Delete banned identities after(in days, 0 means indefinitely):'),
-          m('input[type=number]', {
-            oninput: (e) => (deleteBannedAfter = e.target.value),
-            value: deleteBannedAfter,
-            onchange: () =>
-              rs.rsJsonApiRequest(
-                '/rsIdentity/setDeleteBannedNodesThreshold',
-                {
-                  days: deleteBannedAfter,
-                },
-                () => {}
-              ),
-          }),
+        m('.widget__heading', m('h3', 'Reputation')),
+        m('.widget__body', [
+          m('.grid-2col', [
+            m('p', 'Use "positive" as the default opinion for contacts(instead of neutral):'),
+            m('input[type=checkbox]', {
+              checked: usePositiveDefault,
+              oninput: (e) => {
+                usePositiveDefault = e.target.checked;
+                rs.rsJsonApiRequest(
+                  '/rsreputations/setAutoPositiveOpinionForContacts',
+                  {
+                    b: usePositiveDefault,
+                  },
+                  () => {}
+                );
+              },
+            }),
+            m('p', 'Automatically add identities owned by friend nodes to my contacts:'),
+            m('input[type=checkbox]', {
+              checked: addFriendIdAsContacts,
+              oninput: (e) => {
+                addFriendIdAsContacts = e.target.checked;
+                rs.rsJsonApiRequest(
+                  '/rsIdentity/setAutoAddFriendIdsAsContact',
+                  {
+                    enabled: addFriendIdAsContacts,
+                  },
+                  () => {}
+                );
+              },
+            }),
+            m('p', 'Difference in votes (+/-) to rate an ID positively:'),
+            m('input[type=number]', {
+              oninput: (e) => (positiveThreshold = e.target.value),
+              value: positiveThreshold,
+              onchange: () =>
+                rs.rsJsonApiRequest(
+                  '/rsreputations/setThresholdForRemotelyPositiveReputation',
+                  {
+                    thresh: positiveThreshold,
+                  },
+                  () => {}
+                ),
+            }),
+            m('p', 'Difference in votes (+/-) to rate an ID negatively:'),
+            m('input[type=number]', {
+              oninput: (e) => (negativeThreshold = e.target.value),
+              value: negativeThreshold,
+              onchange: () =>
+                rs.rsJsonApiRequest(
+                  '/rsreputations/setThresholdForRemotelyNegativeReputation',
+                  {
+                    thresh: negativeThreshold,
+                  },
+                  () => {}
+                ),
+            }),
+            m('p', 'Delete banned identities after(in days, 0 means indefinitely):'),
+            m('input[type=number]', {
+              oninput: (e) => (deleteBannedAfter = e.target.value),
+              value: deleteBannedAfter,
+              onchange: () =>
+                rs.rsJsonApiRequest(
+                  '/rsIdentity/setDeleteBannedNodesThreshold',
+                  {
+                    days: deleteBannedAfter,
+                  },
+                  () => {}
+                ),
+            }),
+          ]),
         ]),
       ]),
   };

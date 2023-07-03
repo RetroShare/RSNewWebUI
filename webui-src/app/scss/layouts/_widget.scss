@@ -1,17 +1,55 @@
 .widget {
-  margin: 1em;
-  padding: 1em;
-  border-radius: 10px;
+  height: 100%;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   background-color: white;
+  border-radius: 6px;
+  overflow: auto;
+  & .top-heading {
+    display: flex;
+    justify-content: space-between;
+  }
+  &__heading {
+    padding-bottom: 0.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #999;
+  }
+  &__body {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    &-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      & .action {
+        display: flex;
+        gap: 0.5rem;
+      }
+    }
+    &-content {
+      height: 100%;
+      overflow: auto;
+    }
+    &-box {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+  & > p {
+    font-size: 0.9em;
+    color: #666;
+  }
+  & .tooltip {
+    float: right;
+  }
+  &-half {
+    max-width: 50%;
+  }
 }
-.widget > p {
-  font-size: 0.9em;
-  color: #666;
-}
-.widget .tooltip {
-  float: right;
-}
-.widget-half {
-  max-width: 50%;
-}
-

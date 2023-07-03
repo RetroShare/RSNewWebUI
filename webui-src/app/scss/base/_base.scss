@@ -1,6 +1,7 @@
 /******************************
 General site-wide rules
 ******************************/
+@use '../abstracts/colors' as *;
 
 #main {
   height: 100vh;
@@ -9,18 +10,18 @@ General site-wide rules
 /* Main base div for tabs used by m.route */
 .content {
   height: 100%;
+  display: flex;
   overflow: hidden;
 }
 
 /* Main tab content */
-#tab-content {
+.tab-content {
   height: 100%;
-  background-color: #eef3f6;
+  width: 100%;
+  display: flex;
+  background-color: $light-color;
+  animation: fadein 0.3s;
   overflow: auto;
-}
-/* Individual tab pages */
-.tab-page {
-  animation: fadein 0.5s;
 }
 
 input[type='text'],
@@ -34,25 +35,29 @@ textarea {
   font-weight: 400;
   border: 1px solid #ccc;
   border-radius: 5px;
-  padding: 0.5rem;
+  padding: 0.4rem 0.8rem;
   /* Disable chromium's focused element hinting*/
   outline: transparent;
 }
-input:focus {
-  border: 1px solid #3ba4d7;
-  box-shadow: inset 0 0 5px #ccc;
+input {
+  &:focus {
+    border: 1px solid #3ba4d7;
+    box-shadow: inset 0 0 5px #ccc;
+  }
+  &.stretched {
+    width: 90%;
+  }
+  &.small {
+    max-width: 70%;
+    padding: 0.1rem;
+  }
+  &.searchbar {
+    width: 40%;
+  }
 }
-input.stretched {
-  width: 90%;
-}
-input.small {
-  max-width: 70%;
-  font-size: 1em;
-  padding: 0.1em;
-}
-input.searchbar {
-  display: block;
-  margin: 0.9em 0 0 0.9em;
+
+a {
+  cursor: pointer;
 }
 
 table {
@@ -62,21 +67,18 @@ table {
   border-collapse: collapse;
   text-align: center;
   color: #333;
-  font-size: 1.2em;
-}
-table th {
-  font-weight: 100;
-  font-size: 1.3em;
-  color: black;
-  border-bottom: 2px solid #eee;
-}
-table tr {
-  border-bottom: 1px solid #eee;
+  font-size: 1.125rem;
+  & th {
+    font-size: 1.125rem;
+    color: black;
+    border-bottom: 2px solid #eee;
+  }
+  & tr {
+    border-bottom: 1px solid #eee;
+  }
 }
 
 h3 {
-  font-size: 2em;
-  font-weight: 100;
   color: #444;
 }
 hr {
@@ -89,9 +91,9 @@ hr {
   grid-template-columns: auto auto;
   gap: 1rem;
   justify-content: start;
-}
-.grid-2col input[type='checkbox'] {
-  margin-top: 20px;
+  & input[type='checkbox'] {
+    margin-top: 20px;
+  }
 }
 
 .error {

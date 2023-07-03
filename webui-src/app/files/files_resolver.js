@@ -11,12 +11,14 @@ const friendfile = require('files/friends_files');
 
 const MyFiles = () => {
   return {
-    view: (vnode) => [
-      m(util.SearchBar, {
-        list: Object.assign({}, downloads.list, uploads.list),
-      }),
-      m(downloads.Component),
-      m(uploads.Component),
+    view: () => [
+      m('.widget__heading', [
+        m('h3', 'File Transfers'),
+        m(util.SearchBar, {
+          list: Object.assign({}, downloads.list, uploads.list),
+        }),
+      ]),
+      m('.widget__body', [m(downloads.Component), m(uploads.Component)]),
     ],
   };
 };
@@ -29,14 +31,13 @@ const sections = {
 };
 
 const Layout = {
-  view: (vnode) =>
-    m('.tab-page', [
-      m(widget.Sidebar, {
-        tabs: Object.keys(sections),
-        baseRoute: '/files/',
-      }),
-      m('.file-node-panel', vnode.children),
-    ]),
+  view: (vnode) => [
+    m(widget.Sidebar, {
+      tabs: Object.keys(sections),
+      baseRoute: '/files/',
+    }),
+    m('.node-panel', m('.widget', vnode.children)),
+  ],
 };
 
 module.exports = {

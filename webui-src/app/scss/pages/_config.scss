@@ -1,29 +1,15 @@
-@use '../abstracts/variables' as *;
-
-.config-node-panel {
-  position: relative;
-  bottom: 320px;
-  margin-left: 200px;
-  animation: fadein 0.5s;
-}
+@use '../abstracts/colors' as *;
 
 .mail {
   .permission-flag {
+    margin-bottom: 1rem;
     display: flex;
     gap: 1rem;
   }
   &-tags {
-    padding: 8px;
+    padding: 0.5rem;
     border: 1px solid transparentize($dark-color, 0.8);
     border-radius: 6px;
-    &__heading {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      & button {
-        height: max-content;
-      }
-    }
     &__container {
       display: flex;
       flex-direction: column;
@@ -38,12 +24,12 @@
           border: none;
         }
         &__color {
-          width: 20px;
-          height: 20px;
+          width: 1.25rem;
+          height: 1.25rem;
           aspect-ratio: 1;
         }
         &__name {
-          font-size: 1.25rem;
+          font-size: 1.125rem;
         }
         &__modify {
           margin-left: auto;
@@ -53,6 +39,10 @@
         }
         &:hover {
           background-color: $light-color;
+        }
+        & button,
+        & button.red {
+          padding: 0.25rem 0.6rem;
         }
       }
     }
@@ -70,7 +60,7 @@
   margin: 0;
   padding-left: 1rem;
   height: 100px;
-  overflow: hidden scroll;
+  overflow: hidden auto;
   &::-webkit-scrollbar {
     display: none;
   }
@@ -101,4 +91,10 @@
       }
     }
   }
+}
+
+.config-files {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }

@@ -1,56 +1,47 @@
-@use '../abstracts/variables' as *;
+@use '../abstracts/colors' as *;
 
 .file-view {
-  width: 90%;
-  border-radius: 10px;
+  width: 100%;
+  padding: 1rem;
+  margin-top: 1.5rem;
+  border-radius: 8px;
   border: 1px solid #ccc;
-  margin-top: 2em;
-  padding: 1em;
   animation: fadein 0.5s;
-}
-.file-view > p {
-  margin: 0.5em;
-  font-size: 1.1em;
-}
-.file-view > span {
-  margin: 0 1em;
-  font-size: 0.9em;
-}
-.file-view > .progressbar {
-  width: 70%;
-  margin-bottom: 5px;
-}
-.file-view button {
-  float: right;
-  margin-left: 15px;
-}
-.file-view select {
-  float: right;
-  margin-left: 15px;
-}
-.file-view label {
-  float: right;
-  margin-left: 15px;
-}
-span > i {
-  margin-right: 5px;
-}
-
-.filestat {
-  min-width: 7em;
-  display: inline-block;
-}
-
-.searchbar {
-  margin: 5px;
-  width: 40%;
-  box-shadow: 0 0 3px #aaa;
-}
-.file-node-panel {
-  position: relative;
-  bottom: 200px;
-  margin-left: 200px;
-  animation: fadein 0.5s;
+  &__heading {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    &-chunk {
+      display: flex;
+      gap: 1rem;
+    }
+  }
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    &-details {
+      display: flex;
+      align-items: center;
+      &-stat {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        & span > i {
+          margin-right: 0.5rem;
+        }
+      }
+      &-action {
+        display: flex;
+        height: 100%;
+        gap: 1rem;
+        & button,
+        & button.red {
+          padding: 0.25rem 0.75rem;
+        }
+      }
+    }
+  }
 }
 
 table.myfiles td {
@@ -89,10 +80,8 @@ table.friendsfiles td:nth-child(2) {
   gap: 8px;
   border: 1px solid transparentize($dark-color, 0.8);
   border-radius: 6px;
-
-  h4 {
-    font-size: 1.25rem;
-  }
+  height: 100%;
+  overflow: auto;
 
   &__keywords {
     flex-basis: 15%;
@@ -116,6 +105,8 @@ table.friendsfiles td:nth-child(2) {
 
   &__results {
     flex-basis: 85%;
+    height: 100%;
+    overflow: auto;
 
     & .results-container {
       & .results-header {
@@ -144,6 +135,8 @@ table.friendsfiles td:nth-child(2) {
         }
       }
       & .results {
+        height: 100%;
+        overflow: auto;
         & tr {
           display: flex;
           & .results {
@@ -171,9 +164,17 @@ table.friendsfiles td:nth-child(2) {
           }
         }
       }
-      & button {
-        font-size: 1rem;
-      }
     }
+  }
+}
+
+.search-form {
+  display: flex;
+  width: 40%;
+  input {
+    width: 100%;
+  }
+  button {
+    margin-left: 0.5rem;
   }
 }

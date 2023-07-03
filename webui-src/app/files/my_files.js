@@ -21,7 +21,8 @@ function displayfiles() {
                 class: 'fa-rotate-' + (parStruct.showChild ? '90' : '0'),
                 style: 'margin-top:12px',
                 onclick: () => {
-                  if (!loaded) {  // if it is not already retrieved
+                  if (!loaded) {
+                    // if it is not already retrieved
                     parStruct.details.children.map(async (child) => {
                       const res = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
                         handle: child.handle.xint64,
@@ -43,7 +44,6 @@ function displayfiles() {
               position: 'relative',
               '--replyDepth': v.attrs.replyDepth,
               left: `calc(30px*${v.attrs.replyDepth})`,
-
             },
           },
           parStruct.details.name
@@ -52,7 +52,8 @@ function displayfiles() {
       ]),
       parStruct.showChild &&
         childrenList.map((child) =>
-          m(displayfiles, { // recursive call
+          m(displayfiles, {
+            // recursive call
             par_directory: { details: child, showChild: false },
             replyDepth: v.attrs.replyDepth + 1,
           })
@@ -65,13 +66,12 @@ const Layout = () => {
   //  let root_handle;
   let parent;
   return {
-    oninit: async () => {
-      const res = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {});
-      parent = res;
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {}).then((res) => (parent = res));
     },
-    view: (v) => [
-      m('.widget', [
-        m('h3', 'My Files'),
+    view: () => [
+      m('.widget__heading', [m('h3', 'My Files')]),
+      m('.widget__body', [
         m(
           util.MyFilesTable,
           m(

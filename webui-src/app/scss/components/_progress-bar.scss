@@ -1,23 +1,26 @@
+@use '../abstracts/colors' as *;
+
 .progressbar {
   width: 100%;
-  border-radius: 500px;
-  background-color: #eef3f6;
+  height: 2rem;
   position: relative;
-  text-align: left;
-}
-.progressbar:before {
-  position: absolute;
   text-align: center;
-  left: 0;
-  right: 0;
+  background-color: $light-color;
+  border-radius: 20px;
+  overflow: hidden;
+  &-status {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    color: $dark-color;
+    background-color: $primary-color;
+  }
+  &-percent {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: fit-content;
+    height: fit-content;
+  }
 }
-.progress-status {
-  display: inline-block;
-  height: 100%;
-  padding: 5px;
-  border-radius: 500px;
-  color: #000;
-  background-color: #3ba4d7;
-  text-align: center;
-}
-

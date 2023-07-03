@@ -61,60 +61,57 @@ const Layout = () => {
     },
     // onupdate: getChannels.load,
     view: (vnode) =>
-      m('.tab-page', [
-        Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId')
-          ? ''
-          : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId')
-          ? m(util.SearchBar, {
-              category: 'posts',
-              channelId: vnode.attrs.pathInfo.mGroupId,
-            })
-          : m(util.SearchBar, {
-              category: 'channels',
-            }),
-        m(
-          'button',
-          {
-            style: { fontSize: '1.2em', width: '200px' },
-            onclick: () =>
-              ownId &&
-              widget.popupMessage(
-                m(viewUtil.createchannel, {
-                  authorId: ownId,
-                })
-              ),
-          },
-          'Create Channel'
-        ),
-        m(widget.Sidebar, {
-          tabs: Object.keys(sections),
-          baseRoute: '/channels/',
-        }),
-        m(
-          '.channel-node-panel',
-
-          Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId') // posts
-            ? m(viewUtil.PostView, {
-                msgId: vnode.attrs.pathInfo.mMsgId,
+      m('.widget', [
+        m('.top-heading', [
+          m(
+            'button',
+            {
+              onclick: () =>
+                ownId &&
+                widget.popupMessage(
+                  m(viewUtil.createchannel, {
+                    authorId: ownId,
+                  })
+                ),
+            },
+            'Create Channel'
+          ),
+          Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId')
+            ? ''
+            : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId')
+            ? m(util.SearchBar, {
+                category: 'posts',
                 channelId: vnode.attrs.pathInfo.mGroupId,
               })
-            : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId') // channels view
-            ? m(viewUtil.ChannelView, {
-                id: vnode.attrs.pathInfo.mGroupId,
-              })
-            : m(sections[vnode.attrs.pathInfo.tab], {
-                // subscribed, all, popular, other
-                list: getChannels[vnode.attrs.pathInfo.tab],
-              })
-        ),
+            : m(util.SearchBar, {
+                category: 'channels',
+              }),
+        ]),
+        Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId') // posts
+          ? m(viewUtil.PostView, {
+              msgId: vnode.attrs.pathInfo.mMsgId,
+              channelId: vnode.attrs.pathInfo.mGroupId,
+            })
+          : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId') // channels view
+          ? m(viewUtil.ChannelView, {
+              id: vnode.attrs.pathInfo.mGroupId,
+            })
+          : m(sections[vnode.attrs.pathInfo.tab], {
+              // subscribed, all, popular, other
+              list: getChannels[vnode.attrs.pathInfo.tab],
+            }),
       ]),
   };
 };
 
 module.exports = {
   view: (vnode) => {
-    return m(Layout, {
-      pathInfo: vnode.attrs,
-    });
+    return [
+      m(widget.Sidebar, {
+        tabs: Object.keys(sections),
+        baseRoute: '/channels/',
+      }),
+      m('.node-panel', m(Layout, { pathInfo: vnode.attrs })),
+    ];
   },
 };

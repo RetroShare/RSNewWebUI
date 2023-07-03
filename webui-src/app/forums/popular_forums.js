@@ -4,9 +4,8 @@ const util = require('forums/forums_util');
 const Layout = () => {
   return {
     view: (v) => [
-      m('.widget', [
-        m('h3', 'Popular Forums'),
-        m('hr'),
+      m('.widget__heading', m('h3', 'Popular Forums')),
+      m('.widget__body', [
         m(
           util.ForumTable,
           m('tbody', [

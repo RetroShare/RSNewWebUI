@@ -192,39 +192,30 @@ function actionButton(file, action) {
 const ProgressBar = () => {
   return {
     view: (v) =>
-      m(
-        '.progressbar',
-        {
+      m('.progressbar', [
+        m('span.progressbar-status', {
           style: {
-            content: v.attrs.rate + '%',
+            width: v.attrs.rate + '%',
           },
-        },
-        m(
-          'span.progress-status',
-          {
-            style: {
-              width: v.attrs.rate + '%',
-            },
-          },
-          v.attrs.rate.toPrecision(3) + '%'
-        )
-      ),
+        }),
+        m('span.progressbar-percent', v.attrs.rate.toPrecision(3) + '%'),
+      ]),
   };
 };
 
-const chunkStrats = [
-  'CHUNK_STRATEGY_STREAMING',
-  'CHUNK_STRATEGY_RANDOM',
-  'CHUNK_STRATEGY_PROGRESSIVE',
-];
-const chunkStratsOptions = ['Streaming', 'Random', 'Progressive'];
+const chunkStrats = {
+  0: 'Streaming', // CHUNK_STRATEGY_STREAMING
+  1: 'Random', // CHUNK_STRATEGY_RANDOM
+  2: 'Progressive', // CHUNK_STRATEGY_PROGRESSIVE
+};
 // rstypes.h :: 366
 
 const File = () => {
   let chunkStrat;
   return {
-    view: (v) =>
-      m(
+    view: (v) => {
+      chunkStrat = v.attrs && v.attrs.strategy;
+      return m(
         '.file-view',
         {
           key: v.attrs.info.hash,
@@ -233,62 +224,80 @@ const File = () => {
           },
         },
         [
-          m('p', v.attrs.info.fname),
-          v.attrs.direction === 'up' || v.attrs.info.downloadStatus === FT_STATE_COMPLETE
-            ? []
-            : [
-                actionButton(v.attrs.info, 'cancel'),
-                actionButton(
-                  v.attrs.info,
-                  v.attrs.info.downloadStatus === FT_STATE_PAUSED ? 'resume' : 'pause'
-                ),
-
+          m('.file-view__heading', [
+            m('h6', v.attrs.info.fname),
+            !(v.attrs.direction === 'up') && [
+              m('.file-view__heading-chunk', [
+                m('label[for=chunkTag]', 'Set Chunk Strategy: '),
                 m(
                   'select[id=chunkTag]',
                   {
                     value: chunkStrat,
-                    onchange: async (e) => {
-                      chunkStrat = chunkStrats[e.target.selectedIndex];
-                      const res = await rs.rsJsonApiRequest('/rsFiles/setChunkStrategy', {
+                    onchange: (e) => {
+                      chunkStrat = e.target.selectedIndex;
+                      rs.rsJsonApiRequest('/rsFiles/setChunkStrategy', {
                         hash: v.attrs.info.hash,
                         newStrategy: chunkStrat,
                       });
                     },
                   },
-                  [chunkStratsOptions.map((opt) => m('option', { value: opt }, opt))]
-                ),
-                m('label[for=chunkTag]', 'Set Chunk Strategy: '),
-              ],
-          v.attrs.direction === 'up'
-            ? []
-            : m(ProgressBar, {
-                rate: (v.attrs.transferred / v.attrs.info.size.xint64) * 100,
-              }),
-          m('span.filestat', m('i.fas.fa-download'), makeFriendlyUnit(v.attrs.transferred)),
-
-          m('span.filestat', m('i.fas.fa-file'), makeFriendlyUnit(v.attrs.info.size.xint64)),
-          m(
-            'span.filestat',
-            m('i.fas.fa-arrow-circle-' + v.attrs.direction),
-            makeFriendlyUnit(v.attrs.info.tfRate * 1024) + '/s'
-          ),
-          v.attrs.direction === 'up'
-            ? []
-            : m('span.filestat', { title: 'time remaining' }, [
-                m('i.fas.fa-clock'),
-                calcRemainingTime(
-                  v.attrs.info.size.xint64 - v.attrs.transferred,
-                  v.attrs.info.tfRate
+                  [
+                    Object.keys(chunkStrats).map((opt) =>
+                      m('option', { value: opt }, chunkStrats[opt])
+                    ),
+                  ]
                 ),
               ]),
-          m(
-            'span.filestat',
-            { title: 'peers' },
-            [m('i.fas.fa-users'), v.attrs.info.peers.length],
-            v.attrs.parts.reduce((a, e) => [...a, ' - ' + makeFriendlyUnit(e)], [])
-          ),
+            ],
+          ]),
+          m('.file-view__body', [
+            m(
+              '.file-view__body-progress',
+              !(v.attrs.direction === 'up') &&
+                m(ProgressBar, {
+                  rate: (v.attrs.transferred / v.attrs.info.size.xint64) * 100,
+                })
+            ),
+            m('.file-view__body-details', [
+              m('.file-view__body-details-stat', [
+                m('span', m('i.fas.fa-download'), makeFriendlyUnit(v.attrs.transferred)),
+
+                m('span', m('i.fas.fa-file'), makeFriendlyUnit(v.attrs.info.size.xint64)),
+                m(
+                  'span',
+                  m('i.fas.fa-arrow-circle-' + v.attrs.direction),
+                  makeFriendlyUnit(v.attrs.info.tfRate * 1024) + '/s'
+                ),
+                !(v.attrs.direction === 'up') &&
+                  m('span', { title: 'time remaining' }, [
+                    m('i.fas.fa-clock'),
+                    calcRemainingTime(
+                      v.attrs.info.size.xint64 - v.attrs.transferred,
+                      v.attrs.info.tfRate
+                    ),
+                  ]),
+                m(
+                  'span',
+                  { title: 'peers' },
+                  [m('i.fas.fa-users'), v.attrs.info.peers.length],
+                  v.attrs.parts.reduce((a, e) => [...a, ' - ' + makeFriendlyUnit(e)], [])
+                ),
+              ]),
+              m(
+                '.file-view__body-details-action',
+                !(v.attrs.info.downloadStatus === FT_STATE_COMPLETE) && [
+                  actionButton(
+                    v.attrs.info,
+                    v.attrs.info.downloadStatus === FT_STATE_PAUSED ? 'resume' : 'pause'
+                  ),
+                  actionButton(v.attrs.info, 'cancel'),
+                ]
+              ),
+            ]),
+          ]),
         ]
-      ),
+      );
+    },
   };
 };
 
@@ -296,7 +305,7 @@ const SearchBar = () => {
   let searchString = '';
   return {
     view: (v) =>
-      m('input[type=text][placeholder=SearchDownloads].searchbar', {
+      m('input[type=text][placeholder=Search].searchbar', {
         value: searchString,
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();

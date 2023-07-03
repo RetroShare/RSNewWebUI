@@ -1,7 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const util = require('mail/mail_util');
-const widget = require('widgets');
 const peopleUtil = require('people/people_util');
 const compose = require('mail/mail_compose');
 
@@ -116,9 +115,9 @@ const Layout = {
     };
 
     return [
-      m('.tab-page', [
+      m('.side-bar', [
         m(
-          'button[id=composebtn]',
+          'button.mail-compose-btn',
           {
             onclick: () =>
               composeData.allUsers &&
@@ -129,19 +128,6 @@ const Layout = {
           },
           'Compose'
         ),
-        m(
-          'select[id=tags]',
-          {
-            value: tagselect.showval,
-            onchange: (e) => {
-              tagselect.showval = tagselect.opts[e.target.selectedIndex];
-            },
-          },
-          [tagselect.opts.map((o) => m('option', { value: o }, o.toLocaleString()))]
-        ),
-        m(util.SearchBar, {
-          list: {},
-        }),
         m(util.Sidebar, {
           tabs: Object.keys(sections),
           size: sectionsSize,
@@ -152,8 +138,28 @@ const Layout = {
           size: sectionsquickviewSize,
           baseRoute: '/mail/',
         }),
-        m('.mail-node-panel', vnode.children),
       ]),
+      m(
+        '.node-panel',
+        m('.widget', [
+          m('.top-heading', [
+            m(
+              'select.mail-tag',
+              {
+                value: tagselect.showval,
+                onchange: (e) => {
+                  tagselect.showval = tagselect.opts[e.target.selectedIndex];
+                },
+              },
+              [tagselect.opts.map((o) => m('option', { value: o }, o.toLocaleString()))]
+            ),
+            m(util.SearchBar, {
+              list: {},
+            }),
+          ]),
+          vnode.children,
+        ])
+      ),
     ];
   },
 };

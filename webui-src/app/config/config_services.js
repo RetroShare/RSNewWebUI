@@ -56,28 +56,28 @@ const MyServices = {
   },
   view() {
     return m('.widget', [
-      m('h3', 'My Services'),
-      m('hr'),
-      m('table', [
-        m('tr', [m('th', 'Name'), m('th', 'ID'), m('th', 'Version'), m('th', 'Allow by default')]),
-        servicesInfo.list.map((data) =>
-          m(Service, {
-            data,
-          })
-        ),
+      m('.widget__heading', m('h3', 'My Services')),
+      m('.widget__body', [
+        m('table', [
+          m('tr', [
+            m('th', 'Name'),
+            m('th', 'ID'),
+            m('th', 'Version'),
+            m('th', 'Allow by default'),
+          ]),
+          servicesInfo.list.map((data) =>
+            m(Service, {
+              data,
+            })
+          ),
+        ]),
       ]),
     ]);
   },
 };
 
-const Layout = () => {
-  return {
-    view: (vnode) => [m(MyServices)],
-  };
-};
-
 module.exports = {
-  view: (vnode) => {
-    return m(Layout);
+  view: () => {
+    return m(MyServices);
   },
 };

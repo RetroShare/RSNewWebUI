@@ -237,145 +237,163 @@ const MessageView = () => {
         (data) => (details = { ...details, avatar: data.details.mAvatar })
       );
     },
-    view: (v) =>
+    view: () =>
       m(
-        '.widget.msgview',
+        '.msg-view',
         {
           key: details.msgId,
         },
         [
-          m(
-            'a[title=Back]',
-            {
-              onclick: () =>
-                m.route.set('/mail/:tab', {
-                  tab: m.route.param().tab,
-                }),
-            },
-            m('i.fas.fa-arrow-left')
-          ),
-          m('h3', details.title),
-          m('.msgHeader', [
-            details.from &&
-              m(peopleUtil.UserAvatar, {
-                avatar: details.avatar,
-                firstLetter: rs.userList.userMap[details.from._addr_string]
-                  ? rs.userList.userMap[details.from._addr_string].slice(0, 1).toUpperCase()
-                  : '',
-              }),
-            m('.msgHeaderDetails', [
-              details.from &&
-                m('from', { style: { display: 'block ruby' } }, [
-                  m('p', { style: { fontWeight: 'bold' } }, 'From: '),
-                  rs.userList.userMap[details.from._addr_string],
-                ]),
-              toList &&
-                Object.keys(toList).length > 0 &&
-                // TODO: optimize javascript for show-more and show-less working
-                m('to', { style: { display: 'block ruby' } }, [
-                  m('p', { style: { fontWeight: 'bold' } }, 'To: '),
-                  m(
-                    'div.truncate[id=truncate]',
-                    Object.keys(toList).map((key, index) => m('p', rs.userList.userMap[key] + ', '))
-                  ),
-                  m(
-                    'button[id=show-more]',
-                    {
-                      style: {
-                        display: Object.keys(toList).length > 10 ? 'block' : 'none',
-                      },
-                      onclick: () => {
-                        document.querySelector('#show-more').style.display = 'none';
-                        document.querySelector('#truncate').style.height = 'max-content';
-                        document.querySelector('#show-less').style.display = 'block';
-                      },
-                    },
-                    'Show More'
-                  ),
-                  m(
-                    'button[id=show-less][style="display: none;"]',
-                    {
-                      onclick: () => {
-                        document.querySelector('#show-more').style.display = 'block';
-                        document.querySelector('#truncate').style.height = '22px';
-                        document.querySelector('#show-less').style.display = 'none';
-                      },
-                    },
-                    'Show Less'
-                  ),
-                ]),
-              ccList &&
-                Object.keys(ccList).length > 0 &&
-                m('cc', { style: { display: 'block ruby' } }, [
-                  m('p', { style: { fontWeight: 'bold' } }, 'CC: '),
-                  Object.keys(ccList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
-                ]),
-              bccList &&
-                Object.keys(bccList).length > 0 &&
-                m('bcc', { style: { display: 'block ruby' } }, [
-                  m('p', { style: { fontWeight: 'bold' } }, 'BCC: '),
-                  Object.keys(bccList).map((key, index) => m('p', rs.userList.userMap[key] + ', ')),
-                ]),
+          m('.msg-view-nav', [
+            m(
+              'a[title=Back]',
+              {
+                onclick: () =>
+                  m.route.set('/mail/:tab', {
+                    tab: m.route.param().tab,
+                  }),
+              },
+              m('i.fas.fa-arrow-left')
+            ),
+            m('.msg-view-nav__action', [
+              m('button', 'Reply'),
+              m('button', 'Reply All'),
+              m('button', 'Forward'),
+              m(
+                'button',
+                {
+                  onclick: () =>
+                    widget.popupMessage([
+                      m('p', 'Are you sure you want to delete this mail?'),
+                      m(
+                        'button',
+                        {
+                          onclick: async () => {
+                            rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', {
+                              msgId: details.msgId,
+                              bTrash: true,
+                            });
+                            const res = await rs.rsJsonApiRequest('/rsMsgs/MessageDelete', {
+                              msgId: details.msgId,
+                            });
+                            res.body.retval
+                              ? widget.popupMessage([
+                                  m('h3', 'Success'),
+                                  m('hr'),
+                                  m('p', 'Mail Deleted.'),
+                                ])
+                              : widget.popupMessage([
+                                  m('h3', 'Error'),
+                                  m('hr'),
+                                  m('p', res.body.errorMessage),
+                                ]);
+                            m.redraw();
+                            m.route.set('/mail/:tab', {
+                              tab: m.route.param().tab,
+                            });
+                          },
+                        },
+                        'Delete'
+                      ),
+                    ]),
+                },
+                'Delete'
+              ),
             ]),
           ]),
-          m('button', 'Reply'),
-          m('button', 'Reply All'),
-          m('button', 'Forward'),
-          m(
-            'button',
-            {
-              onclick: () =>
-                widget.popupMessage([
-                  m('p', 'Are you sure you want to delete this mail?'),
-                  m(
-                    'button',
-                    {
-                      onclick: async () => {
-                        rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', {
-                          msgId: details.msgId,
-                          bTrash: true,
-                        });
-                        const res = await rs.rsJsonApiRequest('/rsMsgs/MessageDelete', {
-                          msgId: details.msgId,
-                        });
-                        res.body.retval
-                          ? widget.popupMessage([
-                              m('h3', 'Success'),
-                              m('hr'),
-                              m('p', 'Mail Deleted.'),
-                            ])
-                          : widget.popupMessage([
-                              m('h3', 'Error'),
-                              m('hr'),
-                              m('p', res.body.errorMessage),
-                            ]);
-                        m.redraw();
-                        m.route.set('/mail/:tab', {
-                          tab: m.route.param().tab,
-                        });
+          m('.msg-view__header', [
+            m('h3', details.title),
+            m('.msg-details', [
+              details.from &&
+                m(peopleUtil.UserAvatar, {
+                  avatar: details.avatar,
+                  firstLetter: rs.userList.userMap[details.from._addr_string]
+                    ? rs.userList.userMap[details.from._addr_string].slice(0, 1).toUpperCase()
+                    : '',
+                }),
+              m('.msg-details__info', [
+                details.from &&
+                  m('.msg-details__info-item', [
+                    m('b', 'From: '),
+                    rs.userList.userMap[details.from._addr_string] || 'Unknown',
+                  ]),
+                toList &&
+                  Object.keys(toList).length > 0 &&
+                  // TODO: optimize javascript for show-more and show-less working
+                  m('.msg-details__info-item', [
+                    m('b', 'To: '),
+                    m(
+                      '#truncate',
+                      Object.keys(toList).map((key, index) =>
+                        m('span', `${rs.userList.userMap[key]}, `)
+                      )
+                    ),
+                    m(
+                      'button[id=show-more]',
+                      {
+                        style: {
+                          display: Object.keys(toList).length > 10 ? 'block' : 'none',
+                        },
+                        onclick: () => {
+                          document.querySelector('#show-more').style.display = 'none';
+                          document.querySelector('#truncate').style.height = '6rem';
+                          document.querySelector('#truncate').style.overflow = 'auto';
+                          document.querySelector('#show-less').style.display = 'block';
+                        },
                       },
-                    },
-                    'Delete'
-                  ),
-                ]),
-            },
-            'Delete'
-          ),
-          m('hr'),
+                      '...'
+                    ),
+                    m(
+                      'button[id=show-less][style="display: none;"]',
+                      {
+                        onclick: () => {
+                          document.querySelector('#show-more').style.display = 'block';
+                          document.querySelector('#truncate').style.height = '1.75rem';
+                          document.querySelector('#truncate').style.overflow = 'hidden';
+                          document.querySelector('#show-less').style.display = 'none';
+                        },
+                      },
+                      'less'
+                    ),
+                  ]),
+                ccList &&
+                  Object.keys(ccList).length > 0 &&
+                  m('.msg-details__info-item', [
+                    m('b', 'CC: '),
+                    Object.keys(ccList).map((key, index) =>
+                      m('p', `${rs.userList.userMap[key]}, `)
+                    ),
+                  ]),
+                bccList &&
+                  Object.keys(bccList).length > 0 &&
+                  m('.msg-details__info-item', [
+                    m('b', 'BCC: '),
+                    Object.keys(bccList).map((key, index) =>
+                      m('p', `${rs.userList.userMap[key]}, `)
+                    ),
+                  ]),
+              ]),
+            ]),
+          ]),
           m(
-            'iframe[title=message].msg',
-            {
-              srcdoc: message,
-            },
-            message
+            '.msg-view__body',
+            m(
+              'iframe[title=message]',
+              {
+                srcdoc: message,
+              },
+              message
+            )
           ),
-          files.length > 0 && [
-            m('hr'),
-            m('h3', 'Attachments'),
-            m(AttachmentSection, {
-              files,
-            }),
-          ],
+          files.length > 0 &&
+            m('.msg-view__attachment', [
+              m('h3', 'Attachments'),
+              m('.msg-view__attachment-items', [
+                m(AttachmentSection, {
+                  files,
+                }),
+              ]),
+            ]),
         ]
       ),
   };
@@ -401,7 +419,7 @@ const SearchBar = () => {
   let searchString = '';
   return {
     view: (v) =>
-      m('input[type=text][id=searchmail][placeholder=Search Subject].searchbar', {
+      m('input[type=text][placeholder=Search Subject].searchbar', {
         value: searchString,
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
@@ -467,12 +485,11 @@ const Sidebar = () => {
 
 const SidebarQuickView = () => {
   // for the Mail tab, to be moved later.
-  let quickactive = -1;
   return {
     view: (v) =>
       m(
         '.sidebarquickview',
-        m('h4', 'Quick View'),
+        m('h6.bold', 'Quick View'),
         v.attrs.tabs.map((panelName, index) =>
           m(
             m.route.Link,

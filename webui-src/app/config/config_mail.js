@@ -76,111 +76,110 @@ const Mail = () => {
       );
     },
     view: () =>
-      m('.widget.widget-half.mail', [
-        m('.mail-tags__heading', m('h3', 'Distant Messages')),
-        m('hr'),
-        m('.permission-flag', [
-          m('p', 'Accept encrypted distant messages from: '),
-          m(
-            'select[id=setDistantMessagingPermission]',
-            {
-              value: distantMessagingPermissionFlag,
-              oninput: (e) => (distantMessagingPermissionFlag = e.target.value),
-              onchange: () => {
-                rs.rsJsonApiRequest('/rsMsgs/setDistantMessagingPermissionFlags', {
-                  flags: parseInt(distantMessagingPermissionFlag),
-                });
+      m('.widget.mail', [
+        m('.widget__heading', m('h3', 'Mail Configuration')),
+        m('.widget__body', [
+          m('.permission-flag', [
+            m('p', 'Accept encrypted distant messages from: '),
+            m(
+              'select',
+              {
+                value: distantMessagingPermissionFlag,
+                oninput: (e) => (distantMessagingPermissionFlag = e.target.value),
+                onchange: () => {
+                  rs.rsJsonApiRequest('/rsMsgs/setDistantMessagingPermissionFlags', {
+                    flags: parseInt(distantMessagingPermissionFlag),
+                  });
+                },
               },
-            },
-            [
-              m(
-                'option',
-                {
-                  value: util.RS_DISTANT_MESSAGING_PERMISSION_FLAG_FILTER_NONE,
+              [
+                m(
+                  'option',
+                  {
+                    value: util.RS_DISTANT_MESSAGING_PERMISSION_FLAG_FILTER_NONE,
+                  },
+                  'Everybody'
+                ),
+                m(
+                  'option',
+                  {
+                    value: util.RS_DISTANT_MESSAGING_PERMISSION_FLAG_FILTER_NON_CONTACTS,
+                  },
+                  'Contacts'
+                ),
+                m(
+                  'option',
+                  {
+                    value: util.RS_DISTANT_MESSAGING_PERMISSION_FLAG_FILTER_EVERYBODY,
+                  },
+                  'Nobody'
+                ),
+              ]
+            ),
+          ]),
+          m('.widget__heading', [
+            m('h3', 'Mail Tags'),
+            m(
+              'button',
+              {
+                onclick: () => {
+                  // set form fields to default values
+                  msgTagObj.tagName = '';
+                  msgTagObj.tagColor = '';
+                  widget.popupMessage(m(MessageTagForm));
                 },
-                'Everybody'
-              ),
-              m(
-                'option',
-                {
-                  value: util.RS_DISTANT_MESSAGING_PERMISSION_FLAG_FILTER_NON_CONTACTS,
-                },
-                'Contacts'
-              ),
-              m(
-                'option',
-                {
-                  value: util.RS_DISTANT_MESSAGING_PERMISSION_FLAG_FILTER_EVERYBODY,
-                },
-                'Nobody'
-              ),
-            ]
-          ),
-        ]),
-        m('br'),
-        m('.mail-tags__heading', [
-          m('h3', 'Mail Tags'),
-          m(
-            'button',
-            {
-              onclick: () => {
-                // set form fields to default values
-                msgTagObj.tagName = '';
-                msgTagObj.tagColor = '';
-                widget.popupMessage(m(MessageTagForm));
               },
-            },
-            'Create New Tag'
-          ),
-        ]),
-        m('hr'),
-        m(
-          'div.mail-tags',
-          tagArr.length === 0
-            ? m('h4', 'No Message Tags')
-            : m(
-                'div.mail-tags__container',
-                tagArr.map((tag) =>
-                  m('.tag-item', { key: tag.key }, [
-                    m('div.tag-item__color', {
-                      style: {
-                        backgroundColor: `#${tag.value.second.toString(16).padStart(6, '0')}`,
-                      },
-                    }),
-                    m('p.tag-item__name', tag.value.first),
-                    m('.tag-item__modify', [
-                      m(
-                        'button',
-                        {
-                          onclick: () => {
-                            msgTagObj.tagName = tag.value.first;
-                            msgTagObj.tagColor = `#${tag.value.second
-                              .toString(16)
-                              .padStart(6, '0')}`;
-                            widget.popupMessage(m(MessageTagForm, { tagItem: tag }));
-                          },
+              'Create New Tag'
+            ),
+          ]),
+          m(
+            '.mail-tags',
+            tagArr.length === 0
+              ? m('h4', 'No Message Tags')
+              : m(
+                  '.mail-tags__container',
+                  tagArr.map((tag) =>
+                    m('.tag-item', { key: tag.key }, [
+                      m('.tag-item__color', {
+                        style: {
+                          backgroundColor: `#${tag.value.second.toString(16).padStart(6, '0')}`,
                         },
-                        m('i.fas.fa-pen')
-                      ),
-                      m(
-                        'button.red',
-                        {
-                          onclick: () => {
-                            rs.rsJsonApiRequest('/rsMsgs/removeMessageTagType', {
-                              tagId: tag.key,
-                            }).then((res) => {
-                              if (res.body.retval)
-                                tagArr = tagArr.filter((item) => item.key !== tag.key);
-                            });
+                      }),
+                      m('p.tag-item__name', tag.value.first),
+                      m('.tag-item__modify', [
+                        m(
+                          'button',
+                          {
+                            onclick: () => {
+                              msgTagObj.tagName = tag.value.first;
+                              msgTagObj.tagColor = `#${tag.value.second
+                                .toString(16)
+                                .padStart(6, '0')}`;
+                              widget.popupMessage(m(MessageTagForm, { tagItem: tag }));
+                            },
                           },
-                        },
-                        m('i.fas.fa-trash')
-                      ),
-                    ]),
-                  ])
+                          m('i.fas.fa-pen')
+                        ),
+                        m(
+                          'button.red',
+                          {
+                            onclick: () => {
+                              rs.rsJsonApiRequest('/rsMsgs/removeMessageTagType', {
+                                tagId: tag.key,
+                              }).then((res) => {
+                                if (res.body.retval)
+                                  tagArr = tagArr.filter((item) => item.key !== tag.key);
+                              });
+                            },
+                          },
+                          m('i.fas.fa-trash')
+                        ),
+                      ]),
+                    ])
+                  )
                 )
-              )
-        ),
+          ),
+        ]),
       ]),
   };
 };

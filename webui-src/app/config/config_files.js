@@ -9,9 +9,8 @@ const SharedDirectories = () => {
       rs.rsJsonApiRequest('/rsFiles/getSharedDirectories', {}, (data) => (directories = data.dirs));
     },
     view: () =>
-      m('.widget', [
-        m('h3', 'Shared Directories'),
-        m('hr'),
+      m('.widget__body-box', [
+        m('.widget__heading', m('h3', 'Shared Directories')),
         directories.map((dir) =>
           m('input[type=text].stretched', {
             value: dir.filename,
@@ -33,9 +32,8 @@ const DownloadDirectory = () => {
       rs.rsJsonApiRequest('/rsFiles/getDownloadDirectory', {}, (data) => (dlDir = data.retval));
     },
     view: () =>
-      m('.widget', [
-        m('h3', 'Downloads Directory'),
-        m('hr'),
+      m('.widget__body-box', [
+        m('.widget__heading', m('h3', 'Downloads Directory')),
         m('input[type=text].stretched#dl-dir-input', {
           oninput: (e) => (dlDir = e.target.value),
           value: dlDir,
@@ -62,9 +60,8 @@ const PartialsDirectory = () => {
         (data) => (partialsDir = data.retval)
       ),
     view: () =>
-      m('.widget.widget-halfwidth', [
-        m('h3', 'Partials Directory'),
-        m('hr'),
+      m('.widget__body-box', [
+        m('.widget__heading', m('h3', 'Partials Directory')),
         m('input[type=text].stretched#partial-dir-input', {
           oninput: (e) => (partialsDir = e.target.value),
           value: partialsDir,
@@ -123,9 +120,8 @@ const TransferOptions = () => {
       );
     },
     view: () =>
-      m('.widget.widget-half', [
-        m('h3', 'Transfer options'),
-        m('hr'),
+      m('.widget__body-box', [
+        m('.widget__heading', m('h3', 'Transfer options')),
         m('.grid-2col', [
           m('p', 'Maximum simultaneous downloads:'),
           m('input[type=number]', {
@@ -221,12 +217,16 @@ const TransferOptions = () => {
 
 const Layout = () => {
   return {
-    view: () => [
-      m(SharedDirectories),
-      m(DownloadDirectory),
-      m(PartialsDirectory),
-      m(TransferOptions),
-    ],
+    view: () =>
+      m('.widget', [
+        m('.widget__heading', m('h3', 'Files Configuration')),
+        m('.widget__body.config-files', [
+          m(SharedDirectories),
+          m(DownloadDirectory),
+          m(PartialsDirectory),
+          m(TransferOptions),
+        ]),
+      ]),
   };
 };
 

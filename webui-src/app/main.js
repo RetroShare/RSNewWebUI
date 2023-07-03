@@ -40,7 +40,7 @@ const navbar = () => {
               src: '../data/retroshare.svg',
               alt: 'retroshare_icon',
             }),
-            m('h4', 'Retroshare'),
+            m('h5', 'Retroshare'),
           ]),
           m('.nav-menu__box', [
             Object.keys(vnode.attrs.links).map((linkName, i) => {
@@ -51,7 +51,7 @@ const navbar = () => {
                   href: vnode.attrs.links[linkName],
                   class: 'item' + (active ? ' item-selected' : ''),
                 },
-                [navIcon[linkName], m('p[style="margin: 0; align-self: end"]', linkName)]
+                [navIcon[linkName], m('p', linkName)]
               );
             }),
             m(
@@ -85,7 +85,7 @@ const Layout = () => {
             config: '/config/network',
           },
         }),
-        m('#tab-content', vnode.children),
+        m('.tab-content', vnode.children),
       ]),
   };
 };

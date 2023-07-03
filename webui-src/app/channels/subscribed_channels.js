@@ -4,9 +4,8 @@ const util = require('channels/channels_util');
 const Layout = () => {
   return {
     view: (v) => [
-      m('.widget', [
-        m('h3', 'Subscribed Channels'),
-        m('hr'),
+      m('.widget__heading', m('h3', 'Subscribed Channels')),
+      m('.widget__body', [
         m(
           util.ChannelTable,
           m('tbody', [

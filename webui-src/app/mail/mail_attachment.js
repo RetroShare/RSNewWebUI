@@ -20,29 +20,28 @@ const Layout = () => {
       });
     },
     view: (v) => [
-      m('.widget', [
-        m('div.msg-attachment-container', [
-          m('h3', 'Attachments'),
-          m('.view-toggle', [
-            m(
-              '.mail-view',
-              {
-                onclick: () => (viewChanged = false),
-                style: { backgroundColor: viewChanged ? '#fff' : '#019DFF' },
-              },
-              m('i.fas.fa-mail-bulk')
-            ),
-            m(
-              '.attachment-view',
-              {
-                onclick: () => (viewChanged = true),
-                style: { backgroundColor: viewChanged ? '#019DFF' : '#fff' },
-              },
-              m('i.fas.fa-file')
-            ),
-          ]),
+      m('.widget__heading', [
+        m('h3', 'Attachments'),
+        m('.view-toggle', [
+          m(
+            '.mail-view',
+            {
+              onclick: () => (viewChanged = false),
+              style: { backgroundColor: viewChanged ? '#fff' : '#019DFF' },
+            },
+            m('i.fas.fa-mail-bulk')
+          ),
+          m(
+            '.attachment-view',
+            {
+              onclick: () => (viewChanged = true),
+              style: { backgroundColor: viewChanged ? '#019DFF' : '#fff' },
+            },
+            m('i.fas.fa-file')
+          ),
         ]),
-        m('hr'),
+      ]),
+      m('.widget__body', [
         viewChanged
           ? m(util.AttachmentSection, {
               files,
