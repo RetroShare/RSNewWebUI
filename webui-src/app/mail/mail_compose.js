@@ -113,11 +113,12 @@ const Layout = () => {
             ),
           ]),
           m('input.compose-mail__subject[type=text][placeholder=Subject]', {
+            value: data.subject,
             oninput: (e) => (data.subject = e.target.value),
           }),
           m('textarea.compose-mail__message[placeholder=Message]', {
-            oninput: (e) => (data.mailBody = e.target.value),
             value: data.mailBody,
+            oninput: (e) => (data.mailBody = e.target.value),
           }),
           allUsers &&
             m(
