@@ -58,6 +58,16 @@ input {
 
 a {
   cursor: pointer;
+  &[title='Back'] {
+    width: max-content;
+    height: max-content;
+    padding: 0.475rem 0.75rem;
+    border-radius: 50%;
+    transition: 100ms;
+    &:hover {
+      background: $light-color;
+    }
+  }
 }
 
 table {

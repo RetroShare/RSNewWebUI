@@ -8,17 +8,20 @@ function checksudo(id) {
 const UserAvatar = () => ({
   view: (v) => {
     const imageURI = v.attrs.avatar;
-    console.log(imageURI);
     return imageURI === undefined || imageURI.mData.base64 === ''
-      ? m('div.defaultAvatar', {
-        // image isn't getting loaded
-        // ? m('img.defaultAvatar', {
-        //   src: '../data/user.png'
-        // })
-      }, m('p', v.attrs.firstLetter))
+      ? m(
+          'div.defaultAvatar',
+          {
+            // image isn't getting loaded
+            // ? m('img.defaultAvatar', {
+            //   src: '../data/user.png'
+            // })
+          },
+          m('p', v.attrs.firstLetter)
+        )
       : m('img.avatar', {
-        src: 'data:image/png;base64,' + imageURI.mData.base64,
-      });
+          src: 'data:image/png;base64,' + imageURI.mData.base64,
+        });
   },
 });
 
@@ -60,13 +63,13 @@ function sortIds(list) {
   return list;
 }
 
-async function ownIds(consumer = (list) => { }, onlySigned = false) {
+async function ownIds(consumer = (list) => {}, onlySigned = false) {
   await rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {}, (owns) => {
     if (onlySigned) {
       consumer(sortIds(owns.ids));
     } else {
       rs.rsJsonApiRequest('/rsIdentity/getOwnPseudonimousIds', {}, (pseudo) =>
-        consumer(sortIds(pseudo.ids.concat(owns.ids)))
+        consumer(sortIds(pseudo?.ids.concat(owns.ids)))
       );
     }
   });
@@ -119,7 +122,10 @@ const regularcontactInfo = () => {
         [
           m('h4', details.mNickname),
           details.mNickname &&
-          m(UserAvatar, { avatar: details.mAvatar, firstLetter: details.mNickname.slice(0, 1).toUpperCase() }),
+            m(UserAvatar, {
+              avatar: details.mAvatar,
+              firstLetter: details.mNickname.slice(0, 1).toUpperCase(),
+            }),
           m('.details', [
             m('p', 'ID:'),
             m('p', details.mId),

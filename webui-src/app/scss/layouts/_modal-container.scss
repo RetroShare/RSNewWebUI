@@ -13,7 +13,7 @@
   position: absolute;
   color: #555;
   width: 40%;
-  min-height: 250px;
+  min-height: 10rem;
   height: max-content;
   padding: 1.5rem;
   inset: 0;
@@ -21,8 +21,17 @@
   background-color: white;
   border-radius: 1rem;
   animation: fadein 0.5s;
+  display: flex;
+  flex-direction: column;
+  & button:last-child {
+    margin-top: auto;
+  }
   & .close-btn {
     position: absolute;
     right: 1.5rem;
+  }
+  // Remove default widget padding
+  & .widget {
+    padding: 0;
   }
 }

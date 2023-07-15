@@ -5,8 +5,8 @@ const peopleUtil = require('people/people_util');
 const compose = require('mail/mail_compose');
 
 const composeData = {
-  allUsers: undefined,
-  ownId: undefined,
+  allUsers: [],
+  ownId: [],
 };
 
 const Messages = {
@@ -92,7 +92,6 @@ const Layout = () => {
             composeData.ownId.splice(i, 1); // workaround for id '0'
           }
         }
-        // identity = ownId[0];
       });
       composeData.allUsers = await peopleUtil.sortUsers(rs.userList.users);
     },
@@ -104,7 +103,7 @@ const Layout = () => {
         sent: Messages.sent.length,
         trash: Messages.trash.length,
       };
-      const sectionsquickviewSize = {
+      const sectionsQuickviewSize = {
         starred: Messages.starred.length,
         system: Messages.system.length,
         spam: Messages.spam.length,
@@ -118,13 +117,7 @@ const Layout = () => {
 
       return [
         m('.side-bar', [
-          m(
-            'button.mail-compose-btn',
-            {
-              onclick: () => (showCompose = true),
-            },
-            'Compose'
-          ),
+          m('button.mail-compose-btn', { onclick: () => (showCompose = true) }, 'Compose'),
           m(util.Sidebar, {
             tabs: Object.keys(sections),
             size: sectionsSize,
@@ -132,36 +125,31 @@ const Layout = () => {
           }),
           m(util.SidebarQuickView, {
             tabs: Object.keys(sectionsquickview),
-            size: sectionsquickviewSize,
+            size: sectionsQuickviewSize,
             baseRoute: '/mail/',
           }),
         ]),
         m(
           '.node-panel',
           m('.widget', [
-            m('.top-heading', [
-              m(
-                'select.mail-tag',
-                {
-                  value: tagselect.showval,
-                  onchange: (e) => {
-                    tagselect.showval = tagselect.opts[e.target.selectedIndex];
+            m.route.get().split('/').length < 4 &&
+              m('.top-heading', [
+                m(
+                  'select.mail-tag',
+                  {
+                    value: tagselect.showval,
+                    onchange: (e) => (tagselect.showval = tagselect.opts[e.target.selectedIndex]),
                   },
-                },
-                [tagselect.opts.map((o) => m('option', { value: o }, o.toLocaleString()))]
-              ),
-              m(util.SearchBar, {
-                list: {},
-              }),
-            ]),
+                  [tagselect.opts.map((opt) => m('option', { value: opt }, opt.toLocaleString()))]
+                ),
+                m(util.SearchBar, { list: {} }),
+              ]),
             vnode.children,
           ])
         ),
         m(
           '.composePopupOverlay',
-          {
-            style: { display: showCompose ? 'block' : 'none' },
-          },
+          { style: { display: showCompose ? 'block' : 'none' } },
           m(
             '.composePopup',
             composeData.allUsers &&
@@ -169,14 +157,9 @@ const Layout = () => {
               m(compose, {
                 allUsers: composeData.allUsers,
                 ownId: composeData.ownId,
+                msgType: 'compose',
               }),
-            m(
-              'button.red.close-btn',
-              {
-                onclick: () => (showCompose = false),
-              },
-              m('i.fas.fa-times')
-            )
+            m('button.red.close-btn', { onclick: () => (showCompose = false) }, m('i.fas.fa-times'))
           )
         ),
       ];
@@ -186,23 +169,11 @@ const Layout = () => {
 
 module.exports = {
   composeData,
-  view: (v) => {
-    const tab = v.attrs.tab;
+  view: ({ attrs, attrs: { tab, msgId } }) => {
     // TODO: utilize multiple routing params
-
-    if (Object.prototype.hasOwnProperty.call(v.attrs, 'msgId')) {
-      return m(
-        Layout,
-        m(util.MessageView, {
-          id: v.attrs.msgId,
-        })
-      );
+    if (Object.prototype.hasOwnProperty.call(attrs, 'msgId')) {
+      return m(Layout, m(util.MessageView, { msgId }));
     }
-    return m(
-      Layout,
-      m(sections[tab] || sectionsquickview[tab], {
-        list: Messages[tab].reverse(),
-      })
-    );
+    return m(Layout, m(sections[tab] || sectionsquickview[tab], { list: Messages[tab].reverse() }));
   },
 };

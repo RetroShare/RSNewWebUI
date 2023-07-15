@@ -3,6 +3,8 @@ const rs = require('rswebui');
 const util = require('files/files_util');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
+const compose = require('mail/mail_compose');
+const composeData = require('mail/mail_resolver');
 
 // rsmsgs.h
 const RS_MSG_BOXMASK = 0x000f;
@@ -49,35 +51,36 @@ const MessageSummary = () => {
   let isStarred = false;
   let msgStatus = '';
   let fromUserInfo;
+  function starMessage(e) {
+    isStarred = !isStarred;
+    rs.rsJsonApiRequest('/rsMsgs/MessageStar', { msgId: details.msgId, mark: isStarred });
+    // Stop event bubbling, both functions for supporting IE & FF
+    e.stopImmediatePropagation();
+    e.preventDefault();
+  }
   return {
-    oninit: async (v) => {
-      const res = await rs.rsJsonApiRequest('/rsMsgs/getMessage', {
+    oninit: (v) => {
+      rs.rsJsonApiRequest('/rsMsgs/getMessage', {
         msgId: v.attrs.details.msgId,
-      });
-      if (res.body.retval) {
-        details = res.body.msg;
-        files = details.files;
-
-        isStarred = (details.msgflags & 0xf00) === RS_MSG_STAR;
-
-        const flag = details.msgflags & 0xf0;
-        if (flag === RS_MSG_NEW || flag === RS_MSG_UNREAD_BY_USER) {
-          msgStatus = 'unread';
-        } else {
-          msgStatus = 'read';
-        }
-      }
-      if (details && details.from && details.from._addr_string) {
-        rs.rsJsonApiRequest(
-          '/rsIdentity/getIdDetails',
-          {
-            id: details.from._addr_string,
-          },
-          (data) => {
-            fromUserInfo = data.details;
+      })
+        .then((res) => {
+          if (res.body.retval) {
+            details = res.body.msg;
+            files = details.files;
+            isStarred = (details.msgflags & 0xf00) === RS_MSG_STAR;
+            const flag = details.msgflags & 0xf0;
+            msgStatus = flag === RS_MSG_NEW || flag === RS_MSG_UNREAD_BY_USER ? 'unread' : 'read';
           }
-        );
-      }
+        })
+        .then(() => {
+          if (details?.from?._addr_string) {
+            rs.rsJsonApiRequest(
+              '/rsIdentity/getIdDetails',
+              { id: details.from._addr_string },
+              (data) => (fromUserInfo = data.details)
+            );
+          }
+        });
     },
     view: (v) =>
       m(
@@ -86,31 +89,17 @@ const MessageSummary = () => {
           key: details.msgId,
           class: msgStatus,
           onclick: () =>
-            m.route.set('/mail/:tab/:msgId', {
-              tab: v.attrs.category,
-              msgId: details.msgId,
-            }),
+            m.route.set('/mail/:tab/:msgId', { tab: v.attrs.category, msgId: details.msgId }),
         },
         [
           m(
             'td',
-            m('input.star-check[type=checkbox][id=msg-' + details.msgId + ']', {
-              checked: isStarred,
-            }),
+            m(`input.star-check[type=checkbox][id=msg-${details.msgId}]`, { checked: isStarred }),
             // Use label with  [for] to manipulate hidden checkbox
             m(
-              'label.star-check[for=msg-' + details.msgId + ']',
+              `label.star-check[for=msg-${details.msgId}]`,
               {
-                onclick: (e) => {
-                  isStarred = !isStarred;
-                  rs.rsJsonApiRequest('/rsMsgs/MessageStar', {
-                    msgId: details.msgId,
-                    mark: isStarred,
-                  });
-                  // Stop event bubbling, both functions for supporting IE & FF
-                  e.stopImmediatePropagation();
-                  e.preventDefault();
-                },
+                onclick: starMessage,
                 class: (details.msgflags & 0xf00) === RS_MSG_STAR ? 'starred' : 'unstarred',
               },
               m('i.fas.fa-star')
@@ -129,6 +118,19 @@ const MessageSummary = () => {
 };
 
 const AttachmentSection = () => {
+  function handleAttachmentDownload(item) {
+    const { fname: fileName, hash, size: xstr64 } = item;
+    const flags = util.RS_FILE_REQ_ANONYMOUS_ROUTING;
+    rs.rsJsonApiRequest(
+      '/rsFiles/FileRequest',
+      { fileName, hash, flags, size: { xstr64 } },
+      (status) =>
+        widget.popupMessage([
+          m('i.fas.fa-file-medical'),
+          m('h3', `File is ${status.retval ? 'being' : 'already'} downloaded!`),
+        ])
+    ).catch((error) => console.log('error: ', error));
+  }
   return {
     view: (v) =>
       m('table.attachment-container', [
@@ -141,54 +143,13 @@ const AttachmentSection = () => {
         ]),
         m(
           'tbody',
-          v.attrs.files.map((item) =>
+          v.attrs.files.map((file) =>
             m('tr.attachment', [
-              m('td.attachment__name', [m('i.fas.fa-file'), m('span', item.fname)]),
-              m(
-                'td.attachment__from',
-                rs.userList.userMap[item.from._addr_string]
-                  ? rs.userList.userMap[item.from._addr_string]
-                  : '[Unknown]'
-              ),
-              m('td.attachment__size', humanReadableSize(item.size.xint64)),
-              m('td.attachment__date', new Date(item.ts * 1000).toLocaleString()),
-              m(
-                'td',
-                m(
-                  'button',
-                  {
-                    onclick: () => {
-                      try {
-                        rs.rsJsonApiRequest(
-                          '/rsFiles/FileRequest',
-                          {
-                            fileName: item.fname,
-                            hash: item.hash,
-                            flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
-                            size: {
-                              xstr64: item.size.xstr64,
-                            },
-                          },
-                          (status) => {
-                            status.retval
-                              ? widget.popupMessage([
-                                  m('i.fas.fa-file-medical'),
-                                  m('h3', 'File is being downloaded!'),
-                                ])
-                              : widget.popupMessage([
-                                  m('i.fas.fa-file-medical'),
-                                  m('h3', 'File is already downloaded!'),
-                                ]);
-                          }
-                        );
-                      } catch (error) {
-                        console.log('error: ', error);
-                      }
-                    },
-                  },
-                  'Download'
-                )
-              ),
+              m('td.attachment__name', [m('i.fas.fa-file'), m('span', file.fname)]),
+              m('td.attachment__from', rs.userList.userMap[file.from._addr_string] || '[Unknown]'),
+              m('td.attachment__size', humanReadableSize(file.size.xint64)),
+              m('td.attachment__date', new Date(file.ts * 1000).toLocaleString()),
+              m('td', m('button', { onclick: () => handleAttachmentDownload(file) }, 'Download')),
             ])
           )
         ),
@@ -197,134 +158,144 @@ const AttachmentSection = () => {
 };
 
 const MessageView = () => {
-  let details = {};
-  let message = '';
-  const files = [];
-  const toList = {};
-  const ccList = {};
-  const bccList = {};
+  let showReplyCompose = false;
+  const replyData = {
+    sender: [],
+    recipients: [],
+  };
+  const MailData = {
+    msgId: '',
+    sender: {},
+    message: '',
+    subject: '',
+    destinations: [],
+    toList: {},
+    ccList: {},
+    bccList: {},
+    files: [],
+  };
+  function handleMailDelete() {
+    widget.popupMessage([
+      m('p', 'Are you sure you want to delete this mail?'),
+      m(
+        'button',
+        {
+          onclick: () => {
+            rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', { msgId: MailData.msgId, bTrash: true });
+            rs.rsJsonApiRequest('/rsMsgs/MessageDelete', { msgId: MailData.msgId }).then((res) => {
+              widget.popupMessage(
+                m('.widget', [
+                  m('.widget__heading', m('h3', res.body.retval ? 'Success' : 'Error')),
+                  m(
+                    '.widget__body',
+                    m('p', res.body.retval ? 'Mail Deleted.' : 'Error in Deleting.')
+                  ),
+                ])
+              );
+              m.route.set('/mail/:tab', { tab: m.route.param().tab });
+            });
+          },
+        },
+        'Delete'
+      ),
+    ]);
+  }
 
   return {
-    oninit: async (v) => {
-      const res = await rs.rsJsonApiRequest('/rsMsgs/getMessage', {
-        msgId: v.attrs.id,
-      });
-      if (res.body.retval) {
-        details = res.body.msg;
-        res.body.msg.files.forEach((element) => {
-          files.push({ ...element, from: res.body.msg.from, ts: res.body.msg.ts });
-        });
-        // regex to detect html tags
-        // better regex?  /<[a-z][\s\S]*>/gi
-        message = /<\/*[a-z][^>]+?>/gi.test(details.msg)
-          ? details.msg
-          : `<p style="white-space: pre">${details.msg}</p>`;
-      }
-      details?.destinations?.map((destDetail) => {
-        if (destDetail._mode === MSG_ADDRESS_MODE_TO && !toList[destDetail._addr_string]) {
-          toList[destDetail._addr_string] = destDetail;
-        } else if (destDetail._mode === MSG_ADDRESS_MODE_CC && !ccList[destDetail._addr_string]) {
-          ccList[destDetail._addr_string] = destDetail;
-        } else if (destDetail._mode === MSG_ADDRESS_MODE_BCC && !bccList[destDetail._addr_string]) {
-          bccList[destDetail._addr_string] = destDetail;
+    oninit: (v) => {
+      rs.rsJsonApiRequest('/rsMsgs/getMessage', {
+        msgId: v.attrs.msgId,
+      }).then(async (res) => {
+        if (res.body.retval) {
+          const msgDetails = res.body.msg;
+          msgDetails.files.forEach((element) =>
+            MailData.files.push({ ...element, from: msgDetails.from, ts: msgDetails.ts })
+          );
+          // regex to detect html tags, better regex?  /<[a-z][\s\S]*>/gi
+          MailData.message = /<\/*[a-z][^>]+?>/gi.test(msgDetails.msg)
+            ? msgDetails.msg
+            : `<p style="white-space: pre">${msgDetails.msg}</p>`;
+          document.querySelector('#msgView').innerHTML = MailData.message;
+          MailData.sender = msgDetails.from;
+          console.log('mail sender id: ', MailData.sender._addr_string);
+          MailData.subject = msgDetails.title;
+          MailData.destinations = msgDetails.destinations;
         }
+        MailData?.destinations?.map((destDetail) => {
+          const { _addr_string: addrString, _mode: mode } = destDetail; // destructuring + renaming
+          if (mode === MSG_ADDRESS_MODE_TO && !MailData.toList[addrString]) {
+            MailData.toList[addrString] = destDetail;
+          } else if (mode === MSG_ADDRESS_MODE_CC && !MailData.ccList[addrString]) {
+            MailData.ccList[addrString] = destDetail;
+          } else if (mode === MSG_ADDRESS_MODE_BCC && !MailData.bccList[addrString]) {
+            MailData.bccList[addrString] = destDetail;
+          }
+        });
+        console.log('tolist: ', MailData.toList);
+        peopleUtil.ownIds(async (data) => {
+          composeData.ownId = await data;
+          replyData.recipients = composeData.ownId.filter((id) =>
+            Object.prototype.hasOwnProperty.call(MailData.toList, id)
+          );
+          console.log('recipient: ', replyData.recipients, 'ownIds: ', composeData.ownId);
+          for (let i = 0; i < composeData.ownId.length; i++) {
+            if (Number(composeData.ownId[i]) === 0) {
+              composeData.ownId.splice(i, 1); // workaround for id '0'
+            }
+          }
+        });
+        composeData.allUsers = peopleUtil.sortUsers(rs.userList.users);
+        replyData.sender = composeData.allUsers.filter(
+          (user) => user.mGroupId === MailData.sender._addr_string
+        );
+        await rs.rsJsonApiRequest(
+          '/rsIdentity/getIdDetails',
+          { id: MailData?.sender?._addr_string },
+          (data) => (MailData.avatar = data?.details?.mAvatar)
+        );
       });
-      await rs.rsJsonApiRequest(
-        '/rsIdentity/getIdDetails',
-        {
-          id: details.from._addr_string,
-        },
-        (data) => (details = { ...details, avatar: data.details.mAvatar })
-      );
     },
     view: () =>
       m(
         '.msg-view',
-        {
-          key: details.msgId,
-        },
         [
           m('.msg-view-nav', [
             m(
               'a[title=Back]',
-              {
-                onclick: () =>
-                  m.route.set('/mail/:tab', {
-                    tab: m.route.param().tab,
-                  }),
-              },
+              { onclick: () => m.route.set('/mail/:tab', { tab: m.route.param().tab }) },
               m('i.fas.fa-arrow-left')
             ),
             m('.msg-view-nav__action', [
-              m('button', 'Reply'),
+              m('button', { onclick: () => (showReplyCompose = true) }, 'Reply'),
               m('button', 'Reply All'),
               m('button', 'Forward'),
-              m(
-                'button',
-                {
-                  onclick: () =>
-                    widget.popupMessage([
-                      m('p', 'Are you sure you want to delete this mail?'),
-                      m(
-                        'button',
-                        {
-                          onclick: async () => {
-                            rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', {
-                              msgId: details.msgId,
-                              bTrash: true,
-                            });
-                            const res = await rs.rsJsonApiRequest('/rsMsgs/MessageDelete', {
-                              msgId: details.msgId,
-                            });
-                            res.body.retval
-                              ? widget.popupMessage([
-                                  m('h3', 'Success'),
-                                  m('hr'),
-                                  m('p', 'Mail Deleted.'),
-                                ])
-                              : widget.popupMessage([
-                                  m('h3', 'Error'),
-                                  m('hr'),
-                                  m('p', res.body.errorMessage),
-                                ]);
-                            m.redraw();
-                            m.route.set('/mail/:tab', {
-                              tab: m.route.param().tab,
-                            });
-                          },
-                        },
-                        'Delete'
-                      ),
-                    ]),
-                },
-                'Delete'
-              ),
+              m('button', { onclick: handleMailDelete }, 'Delete'),
             ]),
           ]),
           m('.msg-view__header', [
-            m('h3', details.title),
+            m('h3', MailData.subject),
             m('.msg-details', [
-              details.from &&
+              MailData.sender &&
                 m(peopleUtil.UserAvatar, {
-                  avatar: details.avatar,
-                  firstLetter: rs.userList.userMap[details.from._addr_string]
-                    ? rs.userList.userMap[details.from._addr_string].slice(0, 1).toUpperCase()
+                  avatar: MailData.avatar,
+                  firstLetter: rs.userList.userMap[MailData.sender._addr_string]
+                    ? rs.userList.userMap[MailData.sender._addr_string].slice(0, 1).toUpperCase()
                     : '',
                 }),
               m('.msg-details__info', [
-                details.from &&
+                MailData.sender &&
                   m('.msg-details__info-item', [
                     m('b', 'From: '),
-                    rs.userList.userMap[details.from._addr_string] || 'Unknown',
+                    rs.userList.userMap[MailData.sender._addr_string] || 'Unknown',
                   ]),
-                toList &&
-                  Object.keys(toList).length > 0 &&
+                MailData.toList &&
+                  Object.keys(MailData.toList).length > 0 &&
                   // TODO: optimize javascript for show-more and show-less working
                   m('.msg-details__info-item', [
                     m('b', 'To: '),
                     m(
                       '#truncate',
-                      Object.keys(toList).map((key, index) =>
+                      Object.keys(MailData.toList).map((key, index) =>
                         m('span', `${rs.userList.userMap[key]}, `)
                       )
                     ),
@@ -332,7 +303,7 @@ const MessageView = () => {
                       'button[id=show-more]',
                       {
                         style: {
-                          display: Object.keys(toList).length > 10 ? 'block' : 'none',
+                          display: Object.keys(MailData.toList).length > 10 ? 'block' : 'none',
                         },
                         onclick: () => {
                           document.querySelector('#show-more').style.display = 'none';
@@ -356,45 +327,55 @@ const MessageView = () => {
                       'less'
                     ),
                   ]),
-                ccList &&
-                  Object.keys(ccList).length > 0 &&
+                MailData.ccList &&
+                  Object.keys(MailData.ccList).length > 0 &&
                   m('.msg-details__info-item', [
-                    m('b', 'CC: '),
-                    Object.keys(ccList).map((key, index) =>
+                    m('b', 'Cc: '),
+                    Object.keys(MailData.ccList).map((key, index) =>
                       m('p', `${rs.userList.userMap[key]}, `)
                     ),
                   ]),
-                bccList &&
-                  Object.keys(bccList).length > 0 &&
+                MailData.bccList &&
+                  Object.keys(MailData.bccList).length > 0 &&
                   m('.msg-details__info-item', [
-                    m('b', 'BCC: '),
-                    Object.keys(bccList).map((key, index) =>
+                    m('b', 'Bcc: '),
+                    Object.keys(MailData.bccList).map((key, index) =>
                       m('p', `${rs.userList.userMap[key]}, `)
                     ),
                   ]),
               ]),
             ]),
           ]),
-          m(
-            '.msg-view__body',
-            m(
-              'iframe[title=message]',
-              {
-                srcdoc: message,
-              },
-              message
-            )
-          ),
-          files.length > 0 &&
+          m('.msg-view__body', m('#msgView')),
+          MailData.files.length > 0 &&
             m('.msg-view__attachment', [
               m('h3', 'Attachments'),
-              m('.msg-view__attachment-items', [
-                m(AttachmentSection, {
-                  files,
-                }),
-              ]),
+              m('.msg-view__attachment-items', m(AttachmentSection, { files: MailData.files })),
             ]),
-        ]
+        ],
+        m(
+          '.composePopupOverlay',
+          { style: { display: showReplyCompose ? 'block' : 'none' } },
+          m(
+            '.composePopup',
+            composeData.allUsers &&
+              composeData.ownId &&
+              m(compose, {
+                allUsers: composeData.allUsers,
+                ownId: composeData.ownId,
+                msgType: 'reply',
+                sender: replyData.recipients,
+                recipients: replyData.sender,
+                subject: MailData.subject,
+                replyMessage: MailData.message,
+              }),
+            m(
+              'button.red.close-btn',
+              { onclick: () => (showReplyCompose = false) },
+              m('i.fas.fa-times')
+            )
+          )
+        )
       ),
   };
 };
@@ -418,17 +399,13 @@ const Table = () => {
 const SearchBar = () => {
   let searchString = '';
   return {
-    view: (v) =>
+    view: ({ attrs: { list } }) =>
       m('input[type=text][placeholder=Search Subject].searchbar', {
         value: searchString,
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
-          for (const hash in v.attrs.list) {
-            if (v.attrs.list[hash].fname.toLowerCase().indexOf(searchString) > -1) {
-              v.attrs.list[hash].isSearched = true;
-            } else {
-              v.attrs.list[hash].isSearched = false;
-            }
+          for (const hash in list) {
+            list[hash].isSearched = list[hash].fname.toLowerCase().indexOf(searchString) > -1;
           }
         },
       }),
@@ -442,10 +419,10 @@ const activeSideLink = {
 
 const Sidebar = () => {
   return {
-    view: (v) =>
+    view: ({ attrs: { tabs, baseRoute, size } }) =>
       m(
         '.sidebar',
-        v.attrs.tabs.map((panelName, index) =>
+        tabs.map((panelName, index) =>
           m(
             m.route.Link,
             {
@@ -454,11 +431,9 @@ const Sidebar = () => {
                 activeSideLink.sideactive = index;
                 activeSideLink.quicksideactive = -1;
               },
-              href: v.attrs.baseRoute + panelName,
+              href: baseRoute + panelName,
             },
-            v.attrs.size[panelName] > 0
-              ? panelName + ' (' + v.attrs.size[panelName] + ')'
-              : panelName
+            size[panelName] > 0 ? `${panelName} (${size[panelName]})` : panelName
           )
         )
       ),
@@ -468,11 +443,11 @@ const Sidebar = () => {
 const SidebarQuickView = () => {
   // for the Mail tab, to be moved later.
   return {
-    view: (v) =>
+    view: ({ attrs: { tabs, baseRoute, size } }) =>
       m(
         '.sidebarquickview',
         m('h6.bold', 'Quick View'),
-        v.attrs.tabs.map((panelName, index) =>
+        tabs.map((panelName, index) =>
           m(
             m.route.Link,
             {
@@ -482,11 +457,9 @@ const SidebarQuickView = () => {
                 activeSideLink.quicksideactive = index;
                 activeSideLink.sideactive = -1;
               },
-              href: v.attrs.baseRoute + panelName,
+              href: baseRoute + panelName,
             },
-            v.attrs.size[panelName] > 0
-              ? panelName + ' (' + v.attrs.size[panelName] + ')'
-              : panelName
+            size[panelName] > 0 ? `${panelName} (${size[panelName]})` : panelName
           )
         )
       ),

@@ -86,7 +86,7 @@ const Layout = () => {
                       : futil.proxyObj[currentItem.slice(1)].map((item) =>
                           m('tr', [
                             m('td.results__name', [m('i.fas.fa-file'), m('span', item.fName)]),
-                            m('td.results__size', futil.makeFriendlyUnit(item.fSize.xstr64)),
+                            m('td.results__size', futil.makeFriendlyUnit(item.fSize.xint64)),
                             m('td.results__hash', item.fHash),
                             m(
                               'td.results__download',
