@@ -290,41 +290,25 @@ const MessageView = () => {
                   ]),
                 MailData.toList &&
                   Object.keys(MailData.toList).length > 0 &&
-                  // TODO: optimize javascript for show-more and show-less working
                   m('.msg-details__info-item', [
                     m('b', 'To: '),
                     m(
-                      '#truncate',
+                      '#truncate.truncated-view',
                       Object.keys(MailData.toList).map((key, index) =>
-                        m('span', `${rs.userList.userMap[key]}, `)
+                        m('span', { key: index }, `${rs.userList.userMap[key]}, `)
                       )
                     ),
                     m(
-                      'button[id=show-more]',
+                      'button.toggle-truncate',
                       {
                         style: {
                           display: Object.keys(MailData.toList).length > 10 ? 'block' : 'none',
                         },
                         onclick: () => {
-                          document.querySelector('#show-more').style.display = 'none';
-                          document.querySelector('#truncate').style.height = '6rem';
-                          document.querySelector('#truncate').style.overflow = 'auto';
-                          document.querySelector('#show-less').style.display = 'block';
+                          document.querySelector('#truncate').classList.toggle('truncated-view');
                         },
                       },
                       '...'
-                    ),
-                    m(
-                      'button[id=show-less][style="display: none;"]',
-                      {
-                        onclick: () => {
-                          document.querySelector('#show-more').style.display = 'block';
-                          document.querySelector('#truncate').style.height = '1.75rem';
-                          document.querySelector('#truncate').style.overflow = 'hidden';
-                          document.querySelector('#show-less').style.display = 'none';
-                        },
-                      },
-                      'less'
                     ),
                   ]),
                 MailData.ccList &&
@@ -332,7 +316,7 @@ const MessageView = () => {
                   m('.msg-details__info-item', [
                     m('b', 'Cc: '),
                     Object.keys(MailData.ccList).map((key, index) =>
-                      m('p', `${rs.userList.userMap[key]}, `)
+                      m('p', { key: index }, `${rs.userList.userMap[key]}, `)
                     ),
                   ]),
                 MailData.bccList &&
@@ -340,7 +324,7 @@ const MessageView = () => {
                   m('.msg-details__info-item', [
                     m('b', 'Bcc: '),
                     Object.keys(MailData.bccList).map((key, index) =>
-                      m('p', `${rs.userList.userMap[key]}, `)
+                      m('p', { key: index }, `${rs.userList.userMap[key]}, `)
                     ),
                   ]),
               ]),

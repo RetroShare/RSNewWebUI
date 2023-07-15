@@ -281,11 +281,14 @@ input.star-check {
 
 /* mail_util.js styles */
 #truncate {
-  height: 1.75rem;
-  overflow: hidden;
+  height: 6rem;
+  overflow: auto;
+  &.truncated-view {
+    height: 1.75rem;
+    overflow: hidden;
+  }
 }
-#show-more,
-#show-less {
+.toggle-truncate {
   font-size: 0.75rem;
   padding: 0 0.25rem;
   background: #999;
