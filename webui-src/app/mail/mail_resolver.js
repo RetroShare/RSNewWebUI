@@ -4,7 +4,7 @@ const util = require('mail/mail_util');
 const peopleUtil = require('people/people_util');
 const compose = require('mail/mail_compose');
 
-const composeData = {
+const ComposeData = {
   allUsers: [],
   ownId: [],
 };
@@ -86,14 +86,14 @@ const Layout = () => {
     oninit: async () => {
       Messages.load();
       await peopleUtil.ownIds(async (data) => {
-        composeData.ownId = await data;
-        for (let i = 0; i < composeData.ownId.length; i++) {
-          if (Number(composeData.ownId[i]) === 0) {
-            composeData.ownId.splice(i, 1); // workaround for id '0'
+        ComposeData.ownId = await data;
+        for (let i = 0; i < ComposeData.ownId.length; i++) {
+          if (Number(ComposeData.ownId[i]) === 0) {
+            ComposeData.ownId.splice(i, 1); // workaround for id '0'
           }
         }
       });
-      composeData.allUsers = await peopleUtil.sortUsers(rs.userList.users);
+      ComposeData.allUsers = await peopleUtil.sortUsers(rs.userList.users);
     },
     view: (vnode) => {
       const sectionsSize = {
@@ -152,11 +152,11 @@ const Layout = () => {
           { style: { display: showCompose ? 'block' : 'none' } },
           m(
             '.composePopup',
-            composeData.allUsers &&
-              composeData.ownId &&
+            ComposeData.allUsers &&
+              ComposeData.ownId &&
               m(compose, {
-                allUsers: composeData.allUsers,
-                ownId: composeData.ownId,
+                allUsers: ComposeData.allUsers,
+                ownId: ComposeData.ownId,
                 msgType: 'compose',
               }),
             m('button.red.close-btn', { onclick: () => (showCompose = false) }, m('i.fas.fa-times'))
@@ -168,12 +168,21 @@ const Layout = () => {
 };
 
 module.exports = {
-  composeData,
+  ComposeData,
   view: ({ attrs, attrs: { tab, msgId } }) => {
     // TODO: utilize multiple routing params
     if (Object.prototype.hasOwnProperty.call(attrs, 'msgId')) {
       return m(Layout, m(util.MessageView, { msgId }));
     }
-    return m(Layout, m(sections[tab] || sectionsquickview[tab], { list: Messages[tab].reverse() }));
+    return m(
+      Layout,
+      m(sections[tab] || sectionsquickview[tab], {
+        list: Messages[tab].sort((msgA, msgB) => {
+          const msgADate = new Date(msgA.ts.xint64 * 1000);
+          const msgBDate = new Date(msgB.ts.xint64 * 1000);
+          return msgADate < msgBDate;
+        }),
+      })
+    );
   },
 };

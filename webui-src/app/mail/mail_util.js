@@ -4,7 +4,7 @@ const util = require('files/files_util');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
 const compose = require('mail/mail_compose');
-const composeData = require('mail/mail_resolver');
+const ComposeData = require('mail/mail_resolver');
 
 // rsmsgs.h
 const RS_MSG_BOXMASK = 0x000f;
@@ -159,16 +159,16 @@ const AttachmentSection = () => {
 
 const MessageView = () => {
   let showReplyCompose = false;
-  const replyData = {
+  const ReplyData = {
     sender: [],
     recipients: [],
   };
   const MailData = {
     msgId: '',
-    sender: {},
     message: '',
     subject: '',
-    destinations: [],
+    sender: {},
+    recipients: [],
     toList: {},
     ccList: {},
     bccList: {},
@@ -219,9 +219,9 @@ const MessageView = () => {
           MailData.sender = msgDetails.from;
           console.log('mail sender id: ', MailData.sender._addr_string);
           MailData.subject = msgDetails.title;
-          MailData.destinations = msgDetails.destinations;
+          MailData.recipients = msgDetails.destinations;
         }
-        MailData?.destinations?.map((destDetail) => {
+        MailData?.recipients?.map((destDetail) => {
           const { _addr_string: addrString, _mode: mode } = destDetail; // destructuring + renaming
           if (mode === MSG_ADDRESS_MODE_TO && !MailData.toList[addrString]) {
             MailData.toList[addrString] = destDetail;
@@ -233,19 +233,19 @@ const MessageView = () => {
         });
         console.log('tolist: ', MailData.toList);
         peopleUtil.ownIds(async (data) => {
-          composeData.ownId = await data;
-          replyData.recipients = composeData.ownId.filter((id) =>
+          ComposeData.ownId = await data;
+          ReplyData.sender = ComposeData.ownId.filter((id) =>
             Object.prototype.hasOwnProperty.call(MailData.toList, id)
           );
-          console.log('recipient: ', replyData.recipients, 'ownIds: ', composeData.ownId);
-          for (let i = 0; i < composeData.ownId.length; i++) {
-            if (Number(composeData.ownId[i]) === 0) {
-              composeData.ownId.splice(i, 1); // workaround for id '0'
+          console.log('recipient: ', ReplyData.sender, 'ownIds: ', ComposeData.ownId);
+          for (let i = 0; i < ComposeData.ownId.length; i++) {
+            if (Number(ComposeData.ownId[i]) === 0) {
+              ComposeData.ownId.splice(i, 1); // workaround for id '0'
             }
           }
         });
-        composeData.allUsers = peopleUtil.sortUsers(rs.userList.users);
-        replyData.sender = composeData.allUsers.filter(
+        ComposeData.allUsers = peopleUtil.sortUsers(rs.userList.users);
+        ReplyData.recipients = ComposeData.allUsers.filter(
           (user) => user.mGroupId === MailData.sender._addr_string
         );
         await rs.rsJsonApiRequest(
@@ -342,14 +342,14 @@ const MessageView = () => {
           { style: { display: showReplyCompose ? 'block' : 'none' } },
           m(
             '.composePopup',
-            composeData.allUsers &&
-              composeData.ownId &&
+            ComposeData.allUsers &&
+              ComposeData.ownId &&
               m(compose, {
-                allUsers: composeData.allUsers,
-                ownId: composeData.ownId,
+                allUsers: ComposeData.allUsers,
+                ownId: ComposeData.ownId,
                 msgType: 'reply',
-                sender: replyData.recipients,
-                recipients: replyData.sender,
+                sender: ReplyData.sender,
+                recipients: ReplyData.recipients,
                 subject: MailData.subject,
                 replyMessage: MailData.message,
               }),

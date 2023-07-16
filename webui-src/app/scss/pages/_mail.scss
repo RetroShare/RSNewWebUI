@@ -108,10 +108,11 @@
     border-radius: 0;
   }
   &__message {
-    padding: 0.5rem 0;
+    margin: 0.5rem 0;
     height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: auto;
     &-body {
       padding: 0;
       border: none;
@@ -191,9 +192,6 @@
   }
 }
 
-iframe.msg {
-  border: 0;
-}
 .mail-tag {
   width: 8rem;
   padding: 0.5rem;
