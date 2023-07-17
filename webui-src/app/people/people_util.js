@@ -63,14 +63,14 @@ function sortIds(list) {
   return list;
 }
 
-async function ownIds(consumer = (list) => {}, onlySigned = false) {
+async function ownIds(consumer = () => {}, onlySigned = false) {
   await rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {}, (owns) => {
     if (onlySigned) {
       consumer(sortIds(owns.ids));
     } else {
-      rs.rsJsonApiRequest('/rsIdentity/getOwnPseudonimousIds', {}, (pseudo) =>
-        consumer(sortIds(pseudo?.ids.concat(owns.ids)))
-      );
+      rs.rsJsonApiRequest('/rsIdentity/getOwnPseudonimousIds', {}, (pseudo) => {
+        if (pseudo.ids) consumer(sortIds(pseudo.ids.concat(owns.ids)));
+      });
     }
   });
 }

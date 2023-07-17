@@ -1,9 +1,12 @@
 const m = require('mithril');
 const rs = require('rswebui');
-const widget = require('widgets');
+// const widget = require('widgets');
+const peopleUtil = require('people/people_util');
 
 const Layout = () => {
   const Data = {
+    allUsers: [],
+    ownId: [],
     subject: '',
     identity: null,
     recipients: {
@@ -24,40 +27,61 @@ const Layout = () => {
       },
     },
   };
-  // async function loadDetails(attrs) {}
-  return {
-    oninit: async (v) => {
-      console.log('function loadDetails');
-      const { ownId, allUsers, msgType } = await v.attrs;
-      console.log(allUsers, ownId);
-      console.log('attrs: ', await v.attrs);
-      if (msgType === 'compose') {
-        Data.identity = ownId[0];
-        console.log(ownId);
-        console.log('id: ', Data.identity);
-      }
-      Object.keys(Data.recipients).forEach((item) => {
-        Data.recipients[item].inputList = allUsers;
+  async function loadUsers(msgType, senderId, recipientList) {
+    Data.allUsers = await peopleUtil.sortUsers(rs.userList.users);
+    if (msgType === 'reply') {
+      Data.allUsers.forEach(async (user) => {
+        if (user.mGroupId === (await senderId)) Data.recipients.to.sendList.push(user);
       });
-      console.log('Data before reply init: ', Data);
-      if (msgType === 'reply') {
-        const { sender, recipients, subject, replyMessage } = await v.attrs;
-        console.log('id: ', sender);
-        Data.identity = sender[0];
-        // console.log('id: ', Data.identity);
-        Data.recipients.to.sendList = recipients;
-        const tmb = document.querySelector('#composerMailBody');
-        tmb.innerHTML = `<br><br><p>-----Original Message-----</p>${replyMessage}`;
-        Data.subject = subject.substring(0, 4) === 'Re: ' ? subject : `Re: ${subject}`;
-        if (sender.length > 0) Data.identity = ownId.filter((id) => id === sender[0].mGroupId);
-        console.log('Data after reply init: ', Data);
+    }
+    await peopleUtil.ownIds(async (data) => {
+      Data.ownId = await data;
+      for (let i = 0; i < Data.ownId.length; i++) {
+        if (Number(Data.ownId[i]) === 0) {
+          Data.ownId.splice(i, 1); // workaround for id '0'
+        }
       }
-    },
-    view: ({ attrs: { ownId, allUsers } }) => {
+      if (msgType === 'reply') {
+        console.log('identities: ', Data.ownId, recipientList);
+        Data.identity = Data.ownId.filter((id) =>
+          Object.prototype.hasOwnProperty.call(recipientList, id)
+        )[0];
+        console.log('identity reply: ', Data.identity);
+      }
+    });
+  }
+  async function loadDetails(attrs) {
+    const { msgType, senderId, recipientList } = await attrs;
+    await loadUsers(msgType, senderId, recipientList);
+
+    console.log('---------- Mail Composer ----------');
+    console.log('allUsers: ', Data.allUsers, 'ownIds: ', Data.ownId);
+    console.log('attrs: ', await attrs);
+
+    Object.keys(Data.recipients).forEach((item) => {
+      Data.recipients[item].inputList = Data.allUsers;
+    });
+
+    if (msgType === 'compose') {
+      Data.identity = Data.ownId[0];
+      console.log('compose ids: ', Data.identity, Data.ownId);
+    }
+
+    if (msgType === 'reply') {
+      const { subject, replyMessage } = await attrs;
+      const tmb = document.querySelector('#composerMailBody');
+      tmb.innerHTML = `<br><br><p>-----Original Message-----</p>${replyMessage}`;
+      Data.subject = subject.substring(0, 4) === 'Re: ' ? subject : `Re: ${subject}`;
+      console.log('Data after reply init: ', Data);
+    }
+  }
+  return {
+    oninit: async (v) => await loadDetails(v.attrs),
+    view: () => {
       // get recipientType from the function call to handle events for all recipient types
       function handleInput(e, recipientType) {
         Data.recipients[recipientType].inputVal = e.target.value;
-        Data.recipients[recipientType].inputList = allUsers.filter((item) =>
+        Data.recipients[recipientType].inputList = Data.allUsers.filter((item) =>
           item.mGroupName.toLowerCase().includes(e.target.value.toLowerCase())
         );
       }
@@ -65,7 +89,7 @@ const Layout = () => {
         Data.recipients[recipientType].sendList.push(item);
         // reset current input values after a sender is selected
         Data.recipients[recipientType].inputVal = '';
-        Data.recipients[recipientType].inputList = allUsers;
+        Data.recipients[recipientType].inputList = Data.allUsers;
       }
       function removeSelectedItem(recipient, recipientType) {
         Data.recipients[recipientType].sendList = Data.recipients[recipientType].sendList.filter(
@@ -111,11 +135,11 @@ const Layout = () => {
               {
                 value: Data.identity,
                 onchange: (e) => {
-                  Data.identity = ownId[e.target.selectedIndex];
+                  Data.identity = Data.ownId[e.target.selectedIndex];
                 },
               },
-              ownId &&
-                ownId.map((id) =>
+              Data.ownId &&
+                Data.ownId.map((id) =>
                   m(
                     'option',
                     { value: id },
@@ -195,11 +219,10 @@ const Layout = () => {
           m('.compose-mail__message', [
             m('.compose-mail__message-body[placeholder=Message][contenteditable]#composerMailBody'),
           ]),
-          allUsers &&
-            m('button.compose-mail__send-btn', { onclick: sendMail }, [
-              m('span', 'Send Mail'),
-              m('i.fas.fa-paper-plane'),
-            ]),
+          m('button.compose-mail__send-btn', { onclick: sendMail }, [
+            m('span', 'Send Mail'),
+            m('i.fas.fa-paper-plane'),
+          ]),
         ]),
       ]);
     },

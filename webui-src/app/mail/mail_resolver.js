@@ -1,13 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const util = require('mail/mail_util');
-const peopleUtil = require('people/people_util');
 const compose = require('mail/mail_compose');
-
-const ComposeData = {
-  allUsers: [],
-  ownId: [],
-};
 
 const Messages = {
   all: [],
@@ -83,18 +77,7 @@ const tagselect = {
 const Layout = () => {
   let showCompose = false;
   return {
-    oninit: async () => {
-      Messages.load();
-      await peopleUtil.ownIds(async (data) => {
-        ComposeData.ownId = await data;
-        for (let i = 0; i < ComposeData.ownId.length; i++) {
-          if (Number(ComposeData.ownId[i]) === 0) {
-            ComposeData.ownId.splice(i, 1); // workaround for id '0'
-          }
-        }
-      });
-      ComposeData.allUsers = await peopleUtil.sortUsers(rs.userList.users);
-    },
+    oninit: () => Messages.load(),
     view: (vnode) => {
       const sectionsSize = {
         inbox: Messages.inbox.length,
@@ -152,13 +135,7 @@ const Layout = () => {
           { style: { display: showCompose ? 'block' : 'none' } },
           m(
             '.composePopup',
-            ComposeData.allUsers &&
-              ComposeData.ownId &&
-              m(compose, {
-                allUsers: ComposeData.allUsers,
-                ownId: ComposeData.ownId,
-                msgType: 'compose',
-              }),
+            m(compose, { msgType: 'compose' }),
             m('button.red.close-btn', { onclick: () => (showCompose = false) }, m('i.fas.fa-times'))
           )
         ),
@@ -168,7 +145,6 @@ const Layout = () => {
 };
 
 module.exports = {
-  ComposeData,
   view: ({ attrs, attrs: { tab, msgId } }) => {
     // TODO: utilize multiple routing params
     if (Object.prototype.hasOwnProperty.call(attrs, 'msgId')) {

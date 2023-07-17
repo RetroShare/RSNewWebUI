@@ -4,7 +4,6 @@ const util = require('files/files_util');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
 const compose = require('mail/mail_compose');
-const ComposeData = require('mail/mail_resolver');
 
 // rsmsgs.h
 const RS_MSG_BOXMASK = 0x000f;
@@ -159,10 +158,6 @@ const AttachmentSection = () => {
 
 const MessageView = () => {
   let showReplyCompose = false;
-  const ReplyData = {
-    sender: [],
-    recipients: [],
-  };
   const MailData = {
     msgId: '',
     message: '',
@@ -174,54 +169,44 @@ const MessageView = () => {
     bccList: {},
     files: [],
   };
-  function handleMailDelete() {
+  function deleteMail() {
+    rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', { msgId: MailData.msgId, bTrash: true });
+    rs.rsJsonApiRequest('/rsMsgs/MessageDelete', { msgId: MailData.msgId }).then((res) => {
+      widget.popupMessage(
+        m('.widget', [
+          m('.widget__heading', m('h3', res.body.retval ? 'Success' : 'Error')),
+          m('.widget__body', m('p', res.body.retval ? 'Mail Deleted.' : 'Error in Deleting.')),
+        ])
+      );
+      m.route.set('/mail/:tab', { tab: m.route.param().tab });
+    });
+  }
+  function confirmMailDelete() {
     widget.popupMessage([
       m('p', 'Are you sure you want to delete this mail?'),
-      m(
-        'button',
-        {
-          onclick: () => {
-            rs.rsJsonApiRequest('/rsMsgs/MessageToTrash', { msgId: MailData.msgId, bTrash: true });
-            rs.rsJsonApiRequest('/rsMsgs/MessageDelete', { msgId: MailData.msgId }).then((res) => {
-              widget.popupMessage(
-                m('.widget', [
-                  m('.widget__heading', m('h3', res.body.retval ? 'Success' : 'Error')),
-                  m(
-                    '.widget__body',
-                    m('p', res.body.retval ? 'Mail Deleted.' : 'Error in Deleting.')
-                  ),
-                ])
-              );
-              m.route.set('/mail/:tab', { tab: m.route.param().tab });
-            });
-          },
-        },
-        'Delete'
-      ),
+      m('button', { onclick: deleteMail }, 'Delete'),
     ]);
   }
 
   return {
-    oninit: (v) => {
-      rs.rsJsonApiRequest('/rsMsgs/getMessage', {
+    oninit: async (v) => {
+      const res = await rs.rsJsonApiRequest('/rsMsgs/getMessage', {
         msgId: v.attrs.msgId,
-      }).then(async (res) => {
-        if (res.body.retval) {
-          const msgDetails = res.body.msg;
-          msgDetails.files.forEach((element) =>
-            MailData.files.push({ ...element, from: msgDetails.from, ts: msgDetails.ts })
-          );
-          // regex to detect html tags, better regex?  /<[a-z][\s\S]*>/gi
-          MailData.message = /<\/*[a-z][^>]+?>/gi.test(msgDetails.msg)
-            ? msgDetails.msg
-            : `<p style="white-space: pre">${msgDetails.msg}</p>`;
-          document.querySelector('#msgView').innerHTML = MailData.message;
-          MailData.sender = msgDetails.from;
-          console.log('mail sender id: ', MailData.sender._addr_string);
-          MailData.subject = msgDetails.title;
-          MailData.recipients = msgDetails.destinations;
-        }
-        MailData?.recipients?.map((destDetail) => {
+      });
+      if (res.body.retval) {
+        const msgDetails = await res.body.msg;
+        msgDetails.files.forEach((element) =>
+          MailData.files.push({ ...element, from: msgDetails.from, ts: msgDetails.ts })
+        );
+        // regex to detect html tags, better regex?  /<[a-z][\s\S]*>/gi
+        MailData.message = /<\/*[a-z][^>]+?>/gi.test(msgDetails.msg)
+          ? msgDetails.msg
+          : `<p style="white-space: pre">${msgDetails.msg}</p>`;
+        document.querySelector('#msgView').innerHTML = MailData.message;
+        MailData.sender = msgDetails.from;
+        MailData.subject = msgDetails.title;
+        MailData.recipients = msgDetails.destinations;
+        MailData?.recipients?.forEach((destDetail) => {
           const { _addr_string: addrString, _mode: mode } = destDetail; // destructuring + renaming
           if (mode === MSG_ADDRESS_MODE_TO && !MailData.toList[addrString]) {
             MailData.toList[addrString] = destDetail;
@@ -231,29 +216,12 @@ const MessageView = () => {
             MailData.bccList[addrString] = destDetail;
           }
         });
-        console.log('tolist: ', MailData.toList);
-        peopleUtil.ownIds(async (data) => {
-          ComposeData.ownId = await data;
-          ReplyData.sender = ComposeData.ownId.filter((id) =>
-            Object.prototype.hasOwnProperty.call(MailData.toList, id)
-          );
-          console.log('recipient: ', ReplyData.sender, 'ownIds: ', ComposeData.ownId);
-          for (let i = 0; i < ComposeData.ownId.length; i++) {
-            if (Number(ComposeData.ownId[i]) === 0) {
-              ComposeData.ownId.splice(i, 1); // workaround for id '0'
-            }
-          }
-        });
-        ComposeData.allUsers = peopleUtil.sortUsers(rs.userList.users);
-        ReplyData.recipients = ComposeData.allUsers.filter(
-          (user) => user.mGroupId === MailData.sender._addr_string
-        );
-        await rs.rsJsonApiRequest(
+        rs.rsJsonApiRequest(
           '/rsIdentity/getIdDetails',
           { id: MailData?.sender?._addr_string },
           (data) => (MailData.avatar = data?.details?.mAvatar)
         );
-      });
+      }
     },
     view: () =>
       m(
@@ -269,7 +237,7 @@ const MessageView = () => {
               m('button', { onclick: () => (showReplyCompose = true) }, 'Reply'),
               m('button', 'Reply All'),
               m('button', 'Forward'),
-              m('button', { onclick: handleMailDelete }, 'Delete'),
+              m('button', { onclick: confirmMailDelete }, 'Delete'),
             ]),
           ]),
           m('.msg-view__header', [
@@ -288,29 +256,32 @@ const MessageView = () => {
                     m('b', 'From: '),
                     rs.userList.userMap[MailData.sender._addr_string] || 'Unknown',
                   ]),
-                MailData.toList &&
-                  Object.keys(MailData.toList).length > 0 &&
-                  m('.msg-details__info-item', [
-                    m('b', 'To: '),
-                    m(
-                      '#truncate.truncated-view',
-                      Object.keys(MailData.toList).map((key, index) =>
-                        m('span', { key: index }, `${rs.userList.userMap[key]}, `)
-                      )
-                    ),
-                    m(
-                      'button.toggle-truncate',
-                      {
-                        style: {
-                          display: Object.keys(MailData.toList).length > 10 ? 'block' : 'none',
-                        },
-                        onclick: () => {
-                          document.querySelector('#truncate').classList.toggle('truncated-view');
-                        },
-                      },
-                      '...'
-                    ),
-                  ]),
+                m('.msg-details__info-item', [
+                  m('b', 'To: '),
+                  MailData.toList && Object.keys(MailData.toList).length > 0
+                    ? [
+                        m('#truncate.truncated-view', [
+                          Object.keys(MailData.toList).map((key, index) =>
+                            m('span', { key: index }, `${rs.userList.userMap[key]}, `)
+                          ),
+                        ]),
+                        m(
+                          'button.toggle-truncate',
+                          {
+                            style: {
+                              display: Object.keys(MailData.toList).length > 10 ? 'block' : 'none',
+                            },
+                            onclick: () => {
+                              document
+                                .querySelector('#truncate')
+                                .classList.toggle('truncated-view');
+                            },
+                          },
+                          '...'
+                        ),
+                      ]
+                    : m('span', 'Unknown'),
+                ]),
                 MailData.ccList &&
                   Object.keys(MailData.ccList).length > 0 &&
                   m('.msg-details__info-item', [
@@ -342,17 +313,15 @@ const MessageView = () => {
           { style: { display: showReplyCompose ? 'block' : 'none' } },
           m(
             '.composePopup',
-            ComposeData.allUsers &&
-              ComposeData.ownId &&
-              m(compose, {
-                allUsers: ComposeData.allUsers,
-                ownId: ComposeData.ownId,
-                msgType: 'reply',
-                sender: ReplyData.sender,
-                recipients: ReplyData.recipients,
-                subject: MailData.subject,
-                replyMessage: MailData.message,
-              }),
+            MailData.sender._addr_string
+              ? m(compose, {
+                  msgType: 'reply',
+                  senderId: MailData.sender._addr_string,
+                  recipientList: MailData.toList,
+                  subject: MailData.subject,
+                  replyMessage: MailData.message,
+                })
+              : m('.widget', m('.widget__heading', m('h3', 'Sender is not known'))),
             m(
               'button.red.close-btn',
               { onclick: () => (showReplyCompose = false) },
