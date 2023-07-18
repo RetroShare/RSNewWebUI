@@ -1,6 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
-// const widget = require('widgets');
+const widget = require('widgets');
 const peopleUtil = require('people/people_util');
 
 const Layout = () => {
@@ -27,7 +27,7 @@ const Layout = () => {
       },
     },
   };
-  async function loadUsers(msgType, senderId, recipientList) {
+  async function loadMailUserDetails(msgType, senderId, recipientList) {
     Data.allUsers = await peopleUtil.sortUsers(rs.userList.users);
     if (msgType === 'reply') {
       Data.allUsers.forEach(async (user) => {
@@ -42,21 +42,15 @@ const Layout = () => {
         }
       }
       if (msgType === 'reply') {
-        console.log('identities: ', Data.ownId, recipientList);
         Data.identity = Data.ownId.filter((id) =>
           Object.prototype.hasOwnProperty.call(recipientList, id)
         )[0];
-        console.log('identity reply: ', Data.identity);
       }
     });
   }
   async function loadDetails(attrs) {
     const { msgType, senderId, recipientList } = await attrs;
-    await loadUsers(msgType, senderId, recipientList);
-
-    console.log('---------- Mail Composer ----------');
-    console.log('allUsers: ', Data.allUsers, 'ownIds: ', Data.ownId);
-    console.log('attrs: ', await attrs);
+    await loadMailUserDetails(msgType, senderId, recipientList);
 
     Object.keys(Data.recipients).forEach((item) => {
       Data.recipients[item].inputList = Data.allUsers;
@@ -64,7 +58,6 @@ const Layout = () => {
 
     if (msgType === 'compose') {
       Data.identity = Data.ownId[0];
-      console.log('compose ids: ', Data.identity, Data.ownId);
     }
 
     if (msgType === 'reply') {
@@ -72,12 +65,11 @@ const Layout = () => {
       const tmb = document.querySelector('#composerMailBody');
       tmb.innerHTML = `<br><br><p>-----Original Message-----</p>${replyMessage}`;
       Data.subject = subject.substring(0, 4) === 'Re: ' ? subject : `Re: ${subject}`;
-      console.log('Data after reply init: ', Data);
     }
   }
   return {
     oninit: async (v) => await loadDetails(v.attrs),
-    view: () => {
+    view: (v) => {
       // get recipientType from the function call to handle events for all recipient types
       function handleInput(e, recipientType) {
         Data.recipients[recipientType].inputVal = e.target.value;
@@ -100,30 +92,28 @@ const Layout = () => {
         const to = Data.recipients.to.sendList.map((toItem) => toItem.mGroupId);
         const cc = Data.recipients.cc.sendList.map((ccItem) => ccItem.mGroupId);
         const bcc = Data.recipients.bcc.sendList.map((bccItem) => bccItem.mGroupId);
-        console.log(to, cc, bcc);
         const { identity: from, subject } = Data;
-        console.log(from, subject);
-        const tmb = document.querySelector('#composerMailBody');
-        console.log(tmb.innerHTML);
-        // rs.rsJsonApiRequest('/rsMsgs/sendMail', { from, subject, mailBody, to, cc, bcc }).then(
-        //   (res) => {
-        //     if (res.body.retval) {
-        //       Object.keys(Data.recipients).forEach((recipientType) => {
-        //         Data.recipients[recipientType].sendList = [];
-        //       });
-        //       Data.subject = '';
-        //       Data.mailBody = '';
-        //       m.redraw();
-        //     }
-        //     const success = res.body.retval < 1;
-        //     widget.popupMessage(
-        //       m('.widget', [
-        //         m('.widget__heading', m('h3', success ? 'Success' : 'Error')),
-        //         m('.widget__body', m('p', success ? 'Mail sent successfully' : res.body.errorMsg)),
-        //       ])
-        //     );
-        //   }
-        // );
+        const mailBodyElement = document.querySelector('#composerMailBody');
+        const mailBody = `<div>${mailBodyElement.innerHTML}</div>`;
+        rs.rsJsonApiRequest('/rsMsgs/sendMail', { from, subject, mailBody, to, cc, bcc }).then(
+          (res) => {
+            if (res.body.retval) {
+              Object.keys(Data.recipients).forEach((recipientType) => {
+                Data.recipients[recipientType].sendList = [];
+              });
+              Data.subject = '';
+              mailBodyElement.innerHTML = '';
+              v.attrs.setShowCompose(false);
+            }
+            const success = res.body.retval === 1;
+            widget.popupMessage(
+              m('.widget', [
+                m('.widget__heading', m('h3', success ? 'Success' : 'Error')),
+                m('.widget__body', m('p', success ? 'Mail sent successfully' : res.body.errorMsg)),
+              ])
+            );
+          }
+        );
       }
       return m('.widget', [
         m('.widget__heading', m('h3', 'Compose a mail')),

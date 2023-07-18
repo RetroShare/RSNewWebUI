@@ -114,17 +114,8 @@
     flex-direction: column;
     overflow: auto;
     &-body {
-      padding: 0;
-      border: none;
-      border-radius: 0;
-      resize: none;
       height: 100%;
       outline: transparent;
-    }
-    & .replybox {
-      border: none;
-      padding: 0;
-      height: max-content;
     }
   }
   &__send-btn {

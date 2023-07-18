@@ -76,6 +76,10 @@ const tagselect = {
 };
 const Layout = () => {
   let showCompose = false;
+  // setFunction like react to show/hide popup
+  function setShowCompose(bool) {
+    showCompose = bool;
+  }
   return {
     oninit: () => Messages.load(),
     view: (vnode) => {
@@ -100,7 +104,7 @@ const Layout = () => {
 
       return [
         m('.side-bar', [
-          m('button.mail-compose-btn', { onclick: () => (showCompose = true) }, 'Compose'),
+          m('button.mail-compose-btn', { onclick: () => setShowCompose(true) }, 'Compose'),
           m(util.Sidebar, {
             tabs: Object.keys(sections),
             size: sectionsSize,
@@ -131,12 +135,12 @@ const Layout = () => {
           ])
         ),
         m(
-          '.composePopupOverlay',
+          '.composePopupOverlay#mailComposerPopup',
           { style: { display: showCompose ? 'block' : 'none' } },
           m(
             '.composePopup',
-            m(compose, { msgType: 'compose' }),
-            m('button.red.close-btn', { onclick: () => (showCompose = false) }, m('i.fas.fa-times'))
+            m(compose, { msgType: 'compose', setShowCompose }),
+            m('button.red.close-btn', { onclick: () => setShowCompose(false) }, m('i.fas.fa-times'))
           )
         ),
       ];

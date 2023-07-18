@@ -157,7 +157,11 @@ const AttachmentSection = () => {
 };
 
 const MessageView = () => {
-  let showReplyCompose = false;
+  let showCompose = false;
+  // setFunction like react to show/hide popup
+  function setShowCompose(bool) {
+    showCompose = bool;
+  }
   const MailData = {
     msgId: '',
     message: '',
@@ -203,6 +207,7 @@ const MessageView = () => {
           ? msgDetails.msg
           : `<p style="white-space: pre">${msgDetails.msg}</p>`;
         document.querySelector('#msgView').innerHTML = MailData.message;
+        MailData.msgId = msgDetails.msgId;
         MailData.sender = msgDetails.from;
         MailData.subject = msgDetails.title;
         MailData.recipients = msgDetails.destinations;
@@ -234,7 +239,7 @@ const MessageView = () => {
               m('i.fas.fa-arrow-left')
             ),
             m('.msg-view-nav__action', [
-              m('button', { onclick: () => (showReplyCompose = true) }, 'Reply'),
+              m('button', { onclick: () => setShowCompose(true) }, 'Reply'),
               m('button', 'Reply All'),
               m('button', 'Forward'),
               m('button', { onclick: confirmMailDelete }, 'Delete'),
@@ -309,8 +314,8 @@ const MessageView = () => {
             ]),
         ],
         m(
-          '.composePopupOverlay',
-          { style: { display: showReplyCompose ? 'block' : 'none' } },
+          '.composePopupOverlay#mailComposerPopup',
+          { style: { display: showCompose ? 'block' : 'none' } },
           m(
             '.composePopup',
             MailData.sender._addr_string
@@ -320,13 +325,10 @@ const MessageView = () => {
                   recipientList: MailData.toList,
                   subject: MailData.subject,
                   replyMessage: MailData.message,
+                  setShowCompose,
                 })
               : m('.widget', m('.widget__heading', m('h3', 'Sender is not known'))),
-            m(
-              'button.red.close-btn',
-              { onclick: () => (showReplyCompose = false) },
-              m('i.fas.fa-times')
-            )
+            m('button.red.close-btn', { onclick: () => setShowCompose(false) }, m('i.fas.fa-times'))
           )
         )
       ),
