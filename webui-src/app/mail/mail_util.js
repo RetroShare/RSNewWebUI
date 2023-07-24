@@ -171,6 +171,7 @@ const MessageView = () => {
     toList: {},
     ccList: {},
     bccList: {},
+    timeStamp: '',
     files: [],
   };
   function deleteMail() {
@@ -210,6 +211,7 @@ const MessageView = () => {
         MailData.msgId = msgDetails.msgId;
         MailData.sender = msgDetails.from;
         MailData.subject = msgDetails.title;
+        MailData.timeStamp = msgDetails.ts;
         MailData.recipients = msgDetails.destinations;
         MailData?.recipients?.forEach((destDetail) => {
           const { _addr_string: addrString, _mode: mode } = destDetail; // destructuring + renaming
@@ -267,7 +269,7 @@ const MessageView = () => {
                     ? [
                         m('#truncate.truncated-view', [
                           Object.keys(MailData.toList).map((key, index) =>
-                            m('span', { key: index }, `${rs.userList.userMap[key]}, `)
+                            m('span', { key: index }, `${rs.userList.userMap[key] || 'Unknown'}, `)
                           ),
                         ]),
                         m(
@@ -325,6 +327,7 @@ const MessageView = () => {
                   recipientList: MailData.toList,
                   subject: MailData.subject,
                   replyMessage: MailData.message,
+                  timeStamp: new Date(MailData.timeStamp * 1000),
                   setShowCompose,
                 })
               : m('.widget', m('.widget__heading', m('h3', 'Sender is not known'))),

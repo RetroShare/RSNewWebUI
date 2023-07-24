@@ -61,9 +61,53 @@ const Layout = () => {
     }
 
     if (msgType === 'reply') {
-      const { subject, replyMessage } = await attrs;
+      const { subject, replyMessage, timeStamp } = await attrs;
       const tmb = document.querySelector('#composerMailBody');
-      tmb.innerHTML = `<br><br><p>-----Original Message-----</p>${replyMessage}`;
+      const time = timeStamp.toLocaleTimeString('UTC', { hour: '2-digit', minute: '2-digit' });
+      const dateLong = timeStamp.toLocaleDateString('UTC', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      const replyMessageHeader = `
+        -----Original Message-----
+        <br>
+        <b>From: </b>
+        <a href="retroshare://message?id=${senderId}">${rs.userList.userMap[senderId]}</a>
+        <br>
+        <b>To: </b>
+        ${Object.keys(recipientList).map(
+          (recip) => `
+          <a href="retroshare://message?id=${recip}">
+            ${rs.userList.userMap[recipientList[recip]._addr_string] || 'Unknown'},
+          </a>
+        `
+        )}
+        <br>
+        <br>
+        <b>Sent: </b>
+        <span>${dateLong} ${time}</span>
+        <br>
+        <b>Subject: </b>
+        <span>${subject}</span>
+        <br>
+        <br>
+        <span>
+          On ${timeStamp.toLocaleDateString()} ${time},
+          <a href="retroshare://message?id=${senderId}">${rs.userList.userMap[senderId]}</a>
+          wrote:
+        </span>
+      `;
+      tmb.innerHTML = `
+        <br>
+        <br>
+        <div>
+          ${replyMessageHeader}
+          <div class="original-message" style="margin-left: 20px;">
+            ${replyMessage}
+          </div>
+        </div>
+      `;
       Data.subject = subject.substring(0, 4) === 'Re: ' ? subject : `Re: ${subject}`;
     }
   }
