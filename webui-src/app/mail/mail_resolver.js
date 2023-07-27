@@ -1,13 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const util = require('mail/mail_util');
-const peopleUtil = require('people/people_util');
 const compose = require('mail/mail_compose');
-
-const composeData = {
-  allUsers: undefined,
-  ownId: undefined,
-};
 
 const Messages = {
   all: [],
@@ -80,108 +74,94 @@ const tagselect = {
   showval: 'Tags',
   opts: ['Tags', 'Important', 'Work', 'Personal'],
 };
-const Layout = {
-  oninit: async () => {
-    Messages.load();
-    await peopleUtil.ownIds(async (data) => {
-      composeData.ownId = await data;
-      for (let i = 0; i < composeData.ownId.length; i++) {
-        if (Number(composeData.ownId[i]) === 0) {
-          composeData.ownId.splice(i, 1); // workaround for id '0'
-        }
-      }
-      // identity = ownId[0];
-    });
-    composeData.allUsers = await peopleUtil.sortUsers(rs.userList.users);
-  },
-  view: (vnode) => {
-    const sectionsSize = {
-      inbox: Messages.inbox.length,
-      outbox: Messages.outbox.length,
-      drafts: Messages.drafts.length,
-      sent: Messages.sent.length,
-      trash: Messages.trash.length,
-    };
-    const sectionsquickviewSize = {
-      starred: Messages.starred.length,
-      system: Messages.system.length,
-      spam: Messages.spam.length,
-      attachment: Messages.attachment.length,
-      important: Messages.important.length,
-      work: Messages.work.length,
-      todo: Messages.todo.length,
-      later: Messages.later.length,
-      personal: Messages.personal.length,
-    };
+const Layout = () => {
+  let showCompose = false;
+  // setFunction like react to show/hide popup
+  function setShowCompose(bool) {
+    showCompose = bool;
+  }
+  return {
+    oninit: () => Messages.load(),
+    view: (vnode) => {
+      const sectionsSize = {
+        inbox: Messages.inbox.length,
+        outbox: Messages.outbox.length,
+        drafts: Messages.drafts.length,
+        sent: Messages.sent.length,
+        trash: Messages.trash.length,
+      };
+      const sectionsQuickviewSize = {
+        starred: Messages.starred.length,
+        system: Messages.system.length,
+        spam: Messages.spam.length,
+        attachment: Messages.attachment.length,
+        important: Messages.important.length,
+        work: Messages.work.length,
+        todo: Messages.todo.length,
+        later: Messages.later.length,
+        personal: Messages.personal.length,
+      };
 
-    return [
-      m('.side-bar', [
+      return [
+        m('.side-bar', [
+          m('button.mail-compose-btn', { onclick: () => setShowCompose(true) }, 'Compose'),
+          m(util.Sidebar, {
+            tabs: Object.keys(sections),
+            size: sectionsSize,
+            baseRoute: '/mail/',
+          }),
+          m(util.SidebarQuickView, {
+            tabs: Object.keys(sectionsquickview),
+            size: sectionsQuickviewSize,
+            baseRoute: '/mail/',
+          }),
+        ]),
         m(
-          'button.mail-compose-btn',
-          {
-            onclick: () =>
-              composeData.allUsers &&
-              composeData.ownId &&
-              util.popupMessageCompose(
-                m(compose, { allUsers: composeData.allUsers, ownId: composeData.ownId })
-              ),
-          },
-          'Compose'
+          '.node-panel',
+          m('.widget', [
+            m.route.get().split('/').length < 4 &&
+              m('.top-heading', [
+                m(
+                  'select.mail-tag',
+                  {
+                    value: tagselect.showval,
+                    onchange: (e) => (tagselect.showval = tagselect.opts[e.target.selectedIndex]),
+                  },
+                  [tagselect.opts.map((opt) => m('option', { value: opt }, opt.toLocaleString()))]
+                ),
+                m(util.SearchBar, { list: {} }),
+              ]),
+            vnode.children,
+          ])
         ),
-        m(util.Sidebar, {
-          tabs: Object.keys(sections),
-          size: sectionsSize,
-          baseRoute: '/mail/',
-        }),
-        m(util.SidebarQuickView, {
-          tabs: Object.keys(sectionsquickview),
-          size: sectionsquickviewSize,
-          baseRoute: '/mail/',
-        }),
-      ]),
-      m(
-        '.node-panel',
-        m('.widget', [
-          m('.top-heading', [
-            m(
-              'select.mail-tag',
-              {
-                value: tagselect.showval,
-                onchange: (e) => {
-                  tagselect.showval = tagselect.opts[e.target.selectedIndex];
-                },
-              },
-              [tagselect.opts.map((o) => m('option', { value: o }, o.toLocaleString()))]
-            ),
-            m(util.SearchBar, {
-              list: {},
-            }),
-          ]),
-          vnode.children,
-        ])
-      ),
-    ];
-  },
+        m(
+          '.composePopupOverlay#mailComposerPopup',
+          { style: { display: showCompose ? 'block' : 'none' } },
+          m(
+            '.composePopup',
+            m(compose, { msgType: 'compose', setShowCompose }),
+            m('button.red.close-btn', { onclick: () => setShowCompose(false) }, m('i.fas.fa-times'))
+          )
+        ),
+      ];
+    },
+  };
 };
 
 module.exports = {
-  composeData,
-  view: (v) => {
-    const tab = v.attrs.tab;
+  view: ({ attrs, attrs: { tab, msgId } }) => {
     // TODO: utilize multiple routing params
-
-    if (Object.prototype.hasOwnProperty.call(v.attrs, 'msgId')) {
-      return m(
-        Layout,
-        m(util.MessageView, {
-          id: v.attrs.msgId,
-        })
-      );
+    if (Object.prototype.hasOwnProperty.call(attrs, 'msgId')) {
+      return m(Layout, m(util.MessageView, { msgId }));
     }
     return m(
       Layout,
       m(sections[tab] || sectionsquickview[tab], {
-        list: Messages[tab].reverse(),
+        list: Messages[tab].sort((msgA, msgB) => {
+          const msgADate = new Date(msgA.ts.xint64 * 1000);
+          const msgBDate = new Date(msgB.ts.xint64 * 1000);
+          return msgADate < msgBDate;
+        }),
       })
     );
   },

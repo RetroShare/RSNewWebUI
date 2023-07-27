@@ -4,12 +4,11 @@
 .nav-menu {
   background-color: $dark-color;
   box-shadow: 0 5px 5px #222;
-  float: left;
   display: flex;
   flex-direction: column;
   align-items: center;
   height: 100%;
-  padding: 8px 4px;
+  padding: 0.5rem 0.25rem;
   margin-right: 0rem;
 
   &__logo {
@@ -17,7 +16,6 @@
     display: flex;
     gap: 0.3rem;
     align-items: center;
-    overflow: hidden;
 
     img {
       width: 1.6rem;
@@ -30,21 +28,34 @@
   }
 
   &__box {
-    padding-top: 2rem;
+    padding: 2rem 0.125rem;
     display: flex;
     flex-direction: column;
+    gap: 0.5rem;
     position: relative;
 
     .item {
+      margin: 0;
+      padding: 0.675rem 0.5rem;
       width: 10rem;
-      border-radius: 6px;
       display: flex;
       align-items: center;
-      overflow: hidden;
       line-height: 1;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      color: #ccc;
+      text-transform: capitalize;
+      transition: 0ms;
 
       &:hover {
         background-color: transparentize($light-color, 0.85);
+      }
+
+      i.sidenav-icon {
+        width: 2.5rem;
+        height: 1.4rem;
+        display: grid;
+        place-items: center;
       }
     }
 
@@ -56,7 +67,6 @@
 
     button.toggle-nav {
       display: none;
-      font-size: 14px;
       position: absolute;
       padding: 0;
       top: 0;
@@ -74,14 +84,16 @@
 
   &.collapsed {
     .nav-menu__logo {
-      width: 25px;
-      & h4 {
+      & h5 {
         display: none;
       }
     }
     .nav-menu__box {
       .item {
-        width: 2.25rem;
+        padding: 0.675rem 0;
+        width: 2.5rem;
+        justify-content: center;
+        transition: 300ms;
         & p {
           display: none;
         }
@@ -98,29 +110,16 @@
   }
 }
 
-a.item {
-  margin: 4px;
-  padding: 10px;
-  text-align: center;
-  text-decoration: none;
-  color: #ccc;
-  font-size: 0.875em;
-  text-transform: capitalize;
-  transition: 300ms;
-  display: inline-flex;
-  flex-direction: row;
-}
-
 .sidebar {
-  width: 200px;
+  width: 13rem;
   background-color: white;
+  display: flex;
+  flex-direction: column;
   & a {
     text-decoration: none;
     text-transform: capitalize;
-    padding: 1em;
+    padding: 1rem;
     cursor: pointer;
-    display: block;
-    font-size: 0.95em;
     color: #999;
     &:hover {
       color: #222;
@@ -159,14 +158,6 @@ a.item {
   width: 100%;
   padding: 0.5rem;
   animation: fadein 0.5s;
-}
-
-i.sidenav-icon {
-  width: 2.5rem;
-  height: 1.4rem;
-  display: grid;
-  place-items: center;
-  padding-right: 0.5rem;
 }
 
 @keyframes expand-left-border {

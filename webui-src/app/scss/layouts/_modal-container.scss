@@ -13,16 +13,25 @@
   position: absolute;
   color: #555;
   width: 40%;
-  /*height: 40%;*/
-  min-height: 250px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  min-height: 10rem;
+  height: max-content;
+  padding: 1.5rem;
+  inset: 0;
+  margin: auto;
   background-color: white;
-  padding: 2em;
-  border-radius: 20px;
+  border-radius: 1rem;
   animation: fadein 0.5s;
-}
-.modal-content > button {
-  float: right;
+  display: flex;
+  flex-direction: column;
+  & button:last-child {
+    margin-top: auto;
+  }
+  & .close-btn {
+    position: absolute;
+    right: 1.5rem;
+  }
+  // Remove default widget padding
+  & .widget {
+    padding: 0;
+  }
 }

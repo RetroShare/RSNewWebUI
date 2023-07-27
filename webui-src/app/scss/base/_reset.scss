@@ -1,5 +1,5 @@
 html {
-  font-size: 14px;
+  font-size: 87.5%;
   box-sizing: border-box;
 }
 
@@ -42,7 +42,7 @@ html:focus-within {
 body {
   text-rendering: optimizeSpeed;
   line-height: 1.5;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Arial, Helvetica, sans-serif !important;
 }
 
 /* A elements that don't have a class get default styles */

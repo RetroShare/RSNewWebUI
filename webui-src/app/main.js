@@ -26,7 +26,7 @@ const navIcon = {
 };
 
 const navbar = () => {
-  let isCollapsed = false;
+  let isCollapsed = true;
   return {
     view: (vnode) =>
       m(
