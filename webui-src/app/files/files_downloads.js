@@ -7,6 +7,7 @@ const Downloads = {
   strategies: {},
   statusMap: {},
   hashes: [],
+  chunksMap: {},
 
   loadStrategy() {
     rs.rsJsonApiRequest('/rsFiles/FileDownloads', {}, (d) =>
@@ -19,22 +20,29 @@ const Downloads = {
   },
 
   async loadHashes() {
-    await rs.rsJsonApiRequest('/rsFiles/FileDownloads', {}, (d) => (Downloads.hashes = d.hashs));
+    await rs
+      .rsJsonApiRequest('/rsFiles/FileDownloads', {}, (d) => (Downloads.hashes = d.hashs))
+      .then(() => {
+        Downloads.hashes.forEach((hash) => {
+          rs.rsJsonApiRequest('/rsFiles/FileDownloadChunksDetails', {
+            hash,
+          }).then((res) => (this.chunksMap[hash] = res.body.info));
+        });
+      });
   },
 
   async loadStatus() {
     await Downloads.loadHashes();
     const fileKeys = Object.keys(Downloads.statusMap);
     if (Downloads.hashes !== undefined && Downloads.hashes.length !== fileKeys.length) {
-      // New file added
       if (Downloads.hashes.length > fileKeys.length) {
+        // New file added
         const newHashes = util.compareArrays(Downloads.hashes, fileKeys);
         for (const hash of newHashes) {
           Downloads.updateFileDetail(hash, true);
         }
-      }
-      // Existing file removed
-      else {
+      } else {
+        // Existing file removed
         const oldHashes = util.compareArrays(fileKeys, Downloads.hashes);
         for (const hash of oldHashes) {
           delete Downloads.statusMap[hash];
@@ -125,13 +133,7 @@ const NewFileDialog = () => {
       m('input[type=text][name=fileurl]', {
         onchange: (e) => (url = e.target.value),
       }),
-      m(
-        'button',
-        {
-          onclick: () => addFile(url),
-        },
-        'Add'
-      ),
+      m('button', { onclick: () => addFile(url) }, 'Add'),
     ],
   };
 };
@@ -140,27 +142,17 @@ const Component = () => {
   return {
     oninit: () => {
       Downloads.loadStrategy();
-      rs.setBackgroundTask(Downloads.loadStatus, 1000, () => {
-        return m.route.get() === '/files/files';
-      });
+      rs.setBackgroundTask(Downloads.loadStatus, 1000, () => m.route.get() === '/files/files');
       Downloads.resetSearch();
     },
     view: () => [
       m('.widget__body-heading', [
-        m('h3', 'Downloads (' + (Downloads.hashes && Downloads.hashes.length) + ' files)'),
+        m('h3', `Downloads (${Downloads.hashes ? Downloads.hashes.length : 0} files)`),
         m('.action', [
+          m('button', { onclick: () => widget.popupMessage(m(NewFileDialog)) }, 'Add new file'),
           m(
             'button',
-            {
-              onclick: () => widget.popupMessage(m(NewFileDialog)),
-            },
-            'Add new file'
-          ),
-          m(
-            'button',
-            {
-              onclick: () => rs.rsJsonApiRequest('/rsFiles/FileClearCompleted'),
-            },
+            { onclick: () => rs.rsJsonApiRequest('/rsFiles/FileClearCompleted') },
             'Clear completed'
           ),
         ]),
@@ -173,7 +165,8 @@ const Component = () => {
               strategy: Downloads.strategies[hash],
               direction: 'down',
               transferred: Downloads.statusMap[hash].transfered.xint64,
-              parts: [],
+              chunksInfo: Downloads.chunksMap[hash],
+              rsJsonApiRequest: rs.rsJsonApiRequest,
             })
           ),
       ]),

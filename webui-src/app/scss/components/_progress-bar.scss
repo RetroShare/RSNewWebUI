@@ -1,6 +1,6 @@
 @use '../abstracts/colors' as *;
 
-.progressbar {
+.progress-bar {
   width: 100%;
   height: 2rem;
   position: relative;
@@ -8,7 +8,7 @@
   background-color: $light-color;
   border-radius: 20px;
   overflow: hidden;
-  &-status {
+  &__status {
     position: absolute;
     top: 0;
     left: 0;
@@ -16,11 +16,43 @@
     color: $dark-color;
     background-color: $primary-color;
   }
-  &-percent {
+  &__percent {
     position: absolute;
     inset: 0;
     margin: auto;
     width: fit-content;
     height: fit-content;
+  }
+  &-chunks {
+    position: relative;
+    margin-top: 0.5rem;
+    width: 100%;
+    height: 2rem;
+    display: flex;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    background-color: $light-color;
+    & .chunk {
+      width: 100%;
+      &[data-chunkVal='0'] {
+        background-color: transparentize($primary-light-color, 0.8);
+      }
+      &[data-chunkVal='1'] {
+        background-color: $red-color;
+      }
+      &[data-chunkVal='2'] {
+        background-color: $primary-color;
+      }
+      &[data-chunkVal='3'] {
+        background-color: $golden-yellow-color;
+      }
+    }
+    &__percent {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: fit-content;
+      height: fit-content;
+    }
   }
 }
