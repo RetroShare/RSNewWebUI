@@ -723,7 +723,7 @@ const PostView = () => {
               post.mFiles.map((file) =>
                 m('tr', [
                   m('td', file.mName),
-                  m('td', util.formatbytes(file.mSize.xint64)),
+                  m('td', rs.formatBytes(file.mSize.xint64)),
                   m(
                     'button',
                     {

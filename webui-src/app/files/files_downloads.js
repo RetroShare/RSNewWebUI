@@ -166,7 +166,6 @@ const Component = () => {
               direction: 'down',
               transferred: Downloads.statusMap[hash].transfered.xint64,
               chunksInfo: Downloads.chunksMap[hash],
-              rsJsonApiRequest: rs.rsJsonApiRequest,
             })
           ),
       ]),

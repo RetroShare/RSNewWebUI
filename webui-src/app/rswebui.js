@@ -1,5 +1,5 @@
 const m = require('mithril');
-const futil = require('files/files_util');
+const fproxy = require('files/files_proxy');
 
 const RsEventsType = {
   NONE: 0, // Used internally to detect invalid event type passed
@@ -175,11 +175,11 @@ const eventQueue = {
         console.log('search results : ', event);
 
         // if request item doesn't already exists in Object then create new item
-        if (!Object.prototype.hasOwnProperty.call(futil.proxyObj, event.mRequestId)) {
-          futil.proxyObj[event.mRequestId] = [];
+        if (!Object.prototype.hasOwnProperty.call(fproxy.fileProxyObj, event.mRequestId)) {
+          fproxy.fileProxyObj[event.mRequestId] = [];
         }
 
-        futil.proxyObj[event.mRequestId].push(...event.mResults);
+        fproxy.fileProxyObj[event.mRequestId].push(...event.mResults);
       },
     },
     [RsEventsType.CHAT_MESSAGE]: {
@@ -336,6 +336,15 @@ function logon(loginHeader, displayAuthError, displayErrorMessage, successful) {
   });
 }
 
+function formatBytes(bytes, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
 module.exports = {
   rsJsonApiRequest,
   setKeys,
@@ -344,4 +353,5 @@ module.exports = {
   events: eventQueue.events,
   userList,
   loginKey,
+  formatBytes,
 };

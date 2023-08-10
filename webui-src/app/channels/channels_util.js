@@ -180,19 +180,8 @@ const FilesTable = () => {
   };
 };
 
-function formatbytes(bytes, decimals = 2) {
-  // takes in size returns a string (size)(kb/gb/tb)
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
-
 const ChannelTable = () => {
   return {
-    oninit: (v) => {},
     view: (v) => m('table.channels', [m('tr', [m('th', 'Channel Name')]), v.children]),
   };
 };
@@ -239,7 +228,6 @@ module.exports = {
   Data,
   SearchBar,
   ChannelSummary,
-  formatbytes,
   DisplayChannelsFromList,
   updatedisplaychannels,
   ChannelTable,
