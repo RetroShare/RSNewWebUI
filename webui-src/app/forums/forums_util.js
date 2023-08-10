@@ -16,12 +16,38 @@ const Data = {
   ParentThreadMap: {},
 };
 
-async function updatedisplayforums(keyid, details = {}) {
-  const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumsInfo', {
-    forumIds: [keyid], // keyid: Forumid
-  });
-  details = res.body.forumsInfo[0];
-  Data.DisplayForums[keyid] = {
+async function cachedForumFetch(url, options, cacheKey) {
+  const expiry = 10 * 60; // 10 minute default
+  const cachedDetails = sessionStorage.getItem(cacheKey);
+  const cachedTs = sessionStorage.getItem(`${cacheKey}:ts`);
+  // check if cachedDetails was already in sessionStorage
+  if (cachedDetails !== null && cachedTs !== null) {
+    const age = (Date.now() - cachedTs) / 1000;
+    if (age < expiry) {
+      return await JSON.parse(cachedDetails);
+    } else {
+      // clean up old cache
+      sessionStorage.removeItem(cacheKey);
+      sessionStorage.removeItem(`${cacheKey}:ts`);
+    }
+  }
+  const res = await rs.rsJsonApiRequest(url, options);
+  if (res.body.retval) {
+    sessionStorage.setItem(cacheKey, JSON.stringify(res.body));
+    sessionStorage.setItem(`${cacheKey}:ts`, Date.now());
+    return res.body;
+  } else return res.body.retval;
+}
+
+async function updatedisplayforums(forumId, category) {
+  const response = await cachedForumFetch(
+    '/rsgxsforums/getForumsInfo',
+    { forumIds: [forumId] },
+    forumId
+  );
+  if (response === false) return;
+  const details = response.forumsInfo[0];
+  Data.DisplayForums[forumId] = {
     // struct for a forum
     name: details.mMeta.mGroupName,
     author: details.mMeta.mAuthorId,
@@ -33,46 +59,54 @@ async function updatedisplayforums(keyid, details = {}) {
     activity: details.mMeta.mLastPost,
     created: details.mMeta.mPublishTs,
   };
-  if (Data.Threads[keyid] === undefined) {
-    Data.Threads[keyid] = {};
-  }
-  const res2 = await rs.rsJsonApiRequest('/rsgxsforums/getForumMsgMetaData', {
-    forumId: keyid,
-  });
-  if (res2.body.retval) {
-    res2.body.msgMetas.map(async (thread) => {
-      const res3 = await rs.rsJsonApiRequest('/rsgxsforums/getForumContent', {
-        forumId: keyid,
-        msgsIds: [thread.mMsgId],
-      });
 
+  // Check and only proceed if forum is SubscribedForums
+  if (category !== 'SubscribedForums') return;
+
+  if (Data.Threads[forumId] === undefined) {
+    Data.Threads[forumId] = {};
+  }
+  const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumMsgMetaData', {
+    forumId,
+  });
+  if (res.body.retval) {
+    res.body.msgMetas.map(async (thread) => {
+      const response2 = await cachedForumFetch(
+        '/rsgxsforums/getForumContent',
+        { forumId, msgsIds: [thread.mMsgId] },
+        thread.mMsgId
+      );
+      if (response2 === false) return;
+      const threadContent = response2.msgs[0];
       if (
-        res3.body.retval &&
-        (Data.Threads[keyid][thread.mOrigMsgId] === undefined ||
-          Data.Threads[keyid][thread.mOrigMsgId].thread.mMeta.mPublishTs.xint64 <
-            thread.mPublishTs.xint64)
-        // here we get the latest edited thread for each thread by comparing the publish time
+        Data.Threads[forumId][thread.mOrigMsgId] === undefined ||
+        Data.Threads[forumId][thread.mOrigMsgId].thread.mMeta.mPublishTs.xint64 <
+          thread.mPublishTs.xint64
       ) {
-        Data.Threads[keyid][thread.mOrigMsgId] = { thread: res3.body.msgs[0], showReplies: false };
+        // here we get the latest edited thread for each thread by comparing the publish time
+        Data.Threads[forumId][thread.mOrigMsgId] = {
+          thread: threadContent,
+          showReplies: false,
+        };
         if (
-          Data.Threads[keyid][thread.mOrigMsgId] &&
-          Data.Threads[keyid][thread.mOrigMsgId].thread.mMeta.mMsgStatus === THREAD_UNREAD
+          Data.Threads[forumId][thread.mOrigMsgId] &&
+          Data.Threads[forumId][thread.mOrigMsgId].thread.mMeta.mMsgStatus === THREAD_UNREAD
         ) {
-          let parent = Data.Threads[keyid][thread.mOrigMsgId].thread.mMeta.mParentId;
-          while (Data.Threads[keyid][parent]) {
+          let parent = Data.Threads[forumId][thread.mOrigMsgId].thread.mMeta.mParentId;
+          while (Data.Threads[forumId][parent]) {
             // to mark all parent threads of an inread thread
-            Data.Threads[keyid][parent].thread.mMeta.mMsgStatus = THREAD_UNREAD;
-            parent = Data.Threads[keyid][parent].thread.mMeta.mParentId;
+            Data.Threads[forumId][parent].thread.mMeta.mMsgStatus = THREAD_UNREAD;
+            parent = Data.Threads[forumId][parent].thread.mMeta.mParentId;
           }
         }
 
-        if (Data.ParentThreads[keyid] === undefined) {
-          Data.ParentThreads[keyid] = {};
+        if (Data.ParentThreads[forumId] === undefined) {
+          Data.ParentThreads[forumId] = {};
         }
         if (thread.mThreadId === thread.mParentId) {
           // top level thread.
-          Data.ParentThreads[keyid][thread.mOrigMsgId] =
-            Data.Threads[keyid][thread.mOrigMsgId].thread.mMeta;
+          Data.ParentThreads[forumId][thread.mOrigMsgId] =
+            Data.Threads[forumId][thread.mOrigMsgId].thread.mMeta;
         } else {
           if (Data.ParentThreadMap[thread.mParentId] === undefined) {
             Data.ParentThreadMap[thread.mParentId] = {};
@@ -85,36 +119,27 @@ async function updatedisplayforums(keyid, details = {}) {
 }
 
 const DisplayForumsFromList = () => {
+  let forumId;
   return {
+    oninit: async (v) => {
+      forumId = await v.attrs.id;
+    },
     view: (v) =>
       m(
         'tr',
         {
-          key: v.attrs.id,
+          key: forumId,
           class:
-            Data.DisplayForums[v.attrs.id] && Data.DisplayForums[v.attrs.id].isSearched
-              ? ''
-              : 'hidden',
+            Data.DisplayForums[forumId] && Data.DisplayForums[forumId].isSearched ? '' : 'hidden',
           onclick: () => {
             m.route.set('/forums/:tab/:mGroupId', {
               tab: v.attrs.category,
-              mGroupId: v.attrs.id,
+              mGroupId: forumId,
             });
           },
         },
-        [m('td', Data.DisplayForums[v.attrs.id] ? Data.DisplayForums[v.attrs.id].name : '')]
+        [m('td', Data.DisplayForums[forumId] ? Data.DisplayForums[forumId].name : '')]
       ),
-  };
-};
-
-const ForumSummary = () => {
-  let keyid = {};
-  return {
-    oninit: (v) => {
-      keyid = v.attrs.details.mGroupId;
-      updatedisplayforums(keyid);
-    },
-    view: (v) => {},
   };
 };
 
@@ -190,7 +215,6 @@ function popupmessage(message) {
 module.exports = {
   Data,
   SearchBar,
-  ForumSummary,
   DisplayForumsFromList,
   ForumTable,
   ThreadsTable,

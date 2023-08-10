@@ -7,13 +7,17 @@ const peopleUtil = require('people/people_util');
 
 const getForums = {
   All: [],
+  OtherForums: [],
   PopularForums: [],
   SubscribedForums: [],
   MyForums: [],
   async load() {
     const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumsSummaries');
     getForums.All = res.body.forums;
-    getForums.PopularForums = getForums.All;
+    getForums.OtherForums = getForums.All.filter((forum) => forum.mPop <= 2);
+    getForums.PopularForums = getForums.All.filter(
+      (forum) => forum.mPop > 2 && forum.mSubscribeFlags !== util.GROUP_SUBSCRIBE_SUBSCRIBED
+    );
     getForums.SubscribedForums = getForums.All.filter(
       (forum) =>
         forum.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED ||

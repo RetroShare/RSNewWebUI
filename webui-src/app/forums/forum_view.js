@@ -86,31 +86,17 @@ const EditThread = () => {
     view: (vnode) =>
       m('.widget', [
         m('h3', 'Edit Thread'),
-        m('hr'),
-
-        m(
-          'iddisplay',
-          {
-            style: { display: 'block ruby' }, // same line block ruby
-          },
-          [
-            'Identity: ',
-            m('h5[id=authid]', rs.userList.userMap[vnode.attrs.authorId].toLocaleString()),
-          ]
-        ),
-        m(
-          'titledisplay',
-          {
-            style: { display: 'block ruby' },
-          },
-          [
-            'Title: ',
-            m('input[type=text][placeholder=Title]', {
-              value: vnode.attrs.current_title,
-              oninput: (e) => (title = e.target.value),
-            }),
-          ]
-        ),
+        m('iddisplay', [
+          'Identity: ',
+          m('h5[id=authid]', rs.userList.userMap[vnode.attrs.authorId].toLocaleString()),
+        ]),
+        m('titledisplay', [
+          'Title: ',
+          m('input[type=text][placeholder=Title]', {
+            value: vnode.attrs.current_title,
+            oninput: (e) => (title = e.target.value),
+          }),
+        ]),
         m('textarea[rows=5]', {
           style: { width: '90%', display: 'block' },
           oninput: (e) => (body = e.target.value),
@@ -150,9 +136,7 @@ const AddThread = () => {
   let identity;
   return {
     oninit: (vnode) => {
-      if (vnode.attrs.authorId) {
-        identity = vnode.attrs.authorId[0];
-      }
+      if (vnode.attrs.authorId) identity = vnode.attrs.authorId[0];
     },
     view: (vnode) =>
       m('.widget', [
@@ -169,9 +153,7 @@ const AddThread = () => {
           'select[id=idtags]',
           {
             value: identity,
-            onchange: (e) => {
-              identity = vnode.attrs.authorId[e.target.selectedIndex];
-            },
+            onchange: (e) => (identity = vnode.attrs.authorId[e.target.selectedIndex]),
           },
           [
             vnode.attrs.authorId &&
@@ -247,123 +229,117 @@ function displaythread() {
           }
         });
       return [
-        m(
-          'tr',
-          {
-            style: unread ? { fontWeight: 'bold' } : '',
-          },
-          [
-            Object.keys(parMap).length // if this thread has some replies
-              ? m(
-                  'td',
-                  m('i.fas.fa-angle-right', {
-                    class: 'fa-rotate-' + (v.attrs.threadStruct.showReplies ? '90' : '0'),
-                    style: 'margin-top:12px',
-                    onclick: () => {
-                      v.attrs.threadStruct.showReplies = !v.attrs.threadStruct.showReplies;
-                    },
-                  })
-                )
-              : m('td', ''),
+        m('tr', { style: unread ? { fontWeight: 'bold' } : '' }, [
+          Object.keys(parMap).length // if this thread has some replies
+            ? m(
+                'td',
+                m('i.fas.fa-angle-right', {
+                  class: 'fa-rotate-' + (v.attrs.threadStruct.showReplies ? '90' : '0'),
+                  style: 'margin-top:12px',
+                  onclick: () => {
+                    v.attrs.threadStruct.showReplies = !v.attrs.threadStruct.showReplies;
+                  },
+                })
+              )
+            : m('td', ''),
 
-            m(
-              'td',
-              {
-                style: {
-                  position: 'relative',
-                  '--replyDepth': v.attrs.replyDepth,
-                  left: 'calc(30px*var(--replyDepth))', // shifts reply by 30 px
-                },
-                onclick: async () => {
-                  v.attrs.changeThread(thread.mMeta.mOrigMsgId);
-                  if (unread) {
-                    const res = await rs.rsJsonApiRequest('/rsgxsforums/markRead', {
-                      messageId: groupmessagepair,
-                      read: true,
-                    });
-                    if (res.body.retval) {
-                      updatedisplayforums(thread.mMeta.mGroupId);
-                      m.redraw();
-                    }
-                  }
-                },
-                ondblclick: () =>
-                  (v.attrs.threadStruct.showReplies = !v.attrs.threadStruct.showReplies),
+          m(
+            'td',
+            {
+              style: {
+                position: 'relative',
+                '--replyDepth': v.attrs.replyDepth,
+                left: 'calc(30px*var(--replyDepth))', // shifts reply by 30 px
               },
-              [
-                thread.mMeta.mMsgName,
-                m('options', { style: 'display:block' }, [
+              onclick: async () => {
+                v.attrs.changeThread(thread.mMeta.mOrigMsgId);
+                if (unread) {
+                  const res = await rs.rsJsonApiRequest('/rsgxsforums/markRead', {
+                    messageId: groupmessagepair,
+                    read: true,
+                  });
+                  if (res.body.retval) {
+                    updatedisplayforums(thread.mMeta.mGroupId);
+                    m.redraw();
+                  }
+                }
+              },
+              ondblclick: () =>
+                (v.attrs.threadStruct.showReplies = !v.attrs.threadStruct.showReplies),
+            },
+            [
+              thread.mMeta.mMsgName,
+              m('options', { style: 'display:block' }, [
+                m(
+                  'button',
+                  {
+                    style: 'font-size:15px',
+                    onclick: () =>
+                      util.popupmessage(
+                        m(AddThread, {
+                          parent_thread: thread.mMeta.mMsgName,
+                          forumId: thread.mMeta.mGroupId,
+                          authorId: v.attrs.identity,
+                          parentId: thread.mMeta.mMsgId,
+                        })
+                      ),
+                  },
+                  'Reply'
+                ),
+                editpermission &&
                   m(
                     'button',
                     {
                       style: 'font-size:15px',
                       onclick: () =>
                         util.popupmessage(
-                          m(AddThread, {
-                            parent_thread: thread.mMeta.mMsgName,
+                          m(EditThread, {
+                            current_thread: thread.mMeta.mMsgName,
                             forumId: thread.mMeta.mGroupId,
-                            authorId: v.attrs.identity,
-                            parentId: thread.mMeta.mMsgId,
+                            current_title: thread.mMeta.mMsgName,
+                            current_body: thread.mMsg,
+                            authorId: thread.mMeta.mAuthorId,
+                            current_parent: thread.mMeta.mParentId,
+                            current_msgid: thread.mMeta.mOrigMsgId,
                           })
                         ),
                     },
-                    'Reply'
+                    'Edit'
                   ),
-                  editpermission &&
-                    m(
-                      'button',
-                      {
-                        style: 'font-size:15px',
-                        onclick: () =>
-                          util.popupmessage(
-                            m(EditThread, {
-                              current_thread: thread.mMeta.mMsgName,
-                              forumId: thread.mMeta.mGroupId,
-                              current_title: thread.mMeta.mMsgName,
-                              current_body: thread.mMsg,
-                              authorId: thread.mMeta.mAuthorId,
-                              current_parent: thread.mMeta.mParentId,
-                              current_msgid: thread.mMeta.mOrigMsgId,
-                            })
-                          ),
-                      },
-                      'Edit'
-                    ),
-                ]),
-              ]
-            ),
+              ]),
+            ]
+          ),
+          m(
+            'td',
             m(
-              'td',
-              m(
-                'button',
-                {
-                  style: { fontSize: '15px' },
-                  onclick: async () => {
-                    if (!unread) {
-                      const res = await rs.rsJsonApiRequest('/rsgxsforums/markRead', {
-                        messageId: groupmessagepair,
-                        read: false,
-                      });
+              'button',
+              {
+                style: { fontSize: '15px' },
+                onclick: async () => {
+                  if (!unread) {
+                    const res = await rs.rsJsonApiRequest('/rsgxsforums/markRead', {
+                      messageId: groupmessagepair,
+                      read: false,
+                    });
 
-                      if (res.body.retval) {
-                        updatedisplayforums(thread.mMeta.mGroupId);
-                        m.redraw();
-                      }
+                    if (res.body.retval) {
+                      updatedisplayforums(thread.mMeta.mGroupId);
+                      m.redraw();
                     }
-                  },
+                  }
                 },
-                'Mark Unread'
-              )
-            ),
-            m('td', rs.userList.userMap[thread.mMeta.mAuthorId]),
-            m(
-              'td',
-              typeof thread.mMeta.mPublishTs === 'object'
-                ? new Date(thread.mMeta.mPublishTs.xint64 * 1000).toLocaleString()
-                : 'undefined'
-            ),
-          ]
-        ),
+              },
+              'Mark Unread'
+            )
+          ),
+          m('td', rs.userList.userMap[thread.mMeta.mAuthorId]),
+          m(
+            'td',
+            typeof thread.mMeta.mPublishTs === 'object'
+              ? new Date(thread.mMeta.mPublishTs.xint64 * 1000).toLocaleString()
+              : 'undefined'
+          ),
+        ]),
         v.attrs.threadStruct.showReplies &&
           Object.keys(parMap).map((key, index) =>
             m(displaythread, {
