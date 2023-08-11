@@ -1,5 +1,4 @@
 const m = require('mithril');
-const fproxy = require('files/files_proxy');
 
 const RsEventsType = {
   NONE: 0, // Used internally to detect invalid event type passed
@@ -170,18 +169,6 @@ function deeperIfExist(map, key, action) {
 
 const eventQueue = {
   events: {
-    [RsEventsType.FILE_TRANSFER]: {
-      handler: (event) => {
-        console.log('search results : ', event);
-
-        // if request item doesn't already exists in Object then create new item
-        if (!Object.prototype.hasOwnProperty.call(fproxy.fileProxyObj, event.mRequestId)) {
-          fproxy.fileProxyObj[event.mRequestId] = [];
-        }
-
-        fproxy.fileProxyObj[event.mRequestId].push(...event.mResults);
-      },
-    },
     [RsEventsType.CHAT_MESSAGE]: {
       // Chat-Messages
       types: {
@@ -351,6 +338,7 @@ module.exports = {
   setBackgroundTask,
   logon,
   events: eventQueue.events,
+  RsEventsType,
   userList,
   loginKey,
   formatBytes,
