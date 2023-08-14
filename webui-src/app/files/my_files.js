@@ -48,7 +48,7 @@ function displayfiles() {
           },
           parStruct.details.name
         ),
-        m('td', util.formatbytes(parStruct.details.size.xint64)),
+        m('td', rs.formatBytes(parStruct.details.size.xint64)),
       ]),
       parStruct.showChild &&
         childrenList.map((child) =>
