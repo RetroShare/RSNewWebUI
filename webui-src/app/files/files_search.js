@@ -1,6 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const futil = require('files/files_util');
+const fproxy = require('files/files_proxy');
 const widget = require('widgets');
 
 let matchString = '';
@@ -66,7 +67,7 @@ const Layout = () => {
             ),
           ]),
           m('div.file-search-container__results', [
-            Object.keys(futil.proxyObj).length === 0
+            Object.keys(fproxy.fileProxyObj).length === 0
               ? m('h5.bold', 'Results')
               : m('table.results-container', [
                   m(
@@ -80,13 +81,13 @@ const Layout = () => {
                   ),
                   m(
                     'tbody.results',
-                    futil.proxyObj[currentItem.slice(1)] === undefined &&
-                      futil.proxyObj[currentItem.slice(1)].length === 0
+                    fproxy.fileProxyObj[currentItem.slice(1)] === undefined &&
+                      fproxy.fileProxyObj[currentItem.slice(1)].length === 0
                       ? 'Fetching Results...'
-                      : futil.proxyObj[currentItem.slice(1)].map((item) =>
+                      : fproxy.fileProxyObj[currentItem.slice(1)].map((item) =>
                           m('tr', [
                             m('td.results__name', [m('i.fas.fa-file'), m('span', item.fName)]),
-                            m('td.results__size', futil.makeFriendlyUnit(item.fSize.xint64)),
+                            m('td.results__size', rs.formatBytes(item.fSize.xint64)),
                             m('td.results__hash', item.fHash),
                             m(
                               'td.results__download',

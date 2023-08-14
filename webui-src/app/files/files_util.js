@@ -51,22 +51,6 @@ const createProxy = (obj, onChange) => {
   });
 };
 
-const proxyObj = createProxy({}, () => {
-  m.redraw();
-});
-
-function makeFriendlyUnit(bytes) {
-  let cnt = bytes;
-  for (const s of ['', 'k', 'M', 'G']) {
-    if (cnt < 1000) {
-      return cnt.toFixed(1) + ' ' + s + 'B';
-    } else {
-      cnt = cnt / 1024;
-    }
-  }
-  return cnt.toFixed(1) + 'TB';
-}
-
 function calcRemainingTime(bytes, rate) {
   if (rate <= 0 || bytes < 1) {
     return '--';
@@ -91,29 +75,21 @@ function calcRemainingTime(bytes, rate) {
   }
 }
 
-async function fileAction(hash, action) {
-  let actionHeader = '';
+function fileAction(hash, action) {
   const jsonParams = {
     hash,
     flags: 0,
   };
   switch (action) {
-    case 'cancel':
-      actionHeader = '/rsFiles/FileCancel';
-      break;
-
     case 'pause':
-      actionHeader = '/rsFiles/FileControl';
       jsonParams.flags = RS_FILE_CTRL_PAUSE;
       break;
 
     case 'resume':
-      actionHeader = '/rsFiles/FileControl';
       jsonParams.flags = RS_FILE_CTRL_START;
       break;
 
     case 'force_check':
-      actionHeader = '/rsFiles/FileControl';
       jsonParams.flags = RS_FILE_CTRL_FORCE_CHECK;
       break;
 
@@ -121,182 +97,115 @@ async function fileAction(hash, action) {
       console.error('Unknown action in Downloads.control()');
       return;
   }
-  const res = await rs.rsJsonApiRequest(actionHeader, jsonParams, () => {});
-  return res.body.retval;
-}
-
-function actionButton(file, action) {
-  switch (action) {
-    case 'resume':
-      return m(
-        'button',
-        {
-          title: 'resume',
-
-          onclick() {
-            fileAction(file.hash, 'resume');
-          },
-        },
-        m('i.fas.fa-play')
-      );
-
-    case 'pause':
-      return m(
-        'button',
-        {
-          title: 'pause',
-
-          onclick() {
-            fileAction(file.hash, 'pause');
-          },
-        },
-        m('i.fas.fa-pause')
-      );
-
-    case 'cancel':
-      return m(
-        'button.red',
-        {
-          title: 'cancel',
-
-          onclick() {
-            widget.popupMessage(
-              m('Cancelpop', [
-                m('p', 'Are you sure you want to cancel download?'),
-                m(
-                  'button',
-                  {
-                    onclick: async () => {
-                      const res = await fileAction(file.hash, 'cancel');
-                      if (res) {
-                        widget.popupMessage(m('p', 'Download Cancelled Successfully'));
-                      } else {
-                        widget.popupMessage(m('p', 'Download Cancel Failed'));
-                      }
-
-                      m.redraw();
-                    },
-                  },
-                  'Cancel'
-                ),
-              ])
-            );
-            // fileAction(file.hash, 'cancel');
-          },
-        },
-        m('i.fas.fa-times')
-      );
-  }
+  rs.rsJsonApiRequest('/rsFiles/FileControl', jsonParams);
 }
 
 const ProgressBar = () => {
   return {
     view: (v) =>
-      m('.progressbar', [
-        m('span.progressbar-status', {
-          style: {
-            width: v.attrs.rate + '%',
-          },
-        }),
-        m('span.progressbar-percent', v.attrs.rate.toPrecision(3) + '%'),
+      m('.progress-bar-chunks', [
+        v.attrs.chunksInfo.chunks.map((item) => m(`span.chunk[data-chunkVal=${item}]`)),
+        m('span.progress-bar-chunks__percent', v.attrs.rate.toPrecision(3) + '%'),
       ]),
   };
 };
 
-const chunkStrats = {
-  0: 'Streaming', // CHUNK_STRATEGY_STREAMING
-  1: 'Random', // CHUNK_STRATEGY_RANDOM
-  2: 'Progressive', // CHUNK_STRATEGY_PROGRESSIVE
-};
-// rstypes.h :: 366
-
 const File = () => {
   let chunkStrat;
+  const chunkStrats = {
+    // rstypes.h :: 366
+    0: 'Streaming', // CHUNK_STRATEGY_STREAMING
+    1: 'Random', // CHUNK_STRATEGY_RANDOM
+    2: 'Progressive', // CHUNK_STRATEGY_PROGRESSIVE
+  };
+  function fileCancel(hash) {
+    rs.rsJsonApiRequest('/rsFiles/FileCancel', { hash }).then((res) =>
+      widget.popupMessage(m('p', `Download Cancel ${res ? 'Successful' : 'Failed'}`))
+    );
+  }
+  function cancelFileDownload(hash) {
+    widget.popupMessage([
+      m('p', 'Are you sure you want to cancel download?'),
+      m('button', { onclick: () => fileCancel(hash) }, 'Cancel'),
+    ]);
+  }
+  function actionButton(file, action) {
+    return m(
+      'button',
+      { title: action, onclick: () => fileAction(file.hash, action) },
+      m(`i.fas.fa-${action === 'resume' ? 'play' : action}`)
+    );
+  }
+
   return {
+    oninit: async (v) => {
+      chunkStrat = await v.attrs.strategy;
+    },
     view: (v) => {
-      chunkStrat = v.attrs && v.attrs.strategy;
-      return m(
-        '.file-view',
-        {
-          key: v.attrs.info.hash,
-          style: {
-            display: v.attrs.info.isSearched ? 'block' : 'none',
-          },
-        },
-        [
-          m('.file-view__heading', [
-            m('h6', v.attrs.info.fname),
-            !(v.attrs.direction === 'up') && [
+      const { info, direction, transferred, chunksInfo } = v.attrs;
+      function changeChunkStrategy(e) {
+        chunkStrat = e.target.selectedIndex;
+        rs.rsJsonApiRequest('/rsFiles/setChunkStrategy', {
+          hash: info.hash,
+          newStrategy: chunkStrat,
+        });
+      }
+      return m('.file-view', { style: { display: info.isSearched ? 'block' : 'none' } }, [
+        m('.file-view__heading', [
+          m('h6', info.fname),
+          chunkStrat !== undefined &&
+            direction === 'down' && [
               m('.file-view__heading-chunk', [
                 m('label[for=chunkTag]', 'Set Chunk Strategy: '),
-                m(
-                  'select[id=chunkTag]',
-                  {
-                    value: chunkStrat,
-                    onchange: (e) => {
-                      chunkStrat = e.target.selectedIndex;
-                      rs.rsJsonApiRequest('/rsFiles/setChunkStrategy', {
-                        hash: v.attrs.info.hash,
-                        newStrategy: chunkStrat,
-                      });
-                    },
-                  },
-                  [
-                    Object.keys(chunkStrats).map((opt) =>
-                      m('option', { value: opt }, chunkStrats[opt])
-                    ),
-                  ]
-                ),
+                m('select[id=chunkTag]', { value: chunkStrat, onchange: changeChunkStrategy }, [
+                  Object.keys(chunkStrats).map((strat) =>
+                    m('option', { value: strat }, chunkStrats[strat])
+                  ),
+                ]),
               ]),
             ],
-          ]),
-          m('.file-view__body', [
-            m(
-              '.file-view__body-progress',
-              !(v.attrs.direction === 'up') &&
-                m(ProgressBar, {
-                  rate: (v.attrs.transferred / v.attrs.info.size.xint64) * 100,
-                })
-            ),
-            m('.file-view__body-details', [
-              m('.file-view__body-details-stat', [
-                m('span', m('i.fas.fa-download'), makeFriendlyUnit(v.attrs.transferred)),
-
-                m('span', m('i.fas.fa-file'), makeFriendlyUnit(v.attrs.info.size.xint64)),
-                m(
-                  'span',
-                  m('i.fas.fa-arrow-circle-' + v.attrs.direction),
-                  makeFriendlyUnit(v.attrs.info.tfRate * 1024) + '/s'
-                ),
-                !(v.attrs.direction === 'up') &&
-                  m('span', { title: 'time remaining' }, [
-                    m('i.fas.fa-clock'),
-                    calcRemainingTime(
-                      v.attrs.info.size.xint64 - v.attrs.transferred,
-                      v.attrs.info.tfRate
-                    ),
-                  ]),
-                m(
-                  'span',
-                  { title: 'peers' },
-                  [m('i.fas.fa-users'), v.attrs.info.peers.length],
-                  v.attrs.parts.reduce((a, e) => [...a, ' - ' + makeFriendlyUnit(e)], [])
-                ),
+        ]),
+        m('.file-view__body', [
+          m(
+            '.file-view__body-progress',
+            direction === 'down' &&
+              m(ProgressBar, { rate: (transferred / info.size.xint64) * 100, chunksInfo })
+          ),
+          m('.file-view__body-details', [
+            m('.file-view__body-details-stat', [
+              m('span', { title: 'downloaded size' }, [
+                m('i.fas.fa-download'),
+                rs.formatBytes(transferred),
               ]),
-              m(
-                '.file-view__body-details-action',
-                !(v.attrs.info.downloadStatus === FT_STATE_COMPLETE) && [
-                  actionButton(
-                    v.attrs.info,
-                    v.attrs.info.downloadStatus === FT_STATE_PAUSED ? 'resume' : 'pause'
-                  ),
-                  actionButton(v.attrs.info, 'cancel'),
-                ]
-              ),
+              m('span', { title: 'total size' }, [
+                m('i.fas.fa-file'),
+                rs.formatBytes(info.size.xint64),
+              ]),
+              m('span', { title: 'speed' }, [
+                m(`i.fas.fa-arrow-circle-${direction}`),
+                `${rs.formatBytes(info.tfRate * 1024)}/s`,
+              ]),
+              direction === 'down' &&
+                m('span', { title: 'time remaining' }, [
+                  m('i.fas.fa-clock'),
+                  calcRemainingTime(info.size.xint64 - transferred, info.tfRate),
+                ]),
+              m('span', { title: 'peers' }, [m('i.fas.fa-users'), info.peers.length]),
             ]),
+            m(
+              '.file-view__body-details-action',
+              info.downloadStatus !== FT_STATE_COMPLETE && [
+                actionButton(info, info.downloadStatus === FT_STATE_PAUSED ? 'resume' : 'pause'),
+                m(
+                  'button.red',
+                  { title: 'cancel', onclick: () => cancelFileDownload(info.hash) },
+                  m('i.fas.fa-times')
+                ),
+              ]
+            ),
           ]),
-        ]
-      );
+        ]),
+      ]);
     },
   };
 };
@@ -310,11 +219,8 @@ const SearchBar = () => {
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
           for (const hash in v.attrs.list) {
-            if (v.attrs.list[hash].fname.toLowerCase().indexOf(searchString) > -1) {
-              v.attrs.list[hash].isSearched = true;
-            } else {
-              v.attrs.list[hash].isSearched = false;
-            }
+            v.attrs.list[hash].isSearched =
+              v.attrs.list[hash].fname.toLowerCase().indexOf(searchString) > -1;
           }
         },
       }),
@@ -352,14 +258,6 @@ const FriendsFilesTable = () => {
       ]),
   };
 };
-function formatbytes(bytes, decimals = 2) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
 
 module.exports = {
   RS_FILE_CTRL_PAUSE,
@@ -376,12 +274,10 @@ module.exports = {
   RS_FILE_REQ_ANONYMOUS_ROUTING,
   RS_FILE_HINTS_REMOTE,
   RS_FILE_HINTS_LOCAL,
-  makeFriendlyUnit,
   File,
   SearchBar,
   compareArrays,
   MyFilesTable,
   FriendsFilesTable,
-  formatbytes,
-  proxyObj,
+  createProxy,
 };

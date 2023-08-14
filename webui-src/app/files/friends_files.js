@@ -73,7 +73,7 @@ function displayfiles() {
             ? nameOfId + ' (' + parStruct.details.name.slice(0, 8) + '...)'
             : parStruct.details.name
         ),
-        m('td', util.formatbytes(parStruct.details.size.xint64)),
+        m('td', rs.formatBytes(parStruct.details.size.xint64)),
         isFile &&
           m(
             'td',
