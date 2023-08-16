@@ -1,4 +1,4 @@
-@use '../abstracts/colors' as *;
+@use '../abstracts/' as *;
 
 .file-view {
   width: 100%;
@@ -176,5 +176,24 @@ table.friendsfiles td:nth-child(2) {
   }
   button {
     margin-left: 0.5rem;
+  }
+}
+
+.shareManagerPopupOverlay {
+  @include popupOverlay;
+  .shareManagerPopup {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 80%;
+    height: 90%;
+    & > .widget {
+      padding: 2rem;
+    }
+    & .close-btn {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+    }
   }
 }

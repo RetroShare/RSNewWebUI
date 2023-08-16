@@ -1,7 +1,7 @@
 /******************************
 General site-wide rules
 ******************************/
-@use '../abstracts/colors' as *;
+@use '../abstracts' as *;
 
 #main {
   height: 100vh;
@@ -133,6 +133,15 @@ hr {
 .tooltip:hover .tooltiptext {
   visibility: visible;
   animation: fadein 0.5s;
+}
+
+blockquote {
+  color: $dark-color;
+  padding: 0.75rem 1rem 0.75rem 2rem;
+  border-radius: 0.25rem;
+  &.info {
+    @include blockquote('info');
+  }
 }
 
 /******************************
