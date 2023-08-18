@@ -1,6 +1,5 @@
 const m = require('mithril');
 const rs = require('rswebui');
-const widget = require('widgets');
 const util = require('files/files_util');
 const manager = require('files/files_manager');
 
@@ -63,8 +62,6 @@ const DisplayFiles = () => {
     ],
   };
 };
-
-const ShareManagerPopup = () => {};
 
 const Layout = () => {
   //  let root_handle;
