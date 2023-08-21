@@ -197,3 +197,47 @@ table.friendsfiles td:nth-child(2) {
     }
   }
 }
+
+.shareManager {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  &__table {
+    margin-bottom: auto;
+    thead {
+      font-weight: bold;
+      td:nth-child(3) .tooltip {
+        font-weight: normal;
+        font-size: 1rem;
+      }
+    }
+    tbody {
+      text-align: left;
+    }
+    td {
+      input {
+        border: 0 !important;
+        &[type='text'] {
+          width: 100%;
+        }
+      }
+      &:nth-child(1) {
+        width: 45%;
+      }
+      &:nth-child(2) {
+        width: 20%;
+      }
+      &:nth-child(3) {
+        width: 15%;
+        text-align: center;
+      }
+      &:nth-child(4) {
+        width: 20%;
+      }
+    }
+  }
+  &__actions {
+    display: flex;
+    justify-content: space-between;
+  }
+}

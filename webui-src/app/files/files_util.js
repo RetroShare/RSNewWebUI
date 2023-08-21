@@ -19,6 +19,28 @@ const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
 const RS_FILE_HINTS_REMOTE = 0x00000008;
 const RS_FILE_HINTS_LOCAL = 0x00000004;
 
+// Flags for directory sharing permissions.
+const DIR_FLAGS_ANONYMOUS_DOWNLOAD = 0x0080;
+const DIR_FLAGS_BROWSABLE = 0x0400;
+const DIR_FLAGS_ANONYMOUS_SEARCH = 0x0800;
+
+/* eslint-disable no-unused-vars */
+
+// Access Permission calculated by performing OR operation on the above three flags.
+const DIR_FLAGS_PERMISSIONS_MASK =
+  DIR_FLAGS_ANONYMOUS_SEARCH | DIR_FLAGS_BROWSABLE | DIR_FLAGS_ANONYMOUS_DOWNLOAD;
+
+/* eslint-enable no-unused-vars */
+
+// parent_groups visibility
+const RsNodeGroupId = {
+  '00000000000000000000000000000001': 'Friends',
+  '00000000000000000000000000000002': 'Family',
+  '00000000000000000000000000000003': 'CoWorkers',
+  '00000000000000000000000000000004': 'Others',
+  '00000000000000000000000000000005': 'Favorites',
+};
+
 const createArrayProxy = (arr, onChange) => {
   return new Proxy(arr, {
     set: (target, property, value, reciever) => {
@@ -274,6 +296,10 @@ module.exports = {
   RS_FILE_REQ_ANONYMOUS_ROUTING,
   RS_FILE_HINTS_REMOTE,
   RS_FILE_HINTS_LOCAL,
+  DIR_FLAGS_ANONYMOUS_SEARCH,
+  DIR_FLAGS_ANONYMOUS_DOWNLOAD,
+  DIR_FLAGS_BROWSABLE,
+  RsNodeGroupId,
   File,
   SearchBar,
   compareArrays,
