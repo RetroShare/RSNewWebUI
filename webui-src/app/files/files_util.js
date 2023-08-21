@@ -41,6 +41,17 @@ const RsNodeGroupId = {
   '00000000000000000000000000000005': 'Favorites',
 };
 
+function calcShareFlags(shareFlags) {
+  const isAnonymousSearch = (shareFlags & DIR_FLAGS_ANONYMOUS_SEARCH) !== 0;
+  const isAnonymousDownload = (shareFlags & DIR_FLAGS_ANONYMOUS_DOWNLOAD) !== 0;
+  const isBrowsable = (shareFlags & DIR_FLAGS_BROWSABLE) !== 0;
+  return {
+    isAnonymousSearch,
+    isAnonymousDownload,
+    isBrowsable,
+  };
+}
+
 const createArrayProxy = (arr, onChange) => {
   return new Proxy(arr, {
     set: (target, property, value, reciever) => {
@@ -306,4 +317,5 @@ module.exports = {
   MyFilesTable,
   FriendsFilesTable,
   createProxy,
+  calcShareFlags,
 };

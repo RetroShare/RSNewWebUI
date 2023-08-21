@@ -9,17 +9,6 @@ const shareManagerInfo = `
     share flags for each shared directory.
   `;
 
-function calcShareFlags(shareFlags) {
-  const isAnonymousSearch = (shareFlags & futil.DIR_FLAGS_ANONYMOUS_SEARCH) !== 0;
-  const isAnonymousDownload = (shareFlags & futil.DIR_FLAGS_ANONYMOUS_DOWNLOAD) !== 0;
-  const isBrowsable = (shareFlags & futil.DIR_FLAGS_BROWSABLE) !== 0;
-  return {
-    isAnonymousSearch,
-    isAnonymousDownload,
-    isBrowsable,
-  };
-}
-
 const ShareManager = () => {
   let sharedDirArr = [];
   let isEditDisabled = true;
@@ -55,7 +44,7 @@ const ShareManager = () => {
               'tbody.shareManager__table_body',
               sharedDirArr &&
                 sharedDirArr.map((sharedDirItem) => {
-                  const sharedFlags = calcShareFlags(sharedDirItem.shareflags);
+                  const sharedFlags = futil.calcShareFlags(sharedDirItem.shareflags);
                   return m('tr', [
                     m(
                       'td',
