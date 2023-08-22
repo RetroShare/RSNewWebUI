@@ -7,7 +7,7 @@ const logo = () => {
     view() {
       return m('.logo', [
         m('img', {
-          src: '../data/retroshare.svg',
+          src: 'images/retroshare.svg',
           alt: 'retroshare_icon',
         }),
         m('.retroshareText', [

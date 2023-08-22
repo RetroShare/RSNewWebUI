@@ -42,9 +42,6 @@ popd
 echo copying assets folder
 xcopy /s %src%\assets\ %publicdest%
 
-echo copying data folder
-xcopy /s %src%\..\data %publicdest%\data\
-
 echo "### WebUI build complete ###"
 
 goto :EOF

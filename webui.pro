@@ -21,7 +21,7 @@ TEMPLATE = subdirs
 SUBDIRS= # don't build anything
 CONFIG -= qt
 
-WEBUI_SRC_HTML  += $$PWD/webui-src/index.html
+WEBUI_SRC_HTML = $$PWD/webui-src/index.html
 
 WEBUI_SRC_JS = $$PWD/webui-src/app/rswebui.js
 WEBUI_SRC_JS += $$PWD/webui-src/app/mithril.js
@@ -29,9 +29,9 @@ WEBUI_SRC_JS += $$PWD/webui-src/app/login.js
 WEBUI_SRC_JS += $$PWD/webui-src/app/main.js
 WEBUI_SRC_JS += $$PWD/webui-src/app/home.js
 
-WEBUI_SRC_CSS += $$PWD/webui-src/styles.css
+WEBUI_SRC_CSS = $$PWD/webui-src/styles.css
 
-WEBUI_SRC_DATA += $$PWD/data/retroshare.svg
+WEBUI_SRC_IMAGE = $$PWD/data/retroshare.svg
 
 win32-g++ {
     isEmpty(QMAKE_SH) {
@@ -103,9 +103,8 @@ win32-g++ {
                              webui/styles.css \
                              webui/app.js
 
-    webui_data_files.path  = "$${RS_DATA_DIR}/webui/data/"
-    webui_data_files.files = webui/data/retroshare.svg \
-                             webui/data/streaming.png
+    webui_image_files.path  = "$${RS_DATA_DIR}/webui/images/"
+    webui_image_files.files = webui/images/retroshare.svg
 
     webui_font_files.path  = "$${RS_DATA_DIR}/webui/webfonts/"
     webui_font_files.files = webui/webfonts/fa-solid-900.eot \
@@ -114,5 +113,5 @@ win32-g++ {
                              webui/webfonts/fa-solid-900.woff \
                              webui/webfonts/fa-solid-900.woff2
 
-    INSTALLS += webui_base_files webui_font_files webui_data_files
+    INSTALLS += webui_base_files webui_font_files webui_image_files
 }

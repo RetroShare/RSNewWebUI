@@ -13,7 +13,6 @@ else
 fi
 
 if [ "$2" = "" ]; then
-
 	if [ -d "$publicdest" ]; then
 		echo removing existing $publicdest
 		rm $publicdest -R
@@ -30,7 +29,7 @@ shopt -s globstar
 
 if [ "$2" = "" ]||[ "$2" = "index.html" ]; then
 	echo copying html file
-  cp -r $src/index.html $publicdest/
+    cp -r $src/index.html $publicdest/
 fi
 
 if [ "$2" = "" ]||[ "$2" = "styles.css" ]; then
@@ -55,16 +54,8 @@ if [ "$2" = "" ]||[ "$2" = "app.js" ]; then
 	done
 fi
 
-if [ "$2" = "" ]||[ "$2" = "../data" ]; then
-	echo copying assets folder
-    cp -r $src/assets/* $publicdest/
-fi
-
-if [ "$2" = "" ]||[ "$2" = "../data" ]; then # only for development to restore data folder
-	echo copying data folder
-	mkdir $publicdest/data
-    cp -r $src/../data $publicdest/
-fi
+echo copying assets folder
+cp -r $src/assets/* $publicdest/
 
 if [ "$2" != "" ]&&[ "$3" != "" ]; then
 	if [ ! -d "$3/webui" ]; then
