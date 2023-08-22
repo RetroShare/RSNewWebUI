@@ -21,7 +21,7 @@ TEMPLATE = subdirs
 SUBDIRS= # don't build anything
 CONFIG -= qt
 
-WEBUI_SRC_HTML  += $$PWD/webui-src/assets/index.html
+WEBUI_SRC_HTML  += $$PWD/webui-src/index.html
 
 WEBUI_SRC_JS = $$PWD/webui-src/app/rswebui.js
 WEBUI_SRC_JS += $$PWD/webui-src/app/mithril.js
@@ -29,7 +29,7 @@ WEBUI_SRC_JS += $$PWD/webui-src/app/login.js
 WEBUI_SRC_JS += $$PWD/webui-src/app/main.js
 WEBUI_SRC_JS += $$PWD/webui-src/app/home.js
 
-WEBUI_SRC_CSS += $$PWD/webui-src/styles/app.css
+WEBUI_SRC_CSS += $$PWD/webui-src/styles.css
 
 WEBUI_SRC_DATA += $$PWD/data/retroshare.svg
 
@@ -90,24 +90,18 @@ win32-g++ {
     create_webfiles_js.variable_out = JUNK
     create_webfiles_js.CONFIG = combine no_link
 
-    create_webfiles_css.output = webui/app.css
+    create_webfiles_css.output = webui/styles.css
     create_webfiles_css.input = WEBUI_SRC_CSS
-    create_webfiles_css.commands = sh $$_PRO_FILE_PWD_/webui-src/make-src/build.sh $$_PRO_FILE_PWD_ app.css .
+    create_webfiles_css.commands = sh $$_PRO_FILE_PWD_/webui-src/make-src/build.sh $$_PRO_FILE_PWD_ styles.css .
     create_webfiles_css.variable_out = JUNK
     create_webfiles_css.CONFIG = combine no_link
 
     QMAKE_EXTRA_COMPILERS += create_webfiles_html create_webfiles_js create_webfiles_css
 
-    system(cp -r data webui/)
-
-    webui_css_files.path  = "$${RS_DATA_DIR}/webui/css/"
-    webui_css_files.files = webui/css/fontawesome.css \
-                            webui/css/solid.css
-
     webui_base_files.path  = "$${RS_DATA_DIR}/webui/"
-    webui_base_files.files = webui/app.css \
-                             webui/app.js \
-                             webui/index.html
+    webui_base_files.files = webui/index.html \
+                             webui/styles.css \
+                             webui/app.js
 
     webui_data_files.path  = "$${RS_DATA_DIR}/webui/data/"
     webui_data_files.files = webui/data/retroshare.svg \
@@ -120,5 +114,5 @@ win32-g++ {
                              webui/webfonts/fa-solid-900.woff \
                              webui/webfonts/fa-solid-900.woff2
 
-    INSTALLS += webui_base_files webui_css_files webui_font_files webui_data_files
+    INSTALLS += webui_base_files webui_font_files webui_data_files
 }

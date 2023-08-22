@@ -1,13 +1,11 @@
 {
   "name": "webui-src",
   "version": "1.0.0",
-  "description": "",
+  "description": "Retroshare's Web Interface",
   "scripts": {
-    "watch": "rm ./styles/app.css && sass --watch --embed-sources --embed-source-map ./app/scss/main.scss ./styles/app.css",
-    "build": "sass --no-source-map --style=compressed ./app/scss/main.scss ./styles/app.css"
+    "watch": "rm ./styles/app.css && sass --watch --embed-sources --embed-source-map ./app/scss/main.scss ./styles.css",
+    "build": "sass --no-source-map --style=compressed ./app/scss/main.scss ./styles.css"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
   "devDependencies": {
     "sass": "^1.60.0"
