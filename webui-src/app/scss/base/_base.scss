@@ -34,8 +34,8 @@ textarea {
   font-size: 1rem;
   font-weight: 400;
   border: 1px solid #ccc;
-  border-radius: 5px;
-  padding: 0.4rem 0.8rem;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
   /* Disable chromium's focused element hinting*/
   outline: transparent;
 }
@@ -128,7 +128,7 @@ hr {
   background-color: #333;
   font-size: 0.875rem;
   text-align: center;
-  padding: 0.25rem 0;
+  padding: 0.25rem;
   border-radius: 0.5rem;
 }
 .tooltip:hover .tooltiptext {

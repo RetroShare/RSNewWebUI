@@ -5,14 +5,13 @@
   flex-direction: column;
   gap: 0.5rem;
   background-color: white;
-  border-radius: 6px;
+  border-radius: 0.5rem;
   overflow: auto;
   & .top-heading {
     display: flex;
     justify-content: space-between;
   }
   &__heading {
-    padding-bottom: 0.25rem;
     display: flex;
     justify-content: space-between;
     align-items: center;

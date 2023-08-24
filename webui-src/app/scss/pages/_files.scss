@@ -188,7 +188,7 @@ table.friendsfiles td:nth-child(2) {
     width: 80%;
     height: 90%;
     & > .widget {
-      padding: 2rem;
+      padding: 1.5rem;
     }
     & .close-btn {
       position: absolute;
@@ -198,7 +198,7 @@ table.friendsfiles td:nth-child(2) {
   }
 }
 
-.shareManager {
+.share-manager {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -206,9 +206,12 @@ table.friendsfiles td:nth-child(2) {
     margin-bottom: auto;
     thead {
       font-weight: bold;
-      td:nth-child(3) .tooltip {
-        font-weight: normal;
-        font-size: 1rem;
+      td:nth-child(3) {
+        text-align: left;
+        & .tooltip {
+          font-weight: normal;
+          font-size: 1rem;
+        }
       }
     }
     tbody {
@@ -229,7 +232,6 @@ table.friendsfiles td:nth-child(2) {
       }
       &:nth-child(3) {
         width: 15%;
-        text-align: center;
       }
       &:nth-child(4) {
         width: 20%;
@@ -239,5 +241,15 @@ table.friendsfiles td:nth-child(2) {
   &__actions {
     display: flex;
     justify-content: space-between;
+  }
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    &_input {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
   }
 }

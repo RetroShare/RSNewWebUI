@@ -1,5 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const widget = require('widgets');
 const futil = require('files/files_util');
 const cutil = require('config/config_util');
 
@@ -8,6 +9,40 @@ const shareManagerInfo = `
     When you add a new folder, initially all files in that folder are shared. You can separately
     share flags for each shared directory.
   `;
+
+const SharedDirectoryForm = () => {
+  let newDirPath = '';
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    rs.rsJsonApiRequest('/rsFiles/addSharedDirectory', {
+      dir: {
+        filename: newDirPath,
+        virtualname: '',
+        shareflags: futil.DIR_FLAGS_ANONYMOUS_SEARCH | futil.DIR_FLAGS_ANONYMOUS_DOWNLOAD,
+        parent_groups: [],
+      },
+    }).then((res) => console.log(res));
+    console.log(newDirPath);
+  }
+
+  return {
+    view: () =>
+      m('.widget', [
+        m('.widget__heading', m('h3', 'Add New Directory')),
+        m('form.widget__body.share-manager__form', { onsubmit: handleSubmit }, [
+          m('.share-manager__form_input', [
+            m('label', 'Enter absolute directory path :'),
+            m('input[type=text]', {
+              value: newDirPath,
+              oninput: (e) => (newDirPath = e.target.value),
+            }),
+          ]),
+          m('button[type=submit]', 'Add Directory'),
+        ]),
+      ]),
+  };
+};
 
 const ShareManager = () => {
   let sharedDirArr = [];
@@ -21,11 +56,11 @@ const ShareManager = () => {
     view: () => {
       return m('.widget', [
         m('.widget__heading', m('h3', 'ShareManager')),
-        m('.widget__body.shareManager', [
+        m('.widget__body.share-manager', [
           m('blockquote.info', shareManagerInfo),
-          m('table.shareManager__table', [
+          m('table.share-manager__table', [
             m(
-              'thead.shareManager__table_heading',
+              'thead.share-manager__table_heading',
               m('tr', [
                 m('td', 'Shared Directories'),
                 m('td', 'Visible Name'),
@@ -41,7 +76,7 @@ const ShareManager = () => {
               ])
             ),
             m(
-              'tbody.shareManager__table_body',
+              'tbody.share-manager__table_body',
               sharedDirArr &&
                 sharedDirArr.map((sharedDirItem) => {
                   const sharedFlags = futil.calcShareFlags(sharedDirItem.shareflags);
@@ -85,9 +120,12 @@ const ShareManager = () => {
             ),
           ]),
           m(
-            '.shareManager__actions',
-            m('.shareManager__actions-add', m('button', 'Add New')),
-            m('.shareManager__actions-edit', [
+            '.share-manager__actions',
+            m(
+              '.share-manager__actions-add',
+              m('button', { onclick: () => widget.popupMessage(m(SharedDirectoryForm)) }, 'Add New')
+            ),
+            m('.share-manager__actions-edit', [
               isEditDisabled && m('button', { onclick: () => (isEditDisabled = false) }, 'Edit'),
               !isEditDisabled &&
                 m('button', { onclick: () => (isEditDisabled = true) }, 'Apply and Close'),
