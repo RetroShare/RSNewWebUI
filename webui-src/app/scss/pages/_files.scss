@@ -248,8 +248,11 @@ table.friendsfiles td:nth-child(2) {
     gap: 0.5rem;
     &_input {
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 0.5rem;
+      input {
+        flex-grow: 1;
+      }
     }
   }
 }
