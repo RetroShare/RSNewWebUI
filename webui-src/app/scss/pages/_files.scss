@@ -85,11 +85,15 @@ table.friendsfiles td:nth-child(2) {
 
   &__keywords {
     flex-basis: 15%;
+    padding-right: 0.25rem;
     border-right: 1px solid transparentize($dark-color, 0.9);
 
     & .keywords-container {
       display: flex;
       flex-direction: column;
+      border-top: 2.5px solid transparentize($dark-color, 0.92);
+      margin-top: 0.125rem;
+      padding-top: 0.25rem;
 
       & a {
         font-size: 1.2rem;
