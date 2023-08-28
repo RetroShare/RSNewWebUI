@@ -41,15 +41,24 @@ const RsNodeGroupId = {
   '00000000000000000000000000000005': 'Favorites',
 };
 
-function calcShareFlags(shareFlags) {
-  const isAnonymousSearch = (shareFlags & DIR_FLAGS_ANONYMOUS_SEARCH) !== 0;
-  const isAnonymousDownload = (shareFlags & DIR_FLAGS_ANONYMOUS_DOWNLOAD) !== 0;
-  const isBrowsable = (shareFlags & DIR_FLAGS_BROWSABLE) !== 0;
+function calcIndividualFlags(shareFlagsVal) {
+  const isAnonymousSearch = (shareFlagsVal & DIR_FLAGS_ANONYMOUS_SEARCH) !== 0;
+  const isAnonymousDownload = (shareFlagsVal & DIR_FLAGS_ANONYMOUS_DOWNLOAD) !== 0;
+  const isBrowsable = (shareFlagsVal & DIR_FLAGS_BROWSABLE) !== 0;
   return {
     isAnonymousSearch,
     isAnonymousDownload,
     isBrowsable,
   };
+}
+
+function calcShareFlagsValue(shareFlagsObj) {
+  // calculate shareFlagsVal by performing OR operation on the Flags that have true value
+  const shareFlagsVal =
+    (shareFlagsObj.isAnonymousSearch && DIR_FLAGS_ANONYMOUS_SEARCH) |
+    (shareFlagsObj.isAnonymousDownload && DIR_FLAGS_ANONYMOUS_DOWNLOAD) |
+    (shareFlagsObj.isBrowsable && DIR_FLAGS_BROWSABLE);
+  return shareFlagsVal;
 }
 
 const createArrayProxy = (arr, onChange) => {
@@ -268,6 +277,7 @@ function compareArrays(big, small) {
     return !this.has(val);
   }, new Set(small));
 }
+
 const MyFilesTable = () => {
   return {
     view: (v) =>
@@ -277,6 +287,7 @@ const MyFilesTable = () => {
       ]),
   };
 };
+
 const FriendsFilesTable = () => {
   return {
     view: (v) =>
@@ -317,5 +328,6 @@ module.exports = {
   MyFilesTable,
   FriendsFilesTable,
   createProxy,
-  calcShareFlags,
+  calcIndividualFlags,
+  calcShareFlagsValue,
 };

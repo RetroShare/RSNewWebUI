@@ -24,8 +24,7 @@ let sharedDirArr = [];
 const AddSharedDirForm = () => {
   let newDirPath = '';
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  function addNewSharedDirectory() {
     // check if newDirPath already exists
     const sharedDirArrExists = sharedDirArr.find((item) => item.filename === newDirPath);
     if (sharedDirArrExists) {
@@ -61,7 +60,7 @@ const AddSharedDirForm = () => {
     view: () =>
       m('.widget', [
         m('.widget__heading', m('h3', 'Add New Directory')),
-        m('form.widget__body.share-manager__form', { onsubmit: handleSubmit }, [
+        m('form.widget__body.share-manager__form', { onsubmit: addNewSharedDirectory }, [
           m('blockquote.info', addNewDirInfo),
           m('.share-manager__form_input', [
             m('label', 'Enter absolute directory path :'),
@@ -93,20 +92,23 @@ const ShareDirTable = () => {
         m(
           'tbody.share-manager__table_body',
           sharedDirArr.length !== 0 &&
-            sharedDirArr.map((sharedDirItem) => {
+            sharedDirArr.map((sharedDirItem, index) => {
               const {
                 filename,
                 virtualname,
                 shareflags,
                 parent_groups: parentGroups,
               } = sharedDirItem;
-              const sharedFlags = futil.calcShareFlags(shareflags);
+              const sharedFlags = futil.calcIndividualFlags(shareflags);
               return m('tr', [
                 m(
                   'td',
                   m('input[type=text]', {
                     value: filename,
                     disabled: isEditDisabled,
+                    oninput: (e) => {
+                      sharedDirArr[index].filename = e.target.value;
+                    },
                   })
                 ),
                 m(
@@ -114,6 +116,9 @@ const ShareDirTable = () => {
                   m('input[type=text]', {
                     value: virtualname,
                     disabled: isEditDisabled,
+                    oninput: (e) => {
+                      sharedDirArr[index].virtualname = e.target.value;
+                    },
                   })
                 ),
                 m(
@@ -122,6 +127,10 @@ const ShareDirTable = () => {
                     return m('input[type=checkbox]', {
                       checked: sharedFlags[flag],
                       disabled: isEditDisabled,
+                      oninput: (e) => {
+                        sharedFlags[flag] = e.target.checked;
+                        sharedDirArr[index].shareflags = futil.calcShareFlagsValue(sharedFlags);
+                      },
                     });
                   })
                 ),
@@ -144,6 +153,11 @@ const ShareDirTable = () => {
 
 const ShareManager = () => {
   let isEditDisabled = true;
+  function setNewSharedDirectories() {
+    rs.rsJsonApiRequest('/rsFiles/setSharedDirectories', {
+      dirs: sharedDirArr,
+    }).then((res) => console.log(res));
+  }
   return {
     oninit: () => {
       rs.rsJsonApiRequest('/rsFiles/getSharedDirectories').then((res) => {
@@ -153,21 +167,17 @@ const ShareManager = () => {
     view: () => {
       return m('.widget', [
         m('.widget__heading', m('h3', 'ShareManager')),
-        m('.widget__body.share-manager', [
+        m('form.widget__body.share-manager', { onsubmit: setNewSharedDirectories }, [
           m('blockquote.info', shareManagerInfo),
           sharedDirArr.length !== 0 && m(ShareDirTable, { isEditDisabled }),
-          m(
-            '.share-manager__actions',
+          m('.share-manager__actions', [
+            m('button', { onclick: () => widget.popupMessage(m(AddSharedDirForm)) }, 'Add New'),
             m(
-              '.share-manager__actions-add',
-              m('button', { onclick: () => widget.popupMessage(m(AddSharedDirForm)) }, 'Add New')
+              'button',
+              { onclick: () => (isEditDisabled = !isEditDisabled) },
+              isEditDisabled ? 'Edit' : 'Apply and Close'
             ),
-            m('.share-manager__actions-edit', [
-              isEditDisabled && m('button', { onclick: () => (isEditDisabled = false) }, 'Edit'),
-              !isEditDisabled &&
-                m('button', { onclick: () => (isEditDisabled = true) }, 'Apply and Close'),
-            ])
-          ),
+          ]),
         ]),
       ]);
     },
