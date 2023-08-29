@@ -75,6 +75,35 @@ const AddSharedDirForm = () => {
   };
 };
 
+const ManageVisibility = () => {
+  return {
+    view: (v) => {
+      let { parentGroups } = v.attrs;
+      return m('.widget', [
+        m('.widget__heading', m('h3', 'Manage Visibility')),
+        m('form.widget__body', [
+          Object.keys(futil.RsNodeGroupId).map((groupId) =>
+            m('div.manage-visibility', [
+              m(`label[for=${futil.RsNodeGroupId[groupId]}]`, futil.RsNodeGroupId[groupId]),
+              m(`input[type=checkbox][id=${futil.RsNodeGroupId[groupId]}]`, {
+                // if parentGroups is empty it means All friends nodes have Visibility
+                checked: parentGroups.length === 0 ? false : parentGroups.includes(groupId),
+                onclick: () => {
+                  if (parentGroups.includes(groupId)) {
+                    parentGroups = parentGroups.filter((item) => item !== groupId);
+                  } else {
+                    parentGroups.push(groupId);
+                  }
+                },
+              }),
+            ])
+          ),
+        ]),
+      ]);
+    },
+  };
+};
+
 const ShareDirTable = () => {
   return {
     view: (v) => {
@@ -136,12 +165,15 @@ const ShareDirTable = () => {
                 ),
                 m(
                   'td',
+                  {
+                    // since this is not an input element, manually change color
+                    style: { color: isEditDisabled ? '#6D6D6D' : 'black' },
+                    onclick: () =>
+                      !isEditDisabled && widget.popupMessage(m(ManageVisibility, { parentGroups })),
+                  },
                   parentGroups.length === 0
-                    ? m('td', 'All Friend nodes')
-                    : m(
-                        'td',
-                        sharedDirItem.parent_groups.map((group) => `${futil.RsNodeGroupId[group]},`)
-                      )
+                    ? 'All Friend nodes'
+                    : parentGroups.map((groupFlag) => `${futil.RsNodeGroupId[groupFlag]},`)
                 ),
               ]);
             })
