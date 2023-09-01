@@ -9,14 +9,14 @@ else
 fi
 
 if [ -d "$publicdest" ]; then
-	echo remove $publicdest
+	echo removing $publicdest
 	rm $publicdest -R
 fi
 
-echo create $publicdest
+echo creating $publicdest
 mkdir $publicdest
 
-echo touch $publicdest/app.js, $publicdest/app.css, $publicdest/index.html
+echo creating $publicdest/app.js, $publicdest/styles.css, $publicdest/index.html
 touch $publicdest/app.js -d 1970-01-01
-touch $publicdest/app.css -d 1970-01-01
+touch $publicdest/styles.css -d 1970-01-01
 touch $publicdest/index.html -d 1970-01-01

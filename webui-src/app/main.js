@@ -37,7 +37,7 @@ const navbar = () => {
         [
           m('.nav-menu__logo', [
             m('img', {
-              src: '../data/retroshare.svg',
+              src: 'images/retroshare.svg',
               alt: 'retroshare_icon',
             }),
             m('h5', 'Retroshare'),

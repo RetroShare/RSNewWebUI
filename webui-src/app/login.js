@@ -39,7 +39,7 @@ function loginComponent() {
   let withOptions = false;
 
   const logo = () =>
-    m('img.logo[width=30%]', { src: '../data/retroshare.svg', alt: 'retroshare_icon' });
+    m('img.logo[width=30%]', { src: 'images/retroshare.svg', alt: 'retroshare_icon' });
 
   const inputName = () =>
     m('input', {
