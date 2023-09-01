@@ -20,15 +20,15 @@ const RS_FILE_HINTS_REMOTE = 0x00000008;
 const RS_FILE_HINTS_LOCAL = 0x00000004;
 
 // Flags for directory sharing permissions.
+const DIR_FLAGS_ANONYMOUS_SEARCH = 0x0800;
 const DIR_FLAGS_ANONYMOUS_DOWNLOAD = 0x0080;
 const DIR_FLAGS_BROWSABLE = 0x0400;
-const DIR_FLAGS_ANONYMOUS_SEARCH = 0x0800;
 
 /* eslint-disable no-unused-vars */
 
 // Access Permission calculated by performing OR operation on the above three flags.
 const DIR_FLAGS_PERMISSIONS_MASK =
-  DIR_FLAGS_ANONYMOUS_SEARCH | DIR_FLAGS_BROWSABLE | DIR_FLAGS_ANONYMOUS_DOWNLOAD;
+  DIR_FLAGS_ANONYMOUS_SEARCH | DIR_FLAGS_ANONYMOUS_DOWNLOAD | DIR_FLAGS_BROWSABLE;
 
 /* eslint-enable no-unused-vars */
 

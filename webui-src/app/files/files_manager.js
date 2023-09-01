@@ -151,16 +151,39 @@ const ShareDirTable = () => {
                   })
                 ),
                 m(
-                  'td',
+                  'td.share-flags',
                   Object.keys(sharedFlags).map((flag) => {
-                    return m('input[type=checkbox]', {
-                      checked: sharedFlags[flag],
-                      disabled: isEditDisabled,
-                      oninput: (e) => {
-                        sharedFlags[flag] = e.target.checked;
-                        sharedDirArr[index].shareflags = futil.calcShareFlagsValue(sharedFlags);
-                      },
-                    });
+                    return [
+                      m(`input.share-flags-check[type=checkbox][id=${flag}]`, {
+                        checked: sharedFlags[flag],
+                        disabled: isEditDisabled,
+                      }),
+                      m(
+                        `label.share-flags-label[for=${flag}]`,
+                        {
+                          onclick: () => {
+                            if (isEditDisabled) return;
+                            sharedFlags[flag] = !sharedFlags[flag];
+                            sharedDirArr[index].shareflags = futil.calcShareFlagsValue(sharedFlags);
+                          },
+                          style: isEditDisabled && { color: '#7D7D7D' },
+                        },
+                        m(
+                          // check the flag type then if its value is true then only render the icon
+                          flag === 'isAnonymousSearch'
+                            ? sharedFlags[flag]
+                              ? 'i.fas.fa-search'
+                              : 'span'
+                            : flag === 'isAnonymousDownload'
+                            ? sharedFlags[flag]
+                              ? 'i.fas.fa-download'
+                              : 'span'
+                            : sharedFlags[flag]
+                            ? 'i.fas.fa-eye'
+                            : 'span'
+                        )
+                      ),
+                    ];
                   })
                 ),
                 m(

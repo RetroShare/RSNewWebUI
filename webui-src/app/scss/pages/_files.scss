@@ -263,6 +263,28 @@ table.friendsfiles td:nth-child(2) {
       }
     }
   }
+
+  .share-flags {
+    /* hide checkbox */
+    input.share-flags-check {
+      display: none;
+      /* use label with 'for' to manipulate checkbox */
+      & + label.share-flags-label {
+        color: grey;
+        margin-right: 0.25rem;
+        padding: 0.25rem 0.25rem 0.125rem;
+        border: 1px solid #6d6d6d;
+        border-radius: 0.5rem;
+      }
+      &:checked + label.share-flags-label {
+        color: $primary-retro-color;
+      }
+    }
+  }
+  label span {
+    display: inline-block;
+    width: 1.125rem;
+  }
 }
 .manage-visibility {
   label {
