@@ -6,14 +6,19 @@ const cutil = require('config/config_util');
 
 const shareManagerInfo = `
   This is a list of shared folders. You can add and remove folders using the buttons at the bottom.
-  When you add a new folder, initially all files in that folder are shared. You can separately share
-  flags for each shared directory.
+  e.g- You can click on Edit button and then modify any field. When you add a new folder, initially
+  all files in that folder are shared. You can separately share flags for each shared directory.
 `;
 
-const accessTooltipText = `Manage Control Access for Directories, The three options are for the
-  following purpose. 1. Directory can be searched anonymously, 2. Directory can be accessed
-  anonymously, 3. Directory can be browsed anonymously
-`;
+const accessTooltipText = [
+  'Manage Control Access for Directories, The three options are for the following purpose.',
+  m('i.fas.fa-search'),
+  ' Directory can be searched anonymously, ',
+  m('i.fas.fa-download'),
+  ' Directory can be accessed anonymously, ',
+  m('i.fas.fa-eye'),
+  ' Directory can be browsed by designated friends',
+];
 
 const addNewDirInfo = `For Security reasons, Browsers don't allow to read directories so Please
   copy and paste the absolute path of the directory which you want to share.
