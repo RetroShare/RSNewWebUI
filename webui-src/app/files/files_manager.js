@@ -26,6 +26,12 @@ const addNewDirInfo = `For Security reasons, Browsers don't allow to read direct
 
 let sharedDirArr = [];
 
+function loadSharedDirectories() {
+  rs.rsJsonApiRequest('/rsFiles/getSharedDirectories').then((res) => {
+    if (res.body.retval) sharedDirArr = res.body.dirs;
+  });
+}
+
 const AddSharedDirForm = () => {
   let newDirPath = '';
 
@@ -36,14 +42,18 @@ const AddSharedDirForm = () => {
       alert('The path you entered already exists.');
       return;
     }
-    rs.rsJsonApiRequest('/rsFiles/addSharedDirectory', {
+    const newSharedDir = {
       dir: {
         filename: newDirPath,
         virtualname: '',
         shareflags: futil.DIR_FLAGS_ANONYMOUS_SEARCH | futil.DIR_FLAGS_ANONYMOUS_DOWNLOAD,
         parent_groups: [],
       },
-    }).then((res) => {
+    };
+    rs.rsJsonApiRequest('/rsFiles/addSharedDirectory', { ...newSharedDir }).then((res) => {
+      if (res.body.retval) {
+        loadSharedDirectories();
+      }
       widget.popupMessage(
         m('.widget', [
           m('.widget__heading', m('h3', 'Add Shared Directory')),
@@ -92,7 +102,7 @@ const ManageVisibility = () => {
               m(`label[for=${futil.RsNodeGroupId[groupId]}]`, futil.RsNodeGroupId[groupId]),
               m(`input[type=checkbox][id=${futil.RsNodeGroupId[groupId]}]`, {
                 // if parentGroups is empty it means All friends nodes have Visibility
-                checked: parentGroups.length === 0 ? false : parentGroups.includes(groupId),
+                checked: parentGroups.length ? false : parentGroups.includes(groupId),
                 onclick: () => {
                   if (parentGroups.includes(groupId)) {
                     parentGroups = parentGroups.filter((item) => item !== groupId);
@@ -219,11 +229,7 @@ const ShareManager = () => {
     }).then((res) => console.log(res));
   }
   return {
-    oninit: () => {
-      rs.rsJsonApiRequest('/rsFiles/getSharedDirectories').then((res) => {
-        if (res.body.retval) sharedDirArr = res.body.dirs;
-      });
-    },
+    oninit: loadSharedDirectories,
     view: () => {
       return m('.widget', [
         m('.widget__heading', m('h3', 'ShareManager')),
