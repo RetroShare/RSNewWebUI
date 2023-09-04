@@ -25,6 +25,7 @@ const addNewDirInfo = `For Security reasons, Browsers don't allow to read direct
 `;
 
 let sharedDirArr = [];
+let isEditDisabled = true;
 
 function loadSharedDirectories() {
   rs.rsJsonApiRequest('/rsFiles/getSharedDirectories').then((res) => {
@@ -91,21 +92,27 @@ const AddSharedDirForm = () => {
 };
 
 const ManageVisibility = () => {
+  function handleSubmit() {
+    m.redraw();
+    const mContainer = document.getElementById('modal-container');
+    mContainer.style.display = 'none';
+  }
   return {
     view: (v) => {
-      let { parentGroups } = v.attrs;
+      const { parentGroups } = v.attrs;
       return m('.widget', [
         m('.widget__heading', m('h3', 'Manage Visibility')),
-        m('form.widget__body', [
+        m('form.widget__body', { onsubmit: handleSubmit }, [
           Object.keys(futil.RsNodeGroupId).map((groupId) =>
             m('div.manage-visibility', [
               m(`label[for=${futil.RsNodeGroupId[groupId]}]`, futil.RsNodeGroupId[groupId]),
               m(`input[type=checkbox][id=${futil.RsNodeGroupId[groupId]}]`, {
                 // if parentGroups is empty it means All friends nodes have Visibility
-                checked: parentGroups.length ? false : parentGroups.includes(groupId),
+                checked: parentGroups.includes(groupId),
                 onclick: () => {
                   if (parentGroups.includes(groupId)) {
-                    parentGroups = parentGroups.filter((item) => item !== groupId);
+                    const groupItemIndex = parentGroups.indexOf(groupId);
+                    parentGroups.splice(groupItemIndex, 1);
                   } else {
                     parentGroups.push(groupId);
                   }
@@ -113,6 +120,7 @@ const ManageVisibility = () => {
               }),
             ])
           ),
+          m('button[type=submit]', 'OK'),
         ]),
       ]);
     },
@@ -121,8 +129,7 @@ const ManageVisibility = () => {
 
 const ShareDirTable = () => {
   return {
-    view: (v) => {
-      const { isEditDisabled } = v.attrs;
+    view: () => {
       return m('table.share-manager__table', [
         m(
           'thead.share-manager__table_heading',
@@ -135,7 +142,7 @@ const ShareDirTable = () => {
         ),
         m(
           'tbody.share-manager__table_body',
-          sharedDirArr.length !== 0 &&
+          sharedDirArr.length &&
             sharedDirArr.map((sharedDirItem, index) => {
               const {
                 filename,
@@ -222,7 +229,6 @@ const ShareDirTable = () => {
 };
 
 const ShareManager = () => {
-  let isEditDisabled = true;
   function setNewSharedDirectories() {
     rs.rsJsonApiRequest('/rsFiles/setSharedDirectories', {
       dirs: sharedDirArr,
@@ -235,7 +241,7 @@ const ShareManager = () => {
         m('.widget__heading', m('h3', 'ShareManager')),
         m('form.widget__body.share-manager', { onsubmit: setNewSharedDirectories }, [
           m('blockquote.info', shareManagerInfo),
-          sharedDirArr.length !== 0 && m(ShareDirTable, { isEditDisabled }),
+          sharedDirArr.length && m(ShareDirTable),
           m('.share-manager__actions', [
             m('button', { onclick: () => widget.popupMessage(m(AddSharedDirForm)) }, 'Add New'),
             m(
