@@ -129,6 +129,7 @@ const ManageVisibility = () => {
 
 const ShareDirTable = () => {
   return {
+    oninit: futil.loadRsNodeGroupId,
     view: () => {
       return m('table.share-manager__table', [
         m(
@@ -232,7 +233,7 @@ const ShareManager = () => {
   function setNewSharedDirectories() {
     rs.rsJsonApiRequest('/rsFiles/setSharedDirectories', {
       dirs: sharedDirArr,
-    }).then((res) => console.log(res));
+    });
   }
   return {
     oninit: loadSharedDirectories,

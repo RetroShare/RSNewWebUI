@@ -36,10 +36,21 @@ const DIR_FLAGS_PERMISSIONS_MASK =
 const RsNodeGroupId = {
   '00000000000000000000000000000001': 'Friends',
   '00000000000000000000000000000002': 'Family',
-  '00000000000000000000000000000003': 'CoWorkers',
-  '00000000000000000000000000000004': 'Others',
+  '00000000000000000000000000000003': 'Co-Workers',
+  '00000000000000000000000000000004': 'Other Contacts',
   '00000000000000000000000000000005': 'Favorites',
 };
+
+function loadRsNodeGroupId() {
+  rs.rsJsonApiRequest('/rsPeers/getGroupInfoList').then((res) => {
+    const { groupInfoList } = res.body;
+    groupInfoList.forEach((groupItem) => {
+      if (!Object.prototype.hasOwnProperty.call(RsNodeGroupId, groupItem.id)) {
+        RsNodeGroupId[groupItem.id] = groupItem.name;
+      }
+    });
+  });
+}
 
 function calcIndividualFlags(shareFlagsVal) {
   const isAnonymousSearch = (shareFlagsVal & DIR_FLAGS_ANONYMOUS_SEARCH) !== 0;
@@ -322,6 +333,7 @@ module.exports = {
   DIR_FLAGS_ANONYMOUS_DOWNLOAD,
   DIR_FLAGS_BROWSABLE,
   RsNodeGroupId,
+  loadRsNodeGroupId,
   File,
   SearchBar,
   compareArrays,
