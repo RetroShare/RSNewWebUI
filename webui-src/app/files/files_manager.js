@@ -33,6 +33,14 @@ function loadSharedDirectories() {
   });
 }
 
+// Update Shared Directories when there is a corresponding event
+rs.events[rs.RsEventsType.SHARED_DIRECTORIES] = {
+  handler: (event) => {
+    console.log('Shared Directories Event: ', event);
+    loadSharedDirectories();
+  },
+};
+
 const AddSharedDirForm = () => {
   let newDirPath = '';
 
