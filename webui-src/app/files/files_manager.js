@@ -250,7 +250,7 @@ const ShareManager = () => {
         m('.widget__heading', m('h3', 'ShareManager')),
         m('form.widget__body.share-manager', { onsubmit: setNewSharedDirectories }, [
           m('blockquote.info', shareManagerInfo),
-          sharedDirArr.length && m(ShareDirTable),
+          m(ShareDirTable),
           m('.share-manager__actions', [
             m('button', { onclick: () => widget.popupMessage(m(AddSharedDirForm)) }, 'Add New'),
             m(
