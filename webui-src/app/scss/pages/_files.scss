@@ -119,21 +119,20 @@ table.friendsfiles td:nth-child(2) {
           & th {
             font-size: 1.25rem;
             font-weight: bold;
+            text-align: left;
 
             &:nth-child(1) {
               flex-basis: 40%;
-              text-align: left;
             }
             &:nth-child(2) {
               flex-basis: 10%;
+              text-align: center;
             }
             &:nth-child(3) {
               flex-basis: 40%;
-              text-align: left;
             }
             &:nth-child(4) {
               flex-basis: 10%;
-              text-align: right;
             }
           }
         }
@@ -162,7 +161,7 @@ table.friendsfiles td:nth-child(2) {
             &__download {
               flex-basis: 10%;
               display: flex;
-              justify-content: end;
+              justify-content: start;
               align-items: center;
             }
           }
@@ -210,9 +209,13 @@ table.friendsfiles td:nth-child(2) {
     margin: 1rem 0 auto;
     thead {
       font-weight: bold;
+      text-align: left;
+      td:nth-child(1),
+      td:nth-child(2) {
+        padding-left: 0.5rem;
+      }
       td:nth-child(3),
       td:nth-child(4) {
-        text-align: left;
         & .tooltip {
           font-weight: normal;
           font-size: 1rem;
