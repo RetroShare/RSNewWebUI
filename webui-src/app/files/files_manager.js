@@ -227,7 +227,7 @@ const ShareDirTable = () => {
                   },
                   parentGroups.length === 0
                     ? 'All Friend nodes'
-                    : parentGroups.map((groupFlag) => `${futil.RsNodeGroupId[groupFlag]},`)
+                    : parentGroups.map((groupFlag) => futil.RsNodeGroupId[groupFlag]).join(', ')
                 ),
               ]);
             })
