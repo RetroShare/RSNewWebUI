@@ -29,7 +29,7 @@ shopt -s globstar
 
 if [ "$2" = "" ]||[ "$2" = "index.html" ]; then
 	echo copying html file
-    cp -r $src/index.html $publicdest/
+    cp $src/index.html $publicdest/
 fi
 
 if [ "$2" = "" ]||[ "$2" = "styles.css" ]; then

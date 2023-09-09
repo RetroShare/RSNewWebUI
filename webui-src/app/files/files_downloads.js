@@ -139,6 +139,9 @@ const NewFileDialog = () => {
 };
 
 const Component = () => {
+  function clearFileCompleted() {
+    rs.rsJsonApiRequest('/rsFiles/FileClearCompleted');
+  }
   return {
     oninit: () => {
       Downloads.loadStrategy();
@@ -150,11 +153,7 @@ const Component = () => {
         m('h3', `Downloads (${Downloads.hashes ? Downloads.hashes.length : 0} files)`),
         m('.action', [
           m('button', { onclick: () => widget.popupMessage(m(NewFileDialog)) }, 'Add new file'),
-          m(
-            'button',
-            { onclick: () => rs.rsJsonApiRequest('/rsFiles/FileClearCompleted') },
-            'Clear completed'
-          ),
+          m('button', { onclick: clearFileCompleted }, 'Clear completed'),
         ]),
       ]),
       m('.widget__body-content', [

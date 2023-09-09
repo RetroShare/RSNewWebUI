@@ -1,8 +1,9 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const util = require('files/files_util');
+const manager = require('files/files_manager');
 
-function displayfiles() {
+const DisplayFiles = () => {
   const childrenList = []; // stores children details
   let loaded = false; // checks whether we have loaded the children details or not.
   let parStruct; // stores current struct(details, showChild)
@@ -18,8 +19,8 @@ function displayfiles() {
           ? m(
               'td',
               m('i.fas.fa-angle-right', {
-                class: 'fa-rotate-' + (parStruct.showChild ? '90' : '0'),
-                style: 'margin-top:12px',
+                class: `fa-rotate-${parStruct.showChild ? '90' : '0'}`,
+                style: 'margin-top: 0.5rem',
                 onclick: () => {
                   if (!loaded) {
                     // if it is not already retrieved
@@ -43,7 +44,7 @@ function displayfiles() {
             style: {
               position: 'relative',
               '--replyDepth': v.attrs.replyDepth,
-              left: `calc(30px*${v.attrs.replyDepth})`,
+              left: `calc(1.5rem*${v.attrs.replyDepth})`,
             },
           },
           parStruct.details.name
@@ -52,7 +53,7 @@ function displayfiles() {
       ]),
       parStruct.showChild &&
         childrenList.map((child) =>
-          m(displayfiles, {
+          m(DisplayFiles, {
             // recursive call
             par_directory: { details: child, showChild: false },
             replyDepth: v.attrs.replyDepth + 1,
@@ -60,27 +61,44 @@ function displayfiles() {
         ),
     ],
   };
-}
+};
 
 const Layout = () => {
   //  let root_handle;
   let parent;
+  let showShareManager = false;
   return {
     oninit: () => {
       rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {}).then((res) => (parent = res));
     },
     view: () => [
-      m('.widget__heading', [m('h3', 'My Files')]),
+      m('.widget__heading', [
+        m('h3', 'My Files'),
+        m('button', { onclick: () => (showShareManager = true) }, 'Configure shared directories'),
+      ]),
       m('.widget__body', [
         m(
           util.MyFilesTable,
           m(
             'tbody',
             parent &&
-              m(displayfiles, {
+              m(DisplayFiles, {
                 par_directory: { details: parent.body.details, showChild: false },
                 replyDepth: 0,
               })
+          )
+        ),
+        m(
+          '.shareManagerPopupOverlay#shareManagerPopup',
+          { style: { display: showShareManager ? 'block' : 'none' } },
+          m(
+            '.shareManagerPopup',
+            m(manager),
+            m(
+              'button.red.close-btn',
+              { onclick: () => (showShareManager = false) },
+              m('i.fas.fa-times')
+            )
           )
         ),
       ]),

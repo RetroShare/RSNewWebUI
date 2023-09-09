@@ -19,6 +19,59 @@ const RS_FILE_REQ_ANONYMOUS_ROUTING = 0x00000040;
 const RS_FILE_HINTS_REMOTE = 0x00000008;
 const RS_FILE_HINTS_LOCAL = 0x00000004;
 
+// Flags for directory sharing permissions.
+const DIR_FLAGS_ANONYMOUS_SEARCH = 0x0800;
+const DIR_FLAGS_ANONYMOUS_DOWNLOAD = 0x0080;
+const DIR_FLAGS_BROWSABLE = 0x0400;
+
+/* eslint-disable no-unused-vars */
+
+// Access Permission calculated by performing OR operation on the above three flags.
+const DIR_FLAGS_PERMISSIONS_MASK =
+  DIR_FLAGS_ANONYMOUS_SEARCH | DIR_FLAGS_ANONYMOUS_DOWNLOAD | DIR_FLAGS_BROWSABLE;
+
+/* eslint-enable no-unused-vars */
+
+// parent_groups visibility
+const RsNodeGroupId = {
+  '00000000000000000000000000000001': 'Friends',
+  '00000000000000000000000000000002': 'Family',
+  '00000000000000000000000000000003': 'Co-Workers',
+  '00000000000000000000000000000004': 'Other Contacts',
+  '00000000000000000000000000000005': 'Favorites',
+};
+
+function loadRsNodeGroupId() {
+  rs.rsJsonApiRequest('/rsPeers/getGroupInfoList').then((res) => {
+    const { groupInfoList } = res.body;
+    groupInfoList.forEach((groupItem) => {
+      if (!Object.prototype.hasOwnProperty.call(RsNodeGroupId, groupItem.id)) {
+        RsNodeGroupId[groupItem.id] = groupItem.name;
+      }
+    });
+  });
+}
+
+function calcIndividualFlags(shareFlagsVal) {
+  const isAnonymousSearch = (shareFlagsVal & DIR_FLAGS_ANONYMOUS_SEARCH) !== 0;
+  const isAnonymousDownload = (shareFlagsVal & DIR_FLAGS_ANONYMOUS_DOWNLOAD) !== 0;
+  const isBrowsable = (shareFlagsVal & DIR_FLAGS_BROWSABLE) !== 0;
+  return {
+    isAnonymousSearch,
+    isAnonymousDownload,
+    isBrowsable,
+  };
+}
+
+function calcShareFlagsValue(shareFlagsObj) {
+  // calculate shareFlagsVal by performing OR operation on the Flags that have true value
+  const shareFlagsVal =
+    (shareFlagsObj.isAnonymousSearch && DIR_FLAGS_ANONYMOUS_SEARCH) |
+    (shareFlagsObj.isAnonymousDownload && DIR_FLAGS_ANONYMOUS_DOWNLOAD) |
+    (shareFlagsObj.isBrowsable && DIR_FLAGS_BROWSABLE);
+  return shareFlagsVal;
+}
+
 const createArrayProxy = (arr, onChange) => {
   return new Proxy(arr, {
     set: (target, property, value, reciever) => {
@@ -235,6 +288,7 @@ function compareArrays(big, small) {
     return !this.has(val);
   }, new Set(small));
 }
+
 const MyFilesTable = () => {
   return {
     view: (v) =>
@@ -244,6 +298,7 @@ const MyFilesTable = () => {
       ]),
   };
 };
+
 const FriendsFilesTable = () => {
   return {
     view: (v) =>
@@ -274,10 +329,17 @@ module.exports = {
   RS_FILE_REQ_ANONYMOUS_ROUTING,
   RS_FILE_HINTS_REMOTE,
   RS_FILE_HINTS_LOCAL,
+  DIR_FLAGS_ANONYMOUS_SEARCH,
+  DIR_FLAGS_ANONYMOUS_DOWNLOAD,
+  DIR_FLAGS_BROWSABLE,
+  RsNodeGroupId,
+  loadRsNodeGroupId,
   File,
   SearchBar,
   compareArrays,
   MyFilesTable,
   FriendsFilesTable,
   createProxy,
+  calcIndividualFlags,
+  calcShareFlagsValue,
 };
