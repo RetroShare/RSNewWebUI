@@ -1,6 +1,7 @@
 // -----------------------------------------------------------------------------
 // This file contains all application-wide Sass mixins.
 // -----------------------------------------------------------------------------
+@use './colors' as *;
 
 /// Button Mixin
 @mixin button($bg-color) {
@@ -18,5 +19,46 @@
   &:active {
     outline: none;
     box-shadow: inset 3px 3px 0 darken($color: $bg-color, $amount: 20);
+  }
+}
+
+/// Overlay Mixin
+@mixin popupOverlay {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/// Blockquote Mixin
+@mixin blockquote($type) {
+  position: relative;
+  line-height: 1.2;
+  @if ($type == 'info') {
+    color: transparentize($dark-color, 0.2);
+    border: 1px solid transparentize($primary-retro-color, 0.2);
+  } @else if ($type == 'warning') {
+    border: 1px solid transparentize($golden-yellow-color, 0.2);
+  } @else if ($type == 'danger') {
+    border: 1px solid transparentize($red-color, 0.2);
+  }
+  &::before {
+    font-family: 'Font Awesome 5 Free';
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    @if ($type == 'info') {
+      content: '\f05a';
+      color: $primary-color;
+    } @else if ($type == 'warning') {
+      content: '\f071';
+      color: $golden-yellow-color;
+    } @else if ($type == 'danger') {
+      content: '\f05a';
+      color: $red-color;
+    }
   }
 }
