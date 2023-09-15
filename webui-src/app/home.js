@@ -80,13 +80,13 @@ const retroshareId = () => {
           {
             id: 'retroId',
             rows: 1,
-            cols: v.attrs.ownCert.substring(31).length + 2,
+            cols: v.attrs.ownCert.length + 2,
             placeholder: 'certificate',
             onclick: () => {
               document.getElementById('retroId').select();
             },
           },
-          v.attrs.ownCert.substring(31)
+          v.attrs.ownCert
         ),
         m('i.fas.fa-copy', {
           onclick: () => {
@@ -264,7 +264,7 @@ const Certificate = () => {
     rs.rsJsonApiRequest(
       '/rsPeers/GetShortInvite',
       { formatRadix: true },
-      (data) => (ownCert = data.invite)
+      (data) => (ownCert = decodeURIComponent(data.invite).substring(34))
     );
   }
 
