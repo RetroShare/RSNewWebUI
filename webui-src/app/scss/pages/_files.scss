@@ -8,21 +8,16 @@
   border: 1px solid #ccc;
   animation: fadein 0.5s;
   &__heading {
-    display: flex;
-    justify-content: space-between;
+    @include flex($justify: space-between);
     margin-bottom: 0.5rem;
     &-chunk {
-      display: flex;
-      gap: 1rem;
+      @include flex($gap: 1rem);
     }
   }
   &__body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    @include flex(column, $gap: 1rem);
     &-details {
-      display: flex;
-      align-items: center;
+      @include flex($align: center);
       &-stat {
         width: 100%;
         display: grid;
@@ -32,9 +27,8 @@
         }
       }
       &-action {
-        display: flex;
+        @include flex($gap: 1rem);
         height: 100%;
-        gap: 1rem;
         & button,
         & button.red {
           padding: 0.25rem 0.75rem;
@@ -76,8 +70,7 @@ table.friendsfiles td:nth-child(2) {
 .file-search-container {
   margin-top: 1rem;
   padding: 8px;
-  display: flex;
-  gap: 8px;
+  @include flex($gap: 8px);
   border: 1px solid transparentize($dark-color, 0.8);
   border-radius: 6px;
   height: 100%;
@@ -89,8 +82,7 @@ table.friendsfiles td:nth-child(2) {
     border-right: 1px solid transparentize($dark-color, 0.9);
 
     & .keywords-container {
-      display: flex;
-      flex-direction: column;
+      @include flex(column);
       border-top: 2.5px solid transparentize($dark-color, 0.92);
       margin-top: 0.125rem;
       padding-top: 0.25rem;
@@ -160,9 +152,7 @@ table.friendsfiles td:nth-child(2) {
             }
             &__download {
               flex-basis: 10%;
-              display: flex;
-              justify-content: start;
-              align-items: center;
+              @include flex($justify: start, $align: center);
             }
           }
         }
@@ -202,9 +192,7 @@ table.friendsfiles td:nth-child(2) {
 }
 
 .share-manager {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  @include flex(column, $justify: space-between);
   &__table {
     margin: 1rem 0 auto;
     thead {
@@ -250,17 +238,12 @@ table.friendsfiles td:nth-child(2) {
     }
   }
   &__actions {
-    display: flex;
-    justify-content: space-between;
+    @include flex($justify: space-between);
   }
   &__form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    @include flex(column, $gap: 0.5rem);
     &_input {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+      @include flex(column, $gap: 0.5rem);
       input {
         flex-grow: 1;
       }
@@ -294,6 +277,5 @@ table.friendsfiles td:nth-child(2) {
     width: 100%;
     cursor: pointer;
   }
-  display: flex;
-  justify-content: space-between;
+  @include flex($justify: space-between);
 }

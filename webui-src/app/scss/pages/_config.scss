@@ -1,22 +1,18 @@
-@use '../abstracts/colors' as *;
+@use '../abstracts' as *;
 
 .mail {
   .permission-flag {
     margin-bottom: 1rem;
-    display: flex;
-    gap: 1rem;
+    @include flex($gap: 1rem);
   }
   &-tags {
     padding: 0.5rem;
     border: 1px solid transparentize($dark-color, 0.8);
     border-radius: 6px;
     &__container {
-      display: flex;
-      flex-direction: column;
+      @include flex(column);
       & .tag-item {
-        display: flex;
-        align-items: center;
-        gap: 4px;
+        @include flex($align: center, $gap: 4px);
         border-bottom: 1px solid transparentize($dark-color, 0.9);
         padding: 2px 0;
 
@@ -34,8 +30,7 @@
         &__modify {
           margin-left: auto;
           font-size: 0.75rem;
-          display: flex;
-          gap: 4px;
+          @include flex($gap: 4px);
         }
         &:hover {
           background-color: $light-color;
@@ -67,9 +62,7 @@
 }
 
 .proxy-server {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  @include flex(column, $gap: 4px);
   &__tor,
   &__i2p {
     & > h4 {
@@ -94,7 +87,5 @@
 }
 
 .config-files {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  @include flex(column, $gap: 1rem);
 }

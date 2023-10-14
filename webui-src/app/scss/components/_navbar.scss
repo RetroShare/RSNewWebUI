@@ -1,21 +1,17 @@
-@use '../abstracts/colors' as *;
+@use '../abstracts' as *;
 
 /* Navbar */
 .nav-menu {
   background-color: $dark-color;
   box-shadow: 0 5px 5px #222;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  @include flex(column, $align: center);
   height: 100%;
   padding: 0.5rem 0.25rem;
   margin-right: 0rem;
 
   &__logo {
     padding: 1.2rem 0;
-    display: flex;
-    gap: 0.3rem;
-    align-items: center;
+    @include flex(column, $align: center, $gap: 0.3rem);
 
     img {
       width: 1.6rem;
@@ -29,17 +25,14 @@
 
   &__box {
     padding: 2rem 0.125rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    @include flex(column, $gap: 0.5rem);
     position: relative;
 
     .item {
       margin: 0;
       padding: 0.675rem 0.5rem;
       width: 10rem;
-      display: flex;
-      align-items: center;
+      @include flex($align: center);
       line-height: 1;
       border-radius: 0.5rem;
       text-decoration: none;
@@ -113,8 +106,7 @@
 .sidebar {
   width: 13rem;
   background-color: white;
-  display: flex;
-  flex-direction: column;
+  @include flex(column);
   & a {
     text-decoration: none;
     text-transform: capitalize;

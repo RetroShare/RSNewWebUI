@@ -63,7 +63,7 @@
   }
 }
 
-@mixin flex($direction: '', $justify: '', $align: '') {
+@mixin flex($direction: '', $justify: '', $align: '', $gap: 0) {
   display: flex;
   @if ($direction != '') {
     flex-direction: $direction;
@@ -73,5 +73,8 @@
   }
   @if ($align != '') {
     align-items: $align;
+  }
+  @if ($gap != 0) {
+    gap: $gap;
   }
 }

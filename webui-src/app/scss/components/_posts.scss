@@ -1,4 +1,4 @@
-@use '../abstracts/colors' as *;
+@use '../abstracts' as *;
 
 .posts {
   height: 100%;
@@ -6,8 +6,7 @@
   flex-direction: column;
   overflow: auto;
   &__heading {
-    display: flex;
-    justify-content: space-between;
+    @include flex(column, $justify: space-between);
   }
   &-container {
     height: 100%;

@@ -1,3 +1,5 @@
+@use '../abstracts/' as *;
+
 #modal-container {
   display: none;
   position: fixed;
@@ -21,8 +23,7 @@
   background-color: white;
   border-radius: 0.5rem;
   animation: fadein 0.5s;
-  display: flex;
-  flex-direction: column;
+  @include flex(column);
   & button:last-child {
     margin-top: auto;
   }

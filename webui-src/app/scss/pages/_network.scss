@@ -1,3 +1,5 @@
+@use '../abstracts' as *;
+
 .friend {
   color: #444;
   font-size: 1.2em;
@@ -31,8 +33,7 @@
     justify-content: start;
   }
   & .brief-info {
-    display: flex;
-    align-items: center;
+    @include flex($align: center);
     justify-self: start;
   }
 
