@@ -8,10 +8,10 @@
   border-radius: 0.5rem;
   overflow: auto;
   & .top-heading {
-    @include flex(column, $justify: space-between);
+    @include flex($justify: space-between);
   }
   &__heading {
-    @include flex(column, $justify: space-between, $align: center);
+    @include flex($justify: space-between, $align: center);
     border-bottom: 2px solid #999;
   }
   &__body {
@@ -19,9 +19,9 @@
     @include flex(column);
     overflow: auto;
     &-heading {
-      @include flex(column, $justify: space-between, $align: center);
+      @include flex($justify: space-between, $align: center);
       & .action {
-        @include flex(column, $gap: 0.5rem);
+        @include flex($gap: 0.5rem);
       }
     }
     &-content {
