@@ -71,9 +71,10 @@
         background: transparentize($dark-color, 0.95);
         & .textArea {
           padding: 0;
+          width: 100%;
+          min-height: 75px;
           font-size: 1rem;
           font-family: monospace;
-          box-sizing: none;
           background: transparent;
           font-size: 1.1rem;
           border-radius: 5px;
