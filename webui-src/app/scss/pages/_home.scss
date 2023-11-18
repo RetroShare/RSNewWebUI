@@ -53,7 +53,9 @@
         border-radius: 4px;
         background: transparentize($dark-color, 0.95);
         & .textArea {
-          padding: 0.25rem;
+          padding: 0;
+          width: 100%;
+          min-height: 75px;
           font-size: 1rem;
           font-family: monospace;
           background: transparent;

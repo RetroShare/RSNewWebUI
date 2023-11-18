@@ -79,8 +79,6 @@ const retroshareId = () => {
           'textarea[readonly].textArea',
           {
             id: 'retroId',
-            rows: 1,
-            cols: v.attrs.ownCert.length + 2,
             placeholder: 'certificate',
             onclick: () => {
               document.getElementById('retroId').select();

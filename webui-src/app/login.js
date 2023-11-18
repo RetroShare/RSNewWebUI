@@ -52,7 +52,12 @@ function loginComponent() {
   const buttonLogin = () =>
     m(
       'button[type=submit].submit-btn#loginBtn',
-      { onclick: () => verifyLogin(uname, passwd, url) },
+      {
+        onclick: (ev) => {
+          ev.preventDefault();
+          verifyLogin(uname, passwd, url);
+        },
+      },
       'Login'
     );
 
