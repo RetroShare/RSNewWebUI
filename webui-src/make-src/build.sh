@@ -4,10 +4,10 @@
 
 echo "### Starting WebUI build ###"
 
-src=$(readlink -f $(dirname $0))/../../webui-src
+src=$(readlink -f $(dirname $0))../../webui-src
 
 if [ "$1" = "" ]; then
-	publicdest=$(readlink -f $(dirname $0))/../../webui
+	publicdest=$(readlink -f $(dirname $0))../../webui
 else
 	publicdest=$1/webui
 fi
