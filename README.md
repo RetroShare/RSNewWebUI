@@ -63,8 +63,8 @@ make
 ```
 
 See the [RetroShare repo](https://github.com/Retroshare/Retroshare) for more
-detailed instructions on compiling RetroShare. You should afterwards see a tab 'JSON API' and a tab 'Web
-Interface' in the **Preferences**.
+detailed instructions on compiling RetroShare. You should afterwards see a tab
+'JSON API' and a tab 'Web Interface' in the **Preferences**.
 
 ### Enable JSON API
 
@@ -122,8 +122,8 @@ however does not allow you to create new nodes. Therefore the steps are:
     ./retroshare-service/src/retroshare-service -U list -W
    ```
 
-After that follow instructions to launch your profile (you need to choose a webui passord and enter
-the ID and login password of your node).
+After that follow instructions to launch your profile (you need to choose a
+webui password and enter the ID and login password of your node).
 
 ## Contributing
 
