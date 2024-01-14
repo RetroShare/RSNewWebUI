@@ -37,6 +37,7 @@
 @mixin blockquote($type) {
   position: relative;
   line-height: 1.2;
+
   @if ($type == 'info') {
     color: transparentize($dark-color, 0.2);
     border: 1px solid transparentize($primary-retro-color, 0.2);
@@ -45,11 +46,13 @@
   } @else if ($type == 'danger') {
     border: 1px solid transparentize($red-color, 0.2);
   }
+
   &::before {
     font-family: 'Font Awesome 5 Free';
     position: absolute;
     top: 0.5rem;
     left: 0.5rem;
+
     @if ($type == 'info') {
       content: '\f05a';
       color: $primary-color;
@@ -65,16 +68,28 @@
 
 @mixin flex($direction: '', $justify: '', $align: '', $gap: 0) {
   display: flex;
+
   @if ($direction != '') {
     flex-direction: $direction;
   }
+
   @if ($justify != '') {
     justify-content: $justify;
   }
+
   @if ($align != '') {
     align-items: $align;
   }
-  @if ($gap != 0) {
+
+  @if ($gap !=0) {
     gap: $gap;
   }
+}
+
+// Font
+@mixin fontdef-woff($FontPath, $FontName, $FontVersion: '1.0.0', $FontType: 'Regular') {
+  src:
+    url('#{$FontPath}/#{$FontName}-#{$FontType}.woff2') format('woff2'),
+    url('#{$FontPath}/#{$FontName}-#{$FontType}.woff') format('woff'),
+    url('#{$FontPath}/#{$FontName}-#{$FontType}.ttf') format('truetype');
 }
