@@ -9,16 +9,16 @@ General site-wide rules
 
 /* Main base div for tabs used by m.route */
 .content {
+  @include flex;
   height: 100%;
-  display: flex;
   overflow: hidden;
 }
 
 /* Main tab content */
 .tab-content {
+  @include flex;
   height: 100%;
   width: 100%;
-  display: flex;
   background-color: $light-color;
   animation: fadein 0.3s;
   overflow: auto;

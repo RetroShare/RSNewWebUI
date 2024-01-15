@@ -1,4 +1,4 @@
-@use '../abstracts/colors' as *;
+@use '../abstracts' as *;
 
 .media-item {
   display: flex;
@@ -8,9 +8,7 @@
   border-radius: 4px;
   &__details {
     flex-basis: 40%;
-    display: flex;
-    align-items: start;
-    gap: 0.5rem;
+    @include flex($align: start, $gap: 0.5rem);
     & img {
       width: 6rem;
       object-fit: contain;

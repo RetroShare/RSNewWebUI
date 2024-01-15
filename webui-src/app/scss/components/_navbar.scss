@@ -1,21 +1,17 @@
-@use '../abstracts/colors' as *;
+@use '../abstracts' as *;
 
 /* Navbar */
 .nav-menu {
   background-color: $dark-color;
   box-shadow: 0 5px 5px #222;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  @include flex(column, $align: center);
   height: 100%;
   padding: 0.5rem 0.25rem;
   margin-right: 0rem;
 
   &__logo {
     padding: 1.2rem 0;
-    display: flex;
-    gap: 0.3rem;
-    align-items: center;
+    @include flex($align: center, $gap: 0.3rem);
 
     img {
       width: 1.6rem;
@@ -29,17 +25,14 @@
 
   &__box {
     padding: 2rem 0.125rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    @include flex(column, $gap: 0.5rem);
     position: relative;
 
     .item {
       margin: 0;
       padding: 0.675rem 0.5rem;
       width: 10rem;
-      display: flex;
-      align-items: center;
+      @include flex($align: center);
       line-height: 1;
       border-radius: 0.5rem;
       text-decoration: none;
@@ -88,17 +81,20 @@
         display: none;
       }
     }
+
     .nav-menu__box {
       .item {
         padding: 0.675rem 0;
         width: 2.5rem;
         justify-content: center;
         transition: 300ms;
+
         & p {
           display: none;
         }
       }
     }
+
     button i {
       rotate: 180deg;
     }
@@ -113,18 +109,20 @@
 .sidebar {
   width: 13rem;
   background-color: white;
-  display: flex;
-  flex-direction: column;
+  @include flex(column);
+
   & a {
     text-decoration: none;
     text-transform: capitalize;
     padding: 1rem;
     cursor: pointer;
     color: #999;
+
     &:hover {
       color: #222;
     }
   }
+
   & .selected-sidebar-link {
     font-weight: bold;
     color: #222;
@@ -132,20 +130,24 @@
     animation: expand-left-border 0.1s;
   }
 }
+
 .sidebarquickview {
   & > h6 {
     padding: 0.5rem;
   }
+
   & a {
     text-decoration: none;
     text-transform: capitalize;
     padding: 0.5rem 1rem;
     display: block;
     color: #999;
+
     & a:hover {
       color: #222;
     }
   }
+
   & .selected-sidebarquickview-link {
     font-weight: bold;
     color: #222;
@@ -153,6 +155,7 @@
     animation: expand-left-border 0.1s;
   }
 }
+
 /* Content adjacent to sidebar */
 .node-panel {
   width: 100%;
@@ -164,6 +167,7 @@
   from {
     border-left: 0;
   }
+
   to {
     border-left: 5px solid #3ba4d7;
   }

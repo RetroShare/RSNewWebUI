@@ -1,8 +1,7 @@
 @use '../abstracts/' as *;
 
 .side-bar {
-  display: flex;
-  flex-direction: column;
+  @include flex(column);
   background: white;
   .mail-compose-btn {
     width: 96%;
@@ -13,33 +12,26 @@
 
 .compose-mail {
   &__from {
+    @include flex($justify: space-between);
     padding-bottom: 0.5rem;
-    display: flex;
-    justify-content: space-between;
     border-bottom: 2px solid $light-color;
   }
   &__recipients {
     padding: 0.5rem 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    @include flex(column, $gap: 0.5rem);
     border-bottom: 2px solid $light-color;
     &__container {
-      display: flex;
-      gap: 0.5rem;
+      @include flex($gap: 0.5rem);
       & > label {
         text-transform: capitalize;
       }
       .recipients {
         width: 100%;
-        display: flex;
-        gap: 0.5rem;
+        @include flex($gap: 0.5rem);
         flex-wrap: wrap;
         &__selected {
           padding: 0.125rem 0.5rem;
-          display: flex;
-          gap: 0.5rem;
-          align-items: center;
+          @include flex($align: center, $gap: 0.5rem);
           border: 1px solid $light-color;
           border-radius: 3px;
           cursor: default;
@@ -110,8 +102,7 @@
   &__message {
     margin: 0.5rem 0;
     height: 100%;
-    display: flex;
-    flex-direction: column;
+    @include flex(column);
     overflow: auto;
     &-body {
       height: 100%;
@@ -119,9 +110,7 @@
     }
   }
   &__send-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    @include flex($align: center, $gap: 0.5rem);
     & i {
       transform: translateY(-1px);
     }
@@ -130,38 +119,28 @@
 
 .msg-view {
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  @include flex(column, $gap: 1rem);
   overflow: auto;
   &-nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    @include flex($justify: space-between, $align: column);
     &__action {
-      display: flex;
-      gap: 0.5rem;
+      @include flex($gap: 0.5rem);
     }
   }
   &__header {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    @include flex(column, $gap: 1rem);
     & > h3 {
       line-height: 1;
     }
     & .msg-details {
-      display: flex;
-      gap: 1rem;
+      @include flex($gap: 1rem);
       &__avatar {
         height: max-content;
       }
       &__info {
-        display: flex;
-        flex-direction: column;
+        @include flex(column);
         &-item {
-          display: flex;
-          gap: 0.5rem;
+          @include flex($gap: 0.5rem);
         }
       }
     }
@@ -174,8 +153,7 @@
   &__attachment {
     height: 50%;
     overflow: auto;
-    display: flex;
-    flex-direction: column;
+    @include flex(column);
     &-items {
       height: 100%;
       overflow: auto;
@@ -191,8 +169,7 @@
   display: flex;
 }
 .msgHeaderDetails {
-  display: flex;
-  flex-direction: column;
+  @include flex(column);
 }
 
 table.mails {
@@ -295,9 +272,8 @@ table.attachment-container {
   }
 
   .attachment-header {
-    display: flex;
     width: 100%;
-    justify-content: space-between;
+    @include flex($justify: space-between);
 
     th {
       text-align: start;
@@ -323,8 +299,7 @@ table.attachment-container {
 
   .attachment {
     width: 100%;
-    display: flex;
-    justify-content: space-between;
+    @include flex($justify: space-between);
     text-align: start;
 
     &__name {
@@ -348,9 +323,7 @@ table.attachment-container {
       flex-basis: 20%;
     }
     & td:nth-child(5) {
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      @include flex($justify: center, $align: center);
       flex-basis: 10%;
 
       & button {

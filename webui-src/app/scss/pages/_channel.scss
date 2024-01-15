@@ -1,22 +1,17 @@
-@use '../abstracts/colors' as *;
+@use '../abstracts' as *;
 
 .file-section {
   margin-top: 2rem;
-  display: flex;
-  flex-direction: column;
+  @include flex(column);
 }
 
 .comments-section {
   margin-top: 2rem;
-  display: flex;
-  justify-content: space-between;
+  @include flex($justify: space-between);
   &__menu {
-    display: flex;
-    gap: 1rem;
+    @include flex($gap: 1rem);
     &-id {
-      display: flex;
-      gap: 0.25rem;
-      align-items: center;
+      @include flex($gap: 0.25rem, $align: center);
     }
   }
 }

@@ -84,7 +84,6 @@ function loginComponent() {
 
   const textError = () => m('p.error[id=error]');
   return {
-    oninit: () => verifyLogin(uname, passwd, url, false),
     view: () => {
       return m(
         'form.login-page',

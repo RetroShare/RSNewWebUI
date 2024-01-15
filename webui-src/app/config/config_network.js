@@ -1,7 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 
-const util = require('config/config_util'); // for future use
+const util = require('config/config_util');
 
 const SetNwMode = () => {
   const networkModes = [
@@ -124,11 +124,14 @@ const SetNAT = () => {
         'select',
         {
           value: netMode,
-          oninput: (e) => (netMode = e.target.value),
-          onchange: () => {
+          onchange: (e) => {
             rs.rsJsonApiRequest('/rsPeers/setNetworkMode', {
               sslId,
               netMode,
+            }).then((res) => {
+              if (res.body.retval) {
+                netMode = e.target.value;
+              }
             });
           },
         },

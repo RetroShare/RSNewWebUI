@@ -1,29 +1,20 @@
-@use '../abstracts/colors' as *;
+@use '../abstracts' as *;
 
 .homepage {
   margin: 2rem auto 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4rem;
+  @include flex(column, $gap: 4rem);
 
   .logo {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    @include flex($justify: center, $align: center);
     & img {
       width: 90px;
     }
     .retroshareText {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-
+      @include flex(column, $align: center);
       & .retrotext {
         font-size: 36px;
+        font-weight: 600;
         line-height: 1.125;
-        font-weight: 500;
-
         & > span {
           color: $primary-retro-color;
         }
@@ -36,10 +27,7 @@
   }
 
   .certificate {
-    display: flex;
-    flex-direction: column;
-    gap: 4rem;
-
+    @include flex(column, $gap: 4rem);
     &__heading {
       text-align: center;
       & > h1 {
@@ -47,26 +35,21 @@
       }
     }
     &__content {
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
+      @include flex(column, $gap: 2rem);
       padding: 2rem;
       text-align: center;
       border: 1.5px solid transparentize($primary-retro-color, 0.8);
       border-radius: 6px;
       box-shadow: 0px 0px 8px 2px transparentize($dark-color, 0.95);
-
       .rsId > p {
         margin-bottom: 0.5rem;
         color: $primary-retro-color;
       }
-
       .retroshareID {
-        padding: 0.5rem;
-        display: flex;
+        padding: 0.25rem;
+        @include flex($align: center);
         justify-self: start;
-        align-items: center;
-        font-size: 1.2rem;
+        font-size: 1.25rem;
         border-radius: 4px;
         background: transparentize($dark-color, 0.95);
         & .textArea {
@@ -76,8 +59,6 @@
           font-size: 1rem;
           font-family: monospace;
           background: transparent;
-          font-size: 1.1rem;
-          border-radius: 5px;
           border: none;
           resize: none;
         }
@@ -91,21 +72,17 @@
       }
 
       .webhelp {
+        padding: 0.5rem;
+        background: whitesmoke;
+        @include flex($justify: center, $align: center, $gap: 0.5rem);
+        border-radius: 4px;
+        border: 1px solid transparentize($dark-color, 0.5);
+        width: fit-content;
+        cursor: pointer;
         &-container {
           display: grid;
           place-items: center;
         }
-        background: whitesmoke;
-        border-radius: 5px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 0.5rem;
-        border-radius: 5px;
-        border: 1px solid transparentize($dark-color, 0.5);
-        padding: 0.5rem;
-        width: fit-content;
-        cursor: pointer;
         &:hover {
           background: $light-color;
           border: 1px solid $dark-color;
