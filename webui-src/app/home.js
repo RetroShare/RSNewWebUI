@@ -145,6 +145,7 @@ function confirmAddPrompt(details, cert, long) {
               const res = await rs.rsJsonApiRequest('/rsPeers/addSslOnlyFriend', {
                 sslId: details.id,
                 pgpId: details.gpg_id,
+                details
               });
               if (res.body.retval) {
                 widget.popupMessage([
