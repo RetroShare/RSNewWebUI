@@ -5,6 +5,7 @@ const widget = require('widgets');
 const downloads = require('files/files_downloads');
 const uploads = require('files/files_uploads');
 const util = require('files/files_util');
+const uploads_view = require('files/uploads_view');
 const search = require('files/files_search');
 const myfile = require('files/my_files');
 const friendfile = require('files/friends_files');
@@ -28,6 +29,7 @@ const sections = {
   search,
   MyFiles: myfile,
   FriendsFiles: friendfile,
+  Uploads: uploads_view,
 };
 
 const Layout = {
