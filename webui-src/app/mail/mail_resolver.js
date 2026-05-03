@@ -152,6 +152,7 @@ module.exports = {
     if (Object.prototype.hasOwnProperty.call(attrs, 'msgId')) {
       return m(Layout, m(util.MessageView, { msgId }));
     }
+    const tabLabel = tab ? tab.charAt(0).toUpperCase() + tab.slice(1) : 'Messages';
     return m(
       Layout,
       m(sections[tab] || sectionsquickview[tab], {
@@ -160,6 +161,8 @@ module.exports = {
           const msgBDate = new Date((msgB.ts.xint64 || 0) * 1000);
           return msgADate < msgBDate;
         }),
+        heading: tabLabel,
+        category: tab,
       })
     );
   },
