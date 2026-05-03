@@ -1,0 +1,11 @@
+{
+  "project": "RetroShare RSNewWebUI",
+  "branchName": "ralph/RS-001",
+  "stories": [
+    {"id": "RS-001", "title": "Add Friend Requests Page in WebUI", "done": false, "priority": "high"},
+    {"id": "RS-002", "title": "Home V2 - Display latest Channel content", "done": false, "priority": "high"},
+    {"id": "RS-003", "title": "Allow RS to bind to specific network interface", "done": false, "priority": "medium"},
+    {"id": "RS-004", "title": "Status Bar - Connected friends, NAT/DHT, Tor, Bandwidth", "done": false, "priority": "low"},
+    {"id": "RS-005", "title": "Files View - Show Uploads", "done": false, "priority": "low"}
+  ]
+}

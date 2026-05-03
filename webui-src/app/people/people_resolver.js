@@ -4,6 +4,7 @@ const widget = require('widgets');
 const sections = {
   OwnIdentity: require('people/people_ownids'),
   MyContacts: require('people/people_own_contacts'),
+  FriendRequests: require('people/people_friend_requests'),
   All: require('people/people'),
 };
 
