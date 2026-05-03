@@ -212,10 +212,27 @@ const MessageView = () => {
       m.route.set('/mail/:tab', { tab: m.route.param().tab });
     });
   }
+  function markAsSpam() {
+    rs.rsJsonApiRequest('/rsMail/setMessageSpam', { msgId: MailData.msgId, bSpam: true }).then((res) => {
+      widget.popupMessage(
+        m('.widget', [
+          m('.widget__heading', m('h3', res.body.retval ? 'Marked as Spam' : 'Error')),
+          m('.widget__body', m('p', res.body.retval ? 'Mail moved to Spam.' : 'Error marking as spam.'))
+        ])
+      );
+      m.route.set('/mail/:tab', { tab: m.route.param().tab });
+    });
+  }
   function confirmMailDelete() {
     widget.popupMessage([
       m('p', 'Are you sure you want to delete this mail?'),
       m('button', { onclick: deleteMail }, 'Delete'),
+    ]);
+  }
+  function confirmMarkSpam() {
+    widget.popupMessage([
+      m('p', 'Mark this mail as spam?'),
+      m('button', { onclick: markAsSpam }, 'Mark as Spam'),
     ]);
   }
 
@@ -270,6 +287,7 @@ const MessageView = () => {
               m('button', { onclick: () => setShowCompose(true, 'reply') }, 'Reply'),
               m('button', { onclick: () => setShowCompose(true, 'replyall') }, 'Reply All'),
               m('button', { onclick: () => setShowCompose(true, 'forward') }, 'Forward'),
+              m('button', { onclick: confirmMarkSpam }, 'Spam'),
               m('button', { onclick: confirmMailDelete }, 'Delete'),
             ]),
           ]),
