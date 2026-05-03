@@ -70,12 +70,21 @@ const tagselect = {
 };
 const Layout = () => {
   let showCompose = false;
-  // setFunction like react to show/hide popup
+  let viewMode = localStorage.getItem('mailViewMode') || 'side';
   function setShowCompose(bool) {
     showCompose = bool;
   }
+  function cycleViewMode() {
+    if (viewMode === 'side') viewMode = 'below';
+    else if (viewMode === 'below') viewMode = 'side';
+    else viewMode = 'side';
+    localStorage.setItem('mailViewMode', viewMode);
+    document.getElementById('mailMainContent').dataset.viewMode = viewMode;
+  }
   return {
-    oninit: () => Messages.load(),
+    oninit: () => {
+      document.getElementById('mailMainContent').dataset.viewMode = viewMode;
+    },
     view: (vnode) => {
       const sectionsSize = {
         inbox: (Messages.inbox || []).length,
@@ -111,7 +120,16 @@ const Layout = () => {
           }),
         ]),
         m(
-          '.node-panel',
+          'button.view-mode-btn',
+          {
+            onclick: cycleViewMode,
+            title: 'Toggle view mode',
+            style: 'margin-left:0.5rem;padding:0.25rem 0.5rem;font-size:0.75rem;',
+          },
+          viewMode === 'side' ? '⇢ Side' : viewMode === 'below' ? '⇣ Below' : '⊡ Split'
+        ),
+        m(
+          '.node-panel#mailMainContent',
           m('.widget', [
             m.route.get().split('/').length < 4 &&
             m('.top-heading', [
