@@ -3,6 +3,7 @@ const m = require('mithril');
 const login = require('login');
 const rs = require('rswebui');
 const home = require('home');
+const home_v2 = require('home_v2');
 const network = require('network/network');
 const people = require('people/people_resolver');
 const chat = require('chat/chat');
@@ -137,6 +138,9 @@ m.route(document.getElementById('main'), '/', {
     render: () => m(login),
   },
   '/home': {
+    render: () => m(Layout, m(home_v2)),
+  },
+  '/home-old': {
     render: () => m(Layout, m(home)),
   },
   '/network': {
