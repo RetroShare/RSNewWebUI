@@ -1,6 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
+const peopleUtil = require('people/people_util');
 const Data = require('network/network_data');
 
 const ConfirmRemove = () => {
@@ -118,6 +119,53 @@ const SearchBar = () => {
   };
 };
 
+// Own Profile Header - shows current user info
+const OwnProfileHeader = () => {
+  let ownDetails = null;
+  let ownAvatar = null;
+
+  return {
+    oninit: () => {
+      rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId', {}, (res) => {
+        if (res.body.retval) {
+          const sslId = res.body.id;
+          rs.rsJsonApiRequest('/rsPeers/getPeerDetails', { sslId }, (data) => {
+            if (data.retval) {
+              ownDetails = data.det;
+              if (data.det.mAvatar && data.det.mAvatar.mData && data.det.mAvatar.mData.base64) {
+                ownAvatar = data.det.mAvatar;
+              }
+              m.redraw();
+            }
+          });
+        }
+      });
+    },
+    view: () => {
+      if (!ownDetails) {
+        return m('.own-profile-header', m('p', 'Loading profile...'));
+      }
+      const isOnline = true; // Own node is always online
+      return m('.own-profile-header', [
+        m('.own-profile-avatar', [
+          m(peopleUtil.UserAvatar, {
+            avatar: ownAvatar,
+            firstLetter: ownDetails.name ? ownDetails.name[0].toUpperCase() : '?',
+          }),
+        ]),
+        m('.own-profile-info', [
+          m('p.own-profile-name', ownDetails.name || 'Unknown'),
+          m('p.own-profile-status', [
+            m('i.fas', { class: isOnline ? 'fa-circle online-indicator' : 'fa-circle' }),
+            isOnline ? ' Online' : ' Offline',
+          ]),
+          m('p.own-profile-id', 'ID: ' + (ownDetails.id ? ownDetails.id.substring(0, 12) + '...' : 'N/A')),
+        ]),
+      ]);
+    },
+  };
+};
+
 const FriendsList = () => {
   return {
     oninit: () => {
@@ -142,7 +190,13 @@ const FriendsList = () => {
 
 const Layout = () => {
   return {
-    view: () => m('.node-panel', m(FriendsList)),
+    view: () =>
+      m('.network-layout', [
+        m('.network-sidebar', [
+          m(OwnProfileHeader),
+          m(FriendsList),
+        ]),
+      ]),
   };
 };
 
