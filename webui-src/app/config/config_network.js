@@ -289,6 +289,54 @@ const SetDynamicDNS = () => {
   };
 };
 
+const SetNetworkInterface = () => {
+  let availableInterfaces = [];
+  let selectedInterface = '';
+  let sslId = '';
+
+  const loadInterfaces = () => {
+    rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId').then((res) => {
+      if (res.body.retval) {
+        sslId = res.body.id;
+      }
+    });
+    availableInterfaces = [
+      { id: 'auto', name: 'Auto (default)' },
+    ];
+    selectedInterface = 'auto';
+  };
+
+  const setInterface = () => {
+    if (sslId && selectedInterface) {
+      rs.rsJsonApiRequest('/rsPeers/setNetworkInterface', {
+        sslId,
+        interfaceId: selectedInterface,
+      });
+    }
+  };
+
+  return {
+    oninit: () => loadInterfaces(),
+    view: () => [
+      m('p', 'Network Interface:'),
+      m('p.small', 'Select which network interface Retroshare should use. "Auto" uses the default interface.'),
+      m(
+        'select',
+        {
+          value: selectedInterface,
+          onchange: (e) => {
+            selectedInterface = e.target.value;
+            setInterface();
+          },
+        },
+        availableInterfaces.map((iface) =>
+          m('option', { value: iface.id }, iface.name)
+        )
+      ),
+    ],
+  };
+};
+
 const SetSocksProxy = () => {
   const socksProxyObj = {
     tor: {},
@@ -394,6 +442,7 @@ const Component = () => {
             m(SetDynamicDNS),
             m(SetLimits),
             m(SetOpMode),
+            m(SetNetworkInterface),
             m(displayIPAddresses, { details }),
           ]),
           m('.widget__heading', m('h3', 'Hidden Service Configuration')),
