@@ -111,6 +111,7 @@ function rsJsonApiRequest(
   config = null
 ) {
   headers['Accept'] = 'application/json';
+  headers['Content-Type'] = 'application/json';
   if (loginKey.isVerified) {
     if (loginKey.username && loginKey.passwd) {
       headers['Authorization'] = 'Basic ' + btoa(loginKey.username + ':' + loginKey.passwd);
