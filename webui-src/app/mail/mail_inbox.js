@@ -1,4 +1,5 @@
 const m = require('mithril');
+const rs = require('rswebui');
 const util = require('mail/mail_util');
 
 const Layout = () => {
@@ -7,6 +8,20 @@ const Layout = () => {
     view: (v) => [
       m('.widget__heading', [
         m('h3', 'Inbox'),
+        m('.mail-actions', [
+          m('button', {
+            title: 'Mark all as read',
+            onclick: () => {
+              v.attrs.list.forEach((msg) => {
+                const flag = msg.msgflags & 0xf0;
+                if (flag === 0x10 || flag === 0x20) { // RS_MSG_NEW or RS_MSG_UNREAD_BY_USER
+                  rs.rsJsonApiRequest('/rsMail/MessageToTrash', { msgId: msg.msgId, bTrash: false });
+                }
+              });
+              m.redraw();
+            },
+          }, m('i.fas.fa-envelope-open')),
+        ]),
         m('.mail-view-toggle', [
           m('span', 'View:'),
           m('button', {
