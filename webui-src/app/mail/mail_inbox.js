@@ -10,6 +10,10 @@ const Layout = () => {
         m('h3', 'Inbox'),
         m('.mail-actions', [
           m('button', {
+            title: 'Compose new mail',
+            onclick: () => m.route.set('/mail/compose'),
+          }, m('i.fas.fa-edit')),
+          m('button', {
             title: 'Mark all as read',
             onclick: () => {
               v.attrs.list.forEach((msg) => {
