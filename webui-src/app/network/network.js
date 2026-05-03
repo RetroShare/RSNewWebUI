@@ -159,7 +159,24 @@ const OwnProfileHeader = () => {
             m('i.fas', { class: isOnline ? 'fa-circle online-indicator' : 'fa-circle' }),
             isOnline ? ' Online' : ' Offline',
           ]),
-          m('p.own-profile-id', 'ID: ' + (ownDetails.id ? ownDetails.id.substring(0, 12) + '...' : 'N/A')),
+          m('p.own-profile-id', [
+            'ID: ',
+            m('span.id-short', ownDetails.id ? ownDetails.id.substring(0, 12) + '...' : 'N/A'),
+            m('button.copy-btn', {
+              title: 'Copy full ID',
+              onclick: () => {
+                if (ownDetails.id) {
+                  navigator.clipboard.writeText(ownDetails.id).then(() => {
+                    const btn = document.querySelector('.own-profile-id .copy-btn');
+                    if (btn) {
+                      btn.textContent = 'Copied!';
+                      setTimeout(() => (btn.textContent = 'Copy'), 1500);
+                    }
+                  });
+                }
+              },
+            }, 'Copy'),
+          ]),
         ]),
       ]);
     },
