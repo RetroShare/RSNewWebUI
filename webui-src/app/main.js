@@ -27,7 +27,7 @@ const navIcon = {
 };
 
 const navbar = () => {
-  let isCollapsed = true;
+  let isCollapsed = localStorage.getItem('navCollapsed') === 'true';
   return {
     view: (vnode) =>
       m(
@@ -99,7 +99,10 @@ const navbar = () => {
             m(
               'button.toggle-nav',
               {
-                onclick: () => (isCollapsed = !isCollapsed),
+                onclick: () => {
+                  isCollapsed = !isCollapsed;
+                  localStorage.setItem('navCollapsed', isCollapsed);
+                },
               },
               m('i.fas.fa-angle-double-left')
             ),
