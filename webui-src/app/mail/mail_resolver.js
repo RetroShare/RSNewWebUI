@@ -133,7 +133,11 @@ const Layout = () => {
           { style: { display: showCompose ? 'block' : 'none' } },
           m(
             '.composePopup',
-            m(compose, { msgType: 'compose', setShowCompose }),
+            m(compose, {
+              msgType: 'compose',
+              setShowCompose,
+              pendingCtx: getPendingReplyContext(),
+            }),
             m('button.red.close-btn', { onclick: () => setShowCompose(false) }, m('i.fas.fa-times'))
           )
         ),

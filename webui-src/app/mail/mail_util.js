@@ -5,6 +5,15 @@ const widget = require('widgets');
 const peopleUtil = require('people/people_util');
 const compose = require('mail/mail_compose');
 
+// Global state to pass reply context from MessageView to compose
+let pendingReplyContext = null;
+const setPendingReplyContext = (ctx) => { pendingReplyContext = ctx; };
+const getPendingReplyContext = () => {
+  const ctx = pendingReplyContext;
+  pendingReplyContext = null;
+  return ctx;
+};
+
 // rsmail.h
 const RS_MSG_BOXMASK = 0x000f;
 
@@ -159,8 +168,20 @@ const AttachmentSection = () => {
 const MessageView = () => {
   let showCompose = false;
   // setFunction like react to show/hide popup
-  function setShowCompose(bool) {
+  function setShowCompose(bool, msgType = 'compose') {
     showCompose = bool;
+    if (bool && msgType !== 'compose') {
+      // Store the reply context for compose to use
+      setPendingReplyContext({
+        msgType,
+        toList: MailData.toList,
+        ccList: MailData.ccList,
+        from: MailData.sender,
+        subject: MailData.subject,
+        replyMessage: document.querySelector('#msgView')?.innerHTML || '',
+        timeStamp: MailData.timeStamp,
+      });
+    }
   }
   const MailData = {
     msgId: '',
@@ -241,8 +262,8 @@ const MessageView = () => {
               m('i.fas.fa-arrow-left')
             ),
             m('.msg-view-nav__action', [
-              m('button', { onclick: () => setShowCompose(true) }, 'Reply'),
-              m('button', 'Reply All'),
+              m('button', { onclick: () => setShowCompose(true, 'reply') }, 'Reply'),
+              m('button', { onclick: () => setShowCompose(true, 'replyall') }, 'Reply All'),
               m('button', 'Forward'),
               m('button', { onclick: confirmMailDelete }, 'Delete'),
             ]),
@@ -449,4 +470,5 @@ module.exports = {
   RS_MSGTAGTYPE_TODO,
   RS_MSGTAGTYPE_WORK,
   BOX_ALL,
+  MSG_ADDRESS_MODE_CC,
 };

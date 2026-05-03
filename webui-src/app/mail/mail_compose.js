@@ -2,6 +2,7 @@ const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
+const { MSG_ADDRESS_MODE_CC } = require('mail/mail_util');
 
 const Layout = () => {
   const Data = {
@@ -29,10 +30,28 @@ const Layout = () => {
   };
   async function loadMailUserDetails(msgType, senderId, recipientList) {
     Data.allUsers = await peopleUtil.sortUsers(rs.userList.users);
-    if (msgType === 'reply') {
+    if (msgType === 'reply' || msgType === 'replyall') {
       Data.allUsers.forEach(async (user) => {
         if (user.mGroupId === (await senderId)) Data.recipients.to.sendList.push(user);
       });
+    }
+    if (msgType === 'replyall') {
+      // Add all original recipients to appropriate fields
+      if (recipientList) {
+        Object.keys(recipientList).forEach((recipId) => {
+          const user = Data.allUsers.find((u) => u.mGroupId === recipId);
+          if (user) {
+            const dest = recipientList[recipId];
+            if (dest._mode === MSG_ADDRESS_MODE_CC) {
+              if (!Data.recipients.cc.sendList.find((u) => u.mGroupId === recipId)) {
+                Data.recipients.cc.sendList.push(user);
+              }
+            } else if (dest._mode === MSG_ADDRESS_MODE_TO) {
+              // Don't add to 'to' since sender is already there
+            }
+          }
+        });
+      }
     }
     await peopleUtil.ownIds(async (data) => {
       Data.ownId = await data;
@@ -41,7 +60,7 @@ const Layout = () => {
           Data.ownId.splice(i, 1); // workaround for id '0'
         }
       }
-      if (msgType === 'reply') {
+      if (msgType === 'reply' || msgType === 'replyall') {
         Data.identity = Data.ownId.filter((id) =>
           Object.prototype.hasOwnProperty.call(recipientList, id)
         )[0];
@@ -49,19 +68,34 @@ const Layout = () => {
     });
   }
   async function loadDetails(attrs) {
-    const { msgType, senderId, recipientList } = await attrs;
-    await loadMailUserDetails(msgType, senderId, recipientList);
+    const { msgType, senderId, recipientList, pendingCtx } = await attrs;
 
-    Object.keys(Data.recipients).forEach((item) => {
-      Data.recipients[item].inputList = Data.allUsers;
-    });
+    // Handle pending reply context from MessageView (reply/replyall)
+    if (pendingCtx) {
+      const ctx = pendingCtx;
+      if (ctx.msgType === 'reply') {
+        await loadMailUserDetails('reply', ctx.from._addr_string, ctx.toList);
+      } else if (ctx.msgType === 'replyall') {
+        await loadMailUserDetails('replyall', ctx.from._addr_string, ctx.toList);
+        // For reply all, pre-fill CC with the original CC list
+        if (ctx.ccList) {
+          Object.keys(ctx.ccList).forEach((ccId) => {
+            const ccUser = Data.allUsers.find((u) => u.mGroupId === ccId);
+            if (ccUser && !Data.recipients.cc.sendList.find((u) => u.mGroupId === ccId)) {
+              Data.recipients.cc.sendList.push(ccUser);
+            }
+          });
+        }
+      }
 
-    if (msgType === 'compose') {
+      Object.keys(Data.recipients).forEach((item) => {
+        Data.recipients[item].inputList = Data.allUsers;
+      });
+
       Data.identity = Data.ownId[0];
-    }
 
-    if (msgType === 'reply') {
-      const { subject, replyMessage, timeStamp } = await attrs;
+      // Set subject and original message quote
+      const { subject, replyMessage, timeStamp } = ctx;
       const tmb = document.querySelector('#composerMailBody');
       const time = timeStamp.toLocaleTimeString('UTC', { hour: '2-digit', minute: '2-digit' });
       const dateLong = timeStamp.toLocaleDateString('UTC', {
@@ -73,16 +107,27 @@ const Layout = () => {
         -----Original Message-----
         <br>
         <b>From: </b>
-        <a href="retroshare://message?id=${senderId}">${rs.userList.userMap[senderId]}</a>
+        <a href="retroshare://message?id=${ctx.from._addr_string}">${rs.userList.userMap[ctx.from._addr_string]}</a>
         <br>
         <b>To: </b>
-        ${Object.keys(recipientList).map(
+        ${Object.keys(ctx.toList).map(
           (recip) => `
           <a href="retroshare://message?id=${recip}">
-            ${rs.userList.userMap[recipientList[recip]._addr_string] || 'Unknown'},
+            ${rs.userList.userMap[ctx.toList[recip]._addr_string] || 'Unknown'},
           </a>
         `
         )}
+        ${ctx.ccList && Object.keys(ctx.ccList).length > 0 ? `
+        <br>
+        <b>CC: </b>
+        ${Object.keys(ctx.ccList).map(
+          (ccId) => `
+          <a href="retroshare://message?id=${ccId}">
+            ${rs.userList.userMap[ctx.ccList[ccId]._addr_string] || 'Unknown'},
+          </a>
+        `
+        )}
+        ` : ''}
         <br>
         <br>
         <b>Sent: </b>
@@ -94,7 +139,7 @@ const Layout = () => {
         <br>
         <span>
           On ${timeStamp.toLocaleDateString()} ${time},
-          <a href="retroshare://message?id=${senderId}">${rs.userList.userMap[senderId]}</a>
+          <a href="retroshare://message?id=${ctx.from._addr_string}">${rs.userList.userMap[ctx.from._addr_string]}</a>
           wrote:
         </span>
       `;
@@ -109,6 +154,68 @@ const Layout = () => {
         </div>
       `;
       Data.subject = subject.substring(0, 4) === 'Re: ' ? subject : `Re: ${subject}`;
+    } else {
+      // Original compose logic
+      await loadMailUserDetails(msgType, senderId, recipientList);
+
+      Object.keys(Data.recipients).forEach((item) => {
+        Data.recipients[item].inputList = Data.allUsers;
+      });
+
+      if (msgType === 'compose') {
+        Data.identity = Data.ownId[0];
+      }
+
+      if (msgType === 'reply') {
+        const { subject, replyMessage, timeStamp } = await attrs;
+        const tmb = document.querySelector('#composerMailBody');
+        const time = timeStamp.toLocaleTimeString('UTC', { hour: '2-digit', minute: '2-digit' });
+        const dateLong = timeStamp.toLocaleDateString('UTC', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        const replyMessageHeader = `
+          -----Original Message-----
+          <br>
+          <b>From: </b>
+          <a href="retroshare://message?id=${senderId}">${rs.userList.userMap[senderId]}</a>
+          <br>
+          <b>To: </b>
+          ${Object.keys(recipientList).map(
+            (recip) => `
+            <a href="retroshare://message?id=${recip}">
+              ${rs.userList.userMap[recipientList[recip]._addr_string] || 'Unknown'},
+            </a>
+          `
+          )}
+          <br>
+          <br>
+          <b>Sent: </b>
+          <span>${dateLong} ${time}</span>
+          <br>
+          <b>Subject: </b>
+          <span>${subject}</span>
+          <br>
+          <br>
+          <span>
+            On ${timeStamp.toLocaleDateString()} ${time},
+            <a href="retroshare://message?id=${senderId}">${rs.userList.userMap[senderId]}</a>
+            wrote:
+          </span>
+        `;
+        tmb.innerHTML = `
+          <br>
+          <br>
+          <div>
+            ${replyMessageHeader}
+            <div class="original-message" style="margin-left: 20px;">
+              ${replyMessage}
+            </div>
+          </div>
+        `;
+        Data.subject = subject.substring(0, 4) === 'Re: ' ? subject : `Re: ${subject}`;
+      }
     }
   }
   return {
