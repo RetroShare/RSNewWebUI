@@ -100,6 +100,10 @@ const MessageSummary = () => {
             m.route.set('/mail/:tab/:msgId', { tab: v.attrs.category, msgId: details.msgId }),
         },
         [
+          m('td', peopleUtil.UserAvatar, {
+            avatar: fromUserInfo && fromUserInfo.mAvatar,
+            firstLetter: fromUserInfo && fromUserInfo.mNickname ? fromUserInfo.mNickname[0].toUpperCase() : '?',
+          }),
           m(
             'td',
             m(`input.star-check[type=checkbox][id=msg-${details.msgId}]`, { checked: isStarred }),
@@ -365,6 +369,7 @@ const Table = () => {
     view: (v) =>
       m('table.mails', [
         m('tr', [
+          m('th[title=avatar]', m('i.fas.fa-user')),
           m('th[title=starred]', m('i.fas.fa-star')),
           m('th[title=attachments]', m('i.fas.fa-paperclip')),
           m('th', 'Subject'),
