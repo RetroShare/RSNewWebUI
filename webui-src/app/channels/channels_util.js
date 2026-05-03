@@ -199,28 +199,33 @@ const SearchBar = () => {
           if (v.attrs.category.localeCompare('channels') === 0) {
             // for channels
             for (const hash in Data.DisplayChannels) {
-              if (Data.DisplayChannels[hash].name.toLowerCase().indexOf(searchString) > -1) {
-                Data.DisplayChannels[hash].isSearched = true;
-              } else {
-                Data.DisplayChannels[hash].isSearched = false;
-              }
+              Data.DisplayChannels[hash].isSearched = searchString === '' || Data.DisplayChannels[hash].name.toLowerCase().indexOf(searchString) > -1;
             }
           } else {
             for (const hash in Data.Posts[v.attrs.channelId]) {
               // for posts
-              if (
-                Data.Posts[v.attrs.channelId][hash].post.mMeta.mMsgName
-                  .toLowerCase()
-                  .indexOf(searchString) > -1
-              ) {
-                Data.Posts[v.attrs.channelId][hash].isSearched = true;
-              } else {
-                Data.Posts[v.attrs.channelId][hash].isSearched = false;
-              }
+              Data.Posts[v.attrs.channelId][hash].isSearched = searchString === '' || Data.Posts[v.attrs.channelId][hash].post.mMeta.mMsgName.toLowerCase().indexOf(searchString) > -1;
             }
           }
         },
       }),
+      m('button.searchbar-clear', {
+        title: 'Clear search',
+        style: 'display: ' + (searchString ? 'inline-block' : 'none'),
+        onclick: () => {
+          searchString = '';
+          if (v.attrs.category.localeCompare('channels') === 0) {
+            for (const hash in Data.DisplayChannels) {
+              Data.DisplayChannels[hash].isSearched = true;
+            }
+          } else {
+            for (const hash in Data.Posts[v.attrs.channelId]) {
+              Data.Posts[v.attrs.channelId][hash].isSearched = true;
+            }
+          }
+          m.redraw();
+        },
+      }, m('i.fas.fa-times')),
   };
 };
 
