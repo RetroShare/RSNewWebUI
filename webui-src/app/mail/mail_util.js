@@ -106,10 +106,15 @@ const MessageSummary = () => {
           ),
           files && m('td', files.length),
           m('td', details.title),
-          m(
-            'td',
-            fromUserInfo && Number(fromUserInfo.mId) !== 0 ? fromUserInfo.mNickname : '[Unknown]'
-          ),
+          m('td', {
+            style: 'display:flex;align-items:center;gap:.5rem',
+          }, [
+            m(peopleUtil.UserAvatar, {
+              avatar: fromUserInfo?.mAvatar,
+              firstLetter: fromUserInfo?.mNickname ? fromUserInfo.mNickname[0].toUpperCase() : '',
+            }),
+            m('span', fromUserInfo && Number(fromUserInfo.mId) !== 0 ? fromUserInfo.mNickname : '[Unknown]'),
+          ]),
           m('td', new Date(details.ts * 1000).toLocaleString()),
         ]
       ),
