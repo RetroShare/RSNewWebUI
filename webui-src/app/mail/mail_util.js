@@ -398,24 +398,38 @@ const activeSideLink = {
 };
 
 const Sidebar = () => {
+  let darkMode = localStorage.getItem('darkMode') === 'true';
+  const toggleDarkMode = () => {
+    darkMode = !darkMode;
+    localStorage.setItem('darkMode', darkMode);
+    document.body.classList.toggle('dark-mode', darkMode);
+  };
   return {
     view: ({ attrs: { tabs, baseRoute, size } }) =>
       m(
-        '.sidebar',
-        tabs.map((panelName, index) =>
-          m(
-            m.route.Link,
-            {
-              class: index === activeSideLink.sideactive ? 'selected-sidebar-link' : '',
-              onclick: () => {
-                activeSideLink.sideactive = index;
-                activeSideLink.quicksideactive = -1;
+        '.sidebar' + (darkMode ? '.dark-mode' : ''),
+        [
+          tabs.map((panelName, index) =>
+            m(
+              m.route.Link,
+              {
+                class: index === activeSideLink.sideactive ? 'selected-sidebar-link' : '',
+                onclick: () => {
+                  activeSideLink.sideactive = index;
+                  activeSideLink.quicksideactive = -1;
+                },
+                href: baseRoute + panelName,
               },
-              href: baseRoute + panelName,
-            },
-            size[panelName] > 0 ? `${panelName} (${size[panelName]})` : panelName
+              size[panelName] > 0 ? `${panelName} (${size[panelName]})` : panelName
+            )
+          ),
+          m('div', { style: 'margin-top:auto;padding:1rem;border-top:1px solid #333;' },
+            m('button', {
+              onclick: toggleDarkMode,
+              style: 'width:100%;font-size:0.75rem;padding:0.375rem;'
+            }, darkMode ? '☀️ Light Mode' : '🌙 Dark Mode')
           )
-        )
+        ]
       ),
   };
 };

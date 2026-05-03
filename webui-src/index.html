@@ -9,10 +9,20 @@
     <script src="app.js"></script>
   </head>
 
-  <body onload="load_ui();">
+  <body onload="load_ui();" class="dark-mode-init">
     <div id="main">
       <h3>Javascript not found!</h3>
-      <script type="text/javascript">
+      <script>
+    // Apply saved dark mode preference on page load
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark-mode');
+    } else if (localStorage.getItem('darkMode') === null) {
+      // Default to dark mode if no preference saved
+      localStorage.setItem('darkMode', 'true');
+      document.body.classList.add('dark-mode');
+    }
+  </script>
+  <script type="text/javascript">
         function load_ui() {
           var main = require('main');
         }
