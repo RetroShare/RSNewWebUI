@@ -110,6 +110,31 @@ const navbar = () => {
 };
 
 const Layout = () => {
+  let peerCount = 0;
+  let coreVersion = '';
+
+  const refreshStatus = () => {
+    rs.rsJsonApiRequest('/rsPeers/getFriendList', {}, (data) => {
+      const sslIds = data.sslIds || [];
+      let connected = 0;
+      let checked = 0;
+      if (sslIds.length === 0) {
+        peerCount = 0;
+      } else {
+        sslIds.forEach((sslId) => {
+          rs.rsJsonApiRequest('/rsPeers/isOnline', { sslId }, (stat) => {
+            if (stat.retval) connected++;
+            checked++;
+            if (checked === sslIds.length) peerCount = connected;
+          });
+        });
+      }
+    });
+    coreVersion = document.querySelector('span.webui-version')?.textContent || 'v131';
+  };
+
+  rs.setBackgroundTask(refreshStatus, 10000);
+
   return {
     view: (vnode) =>
       m('.content', [
@@ -128,6 +153,29 @@ const Layout = () => {
           },
         }),
         m('.tab-content', vnode.children),
+        m('.status-bar', {
+          style: {
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '24px',
+            background: '#16213e',
+            color: '#aab',
+            fontSize: '0.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 1rem',
+            zIndex: 100,
+            borderTop: '1px solid #333',
+          },
+        }, [
+          m('span', peerCount === 1 ? '1 friend connected' : `${peerCount} friends connected`),
+          m('span', m('i.fas fa-circle', {
+            style: { color: '#2ecc71', fontSize: '0.5em', marginRight: '4px' },
+          }), coreVersion || 'RetroShare'),
+        ]),
       ]),
   };
 };
