@@ -107,21 +107,26 @@ const regularcontactInfo = () => {
           details = data.details;
         }
       ),
-    view: (v) =>
-      m(
-        '.identity',
+    view: (v) => {
+      const viewMode = v.attrs.viewMode || 'list';
+      const isGrid = viewMode === 'grid';
+      return m(
+        '.identity.' + viewMode,
         {
           key: details.mId,
           style: 'display:' + (v.attrs.id.isSearched ? 'block' : 'none'),
         },
         [
-          m('h4', details.mNickname),
-          details.mNickname &&
-          m(UserAvatar, {
-            avatar: details.mAvatar,
-            firstLetter: details.mNickname.slice(0, 1).toUpperCase(),
-          }),
-          m('.details', [
+          m('.identity-avatar',
+            details.mNickname &&
+            m(UserAvatar, {
+              avatar: details.mAvatar,
+              firstLetter: details.mNickname.slice(0, 1).toUpperCase(),
+            })
+          ),
+          isGrid ? null : m('h4', details.mNickname),
+          isGrid ? m('p.identity-name', details.mNickname) : null,
+          !isGrid && m('.details', [
             m('p', 'ID:'),
             m('p', details.mId),
             m('p', 'Type:'),
@@ -143,19 +148,22 @@ const regularcontactInfo = () => {
                 : 'undefiend'
             ),
           ]),
-          m(
-            'button',
-            {
-              onclick: () =>
-                m.route.set('/chat/:userid/createdistantchat', {
-                  userid: v.attrs.id.mGroupId,
-                }),
-            },
-            'Chat'
-          ),
-          m('button.red', {}, 'Mail'),
+          m('.identity-actions', [
+            m(
+              'button',
+              {
+                onclick: () =>
+                  m.route.set('/chat/:userid/createdistantchat', {
+                    userid: v.attrs.id.mGroupId,
+                  }),
+              },
+              m('i.fas.fa-comment')
+            ),
+            m('button.red', {}, m('i.fas.fa-envelope')),
+          ]),
         ]
-      ),
+      );
+    },
   };
 };
 
