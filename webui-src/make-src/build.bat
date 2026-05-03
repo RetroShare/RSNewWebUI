@@ -1,5 +1,6 @@
 @echo off
 REM create webfiles from sources at compile time (works without npm/node.js)
+REM Updated to match build.sh functionality
 
 setlocal enabledelayedexpansion
 
@@ -8,56 +9,65 @@ echo "### Starting WebUI build ###"
 set src=%~dp0..\..\webui-src
 
 rem Output destination
-if "%~1" == "" (
+if "%~1"=="" (
 	set publicdest=%~dp0..\..\webui
 ) else (
 	set publicdest=%~1\webui
 )
 
-if exist "%publicdest%"	echo removing existing %publicdest%&&rd %publicdest% /S /Q
+if not "%~2"=="" (
+	if exist "%publicdest%" (
+		echo removing existing %publicdest%
+		rmdir /s /q "%publicdest%"
+	)
+)
 
-echo creating %publicdest%
-md %publicdest%
+if not exist "%publicdest%" (
+	echo creating %publicdest%
+	mkdir "%publicdest%"
+)
 
 rem Make full path
-pushd %publicdest%
-set publicdest=%cd%
-popd
+for %%i in ("%publicdest%") do set publicdest=%%~fi
 
 echo copying html file
-xcopy /s %src%\index.html %publicdest%
+copy /y "%src%\index.html" "%publicdest%\"
 
 echo copying css file
-xcopy /s %src%\styles.css %publicdest%
+copy /y "%src%\styles.css" "%publicdest%\"
 
 echo building app.js
 echo - copying template.js ...
-copy %src%\make-src\template.js %publicdest%\app.js
+copy /y "%src%\make-src\template.js" "%publicdest%\app.js"
 
-pushd %src%\app
-set "basefolder=%cd%\"
-for /R %%F in (*.js) do call :addfile-js "%basefolder%" "%%F"
-popd
+rem Clear existing content in app.js and rebuild
+echo. > "%publicdest%\app.js"
+copy /y "%src%\make-src\template.js" "%publicdest%\app.js"
+
+rem Process all JS files recursively
+for /R "%src%\app" %%F in (*.js) do (
+	call :addfile-js "%%F"
+)
 
 echo copying assets folder
-xcopy /s %src%\assets\ %publicdest%
+xcopy /s /e /i /y "%src%\assets" "%publicdest%\assets\"
 
 echo "### WebUI build complete ###"
-
 goto :EOF
 
 :addfile-js
-set basefolder=%~1
-set fname=%~2
+set filepath=%~1
+set fname=%filepath%
 
-set registername=%~dpn2
-set registername=!registername:%basefolder%=!
-set registername=%registername:\=/%
+rem Get relative path from app folder
+set relpath=!fname:%src%\app=!
+set relpath=!relpath:\=/!
+set relpath=!relpath:.js=!
 
-echo - adding %registername% ...
-echo require.register("%registername%", function(exports, require, module) { >> %publicdest%\app.js
-type %fname% >> %publicdest%\app.js
-echo. >> %publicdest%\app.js
-echo }); >> %publicdest%\app.js
+echo - adding !relpath! ...
+echo require.register("!relpath!", function(exports, require, module) { >> "%publicdest%\app.js"
+type "!fname!" >> "%publicdest%\app.js"
+echo. >> "%publicdest%\app.js"
+echo }); >> "%publicdest%\app.js"
 
 :EOF
