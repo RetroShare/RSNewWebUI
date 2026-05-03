@@ -120,15 +120,6 @@ const Layout = () => {
           }),
         ]),
         m(
-          'button.view-mode-btn',
-          {
-            onclick: cycleViewMode,
-            title: 'Toggle view mode',
-            style: 'margin-left:0.5rem;padding:0.25rem 0.5rem;font-size:0.75rem;',
-          },
-          viewMode === 'side' ? '⇢ Side' : viewMode === 'below' ? '⇣ Below' : '⊡ Split'
-        ),
-        m(
           '.node-panel#mailMainContent',
           m('.widget', [
             m.route.get().split('/').length < 4 &&
@@ -142,6 +133,14 @@ const Layout = () => {
                 [tagselect.opts.map((opt) => m('option', { value: opt }, opt.toLocaleString()))]
               ),
               m(util.SearchBar, { list: {} }),
+              m(
+                'button.view-mode-btn',
+                {
+                  onclick: cycleViewMode,
+                  title: 'Toggle view mode',
+                },
+                viewMode === 'side' ? '⇢ Side' : '⇣ Below'
+              ),
             ]),
             vnode.children,
           ])
