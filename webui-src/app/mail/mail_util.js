@@ -171,7 +171,7 @@ const MessageView = () => {
   function setShowCompose(bool, msgType = 'compose') {
     showCompose = bool;
     if (bool && msgType !== 'compose') {
-      // Store the reply context for compose to use
+      // Store the reply/forward context for compose to use
       setPendingReplyContext({
         msgType,
         toList: MailData.toList,
@@ -179,6 +179,7 @@ const MessageView = () => {
         from: MailData.sender,
         subject: MailData.subject,
         replyMessage: document.querySelector('#msgView')?.innerHTML || '',
+        mailBody: MailData.message,
         timeStamp: MailData.timeStamp,
       });
     }
@@ -264,7 +265,7 @@ const MessageView = () => {
             m('.msg-view-nav__action', [
               m('button', { onclick: () => setShowCompose(true, 'reply') }, 'Reply'),
               m('button', { onclick: () => setShowCompose(true, 'replyall') }, 'Reply All'),
-              m('button', 'Forward'),
+              m('button', { onclick: () => setShowCompose(true, 'forward') }, 'Forward'),
               m('button', { onclick: confirmMailDelete }, 'Delete'),
             ]),
           ]),

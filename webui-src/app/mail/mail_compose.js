@@ -46,8 +46,6 @@ const Layout = () => {
               if (!Data.recipients.cc.sendList.find((u) => u.mGroupId === recipId)) {
                 Data.recipients.cc.sendList.push(user);
               }
-            } else if (dest._mode === MSG_ADDRESS_MODE_TO) {
-              // Don't add to 'to' since sender is already there
             }
           }
         });
@@ -64,6 +62,8 @@ const Layout = () => {
         Data.identity = Data.ownId.filter((id) =>
           Object.prototype.hasOwnProperty.call(recipientList, id)
         )[0];
+      } else if (msgType === 'forward') {
+        Data.identity = Data.ownId[0];
       }
     });
   }
@@ -86,6 +86,49 @@ const Layout = () => {
             }
           });
         }
+      } else if (ctx.msgType === 'forward') {
+        // Forward: clear recipients, set subject with Fwd: prefix, quote original
+        await loadMailUserDetails('forward', ctx.from._addr_string, {});
+        Data.recipients.to.sendList = [];
+        Data.recipients.cc.sendList = [];
+
+        Object.keys(Data.recipients).forEach((item) => {
+          Data.recipients[item].inputList = Data.allUsers;
+        });
+
+        const { subject, mailBody, timeStamp } = ctx;
+        const tmb = document.querySelector('#composerMailBody');
+        const time = timeStamp.toLocaleTimeString('UTC', { hour: '2-digit', minute: '2-digit' });
+        const dateLong = timeStamp.toLocaleDateString('UTC', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        const forwardHeader = `
+          -----Forwarded Message-----
+          <br>
+          <b>From: </b>
+          <a href="retroshare://message?id=${ctx.from._addr_string}">${rs.userList.userMap[ctx.from._addr_string]}</a>
+          <br>
+          <b>Sent: </b>
+          <span>${dateLong} ${time}</span>
+          <br>
+          <b>Subject: </b>
+          <span>${subject}</span>
+          <br>
+          <br>
+        `;
+        tmb.innerHTML = `
+          <br>
+          <br>
+          <div>
+            ${forwardHeader}
+            <div class="forwarded-message" style="margin-left: 20px;">
+              ${mailBody}
+            </div>
+          </div>
+        `;
+        Data.subject = subject.substring(0, 4) === 'Fwd: ' ? subject : `Fwd: ${subject}`;
       }
 
       Object.keys(Data.recipients).forEach((item) => {
