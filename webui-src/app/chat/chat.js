@@ -406,9 +406,11 @@ const ChatLobbyModel = {
         }
         names.sort((a, b) => a.localeCompare(b));
         this.users = [];
-        names.forEach((name) => (this.users = this.users.concat([m('.user', name)])));
+        names.forEach((name) => (this.users = this.users.concat([m('.user', [m('i.fas.fa-user'), name]))));
+        this.userCount = m('.user-count', names.length + ' member' + (names.length !== 1 ? 's' : ''));
       } else {
         this.users = [m('.user', detail.lobby_name)];
+        this.userCount = null;
       }
       m.redraw();
     };
