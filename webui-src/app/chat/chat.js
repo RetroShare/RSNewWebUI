@@ -540,11 +540,26 @@ const SubscribedLeftLobbies = {
 
 const SubscribedLobbies = {
   view() {
+    let filterText = '';
     return m('.widget', [
-      m('.widget__heading', m('h3', 'Subscribed chat rooms')),
+      m('.widget__heading', [
+        m('h3', 'Subscribed chat rooms'),
+        m('input.searchbar', {
+          type: 'text',
+          placeholder: 'filter...',
+          value: filterText,
+          oninput: (e) => {
+            filterText = e.target.value.toLowerCase();
+            m.redraw();
+          },
+          style: 'margin-left:.5rem;padding:.25rem .5rem;border:1px solid #ccc;border-radius:4px;width:120px',
+        }),
+      ]),
       m('.widget__body', [
         m(LobbyList, {
-          rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)),
+          rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)).filter(
+            (r) => r.lobby_name && r.lobby_name.toLowerCase().indexOf(filterText) > -1
+          ),
           tagname: '.lobby.subscribed',
           onclick: ChatLobbyModel.switchToEvent,
         }),
@@ -571,11 +586,27 @@ const PublicLeftLobbies = {
 
 const PublicLobbies = {
   view() {
+    let filterText = '';
     return m('.widget', [
-      m('.widget__heading', m('h3', 'Public chat rooms')),
+      m('.widget__heading', [
+        m('h3', 'Public chat rooms'),
+        m('input.searchbar', {
+          type: 'text',
+          placeholder: 'filter...',
+          value: filterText,
+          oninput: (e) => {
+            filterText = e.target.value.toLowerCase();
+            m.redraw();
+          },
+          style: 'margin-left:.5rem;padding:.25rem .5rem;border:1px solid #ccc;border-radius:4px;width:120px',
+        }),
+      ]),
       m('.widget__body', [
         m(LobbyList, {
-          rooms: (ChatRoomsModel.allRooms || []).filter((info) => !ChatRoomsModel.subscribed(info)),
+          rooms: (ChatRoomsModel.allRooms || []).filter(
+            (info) => !ChatRoomsModel.subscribed(info) &&
+            info.lobby_name && info.lobby_name.toLowerCase().indexOf(filterText) > -1
+          ),
           tagname: '.lobby.public',
           onclick: ChatLobbyModel.setupEvent,
         }),
