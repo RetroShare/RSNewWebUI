@@ -13,3 +13,5 @@
 .comment-author{font-weight:600;color:#555;font-size:.85rem}.comment-time{color:#999;font-size:.75rem;margin-left:.5rem}.comment-text{margin:.25rem 0}.comment-actions{display:flex;gap:.5rem;margin-top:.25rem}.comment-actions button{font-size:.75rem;padding:.2rem .5rem}
 /* Network - friend count badge */
 .friend-count{font-size:.75rem;color:#888;font-weight:400;margin-left:.5rem}
+/* Channel posts - card title and date */
+.posts-container-card{display:flex;flex-direction:column;gap:.25rem;cursor:pointer}.posts-container-card img{width:80px;height:60px;object-fit:cover;border-radius:4px}.posts-container-card .title{font-weight:600;font-size:.85rem;margin:0}.posts-container-card .date{font-size:.7rem;color:#888;margin:0}
