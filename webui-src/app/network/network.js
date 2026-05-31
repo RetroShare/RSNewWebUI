@@ -107,14 +107,21 @@ const SearchBar = () => {
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
           for (const id in Data.gpgDetails) {
-            if (Data.gpgDetails[id].name.toLowerCase().indexOf(searchString) > -1) {
-              Data.gpgDetails[id].isSearched = true;
-            } else {
-              Data.gpgDetails[id].isSearched = false;
-            }
+            Data.gpgDetails[id].isSearched = searchString === '' || Data.gpgDetails[id].name.toLowerCase().indexOf(searchString) > -1;
           }
         },
       }),
+      m('button.searchbar-clear', {
+        title: 'Clear search',
+        style: 'display: ' + (searchString ? 'inline-block' : 'none'),
+        onclick: () => {
+          searchString = '';
+          for (const id in Data.gpgDetails) {
+            Data.gpgDetails[id].isSearched = true;
+          }
+          m.redraw();
+        },
+      }, m('i.fas.fa-times')),
   };
 };
 
