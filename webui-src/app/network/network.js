@@ -130,9 +130,15 @@ const FriendsList = () => {
     oninit: () => {
       Data.refreshGpgDetails();
     },
-    view: () =>
-      m('.widget', [
-        m('.widget__heading', [m('h3', 'Friend nodes'), m(SearchBar)]),
+    view: () => {
+      const onlineCount = Object.values(Data.gpgDetails).filter(p => p.isOnline).length;
+      const totalCount = Object.keys(Data.gpgDetails).length;
+      return m('.widget', [
+        m('.widget__heading', [
+          m('h3', 'Friend nodes'),
+          m('span.friend-count', `(${onlineCount} online / ${totalCount} total)`),
+          m(SearchBar),
+        ]),
         m('.widget__body', [
           Object.entries(Data.gpgDetails)
             .sort((a, b) => {
@@ -143,7 +149,8 @@ const FriendsList = () => {
               return m(Friend, { id });
             }),
         ]),
-      ]),
+      ]);
+    },
   };
 };
 
