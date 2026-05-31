@@ -257,7 +257,7 @@ const BoardView = () => {
           {
             style: 'display:' + (bsubscribed ? 'flex' : 'none'),
           },
-          m('.posts__heading', m('h3', 'Posts')),
+          m('.posts__heading', m('h3', `Posts (${Object.keys(plist).filter(k => plist[k].isSearched).length})`)),
           m(
             '.posts-container',
             Object.keys(plist).map((key, index) => [
@@ -281,7 +281,10 @@ const BoardView = () => {
                         : 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
                     alt: 'No Thumbnail',
                   }),
-                  m('p', plist[key].post.mMeta.mMsgName),
+                  m('p.title', plist[key].post.mMeta.mMsgName),
+                  m('p.date', (plist[key].post.mMeta.mPublishTs && typeof plist[key].post.mMeta.mPublishTs === 'object')
+                    ? new Date(plist[key].post.mMeta.mPublishTs.xint64 * 1000).toLocaleDateString()
+                    : ''),
                 ]
               ),
             ])
