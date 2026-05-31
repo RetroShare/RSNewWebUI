@@ -143,17 +143,19 @@ const regularcontactInfo = () => {
                 : 'undefiend'
             ),
           ]),
-          m(
-            'button',
-            {
-              onclick: () =>
-                m.route.set('/chat/:userid/createdistantchat', {
-                  userid: v.attrs.id.mGroupId,
-                }),
-            },
-            'Chat'
-          ),
-          m('button.red', {}, 'Mail'),
+          m('.identity-actions', [
+            m(
+              'button',
+              {
+                onclick: () =>
+                  m.route.set('/chat/:userid/createdistantchat', {
+                    userid: v.attrs.id.mGroupId,
+                  }),
+              },
+              m('i.fas.fa-comment')
+            ),
+            m('button.red', {}, m('i.fas.fa-envelope')),
+          ]),
         ]
       ),
   };

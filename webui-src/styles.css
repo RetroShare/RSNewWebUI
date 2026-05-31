@@ -9,3 +9,5 @@
 .rightbar{font-size:.85rem}.rightbar .user{display:flex;align-items:center;gap:.5rem;padding:.4rem .5rem;border-bottom:1px solid rgba(0,0,0,.05)}.rightbar .user i{margin-right:.25rem;color:#888}.rightbar h5{padding:.5rem;font-size:.9rem;border-bottom:2px solid #eee;margin:0}
 /* Chat - Emoji button */
 .emoji-btn{background:none;border:1px solid #ccc;color:#888;padding:.4rem .6rem;border-radius:4px;cursor:pointer;font-size:1rem}.emoji-btn:hover{background:#e0e0e0;color:#333}.chatMessage{display:flex;align-items:center;gap:.5rem;padding:.5rem;background:#fff;border-top:1px solid #eee}.chatMessage textarea{flex:1;resize:none;min-height:36px;max-height:120px;padding:.5rem;border:1px solid #ccc;border-radius:4px}
+/* Channels/Boards - better comment display */
+.comment-author{font-weight:600;color:#555;font-size:.85rem}.comment-time{color:#999;font-size:.75rem;margin-left:.5rem}.comment-text{margin:.25rem 0}.comment-actions{display:flex;gap:.5rem;margin-top:.25rem}.comment-actions button{font-size:.75rem;padding:.2rem .5rem}
