@@ -20,12 +20,19 @@ const Service = () => {
         },
         (retval) => (defaultAllowed = retval.permissions.mDefaultAllowed)
       ),
-    view: (v) =>
-      m(
+    view: (v) => {
+      const search = window._serviceFilter || '';
+      const name = v.attrs.data.value.mServiceName.toLowerCase();
+      const type = v.attrs.data.value.mServiceType.toLowerCase();
+      if (search && name.indexOf(search) < 0 && type.indexOf(search) < 0) {
+        return null;
+      }
+      return m(
         'tr',
         {
           key: v.attrs.data.key,
         },
+
         [
           m('td', v.attrs.data.value.mServiceName),
           m('td', v.attrs.data.value.mServiceType),
@@ -57,6 +64,18 @@ const MyServices = {
   view() {
     return m('.widget', [
       m('.widget__heading', m('h3', 'My Services')),
+      m('.widget__heading', [
+        m('h3', 'My Services'),
+        m('input.searchbar', {
+          type: 'text',
+          placeholder: 'search services...',
+          oninput: (e) => {
+            window._serviceFilter = e.target.value.toLowerCase();
+            m.redraw();
+          },
+          style: 'margin-left:.5rem;padding:.25rem .5rem;border:1px solid #ccc;border-radius:4px;width:150px',
+        }),
+      ]),
       m('.widget__body', [
         m('table', [
           m('tr', [
