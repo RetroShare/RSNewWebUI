@@ -74,22 +74,28 @@ const SearchBar = () => {
 
   return {
     view: () =>
-      m('input.searchbar', {
-        type: 'text',
-        placeholder: 'search',
-        value: searchString,
-        oninput: (e) => {
-          searchString = e.target.value.toLowerCase();
-
-          rs.userList.users.map((id) => {
-            if (id.mGroupName.toLowerCase().indexOf(searchString) > -1) {
-              id.isSearched = true;
-            } else {
-              id.isSearched = false;
-            }
-          });
-        },
-      }),
+      m('.searchbar-container', [
+        m('input.searchbar', {
+          type: 'text',
+          placeholder: 'search',
+          value: searchString,
+          oninput: (e) => {
+            searchString = e.target.value.toLowerCase();
+            rs.userList.users.map((id) => {
+              id.isSearched = searchString === '' || id.mGroupName.toLowerCase().indexOf(searchString) > -1;
+            });
+          },
+        }),
+        m('button.searchbar-clear', {
+          title: 'Clear search',
+          style: 'display: ' + (searchString ? 'inline-block' : 'none'),
+          onclick: () => {
+            searchString = '';
+            rs.userList.users.map((id) => { id.isSearched = true; });
+            m.redraw();
+          },
+        }, m('i.fas.fa-times')),
+      ]),
   };
 };
 
