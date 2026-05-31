@@ -691,7 +691,8 @@ const LayoutSingle = () => {
             [
               m('textarea.chatMsg', {
                 placeholder: 'Type a message...',
-                enterkeyhint: 'send',
+                enterkeyhint: 'send',,
+                inputmode: 'emoji',
                 onkeydown: (e) => {
                   if ((e.key === 'Enter' || e.keyCode === 13) && !e.shiftKey) {
                     const msg = e.target.value;
