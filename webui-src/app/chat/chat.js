@@ -80,6 +80,7 @@ const ChatRoomsModel = {
   allRooms: [],
   knownSubscrIds: [], // to exclude subscribed from public rooms (subscribedRooms filled to late)
   subscribedRooms: {},
+  showCreateModal: false,
   loadPublicRooms() {
     // TODO: this doesn't preserve id of rooms,
     // use regex on response to extract ids.
@@ -651,10 +652,98 @@ const LobbyName = () => {
   );
 };
 
+
+
+// ***************************** Create Room Modal ******************************
+
+const CreateRoomModal = () => {
+  let roomName = '';
+  let roomTopic = '';
+  let isPrivate = false;
+
+  return {
+    view: () =>
+      m('.modal-overlay', {
+        onclick: (e) => {
+          if (e.target.classList.contains('modal-overlay')) {
+            ChatRoomsModel.showCreateModal = false;
+            m.redraw();
+          }
+        },
+      }, [
+        m('.modal-content', [
+          m('h3', 'Create Chat Room'),
+          m('label', 'Room Name'),
+          m('input', {
+            type: 'text',
+            placeholder: 'Enter room name',
+            value: roomName,
+            oninput: (e) => (roomName = e.target.value),
+          }),
+          m('label', 'Topic (optional)'),
+          m('input', {
+            type: 'text',
+            placeholder: 'Room topic',
+            value: roomTopic,
+            oninput: (e) => (roomTopic = e.target.value),
+          }),
+          m('label.checkbox-label', [
+            m('input', {
+              type: 'checkbox',
+              checked: isPrivate,
+              onchange: (e) => (isPrivate = e.target.checked),
+            }),
+            ' Private (invite only)',
+          ]),
+          m('.modal-actions', [
+            m('button', {
+              onclick: () => {
+                if (!roomName.trim()) return;
+                rs.rsJsonApiRequest(
+                  '/rsChats/createChatLobby',
+                  {
+                    lobby_name: roomName,
+                    lobby_topic: roomTopic,
+                    is_private: isPrivate,
+                    to: isPrivate ? '0000000000000000' : '',
+                    flag: isPrivate ? 1 : 0,
+                  },
+                  (res) => {
+                    if (res.retval) {
+                      ChatRoomsModel.showCreateModal = false;
+                      ChatRoomsModel.loadSubscribedRooms();
+                      m.redraw();
+                    }
+                  }
+                );
+              },
+            }, 'Create'),
+            m('button', {
+              onclick: () => {
+                ChatRoomsModel.showCreateModal = false;
+                m.redraw();
+              },
+            }, 'Cancel'),
+          ]),
+        ]),
+      ]),
+  };
+};
+
 // ***************************** Page Layouts ******************************
 
 const Layout = {
-  view: () => m('.node-panel.chat-panel.chat-hub', [m(SubscribedLobbies), m(PublicLobbies)]),
+  view: () =>
+    m('.node-panel.chat-panel.chat-hub', [
+      m('.chat-actions', [
+        m('button.create-room-btn', {
+          onclick: () => ChatRoomsModel.showCreateModal = true,
+        }, m('i.fas.fa-plus'), ' Create Room'),
+      ]),
+      m(SubscribedLobbies),
+      m(PublicLobbies),
+      ChatRoomsModel.showCreateModal && m(CreateRoomModal),
+    ]),
 };
 
 const LayoutSingle = () => {
