@@ -242,6 +242,36 @@ const displayExternalIPAddress = () => {
   };
 };
 
+const displayHiddenAddress = () => {
+  return {
+    view: ({ attrs: { details } }) => {
+      if (!details || !details.isHiddenNode) return null;
+      return [
+        m('p', 'Hidden Address:'),
+        m('p', details.hiddenNodeAddress || 'Not configured'),
+        m('p', 'Hidden Port:'),
+        m('p', details.hiddenPort || 'N/A'),
+      ];
+    },
+  };
+};
+
+const displayHiddenStatus = () => {
+  return {
+    view: ({ attrs: { details } }) => {
+      const isHidden = details && details.isHiddenNode;
+      return [
+        m('p', 'Hidden Mode:'),
+        m(
+          'p',
+          isHidden ? 'Enabled' : 'Disabled',
+          { style: { color: isHidden ? '#00aa00' : '#888' } }
+        ),
+      ];
+    },
+  };
+};
+
 const displayIPAddresses = () => {
   return {
     view: ({ attrs: { details } }) =>
@@ -394,6 +424,8 @@ const Component = () => {
             m(SetDynamicDNS),
             m(SetLimits),
             m(SetOpMode),
+            m(displayHiddenStatus, { details }),
+            m(displayHiddenAddress, { details }),
             m(displayIPAddresses, { details }),
           ]),
           m('.widget__heading', m('h3', 'Hidden Service Configuration')),
