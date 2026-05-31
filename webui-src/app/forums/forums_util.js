@@ -236,19 +236,28 @@ const SearchBar = () => {
   let searchString = '';
   return {
     view: (v) =>
-      m('input[type=text][id=searchforum][placeholder=Search Subject].searchbar', {
-        value: searchString,
-        oninput: (e) => {
-          searchString = e.target.value.toLowerCase();
-          for (const hash in Data.DisplayForums) {
-            if (Data.DisplayForums[hash].name.toLowerCase().indexOf(searchString) > -1) {
-              Data.DisplayForums[hash].isSearched = true;
-            } else {
-              Data.DisplayForums[hash].isSearched = false;
+      m('.searchbar-container', [
+        m('input[type=text][id=searchforum][placeholder=Search Subject].searchbar', {
+          value: searchString,
+          oninput: (e) => {
+            searchString = e.target.value.toLowerCase();
+            for (const hash in Data.DisplayForums) {
+              Data.DisplayForums[hash].isSearched = searchString === '' || Data.DisplayForums[hash].name.toLowerCase().indexOf(searchString) > -1;
             }
-          }
-        },
-      }),
+          },
+        }),
+        m('button.searchbar-clear', {
+          title: 'Clear search',
+          style: 'display: ' + (searchString ? 'inline-block' : 'none'),
+          onclick: () => {
+            searchString = '';
+            for (const hash in Data.DisplayForums) {
+              Data.DisplayForums[hash].isSearched = true;
+            }
+            m.redraw();
+          },
+        }, m('i.fas.fa-times')),
+      ]),
   };
 };
 function popupmessage(message) {
