@@ -360,4 +360,8 @@ const Layout = () => {
   };
 };
 
+Layout.CreateIdentity = CreateIdentity;
+Layout.EditIdentity = EditIdentity;
+Layout.DeleteIdentity = DeleteIdentity;
+
 module.exports = Layout;
