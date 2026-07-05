@@ -59,7 +59,6 @@
       .retroshareID {
         padding: 0.25rem;
         @include flex($align: center);
-        justify-self: start;
         font-size: 1.25rem;
         border-radius: 4px;
         background: color.adjust($dark-color, $alpha: -0.95);

@@ -2,6 +2,35 @@ const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
 
+// RetroshareInviteFlags (see libretroshare rspeers.h):
+//   CURRENT_LOCAL_IP 0x01 | DNS 0x04 | RADIX_FORMAT 0x08 | CURRENT_EXTERNAL_IP 0x20
+// == defaultCertificateFlags | RADIX_FORMAT, i.e. the compact "short invite" as
+// plain radix64 text (no URL wrapper) - the short ID favoured by RetroShare.
+const SHORT_INVITE_FLAGS = 0x2d;
+
+// Cached own SSL peer id. getOwnId() is not exposed over the JSON API, so we
+// derive it by parsing our own short invite.
+let ownSslId = null;
+async function fetchOwnSslId() {
+  if (ownSslId) return ownSslId;
+  const inv = await rs.rsJsonApiRequest('/rsPeers/getShortInvite', {
+    inviteFlags: SHORT_INVITE_FLAGS,
+  });
+  if (!inv.body || !inv.body.retval) return null;
+  const parsed = await rs.rsJsonApiRequest('/rsPeers/parseShortInvite', {
+    invite: inv.body.invite,
+  });
+  if (parsed.body && parsed.body.retval && parsed.body.details) {
+    ownSslId = parsed.body.details.id;
+  }
+  return ownSslId;
+}
+async function isOwnCert(details) {
+  if (!details || !details.id) return false;
+  const own = await fetchOwnSslId();
+  return !!own && details.id === own;
+}
+
 const logo = () => {
   return {
     view() {
@@ -61,12 +90,20 @@ const ConfirmCopied = () => {
     view: () => [
       m('h3', 'Copied to Clipboard'),
       m('hr'),
-      m('p[style="margin: 12px 0 4px"]', 'Your Retroshare ID has been copied to Clipboard.'),
+      m('p[style="margin: 12px 0 4px"]', 'Your RetroShare ID has been copied to Clipboard.'),
       m(
         'p[style="margin: 4px 0 12px"]',
         'Now, you can paste and send it to your friend via email or some other way.'
       ),
-      m('button', {}, 'Ok'),
+      m(
+        'button',
+        {
+          onclick: () => {
+            document.getElementById('modal-container').style.display = 'none';
+          },
+        },
+        'Ok'
+      ),
     ],
   };
 };
@@ -87,20 +124,36 @@ const retroshareId = () => {
           v.attrs.ownCert
         ),
         m('i.fas.fa-copy', {
+          title: 'Copy to clipboard',
           onclick: () => {
             document.getElementById('retroId').select();
             document.execCommand('copy');
             widget.popupMessage(m(ConfirmCopied));
           },
         }),
-        m('i.fas.fa-share-alt'),
+        // TODO: wire up sharing (web share / mailto invite) - disabled for now
+        m('i.fas.fa-share-alt', {
+          style: { color: '#bbb', cursor: 'not-allowed' },
+          title: 'Coming soon',
+        }),
       ]);
     },
   };
 };
 
 function invalidCertPrompt() {
-  widget.popupMessage([m('h3', 'Error'), m('hr'), m('p', 'Not a valid Retroshare certificate.')]);
+  widget.popupMessage([m('h3', 'Error'), m('hr'), m('p', 'Not a valid RetroShare certificate.')]);
+}
+
+function ownCertPrompt() {
+  widget.popupMessage([
+    m('h3', 'Cannot add yourself'),
+    m('hr'),
+    m(
+      'p',
+      "This is your own certificate! You would not want to make friend with yourself. Would you?"
+    ),
+  ]);
 }
 
 function confirmAddPrompt(details, cert, long) {
@@ -170,13 +223,20 @@ async function addFriendFromCert(cert) {
   const res = await rs.rsJsonApiRequest('/rsPeers/parseShortInvite', { invite: cert });
 
   if (res.body.retval) {
-    // console.log(res.body);
+    if (await isOwnCert(res.body.details)) {
+      ownCertPrompt();
+      return;
+    }
     confirmAddPrompt(res.body.details, cert, false);
   } else {
-    rs.rsJsonApiRequest('/rsPeers/loadDetailsFromStringCert', { cert }, (data) => {
+    rs.rsJsonApiRequest('/rsPeers/loadDetailsFromStringCert', { cert }, async (data) => {
       if (!data.retval) {
         invalidCertPrompt();
         return null;
+      }
+      if (await isOwnCert(data.certDetails)) {
+        ownCertPrompt();
+        return;
       }
       confirmAddPrompt(data.certDetails, cert, true);
     });
@@ -204,7 +264,7 @@ const AddFriend = () => {
     view: (vnode) =>
       m('.widget', [
         m('h3', 'Add friend'),
-        m('h5', 'Did you recieve a certificate from a friend?'),
+        m('h5', 'Did you receive a certificate from a friend?'),
         m('hr'),
         m(
           '.cert-drop-zone',
@@ -227,7 +287,7 @@ const AddFriend = () => {
           [
             m(
               'p[style="margin: 16px 0 4px"]',
-              'You can directly upload or Drag and drop the file below'
+              'You can directly upload or drag and drop the file below'
             ),
             m('input[type=file][name=certificate]', {
               onchange: (e) => {
@@ -260,15 +320,15 @@ const Certificate = () => {
   let ownCert = '';
   function loadOwnCert() {
     rs.rsJsonApiRequest(
-      '/rsPeers/GetShortInvite',
-      { formatRadix: true },
-      (data) => (ownCert = decodeURIComponent(data.invite).substring(34))
+      '/rsPeers/getShortInvite',
+      { inviteFlags: SHORT_INVITE_FLAGS },
+      (data) => (ownCert = data.invite)
     );
   }
 
   return {
     oninit() {
-      // Load long cert by default
+      // Load the short invite (short ID) by default
       loadOwnCert();
     },
 
@@ -277,18 +337,18 @@ const Certificate = () => {
         m(logo),
         m('.certificate', [
           m('.certificate__heading', [
-            m('h1', 'Welcome to Web Interface of Retroshare!'),
-            'Retroshare is an Open Source Cross-platform,',
+            m('h1', 'Welcome to Web Interface of RetroShare!'),
+            'RetroShare is an Open Source Cross-platform,',
             m('br'),
             'Private and Secure Decentralized Communication Platform.',
           ]),
           m('.certificate__content', [
             m('.rsId', [
-              m('p', 'This is your Retroshare ID. Copy and share with your friends!'),
+              m('p', 'This is your RetroShare ID. Copy and share with your friends!'),
               m(retroshareId, { ownCert }),
             ]),
             m('.add-friend', [
-              m('h6', 'Did you receive a Retroshare ID from your friend ?'),
+              m('h6', 'Did you receive a RetroShare ID from your friend ?'),
               m(
                 'button',
                 {
@@ -299,7 +359,7 @@ const Certificate = () => {
                 'Add Friend'
               ),
             ]),
-            m('.webhelp-container', [m('h6', 'Do you need help with Retoshare ?'), m(webhelp)]),
+            m('.webhelp-container', [m('h6', 'Do you need help with RetroShare ?'), m(webhelp)]),
           ]),
         ]),
       ]);
