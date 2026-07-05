@@ -27,37 +27,75 @@ const Layout = () => {
       },
     },
   };
-  async function loadMailUserDetails(msgType, senderId, recipientList) {
+  async function loadMailUserDetails(msgType, senderId, recipientList, isDirectMail) {
     Data.allUsers = await peopleUtil.sortUsers(rs.userList.users);
     if (msgType === 'reply') {
       Data.allUsers.forEach(async (user) => {
         if (user.mGroupId === (await senderId)) Data.recipients.to.sendList.push(user);
       });
     }
-    await peopleUtil.ownIds(async (data) => {
-      Data.ownId = await data;
-      for (let i = 0; i < Data.ownId.length; i++) {
-        if (Number(Data.ownId[i]) === 0) {
-          Data.ownId.splice(i, 1); // workaround for id '0'
-        }
-      }
-      if (msgType === 'reply') {
-        Data.identity = Data.ownId.filter((id) =>
-          Object.prototype.hasOwnProperty.call(recipientList, id)
-        )[0];
-      }
+
+    // Wrap ownIds in a Promise
+    const gxsIds = await new Promise((resolve) => {
+      peopleUtil.ownIds((ids) => {
+        resolve(ids || []);
+      });
     });
+
+    Data.ownId = gxsIds.filter((id) => id && id !== '0000000000000000' && Number(id) !== 0);
+
+    // Fetch own Node GPG ID
+    const netStatus = await new Promise((resolve) => {
+      rs.rsJsonApiRequest('/rsConfig/getConfigNetStatus', {}, (res) => {
+        resolve(res || null);
+      });
+    });
+
+    if (netStatus && netStatus.status) {
+      const ownNodeId = netStatus.status.ownId;
+      if (ownNodeId && !Data.ownId.includes(ownNodeId)) {
+        rs.userList.userMap[ownNodeId] = {
+          name: (netStatus.status.ownName || 'Node') + ' (Node GPG Key)',
+          isContact: false,
+        };
+        Data.ownId.push(ownNodeId);
+      }
+      if (msgType === 'compose' && isDirectMail) {
+        Data.identity = ownNodeId;
+      }
+    }
+
+    if (msgType === 'reply') {
+      Data.identity = Data.ownId.filter((id) =>
+        Object.prototype.hasOwnProperty.call(recipientList, id)
+      )[0];
+    }
   }
   async function loadDetails(attrs) {
-    const { msgType, senderId, recipientList } = await attrs;
-    await loadMailUserDetails(msgType, senderId, recipientList);
+    const { msgType, senderId, recipientList, isDirectMail } = await attrs;
+    await loadMailUserDetails(msgType, senderId, recipientList, isDirectMail);
 
     Object.keys(Data.recipients).forEach((item) => {
       Data.recipients[item].inputList = Data.allUsers;
     });
 
     if (msgType === 'compose') {
-      Data.identity = Data.ownId[0];
+      if (!isDirectMail) {
+        Data.identity = Data.ownId[0];
+      }
+      if (attrs.toId) {
+        const matchingUser = Data.allUsers.find((user) => user.mGroupId === attrs.toId);
+        if (matchingUser) {
+          Data.recipients.to.sendList.push(matchingUser);
+        } else {
+          // If toId is a GPG ID (not in GXS list), add it manually as a GPG recipient
+          const friendName = attrs.friendName || 'Unknown Friend';
+          Data.recipients.to.sendList.push({
+            mGroupId: attrs.toId,
+            mGroupName: friendName + ' (Node GPG Key)',
+          });
+        }
+      }
     }
 
     if (msgType === 'reply') {
@@ -73,13 +111,13 @@ const Layout = () => {
         -----Original Message-----
         <br>
         <b>From: </b>
-        <a href="retroshare://message?id=${senderId}">${rs.userList.userMap[senderId]}</a>
+        <a href="retroshare://message?id=${senderId}">${rs.userList.username(senderId)}</a>
         <br>
         <b>To: </b>
         ${Object.keys(recipientList).map(
           (recip) => `
           <a href="retroshare://message?id=${recip}">
-            ${rs.userList.userMap[recipientList[recip]._addr_string] || 'Unknown'},
+             ${rs.userList.username(recipientList[recip]._addr_string) || 'Unknown'},
           </a>
         `
         )}
@@ -94,7 +132,7 @@ const Layout = () => {
         <br>
         <span>
           On ${timeStamp.toLocaleDateString()} ${time},
-          <a href="retroshare://message?id=${senderId}">${rs.userList.userMap[senderId]}</a>
+           <a href="retroshare://message?id=${senderId}">${rs.userList.username(senderId)}</a>
           wrote:
         </span>
       `;
@@ -172,13 +210,16 @@ const Layout = () => {
                   Data.identity = Data.ownId[e.target.selectedIndex];
                 },
               },
-              Data.ownId &&
+               Data.ownId &&
                 Data.ownId.map((id) =>
                   m(
                     'option',
-                    { value: id },
+                    {
+                      value: id,
+                      selected: id === Data.identity,
+                    },
                     rs.userList.userMap[id]
-                      ? rs.userList.userMap[id].toLocaleString() + ' (' + id.slice(0, 12) + '...)'
+                      ? (rs.userList.userMap[id].name || id) + ' (' + id.slice(0, 12) + '...)'
                       : 'No Signature'
                   )
                 )

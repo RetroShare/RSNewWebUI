@@ -33,28 +33,49 @@ Data.refreshGpgDetails = async function () {
           (stat) => (isOnline = stat.retval)
         )
         .then(() => {
-          const loc = {
-            name: data.location,
-            id: data.id,
-            lastSeen: data.lastConnect,
-            isOnline,
-            gpg_id: data.gpg_id,
-          };
+          let customState = '';
+          return rs
+            .rsJsonApiRequest(
+              '/rsChats/getCustomStateString',
+              { peer_id: data.id },
+              (statusData) => {
+                if (statusData && statusData.retval) {
+                  customState = statusData.retval;
+                }
+              }
+            )
+            .catch(() => {})
+            .then(() => {
+              const gpgId = (data.gpg_id || '').toLowerCase();
+              const loc = {
+                name: data.location,
+                id: data.id,
+                lastSeen: data.lastConnect,
+                isOnline,
+                gpg_id: gpgId,
+                customState,
+              };
 
-          if (details[data.gpg_id] === undefined) {
-            details[data.gpg_id] = {
-              name: data.name,
-              isSearched: true,
-              isOnline,
-              locations: [loc],
-            };
-          } else {
-            details[data.gpg_id].locations.push(loc);
-          }
-          details[data.gpg_id].isOnline = details[data.gpg_id].isOnline || isOnline;
+              if (details[gpgId] === undefined) {
+                details[gpgId] = {
+                  name: data.name,
+                  isSearched: true,
+                  isOnline,
+                  locations: [loc],
+                  customState,
+                };
+              } else {
+                details[gpgId].locations.push(loc);
+                if (!details[gpgId].customState || (isOnline && customState)) {
+                  details[gpgId].customState = customState;
+                }
+              }
+              details[gpgId].isOnline = details[gpgId].isOnline || isOnline;
+            });
         });
     })
   );
+
   Data.gpgDetails = details;
 };
 module.exports = Data;
