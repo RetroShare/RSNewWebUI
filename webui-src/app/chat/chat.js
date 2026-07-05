@@ -192,7 +192,7 @@ const Message = () => {
         .replaceAll('<br/>', '\n')
         .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
       return m(
-        '.message',
+        '.message' + (msg.incoming ? '.incoming' : '.outgoing'),
         m('span.datetime', datetime),
         m('span.username', username),
         m('span.messagetext', text)
@@ -395,20 +395,23 @@ const ChatLobbyModel = {
         }
       };
 
-      // Lookup for chat-user names (Only for lobbies for now)
       // Lookup for chat-user names
       if (detail.gxs_ids) {
-        let names = [];
+        let list = [];
         if (Array.isArray(detail.gxs_ids)) {
-          names = detail.gxs_ids.reduce((a, u) => a.concat(rs.userList.username(u.key)), []);
+          list = detail.gxs_ids.map((u) => {
+            const key = u.key;
+            return { key, name: rs.userList.username(key) };
+          });
         } else if (typeof detail.gxs_ids === 'object') {
-          names = Object.keys(detail.gxs_ids).map(key => rs.userList.username(key));
+          list = Object.keys(detail.gxs_ids).map((key) => {
+            return { key, name: rs.userList.username(key) };
+          });
         }
-        names.sort((a, b) => a.localeCompare(b));
-        this.users = [];
-        names.forEach((name) => (this.users = this.users.concat([m('.user', name)])));
+        list.sort((a, b) => a.name.localeCompare(b.name));
+        this.users = list;
       } else {
-        this.users = [m('.user', detail.lobby_name)];
+        this.users = [{ key: detail.gxs_id || '', name: detail.lobby_name }];
       }
       m.redraw();
     };
@@ -484,6 +487,38 @@ const ChatLobbyModel = {
   },
 };
 
+// ************************* Chat Hub State ****************************
+
+function getSafeAvatar(details) {
+  if (
+    details &&
+    details.mAvatar &&
+    details.mAvatar.mData &&
+    details.mAvatar.mData.base64 !== ''
+  ) {
+    return details.mAvatar;
+  }
+  return undefined;
+}
+
+const ChatHubState = {
+  selectedRoomId: null,
+  selectedRoom: null,
+  selectedRoomType: null,
+  searchString: '',
+  ownProfile: { name: 'Loading...' },
+  gxsDetails: {},
+};
+
+function loadOwnChatProfile() {
+  rs.rsJsonApiRequest('/rsConfig/getConfigNetStatus', {}, (data) => {
+    if (data && data.status) {
+      ChatHubState.ownProfile.name = data.status.ownName || 'Unknown';
+      m.redraw();
+    }
+  });
+}
+
 // ************************* views ****************************
 
 const Lobby = () => {
@@ -523,20 +558,6 @@ const LobbyList = {
   },
 };
 
-const SubscribedLeftLobbies = {
-  view() {
-    return [
-      m('h5.lefttitle', 'subscribed:'),
-      m(LobbyList, {
-        rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)),
-        tagname: '.leftlobby.subscribed',
-        lobbytagname: 'leftname',
-        onclick: ChatLobbyModel.switchToEvent,
-      }),
-    ];
-  },
-};
-
 const SubscribedLobbies = {
   view() {
     return m('.widget', [
@@ -549,22 +570,6 @@ const SubscribedLobbies = {
         }),
       ]),
     ]);
-  },
-};
-
-const PublicLeftLobbies = {
-  view() {
-    return [
-      m('h5.lefttitle', 'public:'),
-      m(LobbyList, {
-        rooms: Object.values(ChatRoomsModel.allRooms || {}).filter(
-          (info) => !ChatRoomsModel.subscribed(info)
-        ),
-        tagname: '.leftlobby.public',
-        lobbytagname: 'leftname',
-        onclick: ChatLobbyModel.setupEvent,
-      }),
-    ];
   },
 };
 
@@ -583,78 +588,438 @@ const PublicLobbies = {
   },
 };
 
-const LobbyName = () => {
-  return m(
-    'h3.lobbyName',
-    m('.mobile-menu-icons', [
-      m('i.fas.fa-bars', { onclick: () => MobileState.toggleLobbies() }),
-    ]),
-    ChatLobbyModel.isSubscribed
-      ? [m('span.chatusername', ChatLobbyModel.lobby_user), m('span.chatatchar', '@')]
-      : [],
-    ChatLobbyModel.currentLobby.chatType === 2
-      ? m('i.fas.fa-circle', {
-        style: {
-          color:
-            ChatLobbyModel.currentLobby.status === 2
-              ? '#2ecc71' // Green (Can Talk)
-              : ChatLobbyModel.currentLobby.status === 1
-                ? '#f39c12' // Orange (Tunnel Down)
-                : ChatLobbyModel.currentLobby.status === 3
-                  ? '#e74c3c' // Red (Remotely Closed)
-                  : '#95a5a6', // Grey (Unknown)
-          fontSize: '0.6em',
-          marginRight: '10px',
-          verticalAlign: 'middle',
-        },
-        title:
-          ChatLobbyModel.currentLobby.status === 2
-            ? 'Tunnel Active (Can Talk)'
-            : ChatLobbyModel.currentLobby.status === 1
-              ? 'Tunnel Down (Negotiating...)'
-              : ChatLobbyModel.currentLobby.status === 3
-                ? 'Remotely Closed'
-                : 'Status Unknown',
-      })
-      : [],
-    m('span.chatlobbyname', ChatLobbyModel.currentLobby.lobby_name),
-    m('.mobile-menu-icons', [
-      m('i.fas.fa-users', { onclick: () => MobileState.toggleUsers() }),
-    ]),
-    m.route.param('subaction') !== 'setup' && ChatLobbyModel.currentLobby.chatType === 3
-      ? [
-        m('i.fas.fa-cog.setupicon', {
-          title: 'configure lobby',
-          onclick: () =>
-            m.route.set(
-              '/chat/:lobby/:subaction',
-              {
-                lobby: m.route.param('lobby'),
-                subaction: 'setup',
+// ************************* Chat Hub Sub-Components ****************************
+
+const ChatRoomHeader = () => {
+  return {
+    view: (vnode) => {
+      const room = vnode.attrs.room;
+      const lobbyHexId = rs.idToHex(room.lobby_id);
+      return m('.chat-hub-header-bar', [
+        m('.chat-header-info', [
+          m('.chat-header-name', room.lobby_name || '<unnamed>'),
+          m('.chat-header-topic', room.lobby_topic || 'No topic'),
+        ]),
+        m('.chat-header-actions', [
+          m(
+            'button.red',
+            {
+              title: 'Leave Room',
+              onclick: () => {
+                ChatLobbyModel.unsubscribeChatLobby(lobbyHexId, () => {
+                  ChatHubState.selectedRoom = null;
+                  ChatHubState.selectedRoomId = null;
+                  ChatHubState.selectedRoomType = null;
+                  m.route.set('/chat');
+                });
               },
-              { replace: true }
-            ),
-        }),
-      ]
-      : [],
-    ChatLobbyModel.isSubscribed
-      ? [
-        m('i.fas.fa-sign-out-alt.leaveicon', {
-          title: 'leaving lobby',
-          onclick: () =>
-            ChatLobbyModel.unsubscribeChatLobby(m.route.param('lobby'), () => {
-              m.route.set('/chat', null, { replace: true });
-            }),
-        }),
-      ]
-      : []
-  );
+            },
+            [m('i.fas.fa-sign-out-alt'), ' Leave']
+          ),
+        ]),
+      ]);
+    },
+  };
+};
+
+function scrollChatToBottom() {
+  setTimeout(() => {
+    const element = document.querySelector('.chat-hub-messages');
+    if (element) {
+      element.scrollTop = element.scrollHeight;
+    }
+  }, 50);
+}
+
+const ChatConversationView = () => {
+  return {
+    oninit: () => {
+      scrollChatToBottom();
+    },
+    view: () => {
+      return m('.chat-hub-conversation-layout', [
+        m('.chat-hub-conversation-main', [
+          m(
+            '.chat-hub-messages',
+            {
+              oncreate: () => scrollChatToBottom(),
+              onupdate: () => scrollChatToBottom(),
+            },
+            ChatLobbyModel.messages
+          ),
+          m(
+            '.chat-hub-input-area',
+            [
+              m('textarea.chat-hub-textarea', {
+                placeholder: 'Type a message... Press Enter to send',
+                enterkeyhint: 'send',
+                onkeydown: (e) => {
+                  if ((e.key === 'Enter' || e.keyCode === 13) && !e.shiftKey) {
+                    const msg = e.target.value;
+                    if (msg.trim() === '') return false;
+                    e.target.value = ' sending ... ';
+                    ChatLobbyModel.sendMessage(msg, () => {
+                      e.target.value = '';
+                      scrollChatToBottom();
+                    });
+                    return false;
+                  }
+                },
+              }),
+              m(
+                'button.chat-hub-send-btn',
+                {
+                  onclick: (e) => {
+                    const textarea = e.target.closest('.chat-hub-input-area').querySelector('textarea');
+                    const msg = textarea.value;
+                    if (msg.trim() === '') return;
+                    textarea.value = ' sending ... ';
+                    ChatLobbyModel.sendMessage(msg, () => {
+                      textarea.value = '';
+                      scrollChatToBottom();
+                    });
+                  },
+                },
+                m('i.fas.fa-paper-plane')
+              ),
+            ]
+          ),
+        ]),
+        m('.chat-hub-rightbar', [
+          m('.rightbar-title', 'Participants'),
+          m('.rightbar-users-list', ChatLobbyModel.users.map((user) => {
+            const gxsId = user.key;
+            const name = user.name;
+
+            // Load details for avatar if not cached
+            if (gxsId && ChatHubState.gxsDetails[gxsId] === undefined) {
+              ChatHubState.gxsDetails[gxsId] = null; // Mark as loading
+              rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: gxsId }, (data) => {
+                if (data && data.details) {
+                  ChatHubState.gxsDetails[gxsId] = data.details;
+                  m.redraw();
+                }
+              });
+            }
+
+            const avatar = getSafeAvatar(ChatHubState.gxsDetails[gxsId]);
+            const firstLetter = (name || '?').slice(0, 1).toUpperCase();
+
+            return m('.user', [
+              m(peopleUtil.UserAvatar, { avatar, firstLetter }),
+              m('span.user-name', name),
+            ]);
+          }))
+        ])
+      ]);
+    },
+  };
 };
 
 // ***************************** Page Layouts ******************************
 
+const ChatRoomDetailView = () => {
+  return {
+    view: () => {
+      const room = ChatHubState.selectedRoom;
+      if (!room) return null;
+
+      let participantCount = 0;
+      let participantNames = [];
+      if (room.gxs_ids) {
+        if (Array.isArray(room.gxs_ids)) {
+          participantCount = room.gxs_ids.length;
+          participantNames = room.gxs_ids.map((u) => rs.userList.username(u.key) || u.key);
+        } else if (typeof room.gxs_ids === 'object') {
+          const keys = Object.keys(room.gxs_ids);
+          participantCount = keys.length;
+          participantNames = keys.map((key) => rs.userList.username(key) || key);
+        }
+      }
+      participantNames.sort((a, b) => a.localeCompare(b));
+
+      const lobbyHexId = rs.idToHex(room.lobby_id);
+
+      return m('.chat-room-detail-view', [
+        m('.detail-section', [
+          m('h3', 'Room Info'),
+          m('.info-grid', [
+            m('.info-label', 'Room Name'),
+            m('.info-value', room.lobby_name || '<unnamed>'),
+            m('.info-label', 'Topic'),
+            m('.info-value', room.lobby_topic || 'None'),
+            m('.info-label', 'Participants'),
+            m('.info-value', participantCount + ' users'),
+            m('.info-label', 'Your Identity'),
+            m('.info-value', rs.userList.username(room.gxs_id) || room.gxs_id || '???'),
+            m('.info-label', 'Lobby ID'),
+            m('.info-value', lobbyHexId),
+          ]),
+        ]),
+
+        m('.detail-section', [
+          m('h3', 'Participants (' + participantCount + ')'),
+          participantNames.length > 0
+            ? m(
+                '.participants-grid',
+                participantNames.map((name) =>
+                  m('.participant-card', m('.participant-name', name))
+                )
+              )
+            : m('p.no-participants', 'No participant information available'),
+        ]),
+      ]);
+    },
+  };
+};
+
+const ChatRoomJoinView = () => {
+  let ownIds = [];
+  return {
+    oninit: () => peopleUtil.ownIds((data) => (ownIds = data)),
+    view: () => {
+      const room = ChatHubState.selectedRoom;
+      if (!room) return null;
+
+      const lobbyHexId = rs.idToHex(room.lobby_id);
+      const participantCount = room.total_number_of_peers || 0;
+
+      return m('.chat-room-detail-view', [
+        m('.detail-section', [
+          m('h3', 'Room Info'),
+          m('.info-grid', [
+            m('.info-label', 'Room Name'),
+            m('.info-value', room.lobby_name || '<unnamed>'),
+            m('.info-label', 'Topic'),
+            m('.info-value', room.lobby_topic || 'None'),
+            m('.info-label', 'Participants'),
+            m('.info-value', participantCount + ' users'),
+          ]),
+        ]),
+
+        m('.detail-section', [
+          m('h3', 'Join Room'),
+          m('p.join-description', 'Select an identity to join this chat room:'),
+          m(
+            '.identities-grid',
+            ownIds.map((nick) =>
+              m(
+                '.identity-card',
+                { onclick: () => ChatLobbyModel.enterPublicLobby(lobbyHexId, nick) },
+                [
+                  m('.identity-name', rs.userList.username(nick) || nick),
+                  m('i.fas.fa-sign-in-alt'),
+                ]
+              )
+            )
+          ),
+        ]),
+      ]);
+    },
+  };
+};
+
 const Layout = {
-  view: () => m('.node-panel.chat-panel.chat-hub', [m(SubscribedLobbies), m(PublicLobbies)]),
+  oninit: () => {
+    ChatHubState.activeTab = 'chat';
+    const lobbyId = m.route.param('lobby');
+    if (lobbyId) {
+      ChatHubState.selectedRoomId = lobbyId;
+      ChatLobbyModel.loadLobby(lobbyId);
+    }
+  },
+  onupdate: () => {
+    const lobbyId = m.route.param('lobby');
+    if (lobbyId && ChatHubState.selectedRoomId !== lobbyId) {
+      ChatHubState.selectedRoomId = lobbyId;
+      ChatLobbyModel.loadLobby(lobbyId);
+    }
+  },
+  view: () => {
+    const search = ChatHubState.searchString.toLowerCase();
+
+    const subscribedRooms = sortLobbies(
+      Object.values(ChatRoomsModel.subscribedRooms)
+    ).filter((info) => (info.lobby_name || '').toLowerCase().includes(search));
+
+    const publicRooms = (ChatRoomsModel.allRooms || [])
+      .filter((info) => !ChatRoomsModel.subscribed(info))
+      .filter((info) => (info.lobby_name || '').toLowerCase().includes(search));
+
+    const isSelected = (info, type) =>
+      ChatHubState.selectedRoomId === rs.idToHex(info.lobby_id);
+
+    const lobbyId = ChatHubState.selectedRoomId;
+    let selectedRoom = null;
+    let selectedRoomType = null;
+
+    if (lobbyId) {
+      if (ChatRoomsModel.subscribedRooms[lobbyId]) {
+        selectedRoom = ChatRoomsModel.subscribedRooms[lobbyId];
+        selectedRoomType = 'subscribed';
+      } else {
+        selectedRoom = ChatRoomsModel.allRooms.find(
+          (r) => rs.idToHex(r.lobby_id) === lobbyId
+        );
+        if (selectedRoom) {
+          selectedRoomType = 'public';
+        }
+      }
+    }
+
+    if (selectedRoom) {
+      ChatHubState.selectedRoom = selectedRoom;
+      ChatHubState.selectedRoomType = selectedRoomType;
+    } else if (!m.route.param('lobby')) {
+      ChatHubState.selectedRoom = null;
+      ChatHubState.selectedRoomId = null;
+      ChatHubState.selectedRoomType = null;
+    }
+
+    return m('.chat-hub-container', [
+      m('.chat-hub-left-pane', [
+        m('.chat-own-profile-card', [
+          m('.profile-header', [
+            m('i.fas.fa-comments', { style: { fontSize: '1.5rem', color: '#3ba4d7' } }),
+            m('.profile-info', [
+              m('.profile-name', 'Chat rooms'),
+            ]),
+          ]),
+        ]),
+
+        m('.chat-rooms-list-container', [
+          m('.searchbar-container', [
+            m('input.searchbar', {
+              type: 'text',
+              placeholder: 'Search chat rooms...',
+              value: ChatHubState.searchString,
+              oninput: (e) => {
+                ChatHubState.searchString = e.target.value;
+              },
+            }),
+          ]),
+          m('.rooms-scroll', [
+            subscribedRooms.length > 0 && [
+              m('.rooms-section-title', [
+                m('i.fas.fa-bookmark'),
+                m('span', 'Subscribed (' + subscribedRooms.length + ')'),
+              ]),
+              subscribedRooms.map((info) => {
+                const hexId = rs.idToHex(info.lobby_id);
+                let count = 0;
+                if (info.gxs_ids) {
+                  if (Array.isArray(info.gxs_ids)) count = info.gxs_ids.length;
+                  else if (typeof info.gxs_ids === 'object')
+                    count = Object.keys(info.gxs_ids).length;
+                }
+                return m(
+                  '.chat-room-list-item' +
+                    (isSelected(info, 'subscribed') ? '.selected' : ''),
+                  {
+                    key: hexId,
+                    onclick: () => {
+                      m.route.set('/chat/:lobby', { lobby: hexId });
+                    },
+                  },
+                  [
+                    m('.room-icon', m('i.fas.fa-comments')),
+                    m('.room-meta', [
+                      m('.room-name', info.lobby_name || '<unnamed>'),
+                      m('.room-topic', info.lobby_topic || 'No topic'),
+                    ]),
+                    count > 0 && m('.room-badge', count),
+                  ]
+                );
+              }),
+            ],
+
+            publicRooms.length > 0 && [
+              m('.rooms-section-title', [
+                m('i.fas.fa-globe'),
+                m('span', 'Public (' + publicRooms.length + ')'),
+              ]),
+              publicRooms.map((info) => {
+                const hexId = rs.idToHex(info.lobby_id);
+                const count = info.total_number_of_peers || 0;
+                return m(
+                  '.chat-room-list-item.public-room' +
+                    (isSelected(info, 'public') ? '.selected' : ''),
+                  {
+                    key: hexId,
+                    onclick: () => {
+                      m.route.set('/chat/:lobby', { lobby: hexId });
+                    },
+                  },
+                  [
+                    m('.room-icon', m('i.fas.fa-globe')),
+                    m('.room-meta', [
+                      m('.room-name', info.lobby_name || '<unnamed>'),
+                      m('.room-topic', info.lobby_topic || 'No topic'),
+                    ]),
+                    count > 0 && m('.room-badge', count),
+                  ]
+                );
+              }),
+            ],
+
+            subscribedRooms.length === 0 &&
+              publicRooms.length === 0 &&
+              m('p.no-rooms', 'No chat rooms found'),
+          ]),
+        ]),
+      ]),
+
+      m('.chat-hub-right-pane', [
+        ChatHubState.selectedRoom
+          ? [
+              ChatHubState.selectedRoomType === 'subscribed'
+                ? [
+                    m(ChatRoomHeader, { room: ChatHubState.selectedRoom }),
+                    m('.chat-hub-tabs-container', [
+                      m('.chat-hub-tabs', [
+                        m(
+                          'button.tab-btn' +
+                            (ChatHubState.activeTab === 'chat' ? '.active' : ''),
+                          {
+                            onclick: () => {
+                              ChatHubState.activeTab = 'chat';
+                              scrollChatToBottom();
+                            },
+                          },
+                          [m('i.fas.fa-comments'), ' Chat']
+                        ),
+                        m(
+                          'button.tab-btn' +
+                            (ChatHubState.activeTab === 'details' ? '.active' : ''),
+                          {
+                            onclick: () => {
+                              ChatHubState.activeTab = 'details';
+                            },
+                          },
+                          [m('i.fas.fa-info-circle'), ' Details']
+                        ),
+                      ]),
+                    ]),
+                    m('.chat-hub-tab-content', { style: { padding: ChatHubState.activeTab === 'chat' ? '0' : '1.5rem' } }, [
+                      ChatHubState.activeTab === 'chat'
+                        ? m(ChatConversationView)
+                        : m(ChatRoomDetailView),
+                    ]),
+                  ]
+                : [
+                    m('.chat-hub-tab-content', m(ChatRoomJoinView)),
+                  ],
+            ]
+          : m('.chat-pane-placeholder', [
+              m('i.fas.fa-comments'),
+              m(
+                'p',
+                'Select a chat room from the left panel to view details or join a conversation.'
+              ),
+            ]),
+      ]),
+    ]);
+  },
 };
 
 const LayoutSingle = () => {
@@ -681,10 +1046,7 @@ const LayoutSingle = () => {
         },
         [
           m('.chat-overlay', { onclick: () => MobileState.closeAll() }),
-          LobbyName(),
-          !isPrivate && m('.lobbies', m(SubscribedLeftLobbies), m(PublicLeftLobbies)),
           m('.messages', { onclick: () => MobileState.closeAll() }, ChatLobbyModel.messages),
-          m('.rightbar', ChatLobbyModel.users),
           m(
             '.chatMessage',
             {},
@@ -720,40 +1082,6 @@ const LayoutSingle = () => {
         ]
       );
     },
-  };
-};
-
-const LayoutSetup = () => {
-  let ownIds = [];
-  return {
-    oninit: () => peopleUtil.ownIds((data) => (ownIds = data)),
-    view: (vnode) =>
-      m(
-        '.node-panel.chat-panel.chat-room.chat-setup',
-        {
-          class:
-            (MobileState.showLobbies ? 'show-lobbies ' : '') +
-            (MobileState.showUsers ? 'show-users' : ''),
-        },
-        [
-          m('.chat-overlay', { onclick: () => MobileState.closeAll() }),
-          LobbyName(),
-          m('.lobbies', m(SubscribedLeftLobbies), m(PublicLeftLobbies)),
-          m('.setup', [
-            m('h5.selectidentity', 'Select identity to use'),
-            ownIds.map((nick) =>
-              m(
-                '.identity' +
-                (ChatLobbyModel.currentLobby.gxs_id === nick ? '.selectedidentity' : ''),
-                {
-                  onclick: () => ChatLobbyModel.setupAction(m.route.param('lobby'), nick),
-                },
-                rs.userList.username(nick)
-              )
-            ),
-          ]),
-        ]
-      ),
   };
 };
 
@@ -802,16 +1130,13 @@ const LayoutCreateDistant = () => {
 module.exports = {
   oninit: () => {
     ChatRoomsModel.loadSubscribedRooms();
+    loadOwnChatProfile();
   },
   view: (vnode) => {
-    if (m.route.param('lobby') === undefined) {
-      return m(Layout);
-    } else if (m.route.param('subaction') === 'setup') {
-      return m(LayoutSetup);
-    } else if (m.route.param('subaction') === 'createdistantchat') {
+    if (m.route.param('subaction') === 'createdistantchat') {
       return m(LayoutCreateDistant);
     } else {
-      return m(LayoutSingle);
+      return m(Layout);
     }
   },
 };
