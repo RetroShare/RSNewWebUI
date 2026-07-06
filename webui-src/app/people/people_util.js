@@ -6,6 +6,17 @@ function checksudo(id) {
   return id === '0000000000000000';
 }
 
+function getAvatarColor(seed) {
+  let hash = 0;
+  if (seed) {
+    for (let i = 0; i < seed.length; i++) {
+      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 60%, 60%)`;
+}
+
 const UserAvatar = () => ({
   view: (v) => {
     const imageURI = v.attrs.avatar;
@@ -49,6 +60,9 @@ const UserAvatar = () => ({
       }, m.trust(svgString));
     }
 
+    const seed = v.attrs.seed || v.attrs.firstLetter || '';
+    const backgroundColor = getAvatarColor(seed);
+
     return m(
       'div.defaultAvatar',
       {
@@ -56,10 +70,17 @@ const UserAvatar = () => ({
           width: sizeStr,
           height: sizeStr,
           borderRadius: isSquare ? '0' : '50%',
-          fontSize: `calc(${sizeStr} * 0.4)`,
+          backgroundColor: backgroundColor,
         }
       },
-      m('p', v.attrs.firstLetter)
+      m('p', {
+        style: {
+          color: '#ffffff',
+          fontWeight: '900',
+          margin: '0',
+          fontSize: `calc(${sizeStr} * 0.55)`,
+        }
+      }, v.attrs.firstLetter || '?')
     );
   },
 });

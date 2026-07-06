@@ -220,7 +220,7 @@ const OwnProfileCard = () => {
 
       return m('.own-profile-card', [
         m('.profile-header', [
-          m(peopleUtil.UserAvatar, { avatar, firstLetter }),
+          m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: State.ownProfile.name }),
           m('.profile-info', [
             m('.profile-name', State.ownProfile.name || 'Loading...'),
             m('.profile-status', 'Online'),
@@ -284,7 +284,7 @@ const FriendsList = () => {
                       },
                     },
                     [
-                      m('.friend-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter })),
+                      m('.friend-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: gpgId })),
                       m('.friend-meta', [
                         m('.friend-name', friend.name),
                         m(
@@ -326,6 +326,7 @@ const DetailsTab = () => {
             avatar: friend.avatar ? { mData: { base64: friend.avatar } } : undefined,
             firstLetter: (friend.name || '?').slice(0, 1).toUpperCase(),
             size: 128,
+            seed: gpgId,
           })),
           m('.detail-title', [
             m('h2', friend.name),
