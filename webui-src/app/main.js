@@ -117,7 +117,7 @@ const Layout = () => {
           links: {
             home: '/home',
             network: '/network',
-            people: '/people/OwnIdentity',
+            people: '/people/MyContacts',
             chat: '/chat',
             mail: '/mail/inbox',
             files: '/files/files',

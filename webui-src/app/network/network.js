@@ -12,6 +12,7 @@ const State = {
     ssl_id: '',
     gpg_id: '',
     customState: '',
+    avatar: '',
   },
   ownGxsIds: [],
   selectedOwnGxsId: '',
@@ -48,6 +49,14 @@ function loadOwnProfile() {
         rs.rsJsonApiRequest('/rsPeers/getPeerDetails', { sslId: State.ownProfile.ssl_id }, (detData) => {
           if (detData && detData.det && detData.det.gpg_id) {
             State.ownProfile.gpg_id = detData.det.gpg_id;
+            m.redraw();
+          }
+        });
+
+        // Fetch own SSL avatar using our own Location SSL ID
+        rs.rsJsonApiRequest('/rsChats/getAvatar', { pid: State.ownProfile.ssl_id }, (avatarData) => {
+          if (avatarData && avatarData.retval && avatarData.avatar_base64_string) {
+            State.ownProfile.avatar = avatarData.avatar_base64_string;
             m.redraw();
           }
         });
@@ -203,25 +212,10 @@ const ConfirmRemove = () => {
   };
 };
 
-// Helper: get avatar safely for UserAvatar (must pass undefined, not null)
-function getSafeAvatar(details) {
-  if (
-    details &&
-    details.mAvatar &&
-    details.mAvatar.mData &&
-    details.mAvatar.mData.base64 !== ''
-  ) {
-    return details.mAvatar;
-  }
-  return undefined;
-}
-
 const OwnProfileCard = () => {
   return {
     view: () => {
-      const ownGxsId = State.ownProfile.gpg_id ? State.gpgToGxsIdMap[State.ownProfile.gpg_id.toLowerCase()] : null;
-      const ownDetails = ownGxsId ? State.gxsIdToDetailsMap[ownGxsId] : null;
-      const avatar = getSafeAvatar(ownDetails);
+      const avatar = State.ownProfile.avatar ? { mData: { base64: State.ownProfile.avatar } } : undefined;
       const firstLetter = (State.ownProfile.name || 'U').slice(0, 1).toUpperCase();
 
       return m('.own-profile-card', [
@@ -271,9 +265,7 @@ const FriendsList = () => {
             : filteredFriends
                 .sort((a, b) => (a[1].isOnline === b[1].isOnline ? 0 : a[1].isOnline ? -1 : 1))
                 .map(([gpgId, friend]) => {
-                  const friendGxsId = State.gpgToGxsIdMap[gpgId.toLowerCase()];
-                  const friendDetails = friendGxsId ? State.gxsIdToDetailsMap[friendGxsId] : null;
-                  const avatar = getSafeAvatar(friendDetails);
+                  const avatar = friend.avatar ? { mData: { base64: friend.avatar } } : undefined;
                   const firstLetter = (friend.name || '?').slice(0, 1).toUpperCase();
                   const isSelected = State.selectedFriendGpgId === gpgId;
 
@@ -330,6 +322,11 @@ const DetailsTab = () => {
 
       return m('.network-detail-view', [
         m('.detail-header', [
+          m('.friend-avatar', m(peopleUtil.UserAvatar, {
+            avatar: friend.avatar ? { mData: { base64: friend.avatar } } : undefined,
+            firstLetter: (friend.name || '?').slice(0, 1).toUpperCase(),
+            size: 128,
+          })),
           m('.detail-title', [
             m('h2', friend.name),
             m('.detail-subtitle', [

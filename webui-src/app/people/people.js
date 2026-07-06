@@ -11,7 +11,7 @@ const { CreateIdentity, EditIdentity, DeleteIdentity } = ownIdsLayout;
 const State = {
   searchString: '',
   selectedId: null, // GXS ID of the selected identity
-  activeFilter: 'all', // 'all' | 'contacts' | 'own'
+  activeFilter: 'contacts', // 'all' | 'contacts' | 'own'
   gxsIdToDetailsMap: {},
   ownGxsIds: [],
   gpgToGxsIdMap: {},
@@ -210,7 +210,13 @@ const DetailsTab = () => {
 
       return m('.network-detail-view', [
         m('.detail-header', [
-          m('.friend-avatar', m(peopleUtil.UserAvatar, { avatar: getSafeAvatar(details), firstLetter: (name || '?').slice(0, 1).toUpperCase() })),
+          m('.friend-avatar', m(peopleUtil.UserAvatar, {
+            avatar: getSafeAvatar(details),
+            firstLetter: (name || '?').slice(0, 1).toUpperCase(),
+            identityId: State.selectedId,
+            size: 128,
+            isSquare: true,
+          })),
           m('.detail-title', [
             m('h2', name),
             m('.detail-subtitle', [
@@ -492,15 +498,6 @@ const PeopleLayout = () => {
           // Filter Tabs Group
           m('.people-filter-group', [
             m(
-              'button.filter-btn' + (State.activeFilter === 'all' ? '.active' : ''),
-              {
-                onclick: () => {
-                  m.route.set('/people/All');
-                },
-              },
-              'All'
-            ),
-            m(
               'button.filter-btn' + (State.activeFilter === 'contacts' ? '.active' : ''),
               {
                 onclick: () => {
@@ -517,6 +514,15 @@ const PeopleLayout = () => {
                 },
               },
               'My Identities'
+            ),
+            m(
+              'button.filter-btn' + (State.activeFilter === 'all' ? '.active' : ''),
+              {
+                onclick: () => {
+                  m.route.set('/people/All');
+                },
+              },
+              'All'
             ),
           ]),
 
@@ -583,7 +589,11 @@ const PeopleLayout = () => {
                         },
                       },
                       [
-                        m('.friend-avatar', m(peopleUtil.UserAvatar, { avatar: itemAvatar, firstLetter: itemFirstLetter })),
+                        m('.friend-avatar', m(peopleUtil.UserAvatar, {
+                          avatar: itemAvatar,
+                          firstLetter: itemFirstLetter,
+                          identityId: gxsId,
+                        })),
                         m('.friend-meta', [
                           m('.friend-name', displayName),
                           m(

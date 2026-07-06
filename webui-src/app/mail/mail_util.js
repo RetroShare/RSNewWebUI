@@ -256,6 +256,7 @@ const MessageView = () => {
                 firstLetter: rs.userList.userMap[MailData.sender._addr_string]
                   ? rs.userList.userMap[MailData.sender._addr_string].slice(0, 1).toUpperCase()
                   : '',
+                identityId: MailData.sender._addr_string,
               }),
               m('.msg-details__info', [
                 MailData.sender &&

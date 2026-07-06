@@ -46,31 +46,50 @@ Data.refreshGpgDetails = async function () {
             )
             .catch(() => {})
             .then(() => {
-              const gpgId = (data.gpg_id || '').toLowerCase();
-              const loc = {
-                name: data.location,
-                id: data.id,
-                lastSeen: data.lastConnect,
-                isOnline,
-                gpg_id: gpgId,
-                customState,
-              };
+              let avatar = '';
+              return rs
+                .rsJsonApiRequest(
+                  '/rsChats/getAvatar',
+                  { pid: data.id },
+                  (avatarData) => {
+                    if (avatarData && avatarData.retval && avatarData.avatar_base64_string) {
+                      avatar = avatarData.avatar_base64_string;
+                    }
+                  }
+                )
+                .catch(() => {})
+                .then(() => {
+                  const gpgId = (data.gpg_id || '').toLowerCase();
+                  const loc = {
+                    name: data.location,
+                    id: data.id,
+                    lastSeen: data.lastConnect,
+                    isOnline,
+                    gpg_id: gpgId,
+                    customState,
+                    avatar,
+                  };
 
-              if (details[gpgId] === undefined) {
-                details[gpgId] = {
-                  name: data.name,
-                  isSearched: true,
-                  isOnline,
-                  locations: [loc],
-                  customState,
-                };
-              } else {
-                details[gpgId].locations.push(loc);
-                if (!details[gpgId].customState || (isOnline && customState)) {
-                  details[gpgId].customState = customState;
-                }
-              }
-              details[gpgId].isOnline = details[gpgId].isOnline || isOnline;
+                  if (details[gpgId] === undefined) {
+                    details[gpgId] = {
+                      name: data.name,
+                      isSearched: true,
+                      isOnline,
+                      locations: [loc],
+                      customState,
+                      avatar: avatar || '',
+                    };
+                  } else {
+                    details[gpgId].locations.push(loc);
+                    if (avatar) {
+                      details[gpgId].avatar = avatar;
+                    }
+                    if (!details[gpgId].customState || (isOnline && customState)) {
+                      details[gpgId].customState = customState;
+                    }
+                  }
+                  details[gpgId].isOnline = details[gpgId].isOnline || isOnline;
+                });
             });
         });
     })

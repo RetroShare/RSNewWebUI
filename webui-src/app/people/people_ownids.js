@@ -276,6 +276,7 @@ const Identity = () => {
           m(peopleUtil.UserAvatar, {
             avatar: details.mAvatar,
             firstLetter: details.mNickname.slice(0, 1).toUpperCase(),
+            identityId: details.mId,
           }),
           m('.details', [
             m('p', 'ID:'),

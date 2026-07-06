@@ -706,7 +706,7 @@ const ChatConversationView = () => {
             const firstLetter = (name || '?').slice(0, 1).toUpperCase();
 
             return m('.user', [
-              m(peopleUtil.UserAvatar, { avatar, firstLetter }),
+              m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: gxsId }),
               m('span.user-name', name),
             ]);
           }))
