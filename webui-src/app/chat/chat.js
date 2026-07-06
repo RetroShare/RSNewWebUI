@@ -56,6 +56,16 @@ function sortLobbies(lobbies) {
   return []; // return empty array instead of undefined
 }
 
+function getNicknameColor(id, name) {
+  const hashString = id && id !== '00000000000000000000000000000000' ? id : (name || '');
+  let hash = 0;
+  for (let i = 0; i < hashString.length; i++) {
+    hash = hashString.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 75%, 35%)`;
+}
+
 // ***************************** models ***********************************
 
 const MobileState = {
@@ -191,6 +201,20 @@ const Message = () => {
       const text = (msg.msg || msg.message || '')
         .replaceAll('<br/>', '\n')
         .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
+
+      const chatType = ChatLobbyModel.currentLobby && ChatLobbyModel.currentLobby.chatType;
+      const isRoom = chatType === 3;
+
+      if (isRoom) {
+        const nickColor = getNicknameColor(gxsId, username);
+        return m(
+          '.message.compact',
+          m('span.datetime', datetime),
+          m('span.username', { style: { color: nickColor } }, username + ':'),
+          m('span.messagetext', text)
+        );
+      }
+
       return m(
         '.message' + (msg.incoming ? '.incoming' : '.outgoing'),
         m('span.datetime', datetime),
@@ -637,10 +661,12 @@ const ChatConversationView = () => {
       scrollChatToBottom();
     },
     view: () => {
+      const chatType = ChatLobbyModel.currentLobby && ChatLobbyModel.currentLobby.chatType;
+      const isRoom = chatType === 3;
       return m('.chat-hub-conversation-layout', [
         m('.chat-hub-conversation-main', [
           m(
-            '.chat-hub-messages',
+            '.chat-hub-messages' + (isRoom ? '.compact-container' : ''),
             {
               oncreate: () => scrollChatToBottom(),
               onupdate: () => scrollChatToBottom(),
@@ -1036,6 +1062,7 @@ const LayoutSingle = () => {
     view: (vnode) => {
       const chatType = ChatLobbyModel.currentLobby.chatType;
       const isPrivate = chatType === 1 || chatType === 2;
+      const isRoom = chatType === 3;
       return m(
         '.node-panel.chat-panel.chat-room',
         {
@@ -1046,7 +1073,11 @@ const LayoutSingle = () => {
         },
         [
           m('.chat-overlay', { onclick: () => MobileState.closeAll() }),
-          m('.messages', { onclick: () => MobileState.closeAll() }, ChatLobbyModel.messages),
+          m(
+            '.messages' + (isRoom ? '.compact-container' : ''),
+            { onclick: () => MobileState.closeAll() },
+            ChatLobbyModel.messages
+          ),
           m(
             '.chatMessage',
             {},
