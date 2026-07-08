@@ -22,6 +22,7 @@ const State = {
   searchString: '',
   gpgToGxsIdMap: {},
   gxsIdToDetailsMap: {},
+  gxsIdentities: [],
   currentChatPeerId: null,
   chatMessages: [],
   chatInputMsg: '',
@@ -94,23 +95,29 @@ function loadSelectedOwnGxsDetails() {
   );
 }
 
+function fetchIdDetails(gxsId) {
+  if (!gxsId) return;
+  if (State.gxsIdToDetailsMap[gxsId] === undefined) {
+    State.gxsIdToDetailsMap[gxsId] = null; // Mark as loading
+    rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: gxsId }, (detData) => {
+      if (detData && detData.details) {
+        State.gxsIdToDetailsMap[gxsId] = detData.details;
+        const pgpId = detData.details.mPgpId;
+        if (pgpId && pgpId !== '0000000000000000') {
+          State.gpgToGxsIdMap[pgpId.toLowerCase()] = gxsId;
+        }
+        m.redraw();
+      }
+    });
+  }
+}
+
 // Build map GPG ID -> GXS ID for all known identities
 function loadGxsIdentities() {
   rs.rsJsonApiRequest('/rsIdentity/getIdentitiesSummaries', {}, (data) => {
     if (data && data.ids) {
-      data.ids.forEach((user) => {
-        const gxsId = user.mGroupId;
-        rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: gxsId }, (detData) => {
-          if (detData && detData.details) {
-            State.gxsIdToDetailsMap[gxsId] = detData.details;
-            const pgpId = detData.details.mPgpId;
-            if (pgpId && pgpId !== '0000000000000000') {
-              State.gpgToGxsIdMap[pgpId.toLowerCase()] = gxsId;
-            }
-            m.redraw();
-          }
-        });
-      });
+      State.gxsIdentities = data.ids.map(u => u.mGroupId);
+      m.redraw();
     }
   });
 }
@@ -571,6 +578,10 @@ const NetworkLayout = () => {
       const selectedGxsId = State.selectedFriendGpgId
         ? State.gpgToGxsIdMap[State.selectedFriendGpgId.toLowerCase()]
         : null;
+
+      if (State.selectedFriendGpgId && !selectedGxsId && State.gxsIdentities) {
+        State.gxsIdentities.forEach(gxsId => fetchIdDetails(gxsId));
+      }
 
       return m('.network-container', [
         m('.network-left-pane', [m(OwnProfileCard), m(FriendsList)]),

@@ -112,6 +112,36 @@ h1{font-size:3rem}h2{font-size:2.25rem}h3{font-size:1.875rem}h4{font-size:1.5rem
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
+}
+
+.friends-list-container .people-context-menu {
+  position: absolute;
+  left: 2rem;
+  width: 210px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  border-radius: 0.375rem;
+  z-index: 1010;
+  padding: 0.25rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.friends-list-container .people-context-menu .menu-item {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  color: #334155;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.friends-list-container .people-context-menu .menu-item:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
 }
 
 .friends-list-container .searchbar-container {
@@ -651,6 +681,35 @@ h1{font-size:3rem}h2{font-size:2.25rem}h3{font-size:1.875rem}h4{font-size:1.5rem
   padding: 1.25rem;
   border-bottom: 1px solid #e2e8f0;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  position: relative;
+}
+
+.chat-create-lobby-btn {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 1.25rem;
+  background-color: #0084ff;
+  color: #ffffff;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 132, 255, 0.2), 0 2px 4px -1px rgba(0, 132, 255, 0.1);
+  transition: background-color 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.chat-create-lobby-btn:hover {
+  background-color: #0073e6;
+  transform: translateY(-1px);
+}
+
+.chat-create-lobby-btn:active {
+  transform: translateY(0);
 }
 
 .chat-own-profile-card .profile-header {
@@ -1175,6 +1234,7 @@ h1{font-size:3rem}h2{font-size:2.25rem}h3{font-size:1.875rem}h4{font-size:1.5rem
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  position: relative;
 }
 
 .chat-hub-rightbar .rightbar-title {
@@ -1202,12 +1262,93 @@ h1{font-size:3rem}h2{font-size:2.25rem}h3{font-size:1.875rem}h4{font-size:1.5rem
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  position: relative;
+}
+
+.chat-hub-rightbar .user .user-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
 }
 
 .chat-hub-rightbar .user:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.chat-hub-rightbar .user-tooltip {
+  position: absolute;
+  left: -275px;
+  transform: translateY(-50%);
+  width: 260px;
+  background-color: #ffffe1;
+  border: 1px solid #7f7f7f;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.25);
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  z-index: 1000;
+  white-space: normal;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.chat-hub-rightbar .user-tooltip .tooltip-avatar {
+  flex-shrink: 0;
+}
+
+.chat-hub-rightbar .user-tooltip .tooltip-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: #000000;
+  text-align: left;
+}
+
+.chat-hub-rightbar .user-tooltip .tooltip-row {
+  line-height: 1.2;
+}
+
+.chat-hub-rightbar .user-tooltip .tooltip-label {
+  font-weight: bold;
+}
+
+.chat-hub-rightbar .user-tooltip .tooltip-value {
+  font-weight: normal;
+  word-break: break-all;
+}
+
+.chat-hub-rightbar .user-tooltip .tooltip-value.tooltip-id {
+  font-family: monospace;
+}
+
+.chat-hub-rightbar .rightbar-context-menu {
+  position: absolute;
+  right: 1rem;
+  width: 210px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  border-radius: 0.375rem;
+  z-index: 1010;
+  padding: 0.25rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-hub-rightbar .rightbar-context-menu .menu-item {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  color: #334155;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.chat-hub-rightbar .rightbar-context-menu .menu-item:hover {
   background-color: #f1f5f9;
   color: #0f172a;
 }
@@ -1418,4 +1559,109 @@ h1{font-size:3rem}h2{font-size:2.25rem}h3{font-size:1.875rem}h4{font-size:1.5rem
   height: auto !important;
   overflow: hidden !important;
   field-sizing: content !important;
+}
+
+/* Attach file button and modal popup */
+.chat-hub-attach-btn {
+  background-color: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.chat-hub-attach-btn:hover {
+  color: #3b82f6;
+  transform: scale(1.05);
+}
+
+.attach-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.attach-modal {
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  width: 450px;
+  max-width: 90%;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.attach-modal h4 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #0f172a;
+}
+
+.attach-modal p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.attach-modal input[type="text"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.attach-modal input[type="text"]:focus {
+  border-color: #3b82f6;
+}
+
+.attach-modal .hashing-spinner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #3b82f6;
+}
+
+.attach-modal .error-text {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.attach-modal .modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.attach-modal .modal-buttons button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 0.25rem;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.attach-modal .modal-buttons button:hover {
+  opacity: 0.9;
 }
