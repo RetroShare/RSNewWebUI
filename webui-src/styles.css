@@ -1665,3 +1665,21 @@ h1{font-size:3rem}h2{font-size:2.25rem}h3{font-size:1.875rem}h4{font-size:1.5rem
 .attach-modal .modal-buttons button:hover {
   opacity: 0.9;
 }
+
+table.mails th.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+table.mails th.sortable-th:hover {
+  background-color: #eef3f6;
+  color: #000;
+}
+
+.compose-mail__from {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.5rem;
+}

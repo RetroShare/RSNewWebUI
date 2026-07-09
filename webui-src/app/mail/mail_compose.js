@@ -3,12 +3,18 @@ const rs = require('rswebui');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
 
+const UserAvatarsCache = {};
+
 const Layout = () => {
+  let showCc = false;
+  let showBcc = false;
+  let ownAvatars = {};
   const Data = {
     allUsers: [],
     ownId: [],
     subject: '',
     identity: null,
+    bodyHtml: '',
     recipients: {
       to: {
         inputVal: '',
@@ -27,13 +33,8 @@ const Layout = () => {
       },
     },
   };
-  async function loadMailUserDetails(msgType, senderId, recipientList, isDirectMail) {
+  async function loadMailUserDetails(msgType, senderId, recipientList, isDirectMail, ccList) {
     Data.allUsers = await peopleUtil.sortUsers(rs.userList.users);
-    if (msgType === 'reply') {
-      Data.allUsers.forEach(async (user) => {
-        if (user.mGroupId === (await senderId)) Data.recipients.to.sendList.push(user);
-      });
-    }
 
     // Wrap ownIds in a Promise
     const gxsIds = await new Promise((resolve) => {
@@ -43,6 +44,20 @@ const Layout = () => {
     });
 
     Data.ownId = gxsIds.filter((id) => id && id !== '0000000000000000' && Number(id) !== 0);
+
+    Data.ownId.forEach((id) => {
+      if (!ownAvatars[id]) {
+        rs.rsJsonApiRequest(
+          '/rsIdentity/getIdDetails',
+          { id },
+          (data) => {
+            if (data?.details) {
+              ownAvatars[id] = data.details.mAvatar;
+            }
+          }
+        );
+      }
+    });
 
     // Fetch own Node GPG ID
     const netStatus = await new Promise((resolve) => {
@@ -65,19 +80,90 @@ const Layout = () => {
       }
     }
 
-    if (msgType === 'reply') {
+    const resolvedSenderId = await senderId;
+
+    if (msgType === 'reply' || msgType === 'replyAll') {
+      Data.allUsers.forEach((user) => {
+        if (user.mGroupId === resolvedSenderId) {
+          Data.recipients.to.sendList.push(user);
+          if (!UserAvatarsCache[resolvedSenderId]) {
+            rs.rsJsonApiRequest(
+              '/rsIdentity/getIdDetails',
+              { id: resolvedSenderId },
+              (data) => {
+                if (data?.details) {
+                  UserAvatarsCache[resolvedSenderId] = data.details.mAvatar;
+                }
+              }
+            );
+          }
+        }
+      });
+    }
+
+    if (msgType === 'replyAll') {
+      // Add other "To" recipients
+      if (recipientList) {
+        Object.keys(recipientList).forEach((recip) => {
+          if (recip !== resolvedSenderId && !Data.ownId.includes(recip)) {
+            const user = Data.allUsers.find((u) => u.mGroupId === recip);
+            if (user && !Data.recipients.to.sendList.some((item) => item.mGroupId === recip)) {
+              Data.recipients.to.sendList.push(user);
+              if (!UserAvatarsCache[recip]) {
+                rs.rsJsonApiRequest(
+                  '/rsIdentity/getIdDetails',
+                  { id: recip },
+                  (data) => {
+                    if (data?.details) {
+                      UserAvatarsCache[recip] = data.details.mAvatar;
+                    }
+                  }
+                );
+              }
+            }
+          }
+        });
+      }
+      // Add other "Cc" recipients
+      if (ccList) {
+        Object.keys(ccList).forEach((recip) => {
+          if (recip !== resolvedSenderId && !Data.ownId.includes(recip)) {
+            const user = Data.allUsers.find((u) => u.mGroupId === recip);
+            if (user && !Data.recipients.cc.sendList.some((item) => item.mGroupId === recip)) {
+              Data.recipients.cc.sendList.push(user);
+              if (!UserAvatarsCache[recip]) {
+                rs.rsJsonApiRequest(
+                  '/rsIdentity/getIdDetails',
+                  { id: recip },
+                  (data) => {
+                    if (data?.details) {
+                      UserAvatarsCache[recip] = data.details.mAvatar;
+                    }
+                  }
+                );
+              }
+            }
+          }
+        });
+      }
+    }
+
+    if (msgType === 'reply' || msgType === 'replyAll') {
       Data.identity = Data.ownId.filter((id) =>
         Object.prototype.hasOwnProperty.call(recipientList, id)
       )[0];
     }
   }
   async function loadDetails(attrs) {
-    const { msgType, senderId, recipientList, isDirectMail } = await attrs;
-    await loadMailUserDetails(msgType, senderId, recipientList, isDirectMail);
+    const { msgType, senderId, recipientList, ccList, isDirectMail } = await attrs;
+    await loadMailUserDetails(msgType, senderId, recipientList, isDirectMail, ccList);
 
     Object.keys(Data.recipients).forEach((item) => {
       Data.recipients[item].inputList = Data.allUsers;
     });
+
+    if (Data.recipients.cc.sendList.length > 0) showCc = true;
+    if (Data.recipients.bcc.sendList.length > 0) showBcc = true;
 
     if (msgType === 'compose') {
       if (!isDirectMail) {
@@ -98,7 +184,7 @@ const Layout = () => {
       }
     }
 
-    if (msgType === 'reply') {
+    if (msgType === 'reply' || msgType === 'replyAll' || msgType === 'forward') {
       const { subject, replyMessage, timeStamp } = await attrs;
       const tmb = document.querySelector('#composerMailBody');
       const time = timeStamp.toLocaleTimeString('UTC', { hour: '2-digit', minute: '2-digit' });
@@ -107,20 +193,21 @@ const Layout = () => {
         month: 'long',
         day: 'numeric',
       });
+      const headerTitle = msgType === 'forward' ? 'Forwarded Message' : 'Original Message';
       const replyMessageHeader = `
-        -----Original Message-----
+        -----${headerTitle}-----
         <br>
         <b>From: </b>
         <a href="retroshare://message?id=${senderId}">${rs.userList.username(senderId)}</a>
         <br>
         <b>To: </b>
-        ${Object.keys(recipientList).map(
+        ${recipientList ? Object.keys(recipientList).map(
           (recip) => `
           <a href="retroshare://message?id=${recip}">
              ${rs.userList.username(recipientList[recip]._addr_string) || 'Unknown'},
           </a>
         `
-        )}
+        ).join('') : ''}
         <br>
         <br>
         <b>Sent: </b>
@@ -130,13 +217,15 @@ const Layout = () => {
         <span>${subject}</span>
         <br>
         <br>
+        ${msgType !== 'forward' ? `
         <span>
           On ${timeStamp.toLocaleDateString()} ${time},
            <a href="retroshare://message?id=${senderId}">${rs.userList.username(senderId)}</a>
           wrote:
         </span>
+        ` : ''}
       `;
-      tmb.innerHTML = `
+      const bodyHtml = `
         <br>
         <br>
         <div>
@@ -146,7 +235,15 @@ const Layout = () => {
           </div>
         </div>
       `;
-      Data.subject = subject.substring(0, 4) === 'Re: ' ? subject : `Re: ${subject}`;
+      if (tmb) {
+        tmb.innerHTML = bodyHtml;
+      }
+      Data.bodyHtml = bodyHtml;
+      if (msgType === 'forward') {
+        Data.subject = subject.substring(0, 5) === 'Fwd: ' ? subject : `Fwd: ${subject}`;
+      } else {
+        Data.subject = subject.substring(0, 4) === 'Re: ' ? subject : `Re: ${subject}`;
+      }
     }
   }
   return {
@@ -161,6 +258,17 @@ const Layout = () => {
       }
       function handleClick(item, recipientType) {
         Data.recipients[recipientType].sendList.push(item);
+        if (item.mGroupId && !UserAvatarsCache[item.mGroupId]) {
+          rs.rsJsonApiRequest(
+            '/rsIdentity/getIdDetails',
+            { id: item.mGroupId },
+            (data) => {
+              if (data?.details) {
+                UserAvatarsCache[item.mGroupId] = data.details.mAvatar;
+              }
+            }
+          );
+        }
         // reset current input values after a sender is selected
         Data.recipients[recipientType].inputVal = '';
         Data.recipients[recipientType].inputList = Data.allUsers;
@@ -202,6 +310,14 @@ const Layout = () => {
         m('.widget__body.compose-mail', [
           m('.compose-mail__from', [
             m('label[for=idtags].bold', 'From: '),
+            Data.identity && m(peopleUtil.UserAvatar, {
+              avatar: ownAvatars[Data.identity],
+              firstLetter: rs.userList.userMap[Data.identity] && typeof rs.userList.userMap[Data.identity] === 'string'
+                ? rs.userList.userMap[Data.identity].slice(0, 1).toUpperCase()
+                : (rs.userList.username(Data.identity) || '').slice(0, 1).toUpperCase(),
+              identityId: Data.identity,
+              size: 24,
+            }),
             m(
               'select[id=idtags]',
               {
@@ -232,6 +348,12 @@ const Layout = () => {
                 Data.recipients.to.sendList.length > 0 &&
                   Data.recipients.to.sendList.map((recipient) =>
                     m('.recipients__selected', [
+                      m(peopleUtil.UserAvatar, {
+                        avatar: UserAvatarsCache[recipient.mGroupId],
+                        firstLetter: recipient.mGroupName ? recipient.mGroupName.slice(0, 1).toUpperCase() : '',
+                        identityId: recipient.mGroupId,
+                        size: 20,
+                      }),
                       m('span', recipient.mGroupName),
                       m('i.fas.fa-times', {
                         onclick: () => removeSelectedItem(recipient, 'to'),
@@ -252,14 +374,40 @@ const Layout = () => {
                   ]),
                 ]),
               ]),
+              m('.compose-mail__recipients__toggles', {
+                style: {
+                  display: 'flex',
+                  gap: '1rem',
+                  alignItems: 'center',
+                  marginLeft: 'auto',
+                  paddingRight: '0.5rem',
+                  userSelect: 'none',
+                }
+              }, [
+                m('span.bold', {
+                  style: { cursor: 'pointer', color: showCc ? '#019DFF' : '#555' },
+                  onclick: () => showCc = !showCc
+                }, 'Cc'),
+                m('span.bold', {
+                  style: { cursor: 'pointer', color: showBcc ? '#019DFF' : '#555' },
+                  onclick: () => showBcc = !showBcc
+                }, 'Bcc')
+              ])
             ]),
-            ['cc', 'bcc'].map((recipientType) =>
-              m('.compose-mail__recipients__container', [
+            ['cc', 'bcc'].map((recipientType) => {
+              const isVisible = recipientType === 'cc' ? showCc : showBcc;
+              return isVisible && m('.compose-mail__recipients__container', [
                 m('label.bold', `${recipientType}: `),
                 m('.recipients', [
                   Data.recipients[recipientType].sendList.length > 0 &&
                     Data.recipients[recipientType].sendList.map((recipient) =>
                       m('.recipients__selected', [
+                        m(peopleUtil.UserAvatar, {
+                          avatar: UserAvatarsCache[recipient.mGroupId],
+                          firstLetter: recipient.mGroupName ? recipient.mGroupName.slice(0, 1).toUpperCase() : '',
+                          identityId: recipient.mGroupId,
+                          size: 20,
+                        }),
                         m('span', recipient.mGroupName),
                         m('i.fas.fa-times', {
                           onclick: () => removeSelectedItem(recipient, recipientType),
@@ -284,15 +432,21 @@ const Layout = () => {
                     ]),
                   ]),
                 ]),
-              ])
-            ),
+              ]);
+            }),
           ]),
           m('input.compose-mail__subject[type=text][placeholder=Subject]', {
             value: Data.subject,
             oninput: (e) => (Data.subject = e.target.value),
           }),
           m('.compose-mail__message', [
-            m('.compose-mail__message-body[placeholder=Message][contenteditable]#composerMailBody'),
+            m('.compose-mail__message-body[placeholder=Message][contenteditable]#composerMailBody', {
+              oncreate: (vnode) => {
+                if (Data.bodyHtml) {
+                  vnode.dom.innerHTML = Data.bodyHtml;
+                }
+              }
+            }),
           ]),
           m('button.compose-mail__send-btn', { onclick: sendMail }, [
             m('span', 'Send Mail'),

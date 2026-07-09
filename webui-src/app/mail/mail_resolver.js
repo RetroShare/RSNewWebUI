@@ -41,6 +41,22 @@ const Messages = {
         Messages.spam = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_SPAM);
 
         Messages.attachment = Messages.all.filter((msg) => msg.count);
+
+        Messages.important = Messages.all.filter(
+          (msg) => msg.msgtags && msg.msgtags.includes(util.RS_MSGTAGTYPE_IMPORTANT)
+        );
+        Messages.work = Messages.all.filter(
+          (msg) => msg.msgtags && msg.msgtags.includes(util.RS_MSGTAGTYPE_WORK)
+        );
+        Messages.personal = Messages.all.filter(
+          (msg) => msg.msgtags && msg.msgtags.includes(util.RS_MSGTAGTYPE_PERSONAL)
+        );
+        Messages.todo = Messages.all.filter(
+          (msg) => msg.msgtags && msg.msgtags.includes(util.RS_MSGTAGTYPE_TODO)
+        );
+        Messages.later = Messages.all.filter(
+          (msg) => msg.msgtags && msg.msgtags.includes(util.RS_MSGTAGTYPE_LATER)
+        );
       }
     });
   },
@@ -98,7 +114,14 @@ const Layout = () => {
 
       return [
         m('.side-bar', [
-          m('button.mail-compose-btn', { onclick: () => setShowCompose(true) }, 'Compose'),
+          m(
+            'button.mail-compose-btn',
+            {
+              style: 'display: flex; align-items: center; justify-content: center; gap: 0.5rem;',
+              onclick: () => setShowCompose(true),
+            },
+            [m('i.fas.fa-pen'), 'Compose']
+          ),
           m(util.Sidebar, {
             tabs: Object.keys(sections),
             size: sectionsSize,
@@ -128,9 +151,8 @@ const Layout = () => {
             vnode.children,
           ])
         ),
-        m(
+        showCompose && m(
           '.composePopupOverlay#mailComposerPopup',
-          { style: { display: showCompose ? 'block' : 'none' } },
           m(
             '.composePopup',
             m(compose, { msgType: 'compose', setShowCompose }),
@@ -142,20 +164,80 @@ const Layout = () => {
   };
 };
 
+const tabConfig = {
+  inbox: { title: 'Inbox', category: 'inbox' },
+  outbox: { title: 'Outbox', category: 'outbox' },
+  drafts: { title: 'Draft', category: 'drafts' },
+  sent: { title: 'Sent', category: 'sent' },
+  trash: { title: 'Trash', category: 'trash' },
+  starred: { title: 'Starred', category: 'starred' },
+  system: { title: 'System', category: 'system' },
+  spam: { title: 'Spam', category: 'spam' },
+  important: { title: 'Important', category: 'important' },
+  work: { title: 'Work', category: 'work' },
+  todo: { title: 'Todo', category: 'todo' },
+  later: { title: 'Later', category: 'later' },
+  personal: { title: 'Personal', category: 'personal' },
+};
+
+const GenericMailList = () => {
+  return {
+    view: (vnode) => {
+      const { title, category, list } = vnode.attrs;
+      return [
+        m('.widget__heading', m('h3', title)),
+        m('.widget__body', [
+          m(
+            util.Table,
+            m(
+              'tbody',
+              list.map((msg) =>
+                m(util.MessageSummary, {
+                  key: msg.msgId,
+                  details: msg,
+                  category: category,
+                })
+              )
+            )
+          ),
+        ]),
+      ];
+    },
+  };
+};
+
 module.exports = {
   view: ({ attrs, attrs: { tab, msgId } }) => {
     // TODO: utilize multiple routing params
     if (Object.prototype.hasOwnProperty.call(attrs, 'msgId')) {
       return m(Layout, m(util.MessageView, { msgId }));
     }
+
+    if (tab === 'attachment') {
+      return m(
+        Layout,
+        m(sectionsquickview.attachment, {
+          list: util.sortList(Messages[tab]),
+        })
+      );
+    }
+
+    const config = tabConfig[tab];
+    if (config) {
+      return m(
+        Layout,
+        m(GenericMailList, {
+          title: config.title,
+          category: config.category,
+          list: util.sortList(Messages[tab]),
+        })
+      );
+    }
+
     return m(
       Layout,
       m(sections[tab] || sectionsquickview[tab], {
-        list: (Messages[tab] || []).sort((msgA, msgB) => {
-          const msgADate = new Date((msgA.ts.xint64 || 0) * 1000);
-          const msgBDate = new Date((msgB.ts.xint64 || 0) * 1000);
-          return msgADate < msgBDate;
-        }),
+        list: util.sortList(Messages[tab]),
       })
     );
   },
