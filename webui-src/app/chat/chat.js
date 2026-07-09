@@ -526,8 +526,8 @@ const ChatLobbyModel = {
       };
 
       // Lookup for chat-user names
+      let list = [];
       if (detail.gxs_ids) {
-        let list = [];
         if (Array.isArray(detail.gxs_ids)) {
           list = detail.gxs_ids.map((u) => {
             const key = u.key;
@@ -538,11 +538,26 @@ const ChatLobbyModel = {
             return { key, name: rs.userList.username(key) || key, lastAct: get64Num(detail.gxs_ids[key]) };
           });
         }
-        list.sort((a, b) => a.name.localeCompare(b.name));
-        this.users = list;
-      } else {
-        this.users = [{ key: detail.gxs_id || '', name: detail.lobby_name, lastAct: Math.floor(Date.now() / 1000) }];
       }
+
+      const ownId = detail.gxs_id;
+      if (ownId && ownId !== '00000000000000000000000000000000') {
+        const hasOwn = list.some((u) => u.key === ownId);
+        if (!hasOwn) {
+          list.push({
+            key: ownId,
+            name: rs.userList.username(ownId) || ownId,
+            lastAct: Math.floor(Date.now() / 1000)
+          });
+        }
+      }
+
+      if (list.length === 0) {
+        list = [{ key: ownId || '', name: rs.userList.username(ownId) || detail.lobby_name || '???', lastAct: Math.floor(Date.now() / 1000) }];
+      }
+
+      list.sort((a, b) => a.name.localeCompare(b.name));
+      this.users = list;
 
       if (detail.chatType === 2) {
         this.startStatusPolling();
@@ -1179,16 +1194,35 @@ const ChatRoomDetailView = () => {
 
       let participantCount = 0;
       let participantNames = [];
+      let participants = [];
+
       if (room.gxs_ids) {
         if (Array.isArray(room.gxs_ids)) {
-          participantCount = room.gxs_ids.length;
-          participantNames = room.gxs_ids.map((u) => rs.userList.username(u.key) || u.key);
+          participants = room.gxs_ids.map((u) => ({
+            key: u.key,
+            name: rs.userList.username(u.key) || u.key
+          }));
         } else if (typeof room.gxs_ids === 'object') {
-          const keys = Object.keys(room.gxs_ids);
-          participantCount = keys.length;
-          participantNames = keys.map((key) => rs.userList.username(key) || key);
+          participants = Object.keys(room.gxs_ids).map((key) => ({
+            key: key,
+            name: rs.userList.username(key) || key
+          }));
         }
       }
+
+      const ownId = room.gxs_id;
+      if (ownId && ownId !== '00000000000000000000000000000000') {
+        const hasOwn = participants.some((p) => p.key === ownId);
+        if (!hasOwn) {
+          participants.push({
+            key: ownId,
+            name: rs.userList.username(ownId) || ownId
+          });
+        }
+      }
+
+      participantCount = participants.length;
+      participantNames = participants.map((p) => p.name);
       participantNames.sort((a, b) => a.localeCompare(b));
 
       const lobbyHexId = rs.idToHex(room.lobby_id);
@@ -1404,10 +1438,18 @@ const Layout = {
               subscribedRooms.map((info) => {
                 const hexId = rs.idToHex(info.lobby_id);
                 let count = 0;
+                let hasOwn = false;
                 if (info.gxs_ids) {
-                  if (Array.isArray(info.gxs_ids)) count = info.gxs_ids.length;
-                  else if (typeof info.gxs_ids === 'object')
+                  if (Array.isArray(info.gxs_ids)) {
+                    count = info.gxs_ids.length;
+                    hasOwn = info.gxs_ids.some((u) => u.key === info.gxs_id);
+                  } else if (typeof info.gxs_ids === 'object') {
                     count = Object.keys(info.gxs_ids).length;
+                    hasOwn = info.gxs_ids[info.gxs_id] !== undefined;
+                  }
+                }
+                if (!hasOwn && info.gxs_id && info.gxs_id !== '00000000000000000000000000000000') {
+                  count++;
                 }
                 return m(
                   '.chat-room-list-item' +
@@ -1536,7 +1578,7 @@ const Layout = {
                       ChatHubState.newRoomTopic = '';
                       ChatHubState.createRoomError = '';
                       // Refresh rooms list
-                      ChatRoomsModel.loadRooms();
+                      ChatRoomsModel.loadSubscribedRooms();
                       m.redraw();
                     } else {
                       ChatHubState.createRoomError = 'Failed to create room. Check parameters.';
