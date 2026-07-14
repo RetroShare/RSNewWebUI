@@ -176,6 +176,27 @@ const ChatRoomsModel = {
 };
 
 /**
+ * Wraps emoji characters in a span so CSS can size them independently.
+ */
+function renderTextWithEmoji(text) {
+  if (!text) return '';
+  // Match emoji sequences (flags, ZWJ sequences, variation selectors, skin tones, etc.)
+  const emojiRegex = /(?:\p{Emoji_Presentation}|\p{Extended_Pictographic})(?:[\u{1F3FB}-\u{1F3FF}])?(?:\u{FE0F})?(?:\u{20E3})?(?:(?:\u{200D}(?:\p{Emoji_Presentation}|\p{Extended_Pictographic})(?:[\u{1F3FB}-\u{1F3FF}])?(?:\u{FE0F})?)*)/gu;
+  const parts = [];
+  let last = 0;
+  let match;
+  // eslint-disable-next-line no-cond-assign
+  while ((match = emojiRegex.exec(text)) !== null) {
+    if (match[0].length === 0) { emojiRegex.lastIndex++; continue; }
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    parts.push(m('span.chat-emoji', match[0]));
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts.length > 0 ? parts : text;
+}
+
+/**
  * Message displays a single Chat-Message<br>
  * currently removes formatting and in consequence inline links
  * msg: Message to Display
@@ -247,7 +268,7 @@ const Message = () => {
           '.message.compact',
           m('span.datetime', datetime),
           m('span.username', { style: { color: nickColor } }, username + ':'),
-          m('span.messagetext', text)
+          m('span.messagetext', renderTextWithEmoji(text))
         );
       }
 
@@ -255,7 +276,7 @@ const Message = () => {
         '.message' + (msg.incoming ? '.incoming' : '.outgoing'),
         m('span.datetime', datetime),
         m('span.username', username),
-        m('span.messagetext', text)
+        m('span.messagetext', renderTextWithEmoji(text))
       );
     },
   };
@@ -663,8 +684,12 @@ const ChatHubState = {
   activeMenu: null,
   showAttachModal: false,
   attachPath: '',
+  attachBrowseHint: false,
   isHashing: false,
   hashingError: '',
+  showEmojiPicker: false,
+  emojiSearch: '',
+  emojiCategory: 'Smileys',
   showCreateRoomModal: false,
   newRoomName: '',
   newRoomTopic: '',
@@ -673,6 +698,142 @@ const ChatHubState = {
   ownGxsIdentities: [],
   createRoomError: '',
 };
+
+// ========================= Emoji Data =========================
+const EMOJI_CATEGORIES = ['Smileys', 'People', 'Animals', 'Food', 'Travel', 'Activities', 'Objects', 'Symbols'];
+const EMOJI_ICONS = {
+  Smileys: '😊', People: '👥', Animals: '🐾', Food: '🍎',
+  Travel: '✈️', Activities: '⚽', Objects: '💡', Symbols: '❤️',
+};
+const EMOJI_DATA = {
+  Smileys: [
+    '😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','😘','🥰','😗','😙','😚',
+    '🙂','🤗','🤩','🤔','🤨','😐','😑','😶','🙄','😏','😣','😥','😮','🤐','😯','😪','😫','🥱',
+    '😴','😌','😛','😜','😝','🤤','😒','😓','😔','😕','🙃','🤑','😲','☹️','🙁','😖','😞','😟',
+    '😤','😢','😭','😦','😧','😨','😩','🤯','😬','😰','😱','🥵','🥶','😳','🤪','😵','😡','😠',
+    '🤬','😷','🤒','🤕','🤢','🤮','🤧','🥴','😇','🥳','🥺','🤠','🤡','🤥','🤫','🤭','🧐','🤓',
+    '😈','👿','👹','👺','💀','☠️','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾',
+  ],
+  People: [
+    '👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇',
+    '☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾',
+    '🦿','🦵','🦶','👂','🦻','👃','🫀','🫁','🧠','🦷','🦴','👀','👁️','👅','👄','🫦','👶','🧒',
+    '👦','👧','🧑','👱','👨','🧔','👩','🧓','👴','👵','🙍','🙎','🙅','🙆','💁','🙋','🧏','🙇',
+    '🤦','🤷','👮','🕵️','💂','🥷','👷','🫅','🤴','👸','👲','🧕','🤵','👰','🤰','🫃','🫄','🤱',
+    '👼','🎅','🤶','🧑‍🎄','🦸','🦹','🧙','🧝','🧛','🧟','🧞','🧜','🧚','🧑‍🤝‍🧑','👫','👬','👭','💏','💑','👪',
+  ],
+  Animals: [
+    '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉',
+    '🙊','🐒','🦆','🦅','🦉','🦇','🐝','🪱','🐛','🦋','🐌','🐞','🐜','🪲','🦗','🪳','🕷️','🦂',
+    '🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🦭',
+    '🐊','🐅','🐆','🦓','🦍','🦧','🦣','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🦬','🐃','🐂','🐄',
+    '🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🐓','🦃','🦤','🦚','🦜',
+    '🦢','🦩','🕊️','🐇','🦝','🦨','🦡','🦫','🦦','🦥','🐁','🐀','🐿️','🦔','🐾','🐉','🐲','🌵',
+  ],
+  Food: [
+    '🍎','🍊','🍋','🍌','🍍','🥭','🍓','🍒','🍑','🥝','🍅','🥥','🥑','🍆','🥔','🥕','🌽','🌶️',
+    '🫑','🥒','🥬','🥦','🧄','🧅','🍄','🥜','🌰','🍞','🥐','🥖','🫓','🥨','🧀','🥚','🍳','🧈',
+    '🥞','🧇','🥓','🥩','🍗','🍖','🦴','🌭','🍔','🍟','🍕','🫔','🌮','🌯','🥙','🧆','🥚','🍱',
+    '🍘','🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','🦪','🍦',
+    '🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','🍼','🥛','☕','🫖','🍵',
+    '🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊','🥄','🍴','🍽️','🥢',
+  ],
+  Travel: [
+    '🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🦯','🦽','🦼','🛺',
+    '🚲','🛴','🛵','🏍️','🛺','🚨','🚔','🚍','🚘','🚖','🚡','🚠','🚟','🚃','🚋','🚞','🚝','🚄',
+    '🚅','🚈','🚂','🚆','🚇','🚊','🚉','✈️','🛫','🛬','🛩️','💺','🛸','🚁','🛶','⛵','🚤','🛥️',
+    '🛳️','⛴️','🚢','⚓','🗺️','🧭','🏔️','⛰️','🌋','🗻','🏕️','🏖️','🏜️','🏝️','🏞️','🏟️','🏛️','🏗️',
+    '🧱','🪨','🪵','🛖','🏘️','🏚️','🏠','🏡','🏢','🏣','🏤','🏥','🏦','🏨','🏩','🏪','🏫','🏬',
+    '🏭','🏯','🏰','💒','🗼','🗽','⛪','🕌','🛕','🕍','⛩️','🕋','⛲','⛺','🌁','🌃','🏙️','🌄',
+  ],
+  Activities: [
+    '⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅',
+    '⛳','🪁','🛝','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛷','⛸️','🥌','🎿','⛷️','🏂','🪂','🏋️',
+    '🤼','🤸','⛹️','🤺','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅',
+    '🎖️','🏵️','🎗️','🎫','🎟️','🎪','🤹','🎭','🩰','🎨','🖼️','🎰','🎲','🧩','🪄','🎯','🪅','🎮',
+    '🕹️','🎳','🎻','🎷','🥁','🪘','🎺','🎸','🪗','🎹','🎵','🎶','🎼','🎤','🎧','📻','🎙️','🎚️',
+    '🎬','📽️','🎞️','📱','📲','☎️','📞','📟','📠','🔋','🪫','🔌','💡','🔦','🕯️','💸','💵','🪙',
+  ],
+  Objects: [
+    '⌚','📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🖲️','💾','💿','📀','🧮','📷','📸','📹','🎥','📽️',
+    '📞','☎️','📟','📠','📺','📻','🧭','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🪫','🔌','💡',
+    '🔦','🕯️','🪔','🧱','💰','💴','💵','💶','💷','💸','💳','🪙','💹','✉️','📧','📨','📩','📤',
+    '📥','📦','📫','📪','📬','📭','📮','🗳️','✏️','✒️','🖊️','🖋️','📝','📁','📂','🗂️','📅','📆',
+    '🗒️','🗓️','📇','📈','📉','📊','📋','📌','📍','🗺️','📏','📐','✂️','🗃️','🗄️','🗑️','🔒','🔓',
+    '🔏','🔐','🔑','🗝️','🔨','🪓','⛏️','⚒️','🛠️','🗡️','⚔️','🔫','🪃','🏹','🛡️','🪚','🔧','🪛',
+  ],
+  Symbols: [
+    '❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝',
+    '💟','☮️','✝️','☪️','🕉️','☸️','✡️','🔯','🕎','☯️','☦️','🛐','⛎','♈','♉','♊','♋','♌',
+    '♍','♎','♏','♐','♑','♒','♓','🆔','⚛️','🉑','☢️','☣️','📴','📳','🈶','🈚','🈸','🈺',
+    '🈷️','✴️','🆚','💮','🉐','㊙️','㊗️','🈴','🈵','🈹','🈲','🅰️','🅱️','🆎','🆑','🅾️','🆘',
+    '❌','⭕','🛑','⛔','📛','🚫','💯','💢','♨️','🚷','🚯','🚳','🚱','🔞','📵','🚭','❗','❕',
+    '❓','❔','‼️','⁉️','🔅','🔆','📶','🛜','📳','📴','🔱','📛','🔰','♻️','✅','🈯','💹','❎',
+    '🌐','💠','Ⓜ️','🌀','💤','🏧','🚾','♿','🅿️','🛗','🈳','🈹','🚰','🔤','🔡','🔠','🆖','🆗',
+    '🆙','🆒','🆕','🆓','🔟','📊','🔣','✔️','☑️','🔘','🔲','🔳','⬛','⬜','◼️','◻️','◾','◽',
+    '▪️','▫️','🔶','🔷','🔸','🔹','🔺','🔻','💠','🔘','🔲','🔳','🏁','🚩','🎌','🏴','🏳️','⭐',
+    '🌟','💫','✨','🌈','☀️','🌤️','⛅','🌥️','☁️','🌦️','🌧️','⛈️','🌩️','🌨️','❄️','☃️','⛄','🌬️',
+  ],
+};
+
+function insertEmojiIntoTextarea(emoji) {
+  const textarea = document.querySelector('.chat-hub-textarea');
+  if (!textarea) return;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const before = textarea.value.substring(0, start);
+  const after = textarea.value.substring(end);
+  textarea.value = before + emoji + after;
+  const newPos = start + emoji.length;
+  textarea.selectionStart = newPos;
+  textarea.selectionEnd = newPos;
+  textarea.focus();
+}
+
+const EmojiPicker = () => ({
+  view: () => {
+    const search = ChatHubState.emojiSearch.toLowerCase();
+    const cat = ChatHubState.emojiCategory;
+    let emojis;
+    if (search) {
+      emojis = Object.values(EMOJI_DATA).flat();
+    } else {
+      emojis = EMOJI_DATA[cat] || [];
+    }
+    return m('.emoji-picker', [
+      // Search bar
+      m('.emoji-search-row', [
+        m('i.fas.fa-search.emoji-search-icon'),
+        m('input.emoji-search-input[type=text][placeholder=Search emoji...]', {
+          value: ChatHubState.emojiSearch,
+          oninput: (e) => { ChatHubState.emojiSearch = e.target.value; },
+        }),
+        ChatHubState.emojiSearch && m('button.emoji-search-clear', {
+          onclick: () => { ChatHubState.emojiSearch = ''; },
+        }, m('i.fas.fa-times')),
+      ]),
+      // Category tabs (hidden while searching)
+      !search && m('.emoji-categories', EMOJI_CATEGORIES.map(c =>
+        m('button.emoji-cat-btn' + (c === cat ? '.active' : ''), {
+          title: c,
+          onclick: () => { ChatHubState.emojiCategory = c; },
+        }, EMOJI_ICONS[c])
+      )),
+      // Emoji grid
+      m('.emoji-grid',
+        emojis.map(e =>
+          m('button.emoji-btn', {
+            onclick: () => {
+              insertEmojiIntoTextarea(e);
+              ChatHubState.showEmojiPicker = false;
+              m.redraw();
+            },
+          }, e)
+        )
+      ),
+    ]);
+  },
+});
 
 function loadOwnChatProfile() {
   rs.rsJsonApiRequest('/rsConfig/getConfigNetStatus', {}, (data) => {
@@ -859,9 +1020,21 @@ function pollHashStatus(localpath) {
 }
 
 const ChatConversationView = () => {
+  function onDocClick(e) {
+    if (ChatHubState.showEmojiPicker && !e.target.closest('.emoji-picker-wrapper')) {
+      ChatHubState.showEmojiPicker = false;
+      m.redraw();
+    }
+  }
   return {
     oninit: () => {
       scrollChatToBottom();
+    },
+    oncreate: () => {
+      document.addEventListener('click', onDocClick, true);
+    },
+    onremove: () => {
+      document.removeEventListener('click', onDocClick, true);
     },
     view: () => {
       const chatType = ChatLobbyModel.currentLobby && ChatLobbyModel.currentLobby.chatType;
@@ -881,6 +1054,35 @@ const ChatConversationView = () => {
           m(
             '.chat-hub-input-area',
             [
+              m(
+                'button.chat-hub-attach-btn',
+                {
+                  disabled: !canTalk,
+                  style: !canTalk ? 'opacity: 0.5; cursor: not-allowed;' : '',
+                  title: 'Attach file',
+                  onclick: () => {
+                    ChatHubState.showAttachModal = true;
+                    ChatHubState.showEmojiPicker = false;
+                  }
+                },
+                m('i.fas.fa-paperclip')
+              ),
+              m('.emoji-picker-wrapper', [
+                m(
+                  'button.chat-hub-emoji-btn',
+                  {
+                    disabled: !canTalk,
+                    style: !canTalk ? 'opacity: 0.5; cursor: not-allowed;' : '',
+                    title: 'Insert emoji',
+                    onclick: (e) => {
+                      e.stopPropagation();
+                      ChatHubState.showEmojiPicker = !ChatHubState.showEmojiPicker;
+                    },
+                  },
+                  '😊'
+                ),
+                ChatHubState.showEmojiPicker && m(EmojiPicker),
+              ]),
               m('textarea.chat-hub-textarea', {
                 placeholder: canTalk ? 'Type a message... Press Enter to send' : 'Waiting for tunnel to be secured...',
                 disabled: !canTalk,
@@ -899,17 +1101,6 @@ const ChatConversationView = () => {
                   }
                 },
               }),
-              m(
-                'button.chat-hub-attach-btn',
-                {
-                  disabled: !canTalk,
-                  style: !canTalk ? 'opacity: 0.5; cursor: not-allowed; margin-right: 0.5rem;' : 'margin-right: 0.5rem;',
-                  onclick: () => {
-                    ChatHubState.showAttachModal = true;
-                  }
-                },
-                m('i.fas.fa-paperclip')
-              ),
               m(
                 'button.chat-hub-send-btn',
                 {
@@ -931,29 +1122,94 @@ const ChatConversationView = () => {
               ),
             ]
           ),
-          ChatHubState.showAttachModal && m('.attach-modal-overlay', [
+          ChatHubState.showAttachModal && m('.attach-modal-overlay', {
+            onclick: (e) => {
+              if (e.target === e.currentTarget && !ChatHubState.isHashing) {
+                ChatHubState.showAttachModal = false;
+                ChatHubState.attachPath = '';
+                ChatHubState.attachBrowseHint = false;
+                ChatHubState.hashingError = '';
+              }
+            }
+          }, [
             m('.attach-modal', [
-              m('h4', 'Attach File to Chat'),
-              m('p', 'Enter the absolute path of the file on your local system:'),
-              m('input[type=text][placeholder=e.g. C:\\Downloads\\file.zip]', {
-                value: ChatHubState.attachPath,
-                oninput: (e) => { ChatHubState.attachPath = e.target.value; },
-                disabled: ChatHubState.isHashing,
+              m('.attach-modal-header', [
+                m('i.fas.fa-paperclip.attach-modal-icon'),
+                m('h4', 'Attach File to Chat'),
+              ]),
+              m('p', 'Browse for a file or type the absolute path on your local system:'),
+              // Hidden native file input for browsing
+              m('input#attach-file-picker[type=file]', {
+                style: 'display:none',
+                onchange: (e) => {
+                  const file = e.target.files && e.target.files[0];
+                  if (file) {
+                    // file.path is only available in Electron/desktop; browsers restrict full path
+                    const fullPath = file.path;
+                    const hasFullPath = fullPath && (fullPath.includes('/') || fullPath.includes('\\')) && fullPath !== file.name;
+                    if (hasFullPath) {
+                      ChatHubState.attachPath = fullPath;
+                      ChatHubState.attachBrowseHint = false;
+                    } else {
+                      // Browser security: only the filename is available, not the full path
+                      ChatHubState.attachPath = file.name;
+                      ChatHubState.attachBrowseHint = true;
+                    }
+                    // Reset the picker so the same file can be re-selected
+                    e.target.value = '';
+                    ChatHubState.hashingError = '';
+                    m.redraw();
+                  }
+                },
               }),
+              m('.attach-path-row', [
+                m('input[type=text]', {
+                  placeholder: 'e.g. C:\\Downloads\\file.zip',
+                  value: ChatHubState.attachPath,
+                  oninput: (e) => {
+                    ChatHubState.attachPath = e.target.value;
+                    ChatHubState.attachBrowseHint = false; // user is editing manually, hint no longer relevant
+                  },
+                  disabled: ChatHubState.isHashing,
+                }),
+                m('button.attach-browse-btn', {
+                  type: 'button',
+                  disabled: ChatHubState.isHashing,
+                  title: 'Browse for file',
+                  onclick: () => {
+                    const picker = document.getElementById('attach-file-picker');
+                    if (picker) picker.click();
+                  },
+                },
+                  [m('i.fas.fa-folder-open'), m('span', ' Browse…')]
+                ),
+              ]),
+              ChatHubState.attachBrowseHint && m('.attach-path-hint', [
+                m('i.fas.fa-info-circle'),
+                m('span', [
+                  ' Your browser cannot expose the full file path. ',
+                  m('strong', 'Edit the path above'),
+                  ' and add your folder prefix — e.g. change ',
+                  m('code', 'file.zip'),
+                  ' to ',
+                  m('code', 'C:\\Downloads\\file.zip'),
+                  ' — then click Attach.',
+                ]),
+              ]),
               ChatHubState.isHashing && m('.hashing-spinner', [
                 m('i.fas.fa-spinner.fa-spin'),
                 m('span', ' Hashing file... Please wait.')
               ]),
-              ChatHubState.hashingError && m('p.error-text', ChatHubState.hashingError),
+              !ChatHubState.attachBrowseHint && ChatHubState.hashingError && m('p.error-text', ChatHubState.hashingError),
               m('.modal-buttons', [
                 m('button.btn.blue', {
-                  disabled: ChatHubState.isHashing || !ChatHubState.attachPath.trim(),
+                  disabled: ChatHubState.isHashing || !ChatHubState.attachPath.trim() || ChatHubState.attachBrowseHint,
                   onclick: () => {
                     const path = ChatHubState.attachPath.trim();
                     ChatHubState.isHashing = true;
                     ChatHubState.hashingError = '';
                     m.redraw();
-                    
+
                     rs.rsJsonApiRequest('/rsFiles/ExtraFileHash', {
                       localpath: path,
                       period: 86400 * 7,
@@ -963,17 +1219,18 @@ const ChatConversationView = () => {
                         pollHashStatus(path);
                       } else {
                         ChatHubState.isHashing = false;
-                        ChatHubState.hashingError = 'Failed to initiate file hashing. Check path.';
+                        ChatHubState.hashingError = 'Failed to initiate file hashing. Check the path and try again.';
                         m.redraw();
                       }
                     });
                   }
-                }, 'Attach'),
+                }, [m('i.fas.fa-link'), m('span', ' Attach')]),
                 m('button.btn.red', {
                   disabled: ChatHubState.isHashing,
                   onclick: () => {
                     ChatHubState.showAttachModal = false;
                     ChatHubState.attachPath = '';
+                    ChatHubState.attachBrowseHint = false;
                     ChatHubState.hashingError = '';
                   }
                 }, 'Cancel')
