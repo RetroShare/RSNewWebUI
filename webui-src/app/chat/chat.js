@@ -247,6 +247,15 @@ const Message = () => {
         }
       }
 
+      const isMuted = ChatHubState.mutedUsers && ChatHubState.mutedUsers.has(gxsId);
+      const details = ChatHubState.gxsDetails[gxsId];
+      const opinion = details && details.mReputation ? details.mReputation.mOwnOpinion : 1;
+      const isBanned = opinion === 0;
+
+      if (isMuted || isBanned) {
+        return null;
+      }
+
       let username = rs.userList.username(gxsId) || msg.peerName || '???';
       // If we only have the hex ID, try to fallback to the peerName from the message
       if (username === gxsId && msg.peerName) {
@@ -695,8 +704,10 @@ const ChatHubState = {
   newRoomTopic: '',
   newRoomIdentity: '',
   newRoomPublic: true,
+  newRoomSigned: false,
   ownGxsIdentities: [],
   createRoomError: '',
+  userSortMethod: 'name',
 };
 
 // ========================= Emoji Data =========================
@@ -1240,109 +1251,160 @@ const ChatConversationView = () => {
         ]),
         m('.chat-hub-rightbar', [
           m('.rightbar-title', 'Participants'),
-          m('.rightbar-users-list', ChatLobbyModel.users.map((user) => {
-            const gxsId = user.key;
-            const name = user.name;
-
-            // Load details for avatar if not cached
-            if (gxsId && ChatHubState.gxsDetails[gxsId] === undefined) {
-              ChatHubState.gxsDetails[gxsId] = null; // Mark as loading
-              rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: gxsId }, (data) => {
-                if (data && data.details) {
-                  ChatHubState.gxsDetails[gxsId] = data.details;
-                  m.redraw();
-                }
-              });
+          m('.rightbar-users-list', (() => {
+            const sortedUsers = [...ChatLobbyModel.users];
+            if (ChatHubState.userSortMethod === 'activity') {
+              sortedUsers.sort((a, b) => b.lastAct - a.lastAct);
+            } else {
+              sortedUsers.sort((a, b) => a.name.localeCompare(b.name));
             }
+            return sortedUsers.map((user) => {
+              const gxsId = user.key;
+              const name = user.name;
 
-            const details = ChatHubState.gxsDetails[gxsId];
-            const avatar = getSafeAvatar(details);
-            const firstLetter = (name || '?').slice(0, 1).toUpperCase();
-
-            // Calculate status color and tooltip
-            const now = Math.floor(Date.now() / 1000);
-            const tLastAct = user.lastAct || 0;
-            const isOwn = gxsId === rs.idToHex(ChatLobbyModel.currentLobby.gxs_id || '');
-            const isMuted = ChatHubState.mutedUsers && ChatHubState.mutedUsers.has(gxsId);
-
-            let statusColor = '#22c55e'; // active (green)
-            let statusTooltip = 'Active';
-
-            if (isMuted) {
-              statusColor = '#ef4444'; // muted (red)
-              statusTooltip = 'Muted';
-            } else if (isOwn) {
-              statusColor = '#3ba4d7'; // own identity (blue)
-              statusTooltip = 'You';
-            } else if (tLastAct + 600 < now) {
-              statusColor = '#cbd5e1'; // inactive > 10 mins (grey)
-              statusTooltip = 'Inactive';
-            } else if (tLastAct + 300 < now) {
-              statusColor = '#eab308'; // away > 5 mins (yellow)
-              statusTooltip = 'Away';
-            }
-
-            return m('.user', {
-              onmouseenter: (e) => {
-                if (ChatHubState.activeMenu) return; // skip tooltip if menu is open
-                const rect = e.currentTarget.getBoundingClientRect();
-                const rightbar = document.querySelector('.chat-hub-rightbar');
-                if (rightbar) {
-                  const parentRect = rightbar.getBoundingClientRect();
-                  const top = rect.top - parentRect.top + rect.height / 2;
-                  ChatHubState.hoveredUser = { gxsId, name, top };
-                }
-              },
-              onmouseleave: () => {
-                ChatHubState.hoveredUser = null;
-              },
-              onclick: (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                ChatHubState.hoveredUser = null; // hide tooltip
-
-                const rect = e.currentTarget.getBoundingClientRect();
-                const rightbar = document.querySelector('.chat-hub-rightbar');
-                if (rightbar) {
-                  const parentRect = rightbar.getBoundingClientRect();
-                  const top = rect.bottom - parentRect.top;
-                  if (ChatHubState.activeMenu && ChatHubState.activeMenu.gxsId === gxsId) {
-                    ChatHubState.activeMenu = null;
-                  } else {
-                    ChatHubState.activeMenu = { gxsId, name, top };
+              // Load details for avatar if not cached
+              if (gxsId && ChatHubState.gxsDetails[gxsId] === undefined) {
+                ChatHubState.gxsDetails[gxsId] = null; // Mark as loading
+                rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: gxsId }, (data) => {
+                  if (data && data.details) {
+                    ChatHubState.gxsDetails[gxsId] = data.details;
+                    m.redraw();
                   }
-                  m.redraw();
-                }
-              },
-              oncontextmenu: (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                ChatHubState.hoveredUser = null; // hide tooltip
-
-                const rect = e.currentTarget.getBoundingClientRect();
-                const rightbar = document.querySelector('.chat-hub-rightbar');
-                if (rightbar) {
-                  const parentRect = rightbar.getBoundingClientRect();
-                  const top = rect.bottom - parentRect.top;
-                  ChatHubState.activeMenu = { gxsId, name, top };
-                  m.redraw();
-                }
+                });
               }
-            }, [
-              m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: gxsId, size: 32 }),
-              m('span.user-name', name),
-              statusColor !== '#22c55e' && m('i.fas.fa-circle', {
-                style: {
-                  color: statusColor,
-                  fontSize: '0.65rem',
-                  marginLeft: 'auto',
-                  flexShrink: 0,
-                  transition: 'color 0.3s ease',
+
+              const details = ChatHubState.gxsDetails[gxsId];
+              const avatar = getSafeAvatar(details);
+              const firstLetter = (name || '?').slice(0, 1).toUpperCase();
+
+              const opinion = details && details.mReputation ? details.mReputation.mOwnOpinion : 1;
+              const isBanned = opinion === 0;
+              if (isBanned) return null;
+
+              // Calculate status color and tooltip
+              const now = Math.floor(Date.now() / 1000);
+              const tLastAct = user.lastAct || 0;
+              const isOwn = gxsId === rs.idToHex(ChatLobbyModel.currentLobby.gxs_id || '');
+              const isMuted = ChatHubState.mutedUsers && ChatHubState.mutedUsers.has(gxsId);
+
+              let statusColor = '#22c55e'; // active (green)
+              let statusTooltip = 'Active';
+
+              if (isMuted) {
+                statusColor = '#ef4444'; // muted (red)
+                statusTooltip = 'Muted';
+              } else if (isOwn) {
+                statusColor = '#3ba4d7'; // own identity (blue)
+                statusTooltip = 'You';
+              } else if (tLastAct + 600 < now) {
+                statusColor = '#cbd5e1'; // inactive > 10 mins (grey)
+                statusTooltip = 'Inactive';
+              } else if (tLastAct + 300 < now) {
+                statusColor = '#eab308'; // away > 5 mins (yellow)
+                statusTooltip = 'Away';
+              }
+
+              return m('.user', {
+                onmouseenter: (e) => {
+                  if (ChatHubState.activeMenu) return; // skip tooltip if menu is open
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const rightbar = document.querySelector('.chat-hub-rightbar');
+                  if (rightbar) {
+                    const parentRect = rightbar.getBoundingClientRect();
+                    const top = rect.top - parentRect.top + rect.height / 2;
+                    ChatHubState.hoveredUser = { gxsId, name, top };
+                  }
                 },
-                title: statusTooltip
-              })
-            ]);
-          })),
+                onmouseleave: () => {
+                  ChatHubState.hoveredUser = null;
+                },
+                onclick: (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  ChatHubState.hoveredUser = null; // hide tooltip
+
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const rightbar = document.querySelector('.chat-hub-rightbar');
+                  if (rightbar) {
+                    const parentRect = rightbar.getBoundingClientRect();
+                    const itemBottom = rect.bottom - parentRect.top;
+                    const estimatedMenuHeight = 310;
+                    let top = itemBottom;
+                    if (itemBottom + estimatedMenuHeight > parentRect.height) {
+                      top = rect.top - parentRect.top - estimatedMenuHeight;
+                      if (top < 10) top = 10;
+                    }
+                    if (ChatHubState.activeMenu && ChatHubState.activeMenu.gxsId === gxsId) {
+                      ChatHubState.activeMenu = null;
+                    } else {
+                      ChatHubState.activeMenu = { gxsId, name, top };
+                    }
+                    m.redraw();
+                  }
+                },
+                oncontextmenu: (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  ChatHubState.hoveredUser = null; // hide tooltip
+
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const rightbar = document.querySelector('.chat-hub-rightbar');
+                  if (rightbar) {
+                    const parentRect = rightbar.getBoundingClientRect();
+                    const itemBottom = rect.bottom - parentRect.top;
+                    const estimatedMenuHeight = 310;
+                    let top = itemBottom;
+                    if (itemBottom + estimatedMenuHeight > parentRect.height) {
+                      top = rect.top - parentRect.top - estimatedMenuHeight;
+                      if (top < 10) top = 10;
+                    }
+                    ChatHubState.activeMenu = { gxsId, name, top };
+                    m.redraw();
+                  }
+                }
+              }, [
+                m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: gxsId, size: 32 }),
+                m('span.user-name', name),
+                (() => {
+                  if (isBanned) {
+                    return m('i.fas.fa-ban', {
+                      style: {
+                        color: '#ef4444',
+                        fontSize: '0.85rem',
+                        marginLeft: 'auto',
+                        flexShrink: 0,
+                      },
+                      title: 'Banned'
+                    });
+                  }
+                  if (isMuted) {
+                    return m('i.fas.fa-volume-mute', {
+                      style: {
+                        color: '#ef4444',
+                        fontSize: '0.85rem',
+                        marginLeft: 'auto',
+                        flexShrink: 0,
+                      },
+                      title: 'Muted'
+                    });
+                  }
+                  if (statusColor !== '#22c55e') {
+                    return m('i.fas.fa-circle', {
+                      style: {
+                        color: statusColor,
+                        fontSize: '0.65rem',
+                        marginLeft: 'auto',
+                        flexShrink: 0,
+                        transition: 'color 0.3s ease',
+                      },
+                      title: statusTooltip
+                    });
+                  }
+                  return null;
+                })()
+              ]);
+            });
+          })()),
           ChatHubState.hoveredUser && (() => {
             const hUser = ChatHubState.hoveredUser;
             const details = ChatHubState.gxsDetails[hUser.gxsId];
@@ -1392,6 +1454,64 @@ const ChatConversationView = () => {
                 e.stopPropagation();
               }
             }, [
+              m('.menu-item', {
+                onclick: () => {
+                  ChatHubState.userSortMethod = 'activity';
+                  ChatHubState.activeMenu = null;
+                  m.redraw();
+                }
+              }, [
+                m('i.fas.fa-circle', {
+                  style: {
+                    color: '#000',
+                    marginRight: '0.5rem',
+                    fontSize: '0.4rem',
+                    width: '18px',
+                    textAlign: 'center',
+                    visibility: ChatHubState.userSortMethod === 'activity' ? 'visible' : 'hidden'
+                  }
+                }),
+                'Sort by Activity'
+              ]),
+              m('.menu-item', {
+                onclick: () => {
+                  ChatHubState.userSortMethod = 'name';
+                  ChatHubState.activeMenu = null;
+                  m.redraw();
+                }
+              }, [
+                m('i.fas.fa-circle', {
+                  style: {
+                    color: '#000',
+                    marginRight: '0.5rem',
+                    fontSize: '0.4rem',
+                    width: '18px',
+                    textAlign: 'center',
+                    visibility: ChatHubState.userSortMethod === 'name' ? 'visible' : 'hidden'
+                  }
+                }),
+                'Sort by Name'
+              ]),
+              m('hr', { style: 'margin: 0.25rem 0; border: none; border-top: 1px solid #e2e8f0;' }),
+              !isOwn && m('.menu-item', {
+                onclick: () => {
+                  ChatHubState.activeMenu = null;
+                  people.setSelectedId(menu.gxsId, 'chat');
+                }
+              }, [
+                m('i.fas.fa-comments', { style: 'color: #3b82f6; margin-right: 0.5rem; width: 18px; text-align: center;' }),
+                'Start private chat'
+              ]),
+              !isOwn && m('.menu-item', {
+                onclick: () => {
+                  ChatHubState.activeMenu = null;
+                  people.setSelectedId(menu.gxsId, 'details', true);
+                }
+              }, [
+                m('i.fas.fa-envelope', { style: 'color: #10b981; margin-right: 0.5rem; width: 18px; text-align: center;' }),
+                'Send Message'
+              ]),
+              !isOwn && m('hr', { style: 'margin: 0.25rem 0; border: none; border-top: 1px solid #e2e8f0;' }),
               !isOwn && m('.menu-item', {
                 onclick: () => {
                   if (isMuted) {
@@ -1403,26 +1523,83 @@ const ChatConversationView = () => {
                   m.redraw();
                 }
               }, [
-                m('i.fas.fa-volume-mute', { style: 'color: #ef4444; margin-right: 0.5rem;' }),
+                m('i', {
+                  class: isMuted ? 'fas fa-volume-up' : 'fas fa-volume-mute',
+                  style: {
+                    color: isMuted ? '#22c55e' : '#ef4444',
+                    marginRight: '0.5rem',
+                    fontSize: '0.95rem',
+                    width: '18px',
+                    textAlign: 'center'
+                  }
+                }),
                 isMuted ? 'Unmute participant' : 'Mute participant'
               ]),
               !isOwn && m('.menu-item', {
                 onclick: () => {
                   ChatHubState.activeMenu = null;
-                  people.setSelectedId(menu.gxsId, 'chat');
+                  rs.rsJsonApiRequest('/rsreputations/setOwnOpinion', { id: menu.gxsId, opinion: 2 }, (data, success) => {
+                    if (success) {
+                      if (!ChatHubState.gxsDetails[menu.gxsId]) ChatHubState.gxsDetails[menu.gxsId] = { mReputation: {} };
+                      if (!ChatHubState.gxsDetails[menu.gxsId].mReputation) ChatHubState.gxsDetails[menu.gxsId].mReputation = {};
+                      ChatHubState.gxsDetails[menu.gxsId].mReputation.mOwnOpinion = 2;
+                      m.redraw();
+                      rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: menu.gxsId }, (d) => {
+                        if (d && d.details) {
+                          ChatHubState.gxsDetails[menu.gxsId] = d.details;
+                          m.redraw();
+                        }
+                      });
+                    }
+                  });
                 }
               }, [
-                m('i.fas.fa-comments', { style: 'color: #3b82f6; margin-right: 0.5rem;' }),
-                'Start private chat'
+                m('span', { style: 'background-color: #22c55e; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; margin-right: 0.5rem; font-size: 0.7rem; color: #ffffff;' }, m('i.fas.fa-thumbs-up')),
+                'Give positive opinion'
               ]),
               !isOwn && m('.menu-item', {
                 onclick: () => {
                   ChatHubState.activeMenu = null;
-                  people.setSelectedId(menu.gxsId, 'details', true);
+                  rs.rsJsonApiRequest('/rsreputations/setOwnOpinion', { id: menu.gxsId, opinion: 1 }, (data, success) => {
+                    if (success) {
+                      if (!ChatHubState.gxsDetails[menu.gxsId]) ChatHubState.gxsDetails[menu.gxsId] = { mReputation: {} };
+                      if (!ChatHubState.gxsDetails[menu.gxsId].mReputation) ChatHubState.gxsDetails[menu.gxsId].mReputation = {};
+                      ChatHubState.gxsDetails[menu.gxsId].mReputation.mOwnOpinion = 1;
+                      m.redraw();
+                      rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: menu.gxsId }, (d) => {
+                        if (d && d.details) {
+                          ChatHubState.gxsDetails[menu.gxsId] = d.details;
+                          m.redraw();
+                        }
+                      });
+                    }
+                  });
                 }
               }, [
-                m('i.fas.fa-envelope', { style: 'color: #10b981; margin-right: 0.5rem;' }),
-                'Send Message'
+                m('span', { style: 'background-color: #f59e0b; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; margin-right: 0.5rem; font-size: 0.7rem; color: #ffffff;' }, m('i.fas.fa-hand-paper')),
+                'Give neutral opinion'
+              ]),
+              !isOwn && m('.menu-item', {
+                onclick: () => {
+                  ChatHubState.activeMenu = null;
+                  rs.rsJsonApiRequest('/rsreputations/setOwnOpinion', { id: menu.gxsId, opinion: 0 }, (data, success) => {
+                    if (success) {
+                      if (!ChatHubState.gxsDetails[menu.gxsId]) ChatHubState.gxsDetails[menu.gxsId] = { mReputation: {} };
+                      if (!ChatHubState.gxsDetails[menu.gxsId].mReputation) ChatHubState.gxsDetails[menu.gxsId].mReputation = {};
+                      ChatHubState.gxsDetails[menu.gxsId].mReputation.mOwnOpinion = 0;
+                      m.redraw();
+                      rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: menu.gxsId }, (d) => {
+                        if (d && d.details) {
+                          ChatHubState.gxsDetails[menu.gxsId] = d.details;
+                          m.redraw();
+                        }
+                      });
+                    }
+                  });
+                }
+              }, [
+                m('span', { style: 'background-color: #ef4444; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; margin-right: 0.5rem; font-size: 0.7rem; color: #ffffff;' }, m('i.fas.fa-thumbs-down')),
+                'Ban this person (Sets negative opinion)'
               ]),
               m('.menu-item', {
                 onclick: () => {
@@ -1430,7 +1607,7 @@ const ChatConversationView = () => {
                   people.setSelectedId(menu.gxsId, 'details');
                 }
               }, [
-                m('i.fas.fa-user', { style: 'color: #8b5cf6; margin-right: 0.5rem;' }),
+                m('i.fas.fa-user', { style: 'color: #8b5cf6; margin-right: 0.5rem; width: 18px; text-align: center;' }),
                 'Show author in people tab'
               ])
             ]);
@@ -1803,11 +1980,23 @@ const Layout = {
             ]),
 
             m('.form-field', { style: 'display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem;' }, [
-              m('input[type=checkbox]', {
-                checked: ChatHubState.newRoomPublic,
-                onclick: (e) => { ChatHubState.newRoomPublic = e.target.checked; }
-              }),
-              m('label', { style: 'font-size: 0.9rem; color: #475569;' }, 'Public Room')
+              m('label', { style: 'display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #475569; cursor: pointer; user-select: none;' }, [
+                m('input[type=checkbox]', {
+                  checked: ChatHubState.newRoomPublic,
+                  onclick: (e) => { ChatHubState.newRoomPublic = e.target.checked; }
+                }),
+                'Public Room'
+              ])
+            ]),
+
+            m('.form-field', { style: 'display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;' }, [
+              m('label', { style: 'display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #475569; cursor: pointer; user-select: none;' }, [
+                m('input[type=checkbox]', {
+                  checked: ChatHubState.newRoomSigned,
+                  onclick: (e) => { ChatHubState.newRoomSigned = e.target.checked; }
+                }),
+                'PGP signed identities'
+              ])
             ]),
 
             ChatHubState.createRoomError && m('p.error-text', { style: 'color: #ef4444; font-size: 0.85rem; margin: 0.5rem 0 0 0;' }, ChatHubState.createRoomError),
@@ -1820,7 +2009,10 @@ const Layout = {
                   const topic = ChatHubState.newRoomTopic.trim();
                   const identity = ChatHubState.newRoomIdentity;
                   const isPublic = ChatHubState.newRoomPublic;
-                  const flags = isPublic ? 4 : 0; // RS_CHAT_LOBBY_FLAGS_PUBLIC
+                  const isSigned = ChatHubState.newRoomSigned;
+                  let flags = 0;
+                  if (isPublic) flags |= 4; // RS_CHAT_LOBBY_FLAGS_PUBLIC
+                  if (isSigned) flags |= 8; // RS_CHAT_LOBBY_FLAGS_SIGNED_ONLY
                   
                   rs.rsJsonApiRequest('/rsChats/createChatLobby', {
                     lobby_name: name,
@@ -1833,6 +2025,7 @@ const Layout = {
                       ChatHubState.showCreateRoomModal = false;
                       ChatHubState.newRoomName = '';
                       ChatHubState.newRoomTopic = '';
+                      ChatHubState.newRoomSigned = false;
                       ChatHubState.createRoomError = '';
                       // Refresh rooms list
                       ChatRoomsModel.loadSubscribedRooms();
@@ -1849,6 +2042,7 @@ const Layout = {
                   ChatHubState.showCreateRoomModal = false;
                   ChatHubState.newRoomName = '';
                   ChatHubState.newRoomTopic = '';
+                  ChatHubState.newRoomSigned = false;
                   ChatHubState.createRoomError = '';
                 }
               }, 'Cancel')

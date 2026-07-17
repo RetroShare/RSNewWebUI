@@ -12,6 +12,7 @@ const channels = require('channels/channels');
 const forums = require('forums/forums');
 const boards = require('boards/boards');
 const config = require('config/config_resolver');
+const statusbar = require('statusbar');
 
 const navIcon = {
   home: m('i.fas.fa-home.sidenav-icon'),
@@ -127,7 +128,10 @@ const Layout = () => {
             config: '/config/network',
           },
         }),
-        m('.tab-content', vnode.children),
+        m('.main-container', { style: { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflow: 'hidden' } }, [
+          m('.tab-content', { style: { flex: '1', overflow: 'auto' } }, vnode.children),
+          m(statusbar)
+        ]),
       ]),
   };
 };
