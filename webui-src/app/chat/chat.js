@@ -708,6 +708,9 @@ const ChatHubState = {
   ownGxsIdentities: [],
   createRoomError: '',
   userSortMethod: 'name',
+  showInviteModal: false,
+  friendsList: [],
+  selectedFriendsToInvite: new Set(),
 };
 
 // ========================= Emoji Data =========================
@@ -926,6 +929,33 @@ const PublicLobbies = {
 
 // ************************* Chat Hub Sub-Components ****************************
 
+function loadFriendsForInvite() {
+  ChatHubState.friendsList = [];
+  rs.rsJsonApiRequest('/rsPeers/getFriendList', {}, (data) => {
+    if (data && data.sslIds) {
+      data.sslIds.forEach((sslId) => {
+        rs.rsJsonApiRequest('/rsPeers/getPeerDetails', { sslId }, (detData) => {
+          if (detData && detData.det) {
+            rs.rsJsonApiRequest('/rsPeers/isOnline', { sslId }, (onlineData) => {
+              ChatHubState.friendsList.push({
+                id: sslId,
+                name: detData.det.name,
+                online: onlineData ? onlineData.retval : false
+              });
+              // Sort online friends first, then alphabetical name
+              ChatHubState.friendsList.sort((a, b) => {
+                if (a.online !== b.online) return a.online ? -1 : 1;
+                return a.name.localeCompare(b.name);
+              });
+              m.redraw();
+            });
+          }
+        });
+      });
+    }
+  });
+}
+
 const ChatRoomHeader = () => {
   return {
     view: (vnode) => {
@@ -975,21 +1005,35 @@ const ChatRoomHeader = () => {
                 },
                 [m('i.fas.fa-sign-out-alt'), ' Leave Chat']
               )
-            : m(
-                'button.red',
-                {
-                  title: 'Leave Room',
-                  onclick: () => {
-                    ChatLobbyModel.unsubscribeChatLobby(lobbyHexId, () => {
-                      ChatHubState.selectedRoom = null;
-                      ChatHubState.selectedRoomId = null;
-                      ChatHubState.selectedRoomType = null;
-                      m.route.set('/chat');
-                    });
+            : [
+                m(
+                  'button',
+                  {
+                    title: 'Invite friends to this room',
+                    style: 'margin-right: 0.75rem;',
+                    onclick: () => {
+                      ChatHubState.showInviteModal = true;
+                      loadFriendsForInvite();
+                    }
                   },
-                },
-                [m('i.fas.fa-sign-out-alt'), ' Leave']
-              ),
+                  [m('i.fas.fa-user-plus'), ' Invite']
+                ),
+                m(
+                  'button.red',
+                  {
+                    title: 'Leave Room',
+                    onclick: () => {
+                      ChatLobbyModel.unsubscribeChatLobby(lobbyHexId, () => {
+                        ChatHubState.selectedRoom = null;
+                        ChatHubState.selectedRoomId = null;
+                        ChatHubState.selectedRoomType = null;
+                        m.route.set('/chat');
+                      });
+                    },
+                  },
+                  [m('i.fas.fa-sign-out-alt'), ' Leave']
+                )
+              ],
         ]),
       ]);
     },
@@ -2002,7 +2046,7 @@ const Layout = {
             ChatHubState.createRoomError && m('p.error-text', { style: 'color: #ef4444; font-size: 0.85rem; margin: 0.5rem 0 0 0;' }, ChatHubState.createRoomError),
 
             m('.modal-buttons', { style: 'display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;' }, [
-              m('button.btn.blue', {
+              m('button', {
                 disabled: !ChatHubState.newRoomName.trim() || !ChatHubState.newRoomIdentity,
                 onclick: () => {
                   const name = ChatHubState.newRoomName.trim();
@@ -2037,13 +2081,81 @@ const Layout = {
                   });
                 }
               }, 'Create'),
-              m('button.btn.red', {
+              m('button.red', {
                 onclick: () => {
                   ChatHubState.showCreateRoomModal = false;
                   ChatHubState.newRoomName = '';
                   ChatHubState.newRoomTopic = '';
                   ChatHubState.newRoomSigned = false;
                   ChatHubState.createRoomError = '';
+                }
+              }, 'Cancel')
+            ])
+          ])
+        ]),
+        ChatHubState.showInviteModal && m('.attach-modal-overlay', [
+          m('.attach-modal', { style: 'max-width: 450px;' }, [
+            m('h4', 'Invite Friends to ' + (ChatHubState.selectedRoom ? ChatHubState.selectedRoom.lobby_name : '')),
+            m('.friends-invite-list', { style: 'max-height: 250px; overflow-y: auto; margin-top: 1rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.5rem;' }, [
+              ChatHubState.friendsList.length === 0
+                ? m('p', { style: 'text-align: center; color: #64748b; font-style: italic; margin: 1rem 0;' }, 'No friends available')
+                : ChatHubState.friendsList.map((friend) => {
+                    const isChecked = ChatHubState.selectedFriendsToInvite.has(friend.id);
+                    return m('.friend-invite-item', {
+                      style: 'display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid #f1f5f9; cursor: pointer;',
+                      onclick: () => {
+                        if (isChecked) {
+                          ChatHubState.selectedFriendsToInvite.delete(friend.id);
+                        } else {
+                          ChatHubState.selectedFriendsToInvite.add(friend.id);
+                        }
+                      }
+                    }, [
+                      m('div', { style: 'display: flex; align-items: center; gap: 0.5rem;' }, [
+                        m('.status-bullet', { style: { backgroundColor: friend.online ? '#22c55e' : '#94a3b8', width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block' } }),
+                        m('span', { style: 'font-weight: 500;' }, friend.name)
+                      ]),
+                      m('input[type=checkbox]', {
+                        checked: isChecked,
+                        onclick: (e) => {
+                          e.stopPropagation();
+                          if (e.target.checked) {
+                            ChatHubState.selectedFriendsToInvite.add(friend.id);
+                          } else {
+                            ChatHubState.selectedFriendsToInvite.delete(friend.id);
+                          }
+                        }
+                      })
+                    ]);
+                  })
+            ]),
+            m('.modal-buttons', { style: 'display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;' }, [
+              m('button', {
+                disabled: ChatHubState.selectedFriendsToInvite.size === 0,
+                onclick: () => {
+                  const lobbyHexId = rs.idToHex(ChatHubState.selectedRoom.lobby_id);
+                  const invitePromises = [];
+                  ChatHubState.selectedFriendsToInvite.forEach((friendId) => {
+                    invitePromises.push(
+                      new Promise((resolve) => {
+                        rs.rsJsonApiRequest('/rsChats/invitePeerToLobby', {
+                          lobby_id: lobbyHexId,
+                          peer_id: friendId
+                        }, () => resolve());
+                      })
+                    );
+                  });
+                  Promise.all(invitePromises).then(() => {
+                    ChatHubState.showInviteModal = false;
+                    ChatHubState.selectedFriendsToInvite.clear();
+                    m.redraw();
+                  });
+                }
+              }, 'Invite'),
+              m('button.red', {
+                onclick: () => {
+                  ChatHubState.showInviteModal = false;
+                  ChatHubState.selectedFriendsToInvite.clear();
                 }
               }, 'Cancel')
             ])

@@ -5,6 +5,7 @@ const Reputation = () => {
   let addFriendIdAsContacts = undefined;
   let usePositiveDefault = undefined;
   let deleteBannedAfter = undefined;
+  let rememberBannedAfter = undefined;
   let negativeThreshold = undefined;
   let positiveThreshold = undefined;
 
@@ -24,6 +25,11 @@ const Reputation = () => {
         '/rsIdentity/deleteBannedNodesThreshold',
         {},
         (data) => (deleteBannedAfter = data.retval)
+      );
+      rs.rsJsonApiRequest(
+        '/rsreputations/rememberBannedIdThreshold',
+        {},
+        (data) => (rememberBannedAfter = data.retval)
       );
       rs.rsJsonApiRequest(
         '/rsreputations/thresholdForRemotelyPositiveReputation',
@@ -95,7 +101,7 @@ const Reputation = () => {
                   () => {}
                 ),
             }),
-            m('p', 'Delete banned identities after(in days, 0 means indefinitely):'),
+            m('p', 'Delete banned identities after(0 means never):'),
             m('input[type=number]', {
               oninput: (e) => (deleteBannedAfter = parseInt(e.target.value)),
               value: deleteBannedAfter,
@@ -104,6 +110,19 @@ const Reputation = () => {
                   '/rsIdentity/setDeleteBannedNodesThreshold',
                   {
                     days: deleteBannedAfter,
+                  },
+                  () => {}
+                ),
+            }),
+            m('p', 'Reset reputation of banned identities after (0 means never):'),
+            m('input[type=number]', {
+              oninput: (e) => (rememberBannedAfter = parseInt(e.target.value)),
+              value: rememberBannedAfter,
+              onchange: () =>
+                rs.rsJsonApiRequest(
+                  '/rsreputations/setRememberBannedIdThreshold',
+                  {
+                    days: rememberBannedAfter,
                   },
                   () => {}
                 ),

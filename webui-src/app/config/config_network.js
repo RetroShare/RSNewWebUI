@@ -328,40 +328,44 @@ const SetSocksProxy = () => {
       });
     },
     view: () =>
-      m('.proxy-server', [
+      m('.proxy-server-container', [
         m(
-          'p',
+          'p.proxy-description',
           'Configure your TOR and I2P SOCKS proxy here. It will allow you to also connect to hidden nodes.'
         ),
-        Object.keys(socksProxyObj).map((proxyItem) => {
-          return m(`.proxy-server__${proxyItem}`, [
-            m('h6', `${proxyItem.toUpperCase()} Socks Proxy: `),
-            m('input[type=text]', {
-              value: socksProxyObj[proxyItem].addr,
-              oninput: (e) => (socksProxyObj[proxyItem].addr = e.target.value),
-              onchange: () => handleProxyChange(proxyItem),
-            }),
-            m('input[type=number]', {
-              value: socksProxyObj[proxyItem].port,
-              oninput: (e) => (socksProxyObj[proxyItem].port = parseInt(e.target.value)),
-              onchange: () => handleProxyChange(proxyItem),
-            }),
-            socksProxyObj[proxyItem].outgoing !== undefined &&
-              m('.proxy-outgoing', [
-                m('.proxy-outgoing__status', {
-                  style: {
-                    backgroundColor: socksProxyObj[proxyItem].outgoing ? '#00dd44' : '#808080',
-                  },
-                }),
-                m(
-                  'p',
-                  `${proxyItem.toUpperCase()} outgoing ${
-                    socksProxyObj[proxyItem].outgoing ? 'on' : 'off'
-                  }`
-                ),
-              ]),
-          ]);
-        }),
+        m('.proxy-rows-container', 
+          Object.keys(socksProxyObj).map((proxyItem) => {
+            const isTor = proxyItem === 'tor';
+            const labelText = isTor ? 'TOR Socks Proxy:' : 'I2P Socks Proxy:';
+            const outgoingText = isTor ? 'TOR outgoing' : 'I2P outgoing';
+            const isOutgoing = socksProxyObj[proxyItem].outgoing;
+            return m('.proxy-row', [
+              m('label.proxy-label', labelText),
+              m('input[type=text].proxy-addr-input', {
+                value: socksProxyObj[proxyItem].addr,
+                oninput: (e) => (socksProxyObj[proxyItem].addr = e.target.value),
+                onchange: () => handleProxyChange(proxyItem),
+              }),
+              m('input[type=number].proxy-port-input', {
+                value: socksProxyObj[proxyItem].port,
+                oninput: (e) => (socksProxyObj[proxyItem].port = parseInt(e.target.value)),
+                onchange: () => handleProxyChange(proxyItem),
+              }),
+              socksProxyObj[proxyItem].outgoing !== undefined &&
+                m('.proxy-status-container', [
+                  m('.proxy-status-bullet', {
+                    style: {
+                      backgroundColor: isOutgoing ? '#22c55e' : '#808080',
+                    },
+                  }),
+                  m(
+                    'span.proxy-status-text',
+                    `${outgoingText} ${isOutgoing ? 'on' : 'off'}`
+                  ),
+                ]),
+            ]);
+          })
+        ),
       ]),
   };
 };
@@ -397,7 +401,7 @@ const Component = () => {
             m(displayIPAddresses, { details }),
           ]),
           m('.widget__heading', m('h3', 'Hidden Service Configuration')),
-          m('.widget__body', [m('.grid-2col', [m(SetSocksProxy)])]),
+          m('.widget__body', [m(SetSocksProxy)]),
         ]),
       ]),
   };
