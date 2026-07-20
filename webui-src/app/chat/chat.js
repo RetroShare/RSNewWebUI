@@ -2,858 +2,95 @@ const m = require('mithril');
 const rs = require('rswebui');
 const peopleUtil = require('people/people_util');
 const people = require('people/people');
+const chatState = require('chat/chat_state');
+const chatEmoji = require('chat/chat_emoji');
 
-// **************** utility functions ********************
+const {
+  get64Num,
+  loadLobbyDetails,
+  loadDistantChatDetails,
+  sortLobbies,
+  getNicknameColor,
+  getStatusColor,
+  getStatusTooltip,
+  renderTextWithEmoji,
+  getSafeAvatar,
+  MobileState,
+  ChatRoomsModel,
+  Message,
+  ChatLobbyModel,
+  ChatHubState,
+} = chatState;
 
-function get64Num(val) {
-  if (!val) return 0;
-  if (typeof val === 'object') {
-    return val.xint64 || parseInt(val.xstr64) || 0;
-  }
-  return Number(val) || 0;
-}
+chatEmoji.setDependencies({ ChatHubState });
 
-function loadLobbyDetails(id, apply) {
-  rs.rsJsonApiRequest(
-    '/rsChats/getChatLobbyInfo',
-    {
-      id: { xstr64: id },
-    },
-    (detail, success) => {
-      if (success && detail.retval) {
-        detail.info.chatType = 3; // LOBBY
-        apply(detail.info);
-      } else {
-        apply(null);
-      }
-    },
-    true
-  );
-}
-
-function loadDistantChatDetails(pid, apply) {
-  // pid is DistantChatPeerId (uint32)
-  rs.rsJsonApiRequest(
-    '/rsChats/getDistantChatStatus',
-    {
-      pid: pid,
-    },
-    (detail, success) => {
-      if (success && detail.retval) {
-        // Map to lobby-like structure for UI compatibility
-        const info = detail.info;
-        info.chatType = 2; // DISTANT (matches TYPE_PRIVATE_DISTANT in rschats.h)
-        info.lobby_name = rs.userList.username(info.to_id) || 'Distant Chat ' + pid;
-        info.lobby_topic = 'Private Encrypted Chat';
-        info.gxs_id = info.own_id;
-        info.lobby_id = pid; // Distant IDs are 128-bit hex strings, NO xstr64 wrapper
-        apply(info);
-      } else {
-        apply(null);
-      }
-    },
-    true
-  );
-}
-
-function sortLobbies(lobbies) {
-  if (lobbies !== undefined && lobbies !== null) {
-    const list = [...lobbies];
-    list.sort((a, b) => a.lobby_name.localeCompare(b.lobby_name));
-    return list;
-  }
-  return []; // return empty array instead of undefined
-}
-
-function getNicknameColor(id, name) {
-  const hashString = id && id !== '00000000000000000000000000000000' ? id : (name || '');
-  let hash = 0;
-  for (let i = 0; i < hashString.length; i++) {
-    hash = hashString.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 75%, 35%)`;
-}
-
-// ***************************** models ***********************************
-
-const MobileState = {
-  showLobbies: false,
-  showUsers: false,
-  toggleLobbies() {
-    this.showLobbies = !this.showLobbies;
-    this.showUsers = false;
-  },
-  toggleUsers() {
-    this.showUsers = !this.showUsers;
-    this.showLobbies = false;
-  },
-  closeAll() {
-    this.showLobbies = false;
-    this.showUsers = false;
-  },
-};
-
-
-const ChatRoomsModel = {
-  allRooms: [],
-  knownSubscrIds: [], // to exclude subscribed from public rooms (subscribedRooms filled to late)
-  subscribedRooms: {},
-  loadPublicRooms() {
-    // TODO: this doesn't preserve id of rooms,
-    // use regex on response to extract ids.
-    rs.rsJsonApiRequest(
-      '/rsChats/getListOfNearbyChatLobbies',
-      {},
-      (data) => {
-        if (data && data.public_lobbies) {
-          // Deduplicate by ID to avoid double display if backend returns redundant info
-          const seen = new Set();
-          const uniqueLobbies = data.public_lobbies.filter((lobby) => {
-            const id = rs.idToHex(lobby.lobby_id);
-            if (seen.has(id)) return false;
-            seen.add(id);
-            return true;
-          });
-          ChatRoomsModel.allRooms = sortLobbies(uniqueLobbies);
-        } else {
-          // No public lobbies
-          ChatRoomsModel.allRooms = [];
-        }
-      }
-    );
-  },
-  loadSubscribedRooms(after = null) {
-    rs.rsJsonApiRequest(
-      '/rsChats/getChatLobbyList',
-      {},
-      (data) => {
-        if (data && data.cl_list) {
-          // Robust deduplication of IDs
-          const ids = [...new Set(data.cl_list.map((lid) => rs.idToHex(lid)))];
-          ChatRoomsModel.knownSubscrIds = ids;
-
-          // Remove stale entries that are no longer in the subscribed list
-          Object.keys(ChatRoomsModel.subscribedRooms).forEach((id) => {
-            if (!ids.includes(id)) {
-              delete ChatRoomsModel.subscribedRooms[id];
-            }
-          });
-
-          if (ids.length === 0) {
-            ChatRoomsModel.loadPublicRooms();
-            if (after != null) after();
-            m.redraw();
-            return;
-          }
-
-          let count = 0;
-          ids.forEach((id) =>
-            loadLobbyDetails(id, (info) => {
-              if (info) {
-                ChatRoomsModel.subscribedRooms[id] = info;
-              }
-              count++;
-              if (count === ids.length) {
-                ChatRoomsModel.loadPublicRooms(); // Load public rooms after we know all subscribed IDs
-                if (after != null) {
-                  after();
-                }
-                m.redraw();
-              }
-            })
-          );
-        } else {
-          // No subscribed lobbies
-          ChatRoomsModel.loadPublicRooms();
-        }
-      }
-    );
-  },
-  subscribed(info) {
-    return this.knownSubscrIds.includes(rs.idToHex(info.lobby_id));
-  },
-};
-
-/**
- * Wraps emoji characters in a span so CSS can size them independently.
- */
-function renderTextWithEmoji(text) {
-  if (!text) return '';
-  // Match emoji sequences (flags, ZWJ sequences, variation selectors, skin tones, etc.)
-  const emojiRegex = /(?:\p{Emoji_Presentation}|\p{Extended_Pictographic})(?:[\u{1F3FB}-\u{1F3FF}])?(?:\u{FE0F})?(?:\u{20E3})?(?:(?:\u{200D}(?:\p{Emoji_Presentation}|\p{Extended_Pictographic})(?:[\u{1F3FB}-\u{1F3FF}])?(?:\u{FE0F})?)*)/gu;
-  const parts = [];
-  let last = 0;
-  let match;
-  // eslint-disable-next-line no-cond-assign
-  while ((match = emojiRegex.exec(text)) !== null) {
-    if (match[0].length === 0) { emojiRegex.lastIndex++; continue; }
-    if (match.index > last) parts.push(text.slice(last, match.index));
-    parts.push(m('span.chat-emoji', match[0]));
-    last = match.index + match[0].length;
-  }
-  if (last < text.length) parts.push(text.slice(last));
-  return parts.length > 0 ? parts : text;
-}
-
-/**
- * Message displays a single Chat-Message<br>
- * currently removes formatting and in consequence inline links
- * msg: Message to Display
- */
-const Message = () => {
-  return {
-    view: (vnode) => {
-      const msg = vnode.attrs;
-      const datetime = new Date(msg.sendTime * 1000).toLocaleTimeString();
-      if (msg.isSystem) {
-        const text = msg.msg || msg.message;
-        const isSecured = text.includes('secured') || text.includes('talk');
-        const bgColor = isSecured ? '#fffbeb' : '#f8fafc';
-        const borderColor = isSecured ? '#fcd34d' : '#cbd5e1';
-        const textColor = isSecured ? '#b45309' : '#475569';
-        const borderStyle = isSecured ? 'solid' : 'dashed';
-
-        return m(
-          '.message.incoming',
-          [
-            m('span.datetime', datetime),
-            m('span.username', 'Chat status'),
-            m('.messagetext', {
-              style: {
-                backgroundColor: bgColor,
-                border: `1px ${borderStyle} ${borderColor}`,
-                color: textColor,
-                padding: '0.5rem 0.75rem',
-                borderRadius: '0.375rem',
-                display: 'inline-block',
-                marginTop: '0.25rem',
-              }
-            }, text)
-          ]
-        );
-      }
-      // Handle both HistoryMsg (peerId) and ChatMessage (lobby_peer_gxs_id)
-      const rawGxsId = msg.lobby_peer_gxs_id || msg.peerId;
-      let gxsId = rs.idToHex(rawGxsId);
-
-      // Fallback for 1-to-1 chats where sender ID might be missing (zeros)
-      const isZero = (id) => !id || id === '00000000000000000000000000000000';
-      if (isZero(gxsId)) {
-        const lobby = ChatLobbyModel.currentLobby;
-        // Types 1 (Private), 2 (Distant) are "private" conversations here
-        if (lobby && (lobby.chatType === 1 || lobby.chatType === 2)) {
-          gxsId = msg.incoming ? rs.idToHex(lobby.to_id || lobby.peer_id || lobby.distant_chat_id) : rs.idToHex(lobby.own_id || lobby.gxs_id);
-        }
-      }
-
-      const isMuted = ChatHubState.mutedUsers && ChatHubState.mutedUsers.has(gxsId);
-      const details = ChatHubState.gxsDetails[gxsId];
-      const opinion = details && details.mReputation ? details.mReputation.mOwnOpinion : 1;
-      const isBanned = opinion === 0;
-
-      if (isMuted || isBanned) {
-        return null;
-      }
-
-      let username = rs.userList.username(gxsId) || msg.peerName || '???';
-      // If we only have the hex ID, try to fallback to the peerName from the message
-      if (username === gxsId && msg.peerName) {
-        username = msg.peerName;
-      }
-      if (username === gxsId && gxsId && gxsId.length > 12) {
-        username = gxsId.substring(0, 8) + '...';
-      }
-      const text = (msg.msg || msg.message || '')
-        .replaceAll('<br/>', '\n')
-        .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
-
-      const chatType = ChatLobbyModel.currentLobby && ChatLobbyModel.currentLobby.chatType;
-      const isRoom = chatType === 3;
-
-      if (isRoom) {
-        const nickColor = getNicknameColor(gxsId, username);
-        return m(
-          '.message.compact',
-          m('span.datetime', datetime),
-          m('span.username', { style: { color: nickColor } }, username + ':'),
-          m('span.messagetext', renderTextWithEmoji(text))
-        );
-      }
-
-      return m(
-        '.message' + (msg.incoming ? '.incoming' : '.outgoing'),
-        m('span.datetime', datetime),
-        m('span.username', username),
-        m('span.messagetext', renderTextWithEmoji(text))
-      );
-    },
-  };
-};
-
-function getStatusColor(status) {
-  switch (status) {
-    case 1: return '#eab308'; // Yellow
-    case 2: return '#22c55e'; // Green
-    case 3: return '#ef4444'; // Red
-    default: return '#94a3b8'; // Grey
-  }
-}
-
-function getStatusTooltip(status) {
-  switch (status) {
-    case 1: return 'Tunnel is pending. Please wait...';
-    case 2: return 'End-to-end encrypted conversation established. You can talk!';
-    case 3: return 'Your partner closed the conversation.';
-    default: return 'Remote status unknown.';
-  }
-}
-
-const ChatLobbyModel = {
-  currentLobby: {
-    lobby_name: '...',
-  },
-  lobby_user: '...',
-  isSubscribed: false,
-  messages: [],
-  users: [],
-  messageKeys: new Set(),
-  lastLobbyId: null,
-  distantChatStatus: null,
-  statusPollInterval: null,
-
-  pollDistantChatStatus() {
-    if (!this.currentLobby || this.currentLobby.chatType !== 2) return;
-    rs.rsJsonApiRequest(
-      '/rsChats/getDistantChatStatus',
-      {
-        pid: this.currentLobby.lobby_id,
-      },
-      (detail, success) => {
-        if (success && detail.retval) {
-          const oldStatus = this.distantChatStatus ? this.distantChatStatus.status : null;
-          this.distantChatStatus = detail.info;
-
-          if (oldStatus !== null && oldStatus !== detail.info.status) {
-            if (detail.info.status === 2) {
-              this.addMessages([{
-                chat_id: this.chatId(),
-                isSystem: true,
-                msg: 'Tunnel is secured. You can talk!',
-                sendTime: Math.floor(Date.now() / 1000)
-              }]);
-            } else if (detail.info.status === 3) {
-              this.addMessages([{
-                chat_id: this.chatId(),
-                isSystem: true,
-                msg: 'Your partner closed the conversation.',
-                sendTime: Math.floor(Date.now() / 1000)
-              }]);
-            }
-          }
-          m.redraw();
-        }
-      }
-    );
-  },
-
-  startStatusPolling() {
-    this.stopStatusPolling();
-    this.pollDistantChatStatus();
-    this.statusPollInterval = setInterval(() => this.pollDistantChatStatus(), 3000);
-  },
-
-  stopStatusPolling() {
-    if (this.statusPollInterval) {
-      clearInterval(this.statusPollInterval);
-      this.statusPollInterval = null;
-    }
-    this.distantChatStatus = null;
-  },
-
-  // Helper to generate a unique key for deduplication
-  getMessageKey(msg) {
-    if (msg.msgId && msg.msgId !== 0) return 'id_' + msg.msgId;
-    // Fallback for live messages or history without IDs
-    const text = msg.msg || msg.message || '';
-    return 't_' + msg.sendTime + '_' + text.substring(0, 32);
-  },
-
-  addMessages(newMsgs, scroll = false) {
-    let added = false;
-    newMsgs.forEach((msg) => {
-      const key = this.getMessageKey(msg);
-      if (!this.messageKeys.has(key)) {
-        // Near-duplicate check for messages without IDs (live events vs optimistic echo)
-        const text = msg.msg || msg.message || '';
-        const isNearDuplicate = this.messages.some((existingMsg) => {
-          const eAttrs = existingMsg.attrs;
-          const eText = eAttrs.msg || eAttrs.message || '';
-          return (
-            eText === text &&
-            Math.abs(eAttrs.sendTime - msg.sendTime) < 5 // 5 seconds window
-          );
-        });
-
-        if (!isNearDuplicate) {
-          this.messageKeys.add(key);
-          this.messages.push(m(Message, msg));
-          added = true;
-        }
-      }
-    });
-
-    if (added) {
-      this.messages.sort((a, b) => a.attrs.sendTime - b.attrs.sendTime);
-      m.redraw();
-      if (scroll) {
-        setTimeout(() => {
-          const element = document.querySelector('.messages');
-          if (element) {
-            element.scrollTop = element.scrollHeight;
-          }
-        }, 100);
-      }
-    }
-  },
-
-  loadHistory(id, type) {
-    const chatPeerId = {
-      broadcast_status_peer_id: '00000000000000000000000000000000',
-      type: type,
-      peer_id: '00000000000000000000000000000000',
-      distant_chat_id: '00000000000000000000000000000000',
-      lobby_id: { xstr64: '0' },
-    };
-
-    if (type === 3) chatPeerId.lobby_id.xstr64 = id;
-    else if (type === 2) chatPeerId.distant_chat_id = id;
-    else if (type === 1) chatPeerId.peer_id = id;
-
-    rs.rsJsonApiRequest(
-      '/rsHistory/getMessages',
-      {
-        chatPeerId: chatPeerId,
-        loadCount: 20,
-      },
-      (data, success) => {
-        if (success && data.msgs) {
-          this.addMessages(data.msgs);
-        }
-      }
-    );
-  },
-  setupAction: (lobbyId, nick) => { },
-  setIdentity(lobbyId, nick) {
-    rs.rsJsonApiRequest(
-      '/rsChats/setIdentityForChatLobby',
-      {
-        lobby_id: { xstr64: lobbyId },
-        nick: nick,
-      },
-      () => m.route.set('/chat/:lobby', { lobby: lobbyId }),
-      true
-    );
-  },
-  enterPublicLobby(lobbyId, nick) {
-    // Set lobby nickname
-    rs.rsJsonApiRequest(
-      '/rsChats/joinVisibleChatLobby',
-      {
-        lobby_id: { xstr64: lobbyId },
-        own_id: nick,
-      },
-      () => {
-        loadLobbyDetails(lobbyId, (info) => {
-          ChatRoomsModel.subscribedRooms[lobbyId] = info;
-          ChatRoomsModel.loadSubscribedRooms(() => {
-            m.route.set('/chat/:lobby', { lobby: rs.idToHex(info.lobby_id) });
-          });
-        });
-      },
-      true
-    );
-  },
-  unsubscribeChatLobby(lobbyId, follow) {
-    // Unsubscribe
-    rs.rsJsonApiRequest(
-      '/rsChats/unsubscribeChatLobby',
-      {
-        lobby_id: { xstr64: lobbyId },
-      },
-      (data, success) => {
-        if (success) {
-          ChatRoomsModel.loadSubscribedRooms(follow);
-        }
-      },
-      true
-    );
-  },
-  chatId() {
-    const type = (this.currentLobby && this.currentLobby.chatType) || 3;
-    const id = this.lastLobbyId || m.route.param('lobby');
-    const cid = {
-      broadcast_status_peer_id: '00000000000000000000000000000000',
-      type: type,
-      peer_id: '00000000000000000000000000000000',
-      distant_chat_id: '00000000000000000000000000000000',
-      lobby_id: { xstr64: '0' },
-    };
-    if (type === 3) cid.lobby_id.xstr64 = id;
-    else if (type === 2) cid.distant_chat_id = id;
-    else if (type === 1) cid.peer_id = id;
-    return cid;
-  },
-  loadLobby(currentlobbyid) {
-    this.stopStatusPolling();
-    this.lastLobbyId = currentlobbyid;
-
-    const finishLoad = (detail) => {
-      this.setupAction = this.setIdentity;
-      this.currentLobby = detail;
-      this.isSubscribed = true;
-      this.lobby_user = rs.userList.username(detail.gxs_id) || '???';
-
-      // Reset local state for this lobby
-      this.messages = [];
-      this.messageKeys.clear();
-
-      // Load history first
-      this.loadHistory(currentlobbyid, detail.chatType);
-
-      // Apply existing messages from live cache
-      const cid = this.chatId();
-      rs.events[15].chatMessages(cid, rs.events[15], (l) => {
-        this.addMessages(l);
-      });
-
-      // Register for chatEvents for future messages
-      rs.events[15].notify = (chatMessage) => {
-        // DEBUG: Log incoming message structure
-        console.log('[RS-DEBUG] Incoming Chat Message:', JSON.stringify(chatMessage, null, 2));
-
-        const msgCid = chatMessage.chat_id;
-        let msgId;
-
-        if (msgCid.type === 3) {
-          msgId = rs.idToHex(msgCid.lobby_id);
-        } else if (msgCid.type === 2) {
-          // For Distant Chat, the ID is the distant_chat_id
-          msgId = rs.idToHex(msgCid.distant_chat_id);
-        } else if (msgCid.type === 1) {
-          // For Private Chat, the ID is the peer_id
-          msgId = rs.idToHex(msgCid.peer_id);
-        } else {
-          // Fallback
-          msgId = rs.idToHex(msgCid);
-        }
-
-        console.log('[RS-DEBUG] Resolved Msg ID:', msgId, 'Current Lobby ID:', currentlobbyid, 'Match:', msgId === currentlobbyid);
-
-        if (msgId === currentlobbyid) {
-          this.addMessages([chatMessage]);
-        }
-      };
-
-      // Lookup for chat-user names
-      let list = [];
-      if (detail.gxs_ids) {
-        if (Array.isArray(detail.gxs_ids)) {
-          list = detail.gxs_ids.map((u) => {
-            const key = u.key;
-            return { key, name: rs.userList.username(key) || key, lastAct: get64Num(u.value) };
-          });
-        } else if (typeof detail.gxs_ids === 'object') {
-          list = Object.keys(detail.gxs_ids).map((key) => {
-            return { key, name: rs.userList.username(key) || key, lastAct: get64Num(detail.gxs_ids[key]) };
-          });
-        }
-      }
-
-      const ownId = detail.gxs_id;
-      if (ownId && ownId !== '00000000000000000000000000000000') {
-        const hasOwn = list.some((u) => u.key === ownId);
-        if (!hasOwn) {
-          list.push({
-            key: ownId,
-            name: rs.userList.username(ownId) || ownId,
-            lastAct: Math.floor(Date.now() / 1000)
-          });
-        }
-      }
-
-      if (list.length === 0) {
-        list = [{ key: ownId || '', name: rs.userList.username(ownId) || detail.lobby_name || '???', lastAct: Math.floor(Date.now() / 1000) }];
-      }
-
-      list.sort((a, b) => a.name.localeCompare(b.name));
-      this.users = list;
-
-      if (detail.chatType === 2) {
-        this.startStatusPolling();
-      }
-
-      m.redraw();
-    };
-
-    loadLobbyDetails(currentlobbyid, (detail) => {
-      if (detail) {
-        finishLoad(detail);
-      } else {
-        // Fallback to Distant Chat
-        loadDistantChatDetails(currentlobbyid, (dDetail) => {
-          if (dDetail) {
-            finishLoad(dDetail);
-          }
-        });
-      }
-    });
-  },
-  loadPublicLobby(currentlobbyid) {
-    this.setupAction = this.enterPublicLobby;
-    this.isSubscribed = false;
-    ChatRoomsModel.allRooms.forEach((it) => {
-      if (rs.idToHex(it.lobby_id) === currentlobbyid) {
-        this.currentLobby = it;
-        this.lobby_user = '???';
-        this.lobbyid = currentlobbyid;
-      }
-    });
-    this.users = [];
-  },
-  sendMessage(msg, onsuccess) {
-    const cid = this.chatId();
-    // Optimistic echo for immediate feedback
-    const echoMsg = {
-      chat_id: cid,
-      msg: msg,
-      sendTime: Math.floor(Date.now() / 1000),
-      lobby_peer_gxs_id: this.currentLobby.gxs_id,
-    };
-    this.addMessages([echoMsg], true);
-
-    rs.rsJsonApiRequest(
-      '/rsChats/sendChat',
-      {
-        id: cid,
-        msg: msg,
-      },
-      (data, success) => {
-        if (success) {
-          onsuccess();
-        } else {
-          console.error('[RS] Failed to send chat message');
-          onsuccess(); // Clear the input even on failure to avoid stuck 'sending...' state
-        }
-      }
-    );
-  },
-  selected(info, selName, defaultName) {
-    const currid = rs.idToHex(ChatLobbyModel.currentLobby.lobby_id || { xstr64: m.route.param('lobby') });
-    return (rs.idToHex(info.lobby_id) === currid ? selName : '') + defaultName;
-  },
-  switchToEvent(info) {
-    return () => {
-      ChatLobbyModel.currentLobby = info;
-      m.route.set('/chat/:lobby', { lobby: rs.idToHex(info.lobby_id) });
-      ChatLobbyModel.loadLobby(rs.idToHex(info.lobby_id)); // update
-    };
-  },
-  setupEvent(info) {
-    return () => {
-      m.route.set('/chat/:lobby/setup', { lobby: rs.idToHex(info.lobby_id) });
-      ChatLobbyModel.loadPublicLobby(rs.idToHex(info.lobby_id)); // update
-    };
-  },
-};
-
-// ************************* Chat Hub State ****************************
-
-function getSafeAvatar(details) {
-  if (
-    details &&
-    details.mAvatar &&
-    details.mAvatar.mData &&
-    details.mAvatar.mData.base64 !== ''
-  ) {
-    return details.mAvatar;
-  }
-  return undefined;
-}
-
-const ChatHubState = {
-  selectedRoomId: null,
-  selectedRoom: null,
-  selectedRoomType: null,
-  searchString: '',
-  ownProfile: { name: 'Loading...' },
-  gxsDetails: {},
-  hoveredUser: null,
-  mutedUsers: new Set(),
-  activeMenu: null,
-  showAttachModal: false,
-  attachPath: '',
-  attachBrowseHint: false,
-  isHashing: false,
-  hashingError: '',
-  showEmojiPicker: false,
-  emojiSearch: '',
-  emojiCategory: 'Smileys',
-  showCreateRoomModal: false,
-  newRoomName: '',
-  newRoomTopic: '',
-  newRoomIdentity: '',
-  newRoomPublic: true,
-  newRoomSigned: false,
-  ownGxsIdentities: [],
-  createRoomError: '',
-  userSortMethod: 'name',
-  showInviteModal: false,
-  friendsList: [],
-  selectedFriendsToInvite: new Set(),
-};
-
-// ========================= Emoji Data =========================
-const EMOJI_CATEGORIES = ['Smileys', 'People', 'Animals', 'Food', 'Travel', 'Activities', 'Objects', 'Symbols'];
-const EMOJI_ICONS = {
-  Smileys: '😊', People: '👥', Animals: '🐾', Food: '🍎',
-  Travel: '✈️', Activities: '⚽', Objects: '💡', Symbols: '❤️',
-};
-const EMOJI_DATA = {
-  Smileys: [
-    '😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','😘','🥰','😗','😙','😚',
-    '🙂','🤗','🤩','🤔','🤨','😐','😑','😶','🙄','😏','😣','😥','😮','🤐','😯','😪','😫','🥱',
-    '😴','😌','😛','😜','😝','🤤','😒','😓','😔','😕','🙃','🤑','😲','☹️','🙁','😖','😞','😟',
-    '😤','😢','😭','😦','😧','😨','😩','🤯','😬','😰','😱','🥵','🥶','😳','🤪','😵','😡','😠',
-    '🤬','😷','🤒','🤕','🤢','🤮','🤧','🥴','😇','🥳','🥺','🤠','🤡','🤥','🤫','🤭','🧐','🤓',
-    '😈','👿','👹','👺','💀','☠️','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾',
-  ],
-  People: [
-    '👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇',
-    '☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾',
-    '🦿','🦵','🦶','👂','🦻','👃','🫀','🫁','🧠','🦷','🦴','👀','👁️','👅','👄','🫦','👶','🧒',
-    '👦','👧','🧑','👱','👨','🧔','👩','🧓','👴','👵','🙍','🙎','🙅','🙆','💁','🙋','🧏','🙇',
-    '🤦','🤷','👮','🕵️','💂','🥷','👷','🫅','🤴','👸','👲','🧕','🤵','👰','🤰','🫃','🫄','🤱',
-    '👼','🎅','🤶','🧑‍🎄','🦸','🦹','🧙','🧝','🧛','🧟','🧞','🧜','🧚','🧑‍🤝‍🧑','👫','👬','👭','💏','💑','👪',
-  ],
-  Animals: [
-    '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉',
-    '🙊','🐒','🦆','🦅','🦉','🦇','🐝','🪱','🐛','🦋','🐌','🐞','🐜','🪲','🦗','🪳','🕷️','🦂',
-    '🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🦭',
-    '🐊','🐅','🐆','🦓','🦍','🦧','🦣','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🦬','🐃','🐂','🐄',
-    '🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🐓','🦃','🦤','🦚','🦜',
-    '🦢','🦩','🕊️','🐇','🦝','🦨','🦡','🦫','🦦','🦥','🐁','🐀','🐿️','🦔','🐾','🐉','🐲','🌵',
-  ],
-  Food: [
-    '🍎','🍊','🍋','🍌','🍍','🥭','🍓','🍒','🍑','🥝','🍅','🥥','🥑','🍆','🥔','🥕','🌽','🌶️',
-    '🫑','🥒','🥬','🥦','🧄','🧅','🍄','🥜','🌰','🍞','🥐','🥖','🫓','🥨','🧀','🥚','🍳','🧈',
-    '🥞','🧇','🥓','🥩','🍗','🍖','🦴','🌭','🍔','🍟','🍕','🫔','🌮','🌯','🥙','🧆','🥚','🍱',
-    '🍘','🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','🦪','🍦',
-    '🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','🍼','🥛','☕','🫖','🍵',
-    '🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊','🥄','🍴','🍽️','🥢',
-  ],
-  Travel: [
-    '🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🦯','🦽','🦼','🛺',
-    '🚲','🛴','🛵','🏍️','🛺','🚨','🚔','🚍','🚘','🚖','🚡','🚠','🚟','🚃','🚋','🚞','🚝','🚄',
-    '🚅','🚈','🚂','🚆','🚇','🚊','🚉','✈️','🛫','🛬','🛩️','💺','🛸','🚁','🛶','⛵','🚤','🛥️',
-    '🛳️','⛴️','🚢','⚓','🗺️','🧭','🏔️','⛰️','🌋','🗻','🏕️','🏖️','🏜️','🏝️','🏞️','🏟️','🏛️','🏗️',
-    '🧱','🪨','🪵','🛖','🏘️','🏚️','🏠','🏡','🏢','🏣','🏤','🏥','🏦','🏨','🏩','🏪','🏫','🏬',
-    '🏭','🏯','🏰','💒','🗼','🗽','⛪','🕌','🛕','🕍','⛩️','🕋','⛲','⛺','🌁','🌃','🏙️','🌄',
-  ],
-  Activities: [
-    '⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅',
-    '⛳','🪁','🛝','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛷','⛸️','🥌','🎿','⛷️','🏂','🪂','🏋️',
-    '🤼','🤸','⛹️','🤺','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅',
-    '🎖️','🏵️','🎗️','🎫','🎟️','🎪','🤹','🎭','🩰','🎨','🖼️','🎰','🎲','🧩','🪄','🎯','🪅','🎮',
-    '🕹️','🎳','🎻','🎷','🥁','🪘','🎺','🎸','🪗','🎹','🎵','🎶','🎼','🎤','🎧','📻','🎙️','🎚️',
-    '🎬','📽️','🎞️','📱','📲','☎️','📞','📟','📠','🔋','🪫','🔌','💡','🔦','🕯️','💸','💵','🪙',
-  ],
-  Objects: [
-    '⌚','📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🖲️','💾','💿','📀','🧮','📷','📸','📹','🎥','📽️',
-    '📞','☎️','📟','📠','📺','📻','🧭','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🪫','🔌','💡',
-    '🔦','🕯️','🪔','🧱','💰','💴','💵','💶','💷','💸','💳','🪙','💹','✉️','📧','📨','📩','📤',
-    '📥','📦','📫','📪','📬','📭','📮','🗳️','✏️','✒️','🖊️','🖋️','📝','📁','📂','🗂️','📅','📆',
-    '🗒️','🗓️','📇','📈','📉','📊','📋','📌','📍','🗺️','📏','📐','✂️','🗃️','🗄️','🗑️','🔒','🔓',
-    '🔏','🔐','🔑','🗝️','🔨','🪓','⛏️','⚒️','🛠️','🗡️','⚔️','🔫','🪃','🏹','🛡️','🪚','🔧','🪛',
-  ],
-  Symbols: [
-    '❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝',
-    '💟','☮️','✝️','☪️','🕉️','☸️','✡️','🔯','🕎','☯️','☦️','🛐','⛎','♈','♉','♊','♋','♌',
-    '♍','♎','♏','♐','♑','♒','♓','🆔','⚛️','🉑','☢️','☣️','📴','📳','🈶','🈚','🈸','🈺',
-    '🈷️','✴️','🆚','💮','🉐','㊙️','㊗️','🈴','🈵','🈹','🈲','🅰️','🅱️','🆎','🆑','🅾️','🆘',
-    '❌','⭕','🛑','⛔','📛','🚫','💯','💢','♨️','🚷','🚯','🚳','🚱','🔞','📵','🚭','❗','❕',
-    '❓','❔','‼️','⁉️','🔅','🔆','📶','🛜','📳','📴','🔱','📛','🔰','♻️','✅','🈯','💹','❎',
-    '🌐','💠','Ⓜ️','🌀','💤','🏧','🚾','♿','🅿️','🛗','🈳','🈹','🚰','🔤','🔡','🔠','🆖','🆗',
-    '🆙','🆒','🆕','🆓','🔟','📊','🔣','✔️','☑️','🔘','🔲','🔳','⬛','⬜','◼️','◻️','◾','◽',
-    '▪️','▫️','🔶','🔷','🔸','🔹','🔺','🔻','💠','🔘','🔲','🔳','🏁','🚩','🎌','🏴','🏳️','⭐',
-    '🌟','💫','✨','🌈','☀️','🌤️','⛅','🌥️','☁️','🌦️','🌧️','⛈️','🌩️','🌨️','❄️','☃️','⛄','🌬️',
-  ],
-};
-
-function insertEmojiIntoTextarea(emoji) {
-  const textarea = document.querySelector('.chat-hub-textarea');
-  if (!textarea) return;
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const before = textarea.value.substring(0, start);
-  const after = textarea.value.substring(end);
-  textarea.value = before + emoji + after;
-  const newPos = start + emoji.length;
-  textarea.selectionStart = newPos;
-  textarea.selectionEnd = newPos;
-  textarea.focus();
-}
-
-const EmojiPicker = () => ({
-  view: () => {
-    const search = ChatHubState.emojiSearch.toLowerCase();
-    const cat = ChatHubState.emojiCategory;
-    let emojis;
-    if (search) {
-      emojis = Object.values(EMOJI_DATA).flat();
-    } else {
-      emojis = EMOJI_DATA[cat] || [];
-    }
-    return m('.emoji-picker', [
-      // Search bar
-      m('.emoji-search-row', [
-        m('i.fas.fa-search.emoji-search-icon'),
-        m('input.emoji-search-input[type=text][placeholder=Search emoji...]', {
-          value: ChatHubState.emojiSearch,
-          oninput: (e) => { ChatHubState.emojiSearch = e.target.value; },
-        }),
-        ChatHubState.emojiSearch && m('button.emoji-search-clear', {
-          onclick: () => { ChatHubState.emojiSearch = ''; },
-        }, m('i.fas.fa-times')),
-      ]),
-      // Category tabs (hidden while searching)
-      !search && m('.emoji-categories', EMOJI_CATEGORIES.map(c =>
-        m('button.emoji-cat-btn' + (c === cat ? '.active' : ''), {
-          title: c,
-          onclick: () => { ChatHubState.emojiCategory = c; },
-        }, EMOJI_ICONS[c])
-      )),
-      // Emoji grid
-      m('.emoji-grid',
-        emojis.map(e =>
-          m('button.emoji-btn', {
-            onclick: () => {
-              insertEmojiIntoTextarea(e);
-              ChatHubState.showEmojiPicker = false;
-              m.redraw();
-            },
-          }, e)
-        )
-      ),
-    ]);
-  },
-});
+// ************************* helpers ****************************
 
 function loadOwnChatProfile() {
   rs.rsJsonApiRequest('/rsConfig/getConfigNetStatus', {}, (data) => {
     if (data && data.status) {
       ChatHubState.ownProfile.name = data.status.ownName || 'Unknown';
       m.redraw();
+    }
+  });
+}
+
+function loadFriendsForInvite() {
+  ChatHubState.friendsList = [];
+  rs.rsJsonApiRequest('/rsPeers/getFriendList', {}, (data) => {
+    if (data && data.sslIds) {
+      data.sslIds.forEach((sslId) => {
+        rs.rsJsonApiRequest('/rsPeers/getPeerDetails', { sslId }, (detData) => {
+          if (detData && detData.det) {
+            rs.rsJsonApiRequest('/rsPeers/isOnline', { sslId }, (onlineData) => {
+              ChatHubState.friendsList.push({
+                id: sslId,
+                name: detData.det.name,
+                online: onlineData ? onlineData.retval : false
+              });
+              ChatHubState.friendsList.sort((a, b) => {
+                if (a.online !== b.online) return a.online ? -1 : 1;
+                return a.name.localeCompare(b.name);
+              });
+              m.redraw();
+            });
+          }
+        });
+      });
+    }
+  });
+}
+
+function scrollChatToBottom() {
+  setTimeout(() => {
+    const element = document.querySelector('.chat-hub-messages');
+    if (element) {
+      element.scrollTop = element.scrollHeight;
+    }
+  }, 50);
+}
+
+function pollHashStatus(localpath) {
+  rs.rsJsonApiRequest('/rsFiles/ExtraFileStatus', { localpath }, (data) => {
+    if (data && data.retval && data.info && data.info.hash && data.info.hash !== '0000000000000000000000000000000000000000') {
+      const info = data.info;
+      const sizeNum = info.size.xint64 || parseInt(info.size.xstr64) || info.size;
+      const fileLink = `<a href="retroshare://file?name=${encodeURIComponent(info.name)}&size=${sizeNum}&hash=${info.hash}">${info.name}</a> (${rs.formatBytes(sizeNum)})`;
+      
+      const textarea = document.querySelector('.chat-hub-textarea');
+      if (textarea) {
+        const val = textarea.value;
+        textarea.value = val ? val + '\n' + fileLink : fileLink;
+      }
+      
+      ChatHubState.showAttachModal = false;
+      ChatHubState.isHashing = false;
+      ChatHubState.attachPath = '';
+      m.redraw();
+    } else {
+      if (ChatHubState.isHashing) {
+        setTimeout(() => pollHashStatus(localpath), 1000);
+      }
     }
   });
 }
@@ -928,33 +165,6 @@ const PublicLobbies = {
 };
 
 // ************************* Chat Hub Sub-Components ****************************
-
-function loadFriendsForInvite() {
-  ChatHubState.friendsList = [];
-  rs.rsJsonApiRequest('/rsPeers/getFriendList', {}, (data) => {
-    if (data && data.sslIds) {
-      data.sslIds.forEach((sslId) => {
-        rs.rsJsonApiRequest('/rsPeers/getPeerDetails', { sslId }, (detData) => {
-          if (detData && detData.det) {
-            rs.rsJsonApiRequest('/rsPeers/isOnline', { sslId }, (onlineData) => {
-              ChatHubState.friendsList.push({
-                id: sslId,
-                name: detData.det.name,
-                online: onlineData ? onlineData.retval : false
-              });
-              // Sort online friends first, then alphabetical name
-              ChatHubState.friendsList.sort((a, b) => {
-                if (a.online !== b.online) return a.online ? -1 : 1;
-                return a.name.localeCompare(b.name);
-              });
-              m.redraw();
-            });
-          }
-        });
-      });
-    }
-  });
-}
 
 const ChatRoomHeader = () => {
   return {
@@ -1040,40 +250,6 @@ const ChatRoomHeader = () => {
   };
 };
 
-function scrollChatToBottom() {
-  setTimeout(() => {
-    const element = document.querySelector('.chat-hub-messages');
-    if (element) {
-      element.scrollTop = element.scrollHeight;
-    }
-  }, 50);
-}
-
-function pollHashStatus(localpath) {
-  rs.rsJsonApiRequest('/rsFiles/ExtraFileStatus', { localpath }, (data) => {
-    if (data && data.retval && data.info && data.info.hash && data.info.hash !== '0000000000000000000000000000000000000000') {
-      const info = data.info;
-      const sizeNum = info.size.xint64 || parseInt(info.size.xstr64) || info.size;
-      const fileLink = `<a href="retroshare://file?name=${encodeURIComponent(info.name)}&size=${sizeNum}&hash=${info.hash}">${info.name}</a> (${rs.formatBytes(sizeNum)})`;
-      
-      const textarea = document.querySelector('.chat-hub-textarea');
-      if (textarea) {
-        const val = textarea.value;
-        textarea.value = val ? val + '\n' + fileLink : fileLink;
-      }
-      
-      ChatHubState.showAttachModal = false;
-      ChatHubState.isHashing = false;
-      ChatHubState.attachPath = '';
-      m.redraw();
-    } else {
-      if (ChatHubState.isHashing) {
-        setTimeout(() => pollHashStatus(localpath), 1000);
-      }
-    }
-  });
-}
-
 const ChatConversationView = () => {
   function onDocClick(e) {
     if (ChatHubState.showEmojiPicker && !e.target.closest('.emoji-picker-wrapper')) {
@@ -1136,7 +312,7 @@ const ChatConversationView = () => {
                   },
                   '😊'
                 ),
-                ChatHubState.showEmojiPicker && m(EmojiPicker),
+                ChatHubState.showEmojiPicker && m(chatEmoji.EmojiPicker),
               ]),
               m('textarea.chat-hub-textarea', {
                 placeholder: canTalk ? 'Type a message... Press Enter to send' : 'Waiting for tunnel to be secured...',
@@ -1193,24 +369,20 @@ const ChatConversationView = () => {
                 m('h4', 'Attach File to Chat'),
               ]),
               m('p', 'Browse for a file or type the absolute path on your local system:'),
-              // Hidden native file input for browsing
               m('input#attach-file-picker[type=file]', {
                 style: 'display:none',
                 onchange: (e) => {
                   const file = e.target.files && e.target.files[0];
                   if (file) {
-                    // file.path is only available in Electron/desktop; browsers restrict full path
                     const fullPath = file.path;
                     const hasFullPath = fullPath && (fullPath.includes('/') || fullPath.includes('\\')) && fullPath !== file.name;
                     if (hasFullPath) {
                       ChatHubState.attachPath = fullPath;
                       ChatHubState.attachBrowseHint = false;
                     } else {
-                      // Browser security: only the filename is available, not the full path
                       ChatHubState.attachPath = file.name;
                       ChatHubState.attachBrowseHint = true;
                     }
-                    // Reset the picker so the same file can be re-selected
                     e.target.value = '';
                     ChatHubState.hashingError = '';
                     m.redraw();
@@ -1223,7 +395,7 @@ const ChatConversationView = () => {
                   value: ChatHubState.attachPath,
                   oninput: (e) => {
                     ChatHubState.attachPath = e.target.value;
-                    ChatHubState.attachBrowseHint = false; // user is editing manually, hint no longer relevant
+                    ChatHubState.attachBrowseHint = false;
                   },
                   disabled: ChatHubState.isHashing,
                 }),
@@ -1306,9 +478,8 @@ const ChatConversationView = () => {
               const gxsId = user.key;
               const name = user.name;
 
-              // Load details for avatar if not cached
               if (gxsId && ChatHubState.gxsDetails[gxsId] === undefined) {
-                ChatHubState.gxsDetails[gxsId] = null; // Mark as loading
+                ChatHubState.gxsDetails[gxsId] = null;
                 rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: gxsId }, (data) => {
                   if (data && data.details) {
                     ChatHubState.gxsDetails[gxsId] = data.details;
@@ -1325,32 +496,31 @@ const ChatConversationView = () => {
               const isBanned = opinion === 0;
               if (isBanned) return null;
 
-              // Calculate status color and tooltip
               const now = Math.floor(Date.now() / 1000);
               const tLastAct = user.lastAct || 0;
               const isOwn = gxsId === rs.idToHex(ChatLobbyModel.currentLobby.gxs_id || '');
               const isMuted = ChatHubState.mutedUsers && ChatHubState.mutedUsers.has(gxsId);
 
-              let statusColor = '#22c55e'; // active (green)
+              let statusColor = '#22c55e';
               let statusTooltip = 'Active';
 
               if (isMuted) {
-                statusColor = '#ef4444'; // muted (red)
+                statusColor = '#ef4444';
                 statusTooltip = 'Muted';
               } else if (isOwn) {
-                statusColor = '#3ba4d7'; // own identity (blue)
+                statusColor = '#3ba4d7';
                 statusTooltip = 'You';
               } else if (tLastAct + 600 < now) {
-                statusColor = '#cbd5e1'; // inactive > 10 mins (grey)
+                statusColor = '#cbd5e1';
                 statusTooltip = 'Inactive';
               } else if (tLastAct + 300 < now) {
-                statusColor = '#eab308'; // away > 5 mins (yellow)
+                statusColor = '#eab308';
                 statusTooltip = 'Away';
               }
 
               return m('.user', {
                 onmouseenter: (e) => {
-                  if (ChatHubState.activeMenu) return; // skip tooltip if menu is open
+                  if (ChatHubState.activeMenu) return;
                   const rect = e.currentTarget.getBoundingClientRect();
                   const rightbar = document.querySelector('.chat-hub-rightbar');
                   if (rightbar) {
@@ -1365,7 +535,7 @@ const ChatConversationView = () => {
                 onclick: (e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  ChatHubState.hoveredUser = null; // hide tooltip
+                  ChatHubState.hoveredUser = null;
 
                   const rect = e.currentTarget.getBoundingClientRect();
                   const rightbar = document.querySelector('.chat-hub-rightbar');
@@ -1389,7 +559,7 @@ const ChatConversationView = () => {
                 oncontextmenu: (e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  ChatHubState.hoveredUser = null; // hide tooltip
+                  ChatHubState.hoveredUser = null;
 
                   const rect = e.currentTarget.getBoundingClientRect();
                   const rightbar = document.querySelector('.chat-hub-rightbar');
@@ -1800,7 +970,6 @@ const Layout = {
     }
     window.addEventListener('click', Layout.dismissMenu);
 
-    // Load own identities for room creation
     peopleUtil.ownIds((ids) => {
       ChatHubState.ownGxsIdentities = ids || [];
       if (ChatHubState.ownGxsIdentities.length > 0) {
@@ -2055,8 +1224,8 @@ const Layout = {
                   const isPublic = ChatHubState.newRoomPublic;
                   const isSigned = ChatHubState.newRoomSigned;
                   let flags = 0;
-                  if (isPublic) flags |= 4; // RS_CHAT_LOBBY_FLAGS_PUBLIC
-                  if (isSigned) flags |= 8; // RS_CHAT_LOBBY_FLAGS_SIGNED_ONLY
+                  if (isPublic) flags |= 4;
+                  if (isSigned) flags |= 8;
                   
                   rs.rsJsonApiRequest('/rsChats/createChatLobby', {
                     lobby_name: name,
@@ -2071,7 +1240,6 @@ const Layout = {
                       ChatHubState.newRoomTopic = '';
                       ChatHubState.newRoomSigned = false;
                       ChatHubState.createRoomError = '';
-                      // Refresh rooms list
                       ChatRoomsModel.loadSubscribedRooms();
                       m.redraw();
                     } else {
