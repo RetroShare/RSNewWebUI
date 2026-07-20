@@ -148,7 +148,7 @@ const Layout = () => {
       }
     }
 
-    if (msgType === 'reply' || msgType === 'replyAll') {
+    if (msgType === 'reply' || msgType === 'replyAll' || msgType === 'forward') {
       Data.identity = Data.ownId.filter((id) =>
         Object.prototype.hasOwnProperty.call(recipientList, id)
       )[0];
