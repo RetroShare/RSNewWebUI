@@ -1087,8 +1087,8 @@ textarea.chatMsg {
     line-height: 1.45 !important;
     margin: 0 !important;
     white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+    // overflow: hidden !important;
+    // text-overflow: ellipsis !important;
 
     &:hover {
       background-color: #f8fafc !important;
