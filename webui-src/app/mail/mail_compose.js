@@ -4,6 +4,7 @@ const widget = require('widgets');
 const peopleUtil = require('people/people_util');
 
 const UserAvatarsCache = {};
+const MAX_RECIPIENTS = 20;
 
 const Layout = () => {
   let showCc = false;
@@ -256,7 +257,13 @@ const Layout = () => {
           item.mGroupName.toLowerCase().includes(e.target.value.toLowerCase())
         );
       }
+      function totalRecipients() {
+        return Data.recipients.to.sendList.length +
+               Data.recipients.cc.sendList.length +
+               Data.recipients.bcc.sendList.length;
+      }
       function handleClick(item, recipientType) {
+        if (totalRecipients() >= MAX_RECIPIENTS) return;
         Data.recipients[recipientType].sendList.push(item);
         if (item.mGroupId && !UserAvatarsCache[item.mGroupId]) {
           rs.rsJsonApiRequest(
@@ -364,6 +371,8 @@ const Layout = () => {
                   m('input[type=text].recipients__input-field', {
                     value: Data.recipients.to.inputVal,
                     oninput: (e) => handleInput(e, 'to'),
+                    placeholder: totalRecipients() >= MAX_RECIPIENTS ? 'Max recipients reached' : '',
+                    disabled: totalRecipients() >= MAX_RECIPIENTS,
                   }),
                   m('ul.recipients__input-list[autocomplete=off]', [
                     Data.recipients.to.inputList.length > 0
@@ -418,6 +427,8 @@ const Layout = () => {
                     m('input[type=text].recipients__input-field', {
                       value: Data.recipients[recipientType].inputVal,
                       oninput: (e) => handleInput(e, recipientType),
+                      placeholder: totalRecipients() >= MAX_RECIPIENTS ? 'Max recipients reached' : '',
+                      disabled: totalRecipients() >= MAX_RECIPIENTS,
                     }),
                     m('ul.recipients__input-list[autocomplete=off]', [
                       Data.recipients[recipientType].inputList.length > 0
@@ -434,6 +445,9 @@ const Layout = () => {
                 ]),
               ]);
             }),
+            totalRecipients() >= MAX_RECIPIENTS && m('.compose-mail__recipient-limit', {
+              style: { color: '#e67e22', fontSize: '0.85rem', padding: '0.25rem 0' }
+            }, `Maximum of ${MAX_RECIPIENTS} recipients reached. Remove a recipient to add more.`),
           ]),
           m('input.compose-mail__subject[type=text][placeholder=Subject]', {
             value: Data.subject,
