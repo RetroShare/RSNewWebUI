@@ -175,15 +175,10 @@ const MessageSummary = () => {
                 },
               },
               [
-                fromUserInfo &&
-                  fromUserInfo.mAvatar &&
-                  fromUserInfo.mAvatar.mData &&
-                  fromUserInfo.mAvatar.mData.base64 &&
-                  fromUserInfo.mAvatar.mData.base64 !== '' &&
-                  m(peopleUtil.UserAvatar, {
-                  avatar: fromUserInfo.mAvatar,
-                  firstLetter: (fromUserInfo.mNickname || '').slice(0, 1).toUpperCase(),
-                  identityId: details.from._addr_string,
+                m(peopleUtil.UserAvatar, {
+                  avatar: fromUserInfo?.mAvatar,
+                  firstLetter: (fromUserInfo?.mNickname || '').slice(0, 1).toUpperCase(),
+                  identityId: details.from?._addr_string,
                   size: 24,
                 }),
                 m('span', fromUserInfo && Number(fromUserInfo.mId) !== 0 ? fromUserInfo.mNickname : '[Unknown]'),
@@ -477,8 +472,10 @@ function sortList(list) {
       case 'from': {
         const aSenderId = MessageCache[msgA.msgId]?.from?._addr_string || msgA.from?._addr_string;
         const bSenderId = MessageCache[msgB.msgId]?.from?._addr_string || msgB.from?._addr_string;
-        const aFrom = (aSenderId && (UserNicknamesCache[aSenderId] || rs.userList.userMap[aSenderId])) || '';
-        const bFrom = (bSenderId && (UserNicknamesCache[bSenderId] || rs.userList.userMap[bSenderId])) || '';
+        const aName = aSenderId && rs.userList.userMap[aSenderId];
+        const bName = bSenderId && rs.userList.userMap[bSenderId];
+        const aFrom = (UserNicknamesCache[aSenderId] || (aName && aName.name) || aName || '') + '';
+        const bFrom = (UserNicknamesCache[bSenderId] || (bName && bName.name) || bName || '') + '';
         valA = aFrom.toLowerCase();
         valB = bFrom.toLowerCase();
         break;
