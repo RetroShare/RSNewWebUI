@@ -10,6 +10,10 @@ const SetNwMode = () => {
     'Inverted: DHT only',
     'Dark Net: None',
   ];
+  const hiddenModes = [
+    'Discovery On (recommended)',
+    'Discovery Off',
+  ];
 
   let vsDisc = 0;
   let vsDht = 0;
@@ -17,8 +21,41 @@ const SetNwMode = () => {
   let sslId = '';
   let details = {};
 
+  const updateSelectedMode = (isHiddenMode) => {
+    if (!details || details.vs_dht === undefined) return;
+    if (isHiddenMode) {
+      if (details.vs_disc === util.RS_VS_DISC_OFF) {
+        selectedMode = hiddenModes[1];
+      } else {
+        selectedMode = hiddenModes[0];
+      }
+    } else {
+      if (
+        details.vs_dht === util.RS_VS_DHT_FULL &&
+        details.vs_disc === util.RS_VS_DISC_FULL
+      ) {
+        selectedMode = networkModes[0];
+      } else if (
+        details.vs_dht === util.RS_VS_DHT_OFF &&
+        details.vs_disc === util.RS_VS_DISC_FULL
+      ) {
+        selectedMode = networkModes[1];
+      } else if (
+        details.vs_dht === util.RS_VS_DHT_FULL &&
+        details.vs_disc === util.RS_VS_DISC_OFF
+      ) {
+        selectedMode = networkModes[2];
+      } else if (
+        details.vs_dht === util.RS_VS_DHT_OFF &&
+        details.vs_disc === util.RS_VS_DISC_OFF
+      ) {
+        selectedMode = networkModes[3];
+      }
+    }
+  };
+
   return {
-    oninit: () => {
+    oninit: (vnode) => {
       rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId').then((res) => {
         if (res.body.retval) {
           sslId = res.body.id;
@@ -27,57 +64,51 @@ const SetNwMode = () => {
           }).then((res) => {
             if (res.body.retval) {
               details = res.body.det;
-              if (
-                details.vs_dht === util.RS_VS_DHT_FULL &&
-                details.vs_disc === util.RS_VS_DISC_FULL
-              ) {
-                selectedMode = networkModes[0];
-              } else if (
-                details.vs_dht === util.RS_VS_DHT_OFF &&
-                details.vs_disc === util.RS_VS_DISC_FULL
-              ) {
-                selectedMode = networkModes[1];
-              } else if (
-                details.vs_dht === util.RS_VS_DHT_FULL &&
-                details.vs_disc === util.RS_VS_DISC_OFF
-              ) {
-                selectedMode = networkModes[2];
-              } else if (
-                details.vs_dht === util.RS_VS_DHT_OFF &&
-                details.vs_disc === util.RS_VS_DISC_OFF
-              ) {
-                selectedMode = networkModes[3];
-              }
+              updateSelectedMode(vnode.attrs && vnode.attrs.isHiddenMode);
+              m.redraw();
             }
           });
         }
       });
     },
-    view: () => {
+    onupdate: (vnode) => {
+      updateSelectedMode(vnode.attrs && vnode.attrs.isHiddenMode);
+    },
+    view: (vnode) => {
+      const isHiddenMode = vnode.attrs && vnode.attrs.isHiddenMode;
+      const modes = isHiddenMode ? hiddenModes : networkModes;
+
       return [
-        m('p', 'Network mode:'),
+        m('p', isHiddenMode ? 'Discovery:' : 'Network mode:'),
         m(
           'select',
           {
             value: selectedMode,
             onchange: (e) => {
-              selectedMode = networkModes[e.target.selectedIndex];
-              if (e.target.selectedIndex === 0) {
-                // Public: DHT & Discovery
-                vsDisc = util.RS_VS_DISC_FULL;
-                vsDht = util.RS_VS_DHT_FULL;
-              } else if (e.target.selectedIndex === 1) {
-                // Private: Discovery only
-                vsDisc = util.RS_VS_DISC_FULL;
-                vsDht = util.RS_VS_DHT_OFF;
-              } else if (e.target.selectedIndex === 2) {
-                // Inverted: DHT only
-                vsDisc = util.RS_VS_DISC_OFF;
-                vsDht = util.RS_VS_DHT_FULL;
-              } else if (e.target.selectedIndex === 3) {
-                // Dark Net: None
-                vsDisc = util.RS_VS_DISC_OFF;
-                vsDht = util.RS_VS_DHT_OFF;
+              const idx = e.target.selectedIndex;
+              selectedMode = modes[idx];
+              if (isHiddenMode) {
+                if (idx === 0) {
+                  vsDisc = util.RS_VS_DISC_FULL;
+                  vsDht = util.RS_VS_DHT_OFF;
+                } else if (idx === 1) {
+                  vsDisc = util.RS_VS_DISC_OFF;
+                  vsDht = util.RS_VS_DHT_OFF;
+                }
+              } else {
+                if (idx === 0) {
+                  vsDisc = util.RS_VS_DISC_FULL;
+                  vsDht = util.RS_VS_DHT_FULL;
+                } else if (idx === 1) {
+                  vsDisc = util.RS_VS_DISC_FULL;
+                  vsDht = util.RS_VS_DHT_OFF;
+                } else if (idx === 2) {
+                  vsDisc = util.RS_VS_DISC_OFF;
+                  vsDht = util.RS_VS_DHT_FULL;
+                } else if (idx === 3) {
+                  vsDisc = util.RS_VS_DISC_OFF;
+                  vsDht = util.RS_VS_DHT_OFF;
+                }
               }
               if (
                 details &&
@@ -92,7 +123,7 @@ const SetNwMode = () => {
               }
             },
           },
-          [networkModes.map((o) => m('option', { value: o }, o))]
+          [modes.map((o) => m('option', { value: o }, o))]
         ),
       ];
     },
@@ -237,8 +268,8 @@ const displayLocalIPAddress = () => {
 };
 const displayExternalIPAddress = () => {
   return {
-    view: ({ attrs: { details } }) =>
-      details && [m('p', 'External Address: '), m('p', details.extAddr)],
+    view: ({ attrs: { details, isHiddenMode } }) =>
+      details && [m('p', 'External Address: '), m('p', isHiddenMode ? 'Hidden - See Config' : details.extAddr)],
   };
 };
 
@@ -289,6 +320,25 @@ const SetDynamicDNS = () => {
   };
 };
 
+const checkPortReachable = (addr, port, timeoutMs = 600) => {
+  if (!addr || !port) return Promise.resolve(false);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(`http://${addr}:${port}`, {
+    mode: 'no-cors',
+    signal: controller.signal,
+    cache: 'no-store',
+  })
+    .then(() => {
+      clearTimeout(timer);
+      return true;
+    })
+    .catch((err) => {
+      clearTimeout(timer);
+      return err.name === 'AbortError';
+    });
+};
+
 const SetSocksProxy = () => {
   const socksProxyObj = {
     tor: {},
@@ -296,14 +346,13 @@ const SetSocksProxy = () => {
   };
   const fetchOutgoing = () => {
     Object.keys(socksProxyObj).forEach((proxyItem) => {
-      fetch(`http://${socksProxyObj[proxyItem].addr}:${socksProxyObj[proxyItem].port}`)
-        .then(() => {
-          socksProxyObj[proxyItem].outgoing = true;
+      const item = socksProxyObj[proxyItem];
+      if (item.addr && item.port) {
+        checkPortReachable(item.addr, item.port).then((isReachable) => {
+          item.outgoing = isReachable;
           m.redraw();
-        })
-        .catch(() => {
-          socksProxyObj[proxyItem].outgoing = false;
         });
+      }
     });
   };
   const handleProxyChange = (proxyItem) => {
@@ -328,9 +377,9 @@ const SetSocksProxy = () => {
       });
     },
     view: () =>
-      m('.proxy-server-container', [
+      m('.proxy-server', [
         m(
-          'p.proxy-description',
+          'p',
           'Configure your TOR and I2P SOCKS proxy here. It will allow you to also connect to hidden nodes.'
         ),
         m('.proxy-rows-container', 
@@ -338,6 +387,7 @@ const SetSocksProxy = () => {
             const isTor = proxyItem === 'tor';
             const labelText = isTor ? 'TOR Socks Proxy:' : 'I2P Socks Proxy:';
             const outgoingText = isTor ? 'TOR outgoing' : 'I2P outgoing';
+            const notEnabledText = isTor ? 'Tor proxy is not enabled' : 'I2P proxy is not enabled';
             const isOutgoing = socksProxyObj[proxyItem].outgoing;
             return m('.proxy-row', [
               m('label.proxy-label', labelText),
@@ -357,6 +407,7 @@ const SetSocksProxy = () => {
                     style: {
                       backgroundColor: isOutgoing ? '#22c55e' : '#808080',
                     },
+                    title: isOutgoing ? 'Proxy seems to work.' : notEnabledText,
                   }),
                   m(
                     'span.proxy-status-text',
@@ -370,8 +421,40 @@ const SetSocksProxy = () => {
   };
 };
 
+const displayHiddenServiceInfo = () => {
+  return {
+    view: ({ attrs: { details } }) =>
+      details && details.hiddenNodeAddress &&
+        m('.proxy-server', [
+          m('p.proxy-description', details.hiddenType === 4
+            ? 'I2P has been automatically configured by Retroshare. You shouldn\'t need to change anything here.'
+            : 'Tor has been automatically configured by Retroshare. You shouldn\'t need to change anything here.'
+          ),
+          m('hr'),
+          m('.proxy-row', [
+            m('label.proxy-label', 'Local Address:'),
+            m('span', details.localAddr || '127.0.0.1'),
+          ]),
+          m('.proxy-row', [
+            m('label.proxy-label', details.hiddenType === 4 ? 'I2P Address:' : 'Onion Address:'),
+            m('span', details.hiddenNodeAddress),
+          ]),
+          details.hiddenNodePort && m('.proxy-row', [
+            m('label.proxy-label', 'Service Port:'),
+            m('span', String(details.hiddenNodePort)),
+          ]),
+          m('.proxy-row', [
+            m('label.proxy-label', 'Local Port:'),
+            m('span', String(details.localPort)),
+          ]),
+        ]),
+  };
+};
+
 const Component = () => {
   let details;
+  let isHiddenMode = false;
+
   return {
     oninit: () => {
       rs.rsJsonApiRequest('/rsAccounts/getCurrentAccountId').then((res) => {
@@ -381,28 +464,49 @@ const Component = () => {
           }).then((res) => {
             if (res.body.retval) {
               details = res.body.det;
+              isHiddenMode = Boolean(
+                details && (
+                  details.hiddenType === util.RS_HIDDEN_TYPE_TOR ||
+                  details.hiddenType === util.RS_HIDDEN_TYPE_I2P ||
+                  details.extAddr === 'Hidden'
+                )
+              );
+              m.redraw();
             }
           });
         }
       });
     },
     view: () =>
-      m('.widget', [
-        m('.widget__heading', m('h3', 'Network Configuration')),
-        m('.widget__body', [
-          m('.grid-2col', [
-            m(SetNwMode),
-            m(SetNAT),
-            m(displayLocalIPAddress, { details }),
-            m(displayExternalIPAddress, { details }),
-            m(SetDynamicDNS),
-            m(SetLimits),
-            m(SetOpMode),
-            m(displayIPAddresses, { details }),
+      m('.config-network', { style: 'display:flex; flex-direction:column; gap:0.5rem;' }, [
+        m('.widget', [
+          m('.widget__heading', m('h3', 'Network Configuration')),
+          m('.widget__body', [
+            m('.grid-2col', [
+              m(SetNwMode, { isHiddenMode }),
+              !isHiddenMode && m(SetNAT),
+              m(displayLocalIPAddress, { details }),
+              m(displayExternalIPAddress, { details, isHiddenMode }),
+              !isHiddenMode && m(SetDynamicDNS),
+              m(SetLimits),
+              !isHiddenMode && m(SetOpMode),
+              !isHiddenMode && m(displayIPAddresses, { details }),
+            ]),
           ]),
-          m('.widget__heading', m('h3', 'Hidden Service Configuration')),
-          m('.widget__body', [m(SetSocksProxy)]),
         ]),
+        m('.widget', [
+          m('.widget__heading', m('h3', 'Hidden Service Configuration')),
+          m('.widget__body', [
+            m(SetSocksProxy),
+          ]),
+        ]),
+        isHiddenMode &&
+          m('.widget', [
+            m('.widget__heading', m('h3', details && details.hiddenType === 4 ? 'Incoming I2P' : 'Incoming Tor')),
+            m('.widget__body', [
+              m(displayHiddenServiceInfo, { details }),
+            ]),
+          ]),
       ]),
   };
 };
