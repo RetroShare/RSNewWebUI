@@ -48,22 +48,14 @@ function updateStatus() {
       State.forwardPort = data.status.forwardPort;
       State.stunOk = data.status.netStunOk;
       State.extAddressOk = data.status.netExtAddressOk;
-    }
-  });
 
-  // 3. NAT netState
-  rs.rsJsonApiRequest('/rsConfig/getNetState', {}, (data) => {
-    if (data && data.retval !== undefined) {
-      State.natState = data.retval;
-    } else {
-      // Fallback calculation based on getConfigNetStatus
       if (State.firewalled && !State.forwardPort) {
         State.natState = 6; // WARNING_NATTED
       } else {
         State.natState = 8; // GOOD
       }
     }
-  });
+  }).catch(() => {});
 }
 
 let intervalId = null;
