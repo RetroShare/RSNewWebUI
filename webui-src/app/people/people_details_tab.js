@@ -87,75 +87,75 @@ const DetailsTab = () => {
               m('i.fas.fa-id-card'),
               m('span', isOwn ? 'My Identity' : isContact ? 'Saved Contact' : 'Discovered Identity'),
             ]),
-          ]),
-          m('.detail-actions', [
-            isOwn
-              ? [
-                  m(
-                    'button.btn',
-                    {
-                      onclick: () =>
-                        widget.popupMessage(
-                          m(EditIdentity, {
-                            details,
-                          })
-                        ),
-                    },
-                    [m('i.fas.fa-edit'), ' Edit']
-                  ),
-                  m(
-                    'button.btn.red',
-                    {
-                      onclick: () =>
-                        widget.popupMessage(
-                          m(DeleteIdentity, {
-                            id: details.mId,
-                            name: details.mNickname,
-                          })
-                        ),
-                    },
-                    [m('i.fas.fa-trash-alt'), ' Delete']
-                  ),
-                ]
-              : [
-                  m(
-                    'button.btn.blue',
-                    {
-                      onclick: () => {
-                        State.activeTab = 'chat';
-                        initializeDistantChat();
+            m('.detail-actions', [
+              isOwn
+                ? [
+                    m(
+                      'button.btn',
+                      {
+                        onclick: () =>
+                          widget.popupMessage(
+                            m(EditIdentity, {
+                              details,
+                            })
+                          ),
                       },
-                    },
-                    [m('i.fas.fa-comment-alt'), ' Start Chat']
-                  ),
-                  m(
-                    'button.btn',
-                    {
-                      onclick: () => {
-                        State.showMailCompose = true;
+                      [m('i.fas.fa-edit'), ' Edit']
+                    ),
+                    m(
+                      'button.btn.red',
+                      {
+                        onclick: () =>
+                          widget.popupMessage(
+                            m(DeleteIdentity, {
+                              id: details.mId,
+                              name: details.mNickname,
+                            })
+                          ),
                       },
-                    },
-                    [m('i.fas.fa-envelope'), ' Send Mail']
-                  ),
-                  m(
-                    'button.btn' + (isContact ? '.red' : '.blue'),
-                    {
-                      onclick: () => {
-                        rs.rsJsonApiRequest(
-                          '/rsIdentity/setAsRegularContact',
-                          { id: State.selectedId, isContact: !isContact },
-                          () => {
-                            rs.userList.loadUsers();
-                            loadGxsIdentities();
-                          }
-                        );
+                      [m('i.fas.fa-trash-alt'), ' Delete']
+                    ),
+                  ]
+                : [
+                    m(
+                      'button.btn.blue',
+                      {
+                        onclick: () => {
+                          State.activeTab = 'chat';
+                          initializeDistantChat();
+                        },
                       },
-                    },
-                    isContact
-                      ? [m('i.fas.fa-user-minus'), ' Remove Contact']
-                      : [m('i.fas.fa-user-plus'), ' Add Contact']
-                  ),
-                ],
+                      [m('i.fas.fa-comment-alt'), ' Start Chat']
+                    ),
+                    m(
+                      'button.btn.blue',
+                      {
+                        onclick: () => {
+                          State.showMailCompose = true;
+                        },
+                      },
+                      [m('i.fas.fa-envelope'), ' Send Mail']
+                    ),
+                    m(
+                      'button.btn' + (isContact ? '.red' : '.blue'),
+                      {
+                        onclick: () => {
+                          rs.rsJsonApiRequest(
+                            '/rsIdentity/setAsRegularContact',
+                            { id: State.selectedId, isContact: !isContact },
+                            () => {
+                              rs.userList.loadUsers();
+                              loadGxsIdentities();
+                            }
+                          );
+                        },
+                      },
+                      isContact
+                        ? [m('i.fas.fa-user-minus'), ' Remove Contact']
+                        : [m('i.fas.fa-user-plus'), ' Add Contact']
+                    ),
+                  ],
+            ]),
           ]),
         ]),
         m('.detail-section', [

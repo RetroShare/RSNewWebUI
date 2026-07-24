@@ -36,6 +36,55 @@ const BOX_ALL = 0x06;
 
 const MessageCache = {};
 const UserNicknamesCache = {};
+const MailGxsDetailsCache = {};
+const MailHoverState = {
+  hoveredUser: null,
+};
+
+function renderMailUserTooltip() {
+  if (!MailHoverState.hoveredUser) return null;
+  const hUser = MailHoverState.hoveredUser;
+  const details = MailGxsDetailsCache[hUser.gxsId];
+  if (!details) return null;
+
+  const avatar = details.mAvatar && details.mAvatar.base64 ? details.mAvatar.base64 : null;
+  const firstLetter = (hUser.name || '?').slice(0, 1).toUpperCase();
+  const votes = details.mReputation
+    ? ((details.mReputation.mFriendsPositiveVotes || 0) - (details.mReputation.mFriendsNegativeVotes || 0))
+    : 0;
+
+  const top = hUser.rect.top - 10;
+  const left = Math.min(Math.max(hUser.rect.left, 140), window.innerWidth - 280);
+
+  return m('.user-tooltip', {
+    style: {
+      position: 'fixed',
+      top: `${top}px`,
+      left: `${left}px`,
+      transform: 'translateY(-100%)',
+      zIndex: 10000,
+    }
+  }, [
+    m('.tooltip-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: hUser.gxsId, size: 64 })),
+    m('.tooltip-details', [
+      m('.tooltip-row', [m('span.tooltip-label', 'Identity name: '), m('span.tooltip-value', hUser.name)]),
+      m('.tooltip-row', [m('span.tooltip-label', 'Identity Id: '), m('span.tooltip-value.tooltip-id', hUser.gxsId)]),
+      details.mPgpId && details.mPgpId !== '0000000000000000' && m('.tooltip-row', [
+        m('span.tooltip-label', 'Node: '),
+        m('span.tooltip-value', `${rs.userList.username(details.mPgpId) || hUser.name} [${details.mPgpId}]`)
+      ]),
+      m('.tooltip-row', [
+        m('span.tooltip-label', 'Votes: '),
+        m('span.tooltip-value', {
+          style: {
+            color: votes >= 0 ? '#22c55e' : '#ef4444',
+            fontWeight: 'bold'
+          }
+        }, (votes >= 0 ? '+' : '') + votes)
+      ])
+    ])
+  ]);
+}
 
 const tagTypesCache = {};
 const defaultTagTypes = {
@@ -112,6 +161,7 @@ const MessageSummary = () => {
                 fromUserInfo = data.details;
                 if (fromUserInfo) {
                   UserNicknamesCache[details.from._addr_string] = fromUserInfo.mNickname || '';
+                  MailGxsDetailsCache[details.from._addr_string] = fromUserInfo;
                 }
               }
             );
@@ -172,7 +222,29 @@ const MessageSummary = () => {
                   alignItems: 'center',
                   gap: '0.5rem',
                   justifyContent: 'start',
+                  cursor: 'pointer',
                 },
+                onmouseenter: (e) => {
+                  if (!details?.from?._addr_string) return;
+                  const gxsId = details.from._addr_string;
+                  const name = fromUserInfo && Number(fromUserInfo.mId) !== 0 ? fromUserInfo.mNickname : '[Unknown]';
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  MailHoverState.hoveredUser = { gxsId, name, rect };
+                  if (fromUserInfo) MailGxsDetailsCache[gxsId] = fromUserInfo;
+                  if (!MailGxsDetailsCache[gxsId]) {
+                    rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: gxsId }, (d) => {
+                      if (d && d.details) {
+                        MailGxsDetailsCache[gxsId] = d.details;
+                        m.redraw();
+                      }
+                    });
+                  }
+                  m.redraw();
+                },
+                onmouseleave: () => {
+                  MailHoverState.hoveredUser = null;
+                  m.redraw();
+                }
               },
               [
                 m(peopleUtil.UserAvatar, {
@@ -350,7 +422,29 @@ const MessageView = () => {
               }),
               m('.msg-details__info', [
                 MailData.sender &&
-                m('.msg-details__info-item', [
+                m('.msg-details__info-item', {
+                  style: { cursor: 'pointer', display: 'inline-flex', gap: '0.25rem', alignItems: 'center' },
+                  onmouseenter: (e) => {
+                    if (!MailData.sender._addr_string) return;
+                    const gxsId = MailData.sender._addr_string;
+                    const name = UserNicknamesCache[gxsId] || rs.userList.username(gxsId) || 'Unknown';
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    MailHoverState.hoveredUser = { gxsId, name, rect };
+                    if (!MailGxsDetailsCache[gxsId]) {
+                      rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: gxsId }, (d) => {
+                        if (d && d.details) {
+                          MailGxsDetailsCache[gxsId] = d.details;
+                          m.redraw();
+                        }
+                      });
+                    }
+                    m.redraw();
+                  },
+                  onmouseleave: () => {
+                    MailHoverState.hoveredUser = null;
+                    m.redraw();
+                  }
+                }, [
                   m('b', 'From: '),
                   UserNicknamesCache[MailData.sender._addr_string] || rs.userList.username(MailData.sender._addr_string) || 'Unknown',
                 ]),
@@ -424,7 +518,8 @@ const MessageView = () => {
               : m('.widget', m('.widget__heading', m('h3', 'Sender is not known'))),
             m('button.red.close-btn', { onclick: () => setShowCompose(false) }, m('i.fas.fa-times'))
           )
-        )
+        ),
+        renderMailUserTooltip(),
       ),
   };
 };
@@ -595,6 +690,7 @@ const Table = () => {
           tbody,
         ]),
         paginationUI,
+        renderMailUserTooltip(),
       ]);
     },
   };
