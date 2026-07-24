@@ -320,23 +320,54 @@ const SetDynamicDNS = () => {
   };
 };
 
-const checkPortReachable = (addr, port, timeoutMs = 600) => {
+const checkPortReachable = (addr, port, timeoutMs = 800) => {
   if (!addr || !port) return Promise.resolve(false);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  return fetch(`http://${addr}:${port}`, {
-    mode: 'no-cors',
-    signal: controller.signal,
-    cache: 'no-store',
-  })
-    .then(() => {
-      clearTimeout(timer);
-      return true;
+
+  return new Promise((resolve) => {
+    let resolved = false;
+    const start = Date.now();
+    const controller = new AbortController();
+
+    const timer = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        controller.abort();
+        // Timeout expired without server connection -> Port is closed / not enabled!
+        resolve(false);
+      }
+    }, timeoutMs);
+
+    fetch(`http://${addr}:${port}`, {
+      mode: 'no-cors',
+      signal: controller.signal,
+      cache: 'no-store',
     })
-    .catch((err) => {
-      clearTimeout(timer);
-      return err.name === 'AbortError';
-    });
+      .then(() => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timer);
+          resolve(true);
+        }
+      })
+      .catch((err) => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timer);
+          if (err && err.name === 'AbortError') {
+            resolve(true);
+          } else {
+            // Tor SOCKS port returns HTTP 501 ("Tor is not an HTTP Proxy").
+            // Connection refused fails in < 15ms. If Tor server responded (501 / > 20ms), port is OPEN!
+            const duration = Date.now() - start;
+            if (duration > 20 || (err && err.message && err.message.includes('501'))) {
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          }
+        }
+      });
+  });
 };
 
 const SetSocksProxy = () => {
@@ -347,11 +378,14 @@ const SetSocksProxy = () => {
   const fetchOutgoing = () => {
     Object.keys(socksProxyObj).forEach((proxyItem) => {
       const item = socksProxyObj[proxyItem];
-      if (item.addr && item.port) {
+      if (item.retval && item.addr && item.port) {
         checkPortReachable(item.addr, item.port).then((isReachable) => {
           item.outgoing = isReachable;
           m.redraw();
         });
+      } else {
+        item.outgoing = false;
+        m.redraw();
       }
     });
   };
@@ -360,7 +394,12 @@ const SetSocksProxy = () => {
       type: util[`RS_HIDDEN_TYPE_${proxyItem.toUpperCase()}`],
       addr: socksProxyObj[proxyItem].addr,
       port: socksProxyObj[proxyItem].port,
-    }).then(fetchOutgoing);
+    }).then((res) => {
+      if (res && res.body) {
+        socksProxyObj[proxyItem] = res.body;
+      }
+      fetchOutgoing();
+    });
   };
   return {
     oninit: () => {
@@ -369,7 +408,7 @@ const SetSocksProxy = () => {
           type: util[`RS_HIDDEN_TYPE_${proxyItem.toUpperCase()}`],
         })
           .then((res) => {
-            if (res.body.retval) {
+            if (res && res.body) {
               socksProxyObj[proxyItem] = res.body;
             }
           })
