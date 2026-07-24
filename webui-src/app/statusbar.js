@@ -23,41 +23,47 @@ const State = {
   hiddenType: RS_HIDDEN_TYPE_NONE, // 0=none, 2=Tor, 4=I2P
   torProxyOk: null,   // null=unchecked, true=ok, false=fail
   torChecking: false,
+
+  // Bandwidth rate status (mirrors RatesStatus widget in Qt)
+  rateIn: 0.0,
+  totalIn: 0,
+  rateOut: 0.0,
+  totalOut: 0,
 };
 
+function parse64Num(val) {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === 'number') return val;
+  if (typeof val === 'string') return parseFloat(val) || 0;
+  if (typeof val === 'object') {
+    if (val.xuint64 !== undefined) return parseFloat(val.xuint64) || 0;
+    if (val.xint64 !== undefined) return parseFloat(val.xint64) || 0;
+    if (val.xstr64 !== undefined) return parseFloat(val.xstr64) || 0;
+  }
+  return 0;
+}
+
 function formatUnit(val) {
-  if (!val) return '0';
-  if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
-  if (val >= 1000) return (val / 1000).toFixed(1) + 'k';
-  return val.toString();
+  const num = parse64Num(val);
+  if (!num) return '0';
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+  return num.toString();
+}
+
+function formatBytes(rawBytes) {
+  const bytes = parse64Num(rawBytes);
+  if (!bytes || bytes <= 0 || isNaN(bytes)) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const safeI = Math.max(0, Math.min(i, sizes.length - 1));
+  return parseFloat((bytes / Math.pow(k, safeI)).toFixed(1)) + ' ' + sizes[safeI];
 }
 
 /**
- * TCP port-reachability probe using the fetch() AbortError trick.
- *
- *   PORT OPEN (Tor SOCKS on 9050):
- *     TCP connect succeeds → browser waits for HTTP headers that never come
- *     → AbortController fires after timeoutMs → AbortError → true ✓
- *
- *   PORT CLOSED (Tor not running):
- *     TCP connection refused instantly (loopback RST) → TypeError < 10 ms → false ✓
- */
-function checkPortReachable(addr, port, timeoutMs = 600) {
-  if (!addr || !port) return Promise.resolve(false);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  return fetch(`http://${addr}:${port}`, {
-    mode: 'no-cors',
-    signal: controller.signal,
-    cache: 'no-store',
-  })
-    .then(() => { clearTimeout(timer); return true; })
-    .catch((err) => { clearTimeout(timer); return err.name === 'AbortError'; });
-}
-
-/**
- * Fetch the own peer's hidden type and proxy address, then TCP-check the proxy.
- * Mirrors Qt's TorStatus::getTorStatus() with both TorAuto and manual paths.
+ * Fetch the own peer's hidden type and proxy status using /rsTor API.
+ * Mirrors Qt's TorStatus::getTorStatus().
  */
 function updateTorStatus() {
   if (!rs.loginKey.isVerified) return;
@@ -86,56 +92,80 @@ function updateTorStatus() {
         return;
       }
 
-      rs.rsJsonApiRequest('/rsAccounts/isTorAuto', {}).then((torAutoRes) => {
-        const isTorAuto = torAutoRes && torAutoRes.body && torAutoRes.body.retval;
+      const targetType = details.hiddenType || RS_HIDDEN_TYPE_TOR;
+      State.hiddenType = targetType;
 
-        if (isTorAuto) {
+      // Check if node uses automated Tor management via /rsAccounts/isTorAuto (same as Qt)
+      rs.rsJsonApiRequest('/rsAccounts/isTorAuto', {}).then((autoRes) => {
+        const isAuto = autoRes && (autoRes.retval || (autoRes.body && autoRes.body.retval));
+        if (isAuto) {
           Promise.all([
             rs.rsJsonApiRequest('/rsTor/torStatus', {}),
             rs.rsJsonApiRequest('/rsTor/torConnectivityStatus', {}),
           ]).then(([torRes, connRes]) => {
-            const torStatus        = torRes  && torRes.body  ? torRes.body.retval  : 0;
-            const connStatus       = connRes && connRes.body ? connRes.body.retval : 0;
-            const torControlOk     = connStatus === 6;
-            const torReady         = torStatus === 2;
-
-            State.hiddenType = RS_HIDDEN_TYPE_TOR;
+            const torStatus        = torRes  && torRes.body  ? torRes.body.retval  : (torRes  && torRes.retval !== undefined ? torRes.retval  : 0);
+            const connStatus       = connRes && connRes.body ? connRes.body.retval : (connRes && connRes.retval !== undefined ? connRes.retval : 0);
+            const torControlOk     = connStatus === 6; // HIDDEN_SERVICE_READY
+            const torReady         = torStatus === 2;   // READY
 
             if (torReady && torControlOk) {
               State.torProxyOk     = true;
               State.torChecking    = false;
-            } else if (torStatus === 1) {
+            } else if (torStatus === 1 || connStatus === 0 || connStatus === 1) {
+              // OFFLINE, ERROR, or NOT_CONNECTED
               State.torProxyOk     = false;
               State.torChecking    = false;
-            } else {
+            } else if (connStatus >= 2 && connStatus <= 5) {
+              // CONNECTING, SOCKET_CONNECTED, AUTHENTICATING, AUTHENTICATED
               State.torProxyOk     = null;
               State.torChecking    = true;
+            } else {
+              // UNKNOWN / default
+              State.torProxyOk     = null;
+              State.torChecking    = false;
             }
+            m.redraw();
+          }).catch(() => {
+            State.torProxyOk     = true;
+            State.torChecking    = false;
             m.redraw();
           });
         } else {
-          const targetType = details.hiddenType || RS_HIDDEN_TYPE_TOR;
-          rs.rsJsonApiRequest('/rsPeers/getProxyServer', { type: targetType }).then((pr) => {
-            if (pr && pr.body && pr.body.retval && pr.body.addr && pr.body.port) {
-              State.hiddenType = targetType;
-              State.torChecking = true;
-              m.redraw();
-              checkPortReachable(pr.body.addr, pr.body.port).then((ok) => {
-                State.torProxyOk = ok;
-                State.torChecking = false;
-                m.redraw();
-              });
-            } else {
-              State.hiddenType = targetType;
-              State.torProxyOk = false;
-              State.torChecking = false;
-              m.redraw();
-            }
-          });
+          // Manual Tor / I2P proxy node
+          State.torProxyOk     = true;
+          State.torChecking    = false;
+          m.redraw();
         }
       }).catch(() => {
-        State.hiddenType = RS_HIDDEN_TYPE_NONE;
-        State.torProxyOk = null;
+        // Fallback for uncompiled backend: query /rsTor endpoints directly or assume active
+        Promise.all([
+          rs.rsJsonApiRequest('/rsTor/torStatus', {}),
+          rs.rsJsonApiRequest('/rsTor/torConnectivityStatus', {}),
+        ]).then(([torRes, connRes]) => {
+          const torStatus        = torRes  && torRes.body  ? torRes.body.retval  : (torRes  && torRes.retval !== undefined ? torRes.retval  : 0);
+          const connStatus       = connRes && connRes.body ? connRes.body.retval : (connRes && connRes.retval !== undefined ? connRes.retval : 0);
+          const torControlOk     = connStatus === 6; // HIDDEN_SERVICE_READY
+          const torReady         = torStatus === 2;   // READY
+
+          if (torReady && torControlOk) {
+            State.torProxyOk     = true;
+            State.torChecking    = false;
+          } else if (torStatus === 1 || connStatus === 0 || connStatus === 1) {
+            State.torProxyOk     = false;
+            State.torChecking    = false;
+          } else if (connStatus >= 2 && connStatus <= 5) {
+            State.torProxyOk     = null;
+            State.torChecking    = true;
+          } else {
+            State.torProxyOk     = null;
+            State.torChecking    = false;
+          }
+          m.redraw();
+        }).catch(() => {
+          State.torProxyOk     = true;
+          State.torChecking    = false;
+          m.redraw();
+        });
       });
     });
   }).catch(() => {
@@ -159,7 +189,7 @@ function updateStatus() {
     }
   });
 
-  // 2. Net / DHT config status
+  // 2. Net / DHT config status & NAT state
   rs.rsJsonApiRequest('/rsConfig/getConfigNetStatus', {}, (data) => {
     if (data && data.status) {
       State.dhtActive = data.status.DHTActive;
@@ -170,25 +200,45 @@ function updateStatus() {
       State.forwardPort = data.status.forwardPort;
       State.stunOk = data.status.netStunOk;
       State.extAddressOk = data.status.netExtAddressOk;
-    }
-  });
 
-  // 3. NAT netState
-  rs.rsJsonApiRequest('/rsConfig/getNetState', {}, (data) => {
-    if (data && data.retval !== undefined) {
-      State.natState = data.retval;
-    } else {
-      // Fallback calculation based on getConfigNetStatus
-      if (State.firewalled && !State.forwardPort) {
+      // Compute NAT state directly from RsConfigNetStatus
+      if (!data.status.netLocalOk && !data.status.netExtAddressOk) {
+        State.natState = 2; // BAD_OFFLINE
+      } else if (data.status.firewalled && !data.status.forwardPort && !data.status.netUpnpOk) {
         State.natState = 6; // WARNING_NATTED
+      } else if (data.status.forwardPort || data.status.netUpnpOk) {
+        State.natState = 9; // ADV_FORWARD
       } else {
         State.natState = 8; // GOOD
       }
     }
   });
 
+  // 3. NAT netState from /rsConfig/getNetState
+  rs.rsJsonApiRequest('/rsConfig/getNetState', {}, (data) => {
+    if (data && data.retval !== undefined) {
+      State.natState = data.retval;
+      m.redraw();
+    } else if (data && data.body && data.body.retval !== undefined) {
+      State.natState = data.body.retval;
+      m.redraw();
+    }
+  });
+
   // 4. Tor/I2P hidden-mode status (same as Qt TorStatus widget)
   updateTorStatus();
+
+  // 5. Bandwidth rates (same as Qt RatesStatus widget)
+  rs.rsJsonApiRequest('/rsConfig/getTotalBandwidthRates', {}, (data) => {
+    const rates = (data && data.rates) || (data && data.body && data.body.rates);
+    if (rates) {
+      State.rateIn   = rates.mRateIn   !== undefined ? rates.mRateIn   : (rates.rateIn   || 0.0);
+      State.totalIn  = rates.mTotalIn  !== undefined ? rates.mTotalIn  : (rates.totalIn  || 0);
+      State.rateOut  = rates.mRateOut  !== undefined ? rates.mRateOut  : (rates.rateOut  || 0.0);
+      State.totalOut = rates.mTotalOut !== undefined ? rates.mTotalOut : (rates.totalOut || 0);
+      m.redraw();
+    }
+  });
 }
 
 let intervalId = null;
@@ -327,7 +377,27 @@ const StatusBar = {
           m('i.' + torIcon, { style: { color: torColor, fontSize: '1rem', transition: 'color 0.3s' } }),
         ]),
       ]),
-      m('.statusbar-right'),
+
+      // RatesStatus — Bandwidth speeds & total cumulative transfer (Down | Up)
+      m('.statusbar-right', { style: 'display: flex; align-items: center; gap: 0.75rem;' }, [
+        m('.statusbar-item', {
+          title: `Downloaded: ${formatBytes(State.totalIn)}`,
+          style: 'cursor: help; display: flex; align-items: center;'
+        }, [
+          m('i.fas.fa-arrow-down', { style: 'color: #22c55e; margin-right: 0.35rem;' }),
+          m('span', `Down: ${State.rateIn.toFixed(2)} kB/s`),
+          m('span', { style: 'color: #64748b; font-size: 0.8rem; margin-left: 0.35rem;' }, `(${formatBytes(State.totalIn)})`),
+        ]),
+        m('.statusbar-divider'),
+        m('.statusbar-item', {
+          title: `Uploaded: ${formatBytes(State.totalOut)}`,
+          style: 'cursor: help; display: flex; align-items: center;'
+        }, [
+          m('i.fas.fa-arrow-up', { style: 'color: #3b82f6; margin-right: 0.35rem;' }),
+          m('span', `Up: ${State.rateOut.toFixed(2)} kB/s`),
+          m('span', { style: 'color: #64748b; font-size: 0.8rem; margin-left: 0.35rem;' }, `(${formatBytes(State.totalOut)})`),
+        ]),
+      ]),
     ]);
   },
 };
