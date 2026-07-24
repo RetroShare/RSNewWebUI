@@ -752,7 +752,7 @@ const ChatConversationView = () => {
               !isOwn && m('.menu-item', {
                 onclick: () => {
                   ChatHubState.activeMenu = null;
-                  rs.rsJsonApiRequest('/rsreputations/setOwnOpinion', { id: menu.gxsId, opinion: 2 }, (data, success) => {
+                  rs.rsJsonApiRequest('/rsreputations/setOwnOpinion', { id: menu.gxsId, op: 2 }, (data, success) => {
                     if (success) {
                       if (!ChatHubState.gxsDetails[menu.gxsId]) ChatHubState.gxsDetails[menu.gxsId] = { mReputation: {} };
                       if (!ChatHubState.gxsDetails[menu.gxsId].mReputation) ChatHubState.gxsDetails[menu.gxsId].mReputation = {};
@@ -774,7 +774,7 @@ const ChatConversationView = () => {
               !isOwn && m('.menu-item', {
                 onclick: () => {
                   ChatHubState.activeMenu = null;
-                  rs.rsJsonApiRequest('/rsreputations/setOwnOpinion', { id: menu.gxsId, opinion: 1 }, (data, success) => {
+                  rs.rsJsonApiRequest('/rsreputations/setOwnOpinion', { id: menu.gxsId, op: 1 }, (data, success) => {
                     if (success) {
                       if (!ChatHubState.gxsDetails[menu.gxsId]) ChatHubState.gxsDetails[menu.gxsId] = { mReputation: {} };
                       if (!ChatHubState.gxsDetails[menu.gxsId].mReputation) ChatHubState.gxsDetails[menu.gxsId].mReputation = {};
@@ -796,7 +796,7 @@ const ChatConversationView = () => {
               !isOwn && m('.menu-item', {
                 onclick: () => {
                   ChatHubState.activeMenu = null;
-                  rs.rsJsonApiRequest('/rsreputations/setOwnOpinion', { id: menu.gxsId, opinion: 0 }, (data, success) => {
+                  rs.rsJsonApiRequest('/rsreputations/setOwnOpinion', { id: menu.gxsId, op: 0 }, (data, success) => {
                     if (success) {
                       if (!ChatHubState.gxsDetails[menu.gxsId]) ChatHubState.gxsDetails[menu.gxsId] = { mReputation: {} };
                       if (!ChatHubState.gxsDetails[menu.gxsId].mReputation) ChatHubState.gxsDetails[menu.gxsId].mReputation = {};
