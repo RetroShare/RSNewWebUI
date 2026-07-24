@@ -536,25 +536,8 @@ const ChatConversationView = () => {
                   e.preventDefault();
                   e.stopPropagation();
                   ChatHubState.hoveredUser = null;
-
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const rightbar = document.querySelector('.chat-hub-rightbar');
-                  if (rightbar) {
-                    const parentRect = rightbar.getBoundingClientRect();
-                    const itemBottom = rect.bottom - parentRect.top;
-                    const estimatedMenuHeight = 310;
-                    let top = itemBottom;
-                    if (itemBottom + estimatedMenuHeight > parentRect.height) {
-                      top = rect.top - parentRect.top - estimatedMenuHeight;
-                      if (top < 10) top = 10;
-                    }
-                    if (ChatHubState.activeMenu && ChatHubState.activeMenu.gxsId === gxsId) {
-                      ChatHubState.activeMenu = null;
-                    } else {
-                      ChatHubState.activeMenu = { gxsId, name, top };
-                    }
-                    m.redraw();
-                  }
+                  ChatHubState.activeMenu = null;
+                  m.redraw();
                 },
                 oncontextmenu: (e) => {
                   e.preventDefault();

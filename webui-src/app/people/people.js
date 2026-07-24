@@ -7,6 +7,7 @@ const {
   fetchIdDetails,
   loadGxsIdentities,
   loadOwnGxsIds,
+  preloadAllChatHistory,
   syncFilter,
   stopStatusPolling,
   initializeDistantChat,
@@ -28,7 +29,8 @@ const PeopleLayout = () => {
       syncFilter(vnode.attrs.tab);
       Data.refreshGpgDetails().then(() => m.redraw());
       loadGxsIdentities();
-      loadOwnGxsIds();
+      loadOwnGxsIds().then(() => preloadAllChatHistory());
+      preloadAllChatHistory();
       window.addEventListener('click', dismissMenu);
 
       // Register for chatEvents to receive live incoming messages

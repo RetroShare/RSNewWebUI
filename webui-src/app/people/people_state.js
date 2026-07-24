@@ -6,10 +6,12 @@ const peopleUtil = require('people/people_util');
 const State = {
   searchString: '',
   selectedId: null, // GXS ID of the selected identity
+  mainTab: 'people', // 'people' | 'chats'
   activeFilter: 'contacts', // 'all' | 'contacts' | 'own'
   gxsIdToDetailsMap: {},
   ownGxsIds: [],
   gpgToGxsIdMap: {},
+  chatHistoryMap: {}, // gxsId -> { lastMsg, lastTime }
   showMailCompose: false,
   activeTab: 'details',
   selectedOwnGxsIdForChat: '',
@@ -254,6 +256,18 @@ function stopStatusPolling() {
   State.distantChatStatus = null;
 }
 
+function isSystemMsg(msgText) {
+  if (!msgText || typeof msgText !== 'string') return true;
+  const lower = msgText.toLowerCase();
+  return (
+    lower.includes('starting distant chat') ||
+    lower.includes('please wait for secure tunnel') ||
+    lower.includes('tunnel is secured') ||
+    lower.includes('chat initiated') ||
+    lower.includes('closed the conversation')
+  );
+}
+
 function initializeDistantChat() {
   if (!State.selectedId || !State.selectedOwnGxsIdForChat) return;
 
@@ -301,6 +315,18 @@ function loadChatMessages() {
     (data, success) => {
       if (success && data.msgs) {
         State.chatMessages = data.msgs;
+        const realUserMsgs = data.msgs.filter(
+          (m) => !m.isSystem && !isSystemMsg(m.message || m.msg)
+        );
+        if (realUserMsgs.length > 0 && State.selectedId) {
+          const last = realUserMsgs[realUserMsgs.length - 1];
+          State.chatHistoryMap[State.selectedId] = {
+            lastMsg: last.message || last.msg || '',
+            lastTime: last.sendTime || last.recvTime || Math.floor(Date.now() / 1000),
+          };
+        } else if (State.selectedId) {
+          delete State.chatHistoryMap[State.selectedId];
+        }
         m.redraw();
         setTimeout(() => {
           const element = document.querySelector('.chat-messages');
@@ -333,6 +359,12 @@ function sendDistantChatMessage() {
     lobby_peer_gxs_id: State.selectedOwnGxsIdForChat,
   };
   State.chatMessages.push(echoMsg);
+  if (State.selectedId) {
+    State.chatHistoryMap[State.selectedId] = {
+      lastMsg: text,
+      lastTime: Math.floor(Date.now() / 1000),
+    };
+  }
   m.redraw();
   setTimeout(() => {
     const element = document.querySelector('.chat-messages');
@@ -353,8 +385,94 @@ function sendDistantChatMessage() {
   );
 }
 
+function preloadAllChatHistory() {
+  rs.rsJsonApiRequest('/rsIdentity/getIdentitiesSummaries', {}, (data) => {
+    const ids = (data && data.ids) ? data.ids : (rs.userList.users || []);
+    if (!ids || ids.length === 0) return;
+
+    ids.forEach((u) => {
+      const gxsId = typeof u === 'object' ? u.mGroupId : u;
+      if (!gxsId) return;
+
+      // Check Distant Chat History (type: 2)
+      const distantPeerId = {
+        broadcast_status_peer_id: '00000000000000000000000000000000',
+        type: 2, // DISTANT
+        peer_id: '00000000000000000000000000000000',
+        distant_chat_id: gxsId,
+        lobby_id: { xstr64: '0' },
+      };
+
+      rs.rsJsonApiRequest(
+        '/rsHistory/getMessages',
+        {
+          chatPeerId: distantPeerId,
+          loadCount: 20,
+        },
+        (msgData, success) => {
+          if (success && msgData && msgData.msgs) {
+            const userMsgs = msgData.msgs.filter(
+              (m) => !m.isSystem && !isSystemMsg(m.message || m.msg)
+            );
+            if (userMsgs.length > 0) {
+              const last = userMsgs[userMsgs.length - 1];
+              State.chatHistoryMap[gxsId] = {
+                lastMsg: last.message || last.msg || '',
+                lastTime: last.sendTime || last.recvTime || Math.floor(Date.now() / 1000),
+              };
+              m.redraw();
+            }
+          }
+        }
+      );
+
+      // Also check Private Chat History (type: 1) if PGP ID is known
+      const details = State.gxsIdToDetailsMap[gxsId];
+      const pgpId = details ? details.mPgpId : (typeof u === 'object' ? u.mPgpId : null);
+      if (pgpId && pgpId !== '0000000000000000') {
+        const privatePeerId = {
+          broadcast_status_peer_id: '00000000000000000000000000000000',
+          type: 1, // PRIVATE
+          peer_id: pgpId,
+          distant_chat_id: '00000000000000000000000000000000',
+          lobby_id: { xstr64: '0' },
+        };
+
+        rs.rsJsonApiRequest(
+          '/rsHistory/getMessages',
+          {
+            chatPeerId: privatePeerId,
+            loadCount: 20,
+          },
+          (msgData, success) => {
+            if (success && msgData && msgData.msgs) {
+              const userMsgs = msgData.msgs.filter(
+                (m) => !m.isSystem && !isSystemMsg(m.message || m.msg)
+              );
+              if (userMsgs.length > 0) {
+                const last = userMsgs[userMsgs.length - 1];
+                const existing = State.chatHistoryMap[gxsId];
+                const lastTime = last.sendTime || last.recvTime || Math.floor(Date.now() / 1000);
+                if (!existing || lastTime > existing.lastTime) {
+                  State.chatHistoryMap[gxsId] = {
+                    lastMsg: last.message || last.msg || '',
+                    lastTime: lastTime,
+                  };
+                  m.redraw();
+                }
+              }
+            }
+          }
+        );
+      }
+    });
+  });
+}
+
 module.exports = {
   State,
+  isSystemMsg,
+  preloadAllChatHistory,
   fetchIdDetails,
   loadGxsIdentities,
   loadOwnGxsIds,

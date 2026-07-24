@@ -6,99 +6,99 @@ const ownIdsLayout = require('people/people_ownids');
 const { CreateIdentity } = ownIdsLayout;
 const {
   State,
+  isSystemMsg,
+  preloadAllChatHistory,
   fetchIdDetails,
   loadGxsIdentities,
   getSafeAvatar,
+  get64Num,
   stopStatusPolling,
   initializeDistantChat,
 } = require('people/people_state');
 
+function formatRelativeTime(ts) {
+  if (!ts) return '';
+  const now = Math.floor(Date.now() / 1000);
+  const diff = now - ts;
+  if (diff < 30) return 'Just Now';
+  if (diff < 3600) return `${Math.floor(diff / 60)} min${Math.floor(diff / 60) > 1 ? 's' : ''}`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hr${Math.floor(diff / 3600) > 1 ? 's' : ''}`;
+  return `${Math.floor(diff / 86400)} d`;
+}
+
 const PeopleSidebar = () => {
   return {
+    oninit: () => {
+      preloadAllChatHistory();
+    },
     view: () => {
-      // 1. Get base list based on filter
-      let baseList = [];
-      if (State.activeFilter === 'own') {
-        baseList = peopleUtil.sortIds(State.ownGxsIds) || [];
-      } else if (State.activeFilter === 'contacts') {
-        baseList = peopleUtil.contactlist(rs.userList.users) || [];
+      // 1. Determine list based on mainTab ('people' vs 'chats')
+      let displayItems = [];
+
+      if (State.mainTab === 'people') {
+        let baseList = [];
+        if (State.activeFilter === 'own') {
+          baseList = peopleUtil.sortIds(State.ownGxsIds) || [];
+        } else if (State.activeFilter === 'contacts') {
+          baseList = peopleUtil.contactlist(rs.userList.users) || [];
+        } else {
+          baseList = peopleUtil.sortUsers(rs.userList.users) || [];
+        }
+
+        displayItems = baseList.filter((item) => {
+          let name = State.activeFilter === 'own' ? (rs.userList.username(item) || 'Unknown') : (item.mGroupName || 'Unknown');
+          return name.toLowerCase().includes(State.searchString.toLowerCase());
+        });
+
+        displayItems.sort((a, b) => {
+          let nameA = State.activeFilter === 'own' ? (rs.userList.username(a) || '') : (a.mGroupName || '');
+          let nameB = State.activeFilter === 'own' ? (rs.userList.username(b) || '') : (b.mGroupName || '');
+          return nameA.localeCompare(nameB);
+        });
       } else {
-        baseList = peopleUtil.sortUsers(rs.userList.users) || [];
+        // Chats Tab: ONLY contacts and identities that have real chat history (ignoring system tunnel status logs)
+        const userGroupIds = new Set((rs.userList.users || []).map((u) => u.mGroupId));
+        Object.keys(State.chatHistoryMap || {}).forEach((id) => userGroupIds.add(id));
+
+        displayItems = Array.from(userGroupIds)
+          .map((gxsId) => {
+            const entry = rs.userList.userMap[gxsId];
+            const name = entry && entry.name ? entry.name : (rs.userList.username(gxsId) || 'Unknown');
+            return { mGroupId: gxsId, mGroupName: name };
+          })
+          .filter((item) => {
+            const gxsId = item.mGroupId;
+            fetchIdDetails(gxsId);
+            const hist = State.chatHistoryMap && State.chatHistoryMap[gxsId];
+
+            const hasRealHistory = Boolean(hist && hist.lastMsg && !isSystemMsg(hist.lastMsg));
+
+            if (!hasRealHistory) return false;
+
+            const name = item.mGroupName || 'Unknown';
+            return name.toLowerCase().includes(State.searchString.toLowerCase());
+          });
+
+        // Sort by chat timestamp descending
+        displayItems.sort((a, b) => {
+          const histA = State.chatHistoryMap[a.mGroupId];
+          const histB = State.chatHistoryMap[b.mGroupId];
+          const detailsA = State.gxsIdToDetailsMap[a.mGroupId];
+          const detailsB = State.gxsIdToDetailsMap[b.mGroupId];
+
+          const timeA = histA ? histA.lastTime : (detailsA ? get64Num(detailsA.mLastUsageTS) : 0);
+          const timeB = histB ? histB.lastTime : (detailsB ? get64Num(detailsB.mLastUsageTS) : 0);
+          return timeB - timeA;
+        });
       }
 
-      // 2. Apply search filter
-      const filteredList = baseList.filter((item) => {
-        let name = '';
-        if (State.activeFilter === 'own') {
-          name = rs.userList.username(item) || 'Unknown';
-        } else {
-          name = item.mGroupName || 'Unknown';
-        }
-        return name.toLowerCase().includes(State.searchString.toLowerCase());
-      });
-
-      // Sort alphabetically by name
-      filteredList.sort((a, b) => {
-        let nameA = '';
-        let nameB = '';
-        if (State.activeFilter === 'own') {
-          nameA = rs.userList.username(a) || '';
-          nameB = rs.userList.username(b) || '';
-        } else {
-          nameA = a.mGroupName || '';
-          nameB = b.mGroupName || '';
-        }
-        return nameA.localeCompare(nameB);
-      });
-
       return m('.people-left-pane', [
-        // Filter Tabs Group
-        m('.people-filter-group', [
-          m(
-            'button.filter-btn' + (State.activeFilter === 'contacts' ? '.active' : ''),
-            {
-              onclick: () => {
-                m.route.set('/people/MyContacts');
-              },
-            },
-            'Contacts'
-          ),
-          m(
-            'button.filter-btn' + (State.activeFilter === 'own' ? '.active' : ''),
-            {
-              onclick: () => {
-                m.route.set('/people/OwnIdentity');
-              },
-            },
-            'My Identities'
-          ),
-          m(
-            'button.filter-btn' + (State.activeFilter === 'all' ? '.active' : ''),
-            {
-              onclick: () => {
-                m.route.set('/people/All');
-              },
-            },
-            'All'
-          ),
-        ]),
-
-        // Create Identity container (only shown for "My Identities")
-        State.activeFilter === 'own' &&
-          m('.create-id-container', [
-            m(
-              'button.create-id-btn.blue',
-              {
-                onclick: () => widget.popupMessage(m(CreateIdentity)),
-              },
-              [m('i.fas.fa-plus-circle'), ' Create New Identity']
-            ),
-          ]),
-
-        // Search bar
-        m('.friends-list-container', [
-          m('.searchbar-container', [
-            m('input.searchbar[type=text][placeholder=Search Identities...]', {
+        // Sidebar Header Container
+        m('.people-sidebar-header', [
+          // 1. Top Search Bar
+          m('.searchbar-wrapper', [
+            m('i.fas.fa-search'),
+            m('input.searchbar-input[type=text][placeholder=Search...]', {
               value: State.searchString,
               oninput: (e) => {
                 State.searchString = e.target.value;
@@ -106,13 +106,75 @@ const PeopleSidebar = () => {
             }),
           ]),
 
-          // Scrollable list
+          // 2. Dual Segmented Tab Control: [People] | [Chats]
+          m('.segmented-control', [
+            m(
+              'button.segment-tab' + (State.mainTab === 'people' ? '.active' : ''),
+              {
+                onclick: () => {
+                  State.mainTab = 'people';
+                  m.redraw();
+                },
+              },
+              [m('i.fas.fa-users'), ' People']
+            ),
+            m(
+              'button.segment-tab' + (State.mainTab === 'chats' ? '.active' : ''),
+              {
+                onclick: () => {
+                  State.mainTab = 'chats';
+                  preloadAllChatHistory();
+                  m.redraw();
+                },
+              },
+              [m('i.fas.fa-comments'), ' Chats']
+            ),
+          ]),
+
+          // 3. Sub-Filter Row (People Tab)
+          State.mainTab === 'people' &&
+            m('.sub-filter-row', [
+              m(
+                'select.filter-select',
+                {
+                  value: State.activeFilter,
+                  onchange: (e) => {
+                    State.activeFilter = e.target.value;
+                    m.route.set(
+                      '/people/' +
+                        (State.activeFilter === 'contacts'
+                          ? 'MyContacts'
+                          : State.activeFilter === 'own'
+                          ? 'OwnIdentity'
+                          : 'All')
+                    );
+                  },
+                },
+                [
+                  m('option[value=contacts]', 'Contacts'),
+                  m('option[value=own]', 'My Identities'),
+                  m('option[value=all]', 'All Users'),
+                ]
+              ),
+              State.activeFilter === 'own' &&
+                m(
+                  'button.btn-add-id[title=Create New Identity]',
+                  {
+                    onclick: () => widget.popupMessage(m(CreateIdentity)),
+                  },
+                  m('i.fas.fa-plus')
+                ),
+            ]),
+        ]),
+
+        // Scrollable List Container
+        m('.friends-list-container', [
           m('.friends-scroll', [
-            filteredList.length === 0
-              ? m('.network-pane-placeholder', { style: 'padding: 2rem 0;' }, 'No identities found')
-              : filteredList.map((item) => {
+            displayItems.length === 0
+              ? m('.network-pane-placeholder', { style: 'padding: 2rem 0;' }, State.mainTab === 'chats' ? 'No active chats' : 'No identities found')
+              : displayItems.map((item) => {
                   let gxsId, displayName;
-                  if (State.activeFilter === 'own') {
+                  if (State.mainTab === 'people' && State.activeFilter === 'own') {
                     gxsId = item;
                     displayName = rs.userList.username(gxsId) || 'Unknown';
                   } else {
@@ -130,6 +192,65 @@ const PeopleSidebar = () => {
                   const itemIsContact = itemEntry && itemEntry.isContact;
                   const itemIsOwn = State.ownGxsIds.includes(gxsId);
 
+                  const hist = State.chatHistoryMap[gxsId];
+                  const lastTS = hist ? hist.lastTime : (itemDetails ? get64Num(itemDetails.mLastUsageTS) : 0);
+                  const relativeTimeStr = formatRelativeTime(lastTS);
+                  const lastMsgText = hist && hist.lastMsg ? hist.lastMsg : (itemIsOwn ? 'My Identity' : itemIsContact ? 'Saved Contact' : 'Distant Chat');
+
+                  if (State.mainTab === 'chats') {
+                    return m(
+                      '.chat-item',
+                      {
+                        class: isSelected ? 'selected' : '',
+                        onclick: (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          State.activeMenu = null;
+                          State.selectedId = gxsId;
+                          State.activeTab = 'chat';
+                          initializeDistantChat();
+                          m.redraw();
+                        },
+                        oncontextmenu: (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          State.selectedId = gxsId;
+                          const container = document.querySelector('.friends-list-container');
+                          if (container) {
+                            const parentRect = container.getBoundingClientRect();
+                            const top = e.clientY - parentRect.top;
+                            const left = Math.min(Math.max(e.clientX - parentRect.left, 10), 160);
+                            State.activeMenu = { gxsId, displayName, isContact: itemIsContact, top, left };
+                          }
+                          m.redraw();
+                        },
+                      },
+                      [
+                        m('.chat-avatar-wrapper', [
+                          m(peopleUtil.UserAvatar, {
+                            avatar: itemAvatar,
+                            firstLetter: itemFirstLetter,
+                            identityId: gxsId,
+                            size: 40,
+                          }),
+                          m('.status-dot', {
+                            style: {
+                              backgroundColor: itemIsContact || itemIsOwn ? '#22c55e' : '#cbd5e1',
+                            },
+                          }),
+                        ]),
+                        m('.chat-info', [
+                          m('.chat-name', displayName),
+                          m('.chat-last-msg', lastMsgText),
+                        ]),
+                        m('.chat-meta', [
+                          relativeTimeStr && m('.chat-time', relativeTimeStr),
+                        ]),
+                      ]
+                    );
+                  }
+
+                  // People tab list item
                   return m(
                     '.friend-list-item',
                     {
@@ -137,18 +258,7 @@ const PeopleSidebar = () => {
                       onclick: (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const container = document.querySelector('.friends-list-container');
-                        if (container) {
-                          const parentRect = container.getBoundingClientRect();
-                          const top = rect.bottom - parentRect.top;
-                          if (State.activeMenu && State.activeMenu.gxsId === gxsId) {
-                            State.activeMenu = null;
-                          } else {
-                            State.activeMenu = { gxsId, displayName, isContact: itemIsContact, top };
-                          }
-                        }
+                        State.activeMenu = null;
 
                         const idChanged = State.selectedId !== gxsId;
                         State.selectedId = gxsId;
@@ -165,13 +275,14 @@ const PeopleSidebar = () => {
                       oncontextmenu: (e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        State.selectedId = gxsId;
 
-                        const rect = e.currentTarget.getBoundingClientRect();
                         const container = document.querySelector('.friends-list-container');
                         if (container) {
                           const parentRect = container.getBoundingClientRect();
-                          const top = rect.bottom - parentRect.top;
-                          State.activeMenu = { gxsId, displayName, isContact: itemIsContact, top };
+                          const top = e.clientY - parentRect.top;
+                          const left = Math.min(Math.max(e.clientX - parentRect.left, 10), 160);
+                          State.activeMenu = { gxsId, displayName, isContact: itemIsContact, top, left };
                         }
                         m.redraw();
                       },
@@ -206,6 +317,9 @@ const PeopleSidebar = () => {
             return m('.people-context-menu', {
               style: {
                 top: `${menu.top}px`,
+                left: menu.left !== undefined ? `${menu.left}px` : '10px',
+                position: 'absolute',
+                zIndex: 1000,
               },
               onclick: (e) => {
                 e.stopPropagation();
