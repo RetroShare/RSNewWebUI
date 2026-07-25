@@ -149,7 +149,7 @@ function renderChatMessage(rawText) {
         .replaceAll('<br>', '\n')
         .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
       if (cleanText) {
-        parts.push(renderTextWithEmoji(cleanText));
+        parts.push(renderFormattedMessageText(cleanText));
       }
     }
 
@@ -182,11 +182,61 @@ function renderChatMessage(rawText) {
 
   // 3. Normal text message
   const cleanText = rawText
+    .replace(/<blockquote[^>]*>/gi, '\n> ')
+    .replace(/<\/blockquote>/gi, '\n')
     .replaceAll('<br/>', '\n')
     .replaceAll('<br>', '\n')
     .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
 
-  return renderTextWithEmoji(cleanText);
+  return renderFormattedMessageText(cleanText);
+}
+
+function renderFormattedMessageText(text) {
+  if (!text) return '';
+  const lines = text.split('\n');
+  const elements = [];
+  let currentQuoteLines = [];
+
+  const flushQuote = () => {
+    if (currentQuoteLines.length > 0) {
+      const quoteText = currentQuoteLines.join('\n');
+      elements.push(
+        m('blockquote.chat-quote-block', {
+          style: {
+            borderLeft: '3px solid #3b82f6',
+            backgroundColor: '#f8fafc',
+            color: '#475569',
+            padding: '0.35rem 0.65rem',
+            margin: '0.35rem 0',
+            borderRadius: '0 0.375rem 0.375rem 0',
+            fontSize: '0.9em',
+            fontStyle: 'italic',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }
+        }, renderTextWithEmoji(quoteText))
+      );
+      currentQuoteLines = [];
+    }
+  };
+
+  lines.forEach((line, idx) => {
+    if (line.trim().startsWith('>')) {
+      const lineContent = line.trim().replace(/^>\s?/, '');
+      currentQuoteLines.push(lineContent);
+    } else {
+      flushQuote();
+      if (line) {
+        elements.push(renderTextWithEmoji(line));
+      }
+      if (idx < lines.length - 1) {
+        elements.push(m('br'));
+      }
+    }
+  });
+  flushQuote();
+
+  return elements.length > 0 ? elements : renderTextWithEmoji(text);
 }
 
 /**
@@ -381,13 +431,34 @@ const Message = () => {
       const chatType = ChatLobbyModel.currentLobby && ChatLobbyModel.currentLobby.chatType;
       const isRoom = chatType === 3;
 
+      const handleContextMenu = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const sel = window.getSelection() ? window.getSelection().toString() : '';
+        const targetText = sel && sel.trim() ? sel : rawText;
+
+        ChatHubState.messageContextMenu = {
+          show: true,
+          x: e.clientX,
+          y: e.clientY,
+          messageText: targetText,
+          username: username,
+        };
+        m.redraw();
+      };
+
       if (isRoom) {
         const nickColor = getNicknameColor(gxsId, username);
         return m(
           '.message.compact',
-          m('span.datetime', datetime),
-          m('span.username', { style: { color: nickColor } }, username + ':'),
-          m('span.messagetext', renderChatMessage(rawText))
+          {
+            oncontextmenu: handleContextMenu,
+          },
+          [
+            m('span.datetime', datetime),
+            m('span.username', { style: { color: nickColor } }, username + ':'),
+            m('span.messagetext', renderChatMessage(rawText)),
+          ]
         );
       }
 
@@ -808,6 +879,13 @@ const ChatHubState = {
   historySearchQuery: '',
   fullHistoryMessages: [],
   isHistoryLoading: false,
+  messageContextMenu: {
+    show: false,
+    x: 0,
+    y: 0,
+    messageText: '',
+    username: '',
+  },
 };
 
 module.exports = {

@@ -1058,10 +1058,16 @@ const ChatRoomJoinView = () => {
 
 const Layout = {
   dismissMenu: () => {
+    let redraw = false;
     if (ChatHubState.activeMenu) {
       ChatHubState.activeMenu = null;
-      m.redraw();
+      redraw = true;
     }
+    if (ChatHubState.messageContextMenu && ChatHubState.messageContextMenu.show) {
+      ChatHubState.messageContextMenu.show = false;
+      redraw = true;
+    }
+    if (redraw) m.redraw();
   },
   oninit: () => {
     ChatHubState.activeTab = 'chat';
@@ -1481,7 +1487,45 @@ const Layout = {
                 'Select a chat room from the left panel to view details or join a conversation.'
               ),
             ]),
-      ]),
+        ]),
+      ChatHubState.messageContextMenu.show && m('.chat-msg-context-menu', {
+        style: `position: fixed; top: ${ChatHubState.messageContextMenu.y}px; left: ${ChatHubState.messageContextMenu.x}px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 0.35rem 0; z-index: 3000; min-width: 160px;`,
+        onclick: (e) => e.stopPropagation(),
+      }, [
+        m('.context-menu-item', {
+          style: 'padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.6rem; cursor: pointer; transition: background 0.15s ease;',
+          onmouseenter: (e) => (e.currentTarget.style.background = '#f1f5f9'),
+          onmouseleave: (e) => (e.currentTarget.style.background = 'transparent'),
+          onclick: () => {
+            const { username, messageText } = ChatHubState.messageContextMenu;
+            const quoteHeader = `> [${username}]: ${messageText}\n`;
+            const textarea = document.querySelector('.chat-hub-input-area textarea') || document.querySelector('#msginput');
+            if (textarea) {
+              textarea.value = (textarea.value ? textarea.value.trim() + '\n' : '') + quoteHeader;
+              textarea.focus();
+            }
+            ChatHubState.messageContextMenu.show = false;
+            m.redraw();
+          },
+        }, [
+          m('i.fas.fa-quote-right', { style: 'color: #3b82f6;' }),
+          'Quote Message'
+        ]),
+        m('.context-menu-item', {
+          style: 'padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.6rem; cursor: pointer; transition: background 0.15s ease;',
+          onmouseenter: (e) => (e.currentTarget.style.background = '#f1f5f9'),
+          onmouseleave: (e) => (e.currentTarget.style.background = 'transparent'),
+          onclick: () => {
+            const { messageText } = ChatHubState.messageContextMenu;
+            navigator.clipboard.writeText(messageText);
+            ChatHubState.messageContextMenu.show = false;
+            m.redraw();
+          },
+        }, [
+          m('i.far.fa-copy', { style: 'color: #64748b;' }),
+          'Copy Text'
+        ]),
+      ])
     ]);
   },
 };

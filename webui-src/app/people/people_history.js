@@ -1,11 +1,11 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const peopleState = require('people/people_state');
-const chatState = require('chat/chat_state');
 
 const HistoryBrowserModal = () => {
   return {
     oninit: (vnode) => {
+      const chatState = require('chat/chat_state');
       const isRoom = vnode.attrs && vnode.attrs.isRoom;
       if (isRoom) {
         chatState.ChatHubState.historySearchQuery = '';
@@ -19,6 +19,7 @@ const HistoryBrowserModal = () => {
       }
     },
     view: (vnode) => {
+      const chatState = require('chat/chat_state');
       const isRoom = vnode.attrs && vnode.attrs.isRoom;
       const stateObj = isRoom ? chatState.ChatHubState : peopleState.State;
 
