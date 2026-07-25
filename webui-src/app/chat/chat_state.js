@@ -532,6 +532,38 @@ const ChatLobbyModel = {
       }
     );
   },
+  loadAllHistoryForRoom(lobbyId, callback) {
+    ChatHubState.isHistoryLoading = true;
+    ChatHubState.fullHistoryMessages = [];
+    m.redraw();
+
+    const chatType = this.currentLobby && this.currentLobby.chatType;
+    const isDistant = chatType === 2;
+
+    const chatPeerId = {
+      broadcast_status_peer_id: '00000000000000000000000000000000',
+      type: isDistant ? 2 : 3,
+      peer_id: '00000000000000000000000000000000',
+      distant_chat_id: isDistant ? (lobbyId || '') : '00000000000000000000000000000000',
+      lobby_id: { xstr64: isDistant ? '0' : (lobbyId || '0') },
+    };
+
+    rs.rsJsonApiRequest(
+      '/rsHistory/getMessages',
+      {
+        chatPeerId: chatPeerId,
+        loadCount: 0,
+      },
+      (data, success) => {
+        let msgs = (success && data && data.msgs) ? data.msgs : [];
+        msgs.sort((a, b) => (a.sendTime || a.recvTime) - (b.sendTime || b.recvTime));
+        ChatHubState.fullHistoryMessages = msgs;
+        ChatHubState.isHistoryLoading = false;
+        m.redraw();
+        if (callback) callback();
+      }
+    );
+  },
   setupAction: (lobbyId, nick) => { },
   setIdentity(lobbyId, nick) {
     rs.rsJsonApiRequest(
@@ -772,6 +804,10 @@ const ChatHubState = {
   showInviteModal: false,
   friendsList: [],
   selectedFriendsToInvite: new Set(),
+  showHistoryModal: false,
+  historySearchQuery: '',
+  fullHistoryMessages: [],
+  isHistoryLoading: false,
 };
 
 module.exports = {

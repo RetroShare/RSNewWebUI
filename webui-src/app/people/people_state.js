@@ -22,6 +22,10 @@ const State = {
   statusPollInterval: null,
   chatDisconnected: false,
   activeMenu: null,
+  showHistoryModal: false,
+  historySearchQuery: '',
+  fullHistoryMessages: [],
+  isHistoryLoading: false,
 };
 
 function fetchIdDetails(gxsId) {
@@ -308,7 +312,7 @@ function loadChatMessages() {
 
   const chatPeerId = {
     broadcast_status_peer_id: '00000000000000000000000000000000',
-    type: 2, // DISTANT
+    type: 2, // TYPE_PRIVATE_DISTANT
     peer_id: '00000000000000000000000000000000',
     distant_chat_id: State.chatPid,
     lobby_id: { xstr64: '0' },
@@ -350,7 +354,7 @@ function sendDistantChatMessage() {
 
   const cid = {
     broadcast_status_peer_id: '00000000000000000000000000000000',
-    type: 2, // DISTANT
+    type: 2, // TYPE_PRIVATE_DISTANT
     peer_id: '00000000000000000000000000000000',
     distant_chat_id: State.chatPid,
     lobby_id: { xstr64: '0' },
@@ -405,10 +409,10 @@ function preloadAllChatHistory() {
       const gxsId = typeof u === 'object' ? u.mGroupId : u;
       if (!gxsId) return;
 
-      // Check Distant Chat History (type: 2)
+      // Check Distant Chat History (type: 2 - TYPE_PRIVATE_DISTANT)
       const distantPeerId = {
         broadcast_status_peer_id: '00000000000000000000000000000000',
-        type: 2, // DISTANT
+        type: 2, // TYPE_PRIVATE_DISTANT
         peer_id: '00000000000000000000000000000000',
         distant_chat_id: gxsId,
         lobby_id: { xstr64: '0' },
@@ -480,10 +484,89 @@ function preloadAllChatHistory() {
   });
 }
 
+function loadAllHistoryForSelectedPeer(callback) {
+  if (!State.selectedId) return;
+
+  State.isHistoryLoading = true;
+  State.fullHistoryMessages = [];
+  m.redraw();
+
+  const queries = [];
+
+  // Query 1: Distant Chat History by active chatPid (type: 2 - TYPE_PRIVATE_DISTANT)
+  if (State.chatPid) {
+    queries.push({
+      broadcast_status_peer_id: '00000000000000000000000000000000',
+      type: 2, // TYPE_PRIVATE_DISTANT
+      peer_id: '00000000000000000000000000000000',
+      distant_chat_id: State.chatPid,
+      lobby_id: { xstr64: '0' },
+    });
+  }
+
+  // Query 2: Distant Chat History by selectedId if different (type: 2 - TYPE_PRIVATE_DISTANT)
+  if (State.selectedId && State.selectedId !== State.chatPid) {
+    queries.push({
+      broadcast_status_peer_id: '00000000000000000000000000000000',
+      type: 2, // TYPE_PRIVATE_DISTANT
+      peer_id: '00000000000000000000000000000000',
+      distant_chat_id: State.selectedId,
+      lobby_id: { xstr64: '0' },
+    });
+  }
+
+  // Query 3: Private Chat History by PGP ID if available (type: 1 - TYPE_PRIVATE)
+  const details = State.gxsIdToDetailsMap[State.selectedId];
+  const pgpId = details ? details.mPgpId : null;
+  if (pgpId && pgpId !== '0000000000000000') {
+    queries.push({
+      broadcast_status_peer_id: '00000000000000000000000000000000',
+      type: 1, // TYPE_PRIVATE
+      peer_id: pgpId,
+      distant_chat_id: '00000000000000000000000000000000',
+      lobby_id: { xstr64: '0' },
+    });
+  }
+
+  let accumulatedMsgs = [];
+  let completed = 0;
+
+  queries.forEach((chatPeerId) => {
+    rs.rsJsonApiRequest(
+      '/rsHistory/getMessages',
+      {
+        chatPeerId: chatPeerId,
+        loadCount: 0, // 0 = load all messages in C++
+      },
+      (msgData, success) => {
+        if (success && msgData && msgData.msgs) {
+          accumulatedMsgs = accumulatedMsgs.concat(msgData.msgs);
+        }
+        completed++;
+        if (completed === queries.length) {
+          const map = new Map();
+          accumulatedMsgs.forEach((mItem) => {
+            const text = mItem.msg || mItem.message || '';
+            const key = `${mItem.sendTime || mItem.recvTime}_${text}`;
+            if (!map.has(key)) map.set(key, mItem);
+          });
+          let uniqueMsgs = Array.from(map.values());
+          uniqueMsgs.sort((a, b) => (a.sendTime || a.recvTime) - (b.sendTime || b.recvTime));
+          State.fullHistoryMessages = uniqueMsgs;
+          State.isHistoryLoading = false;
+          m.redraw();
+          if (callback) callback();
+        }
+      }
+    );
+  });
+}
+
 module.exports = {
   State,
   isSystemMsg,
   preloadAllChatHistory,
+  loadAllHistoryForSelectedPeer,
   fetchIdDetails,
   loadGxsIdentities,
   loadOwnGxsIds,

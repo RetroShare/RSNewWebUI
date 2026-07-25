@@ -8,10 +8,12 @@ const {
   initializeDistantChat,
   sendDistantChatMessage,
   stopStatusPolling,
+  loadAllHistoryForSelectedPeer,
 } = require('people/people_state');
 const { renderChatMessage } = require('chat/chat_state');
 const chatEmoji = require('chat/chat_emoji');
 const peopleUtil = require('people/people_util');
+const HistoryBrowserModal = require('people/people_history');
 
 // Mirroring C++ Distant Chat packet size limit (200KB)
 function formatChatImage(file, callback) {
@@ -98,6 +100,14 @@ const ChatTab = () => {
 
       const canTalk = State.distantChatStatus && State.distantChatStatus.status === 2;
 
+      // Filter history by search query for history modal
+      const query = (State.historySearchQuery || '').toLowerCase();
+      const filteredHistory = (State.fullHistoryMessages || []).filter((msg) => {
+        if (!query) return true;
+        const text = (msg.msg || msg.message || '').toLowerCase();
+        return text.includes(query);
+      });
+
       return m('.network-chat-view', [
         m('.chat-identity-select-container', {
           style: 'padding: 0.5rem 1rem; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;',
@@ -113,7 +123,7 @@ const ChatTab = () => {
               title: getStatusTooltip(State.distantChatStatus ? State.distantChatStatus.status : 0),
             }),
           ]),
-          m('.chat-actions', { style: 'display: flex; align-items: center; gap: 1rem;' }, [
+          m('.chat-actions', { style: 'display: flex; align-items: center; gap: 0.75rem;' }, [
             m('.select-own-profile', { style: 'display: flex; align-items: center; gap: 0.5rem;' }, [
               m('span', { style: 'color: #64748b;' }, 'Chatting as:'),
               (() => {
@@ -136,6 +146,18 @@ const ChatTab = () => {
                   }, State.ownGxsIds.map((id) => m('option', { value: id }, rs.userList.username(id)))),
                 ]);
               })(),
+            ]),
+            m('button.blue.history-btn', {
+              style: 'padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem; border: none; cursor: pointer; background-color: #3b82f6; color: #ffffff; font-weight: 600;',
+              title: 'View all past chat history with this contact',
+              onclick: () => {
+                State.showHistoryModal = true;
+                State.historySearchQuery = '';
+                loadAllHistoryForSelectedPeer();
+              },
+            }, [
+              m('i.fas.fa-history', { style: 'color: #ffffff;' }),
+              'History',
             ]),
             m('button.red.leave-btn', {
               style: 'padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.25rem; border: none; cursor: pointer; background-color: #ef4444; color: #ffffff;',
@@ -304,6 +326,9 @@ const ChatTab = () => {
             },
           }, [m('i.fas.fa-paper-plane'), ' Send']),
         ]),
+
+        // Chat History Browser Modal
+        m(HistoryBrowserModal),
       ]);
     },
   };

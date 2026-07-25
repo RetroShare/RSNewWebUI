@@ -4,6 +4,7 @@ const peopleUtil = require('people/people_util');
 const people = require('people/people');
 const chatState = require('chat/chat_state');
 const chatEmoji = require('chat/chat_emoji');
+const HistoryBrowserModal = require('people/people_history');
 
 const {
   get64Num,
@@ -235,32 +236,45 @@ const ChatRoomHeader = () => {
         ]),
         m('.chat-header-actions', [
           isDistant
-            ? m(
-                'button.red',
-                {
-                  title: 'Leave Distant Chat',
-                  onclick: () => {
-                    if (confirm('Are you sure you want to leave this distant chat conversation?')) {
-                      rs.rsJsonApiRequest(
-                        '/rsChats/closeDistantChatConnexion',
-                        {
-                          pid: lobbyHexId,
-                        },
-                        (data, success) => {
-                          if (success) {
-                            ChatLobbyModel.stopStatusPolling();
-                            ChatHubState.selectedRoom = null;
-                            ChatHubState.selectedRoomId = null;
-                            ChatHubState.selectedRoomType = null;
-                            m.route.set('/chat');
-                          }
-                        }
-                      );
+            ? [
+                m(
+                  'button.blue',
+                  {
+                    title: 'View distant chat history',
+                    style: 'margin-right: 0.75rem;',
+                    onclick: () => {
+                      ChatHubState.showHistoryModal = true;
                     }
                   },
-                },
-                [m('i.fas.fa-sign-out-alt'), ' Leave Chat']
-              )
+                  [m('i.fas.fa-history'), ' History']
+                ),
+                m(
+                  'button.red',
+                  {
+                    title: 'Leave Distant Chat',
+                    onclick: () => {
+                      if (confirm('Are you sure you want to leave this distant chat conversation?')) {
+                        rs.rsJsonApiRequest(
+                          '/rsChats/closeDistantChatConnexion',
+                          {
+                            pid: lobbyHexId,
+                          },
+                          (data, success) => {
+                            if (success) {
+                              ChatLobbyModel.stopStatusPolling();
+                              ChatHubState.selectedRoom = null;
+                              ChatHubState.selectedRoomId = null;
+                              ChatHubState.selectedRoomType = null;
+                              m.route.set('/chat');
+                            }
+                          }
+                        );
+                      }
+                    },
+                  },
+                  [m('i.fas.fa-sign-out-alt'), ' Leave Chat']
+                )
+              ]
             : [
                 m(
                   'button',
@@ -273,6 +287,17 @@ const ChatRoomHeader = () => {
                     }
                   },
                   [m('i.fas.fa-user-plus'), ' Invite']
+                ),
+                m(
+                  'button.blue',
+                  {
+                    title: 'View chat room history',
+                    style: 'margin-right: 0.75rem;',
+                    onclick: () => {
+                      ChatHubState.showHistoryModal = true;
+                    }
+                  },
+                  [m('i.fas.fa-history'), ' History']
                 ),
                 m(
                   'button.red',
@@ -557,6 +582,7 @@ const ChatConversationView = () => {
               ])
             ])
           ]),
+          m(HistoryBrowserModal, { isRoom: true }),
         ]),
         m('.chat-hub-rightbar', [
           m('.rightbar-title', 'Participants'),
