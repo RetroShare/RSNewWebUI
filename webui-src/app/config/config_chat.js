@@ -32,13 +32,13 @@ const ConfigChat = () => {
       }
     });
 
-    // Load Distant Chat Accept Permission Flags
-    rs.rsJsonApiRequest('/rsChats/getDistantChatPermissionFlags', {}, (data) => {
-      if (data && data.retval !== undefined) {
+    // Load Distant Chat Accept Permission Flags (silent error fallback)
+    rs.rsJsonApiRequest('/rsChats/getDistantChatPermissionFlags', {}, (data, success) => {
+      if (success && data && data.retval !== undefined) {
         acceptChatFrom = data.retval;
         m.redraw();
       }
-    });
+    }, true);
 
     // Load Max Storage Duration (silent error fallback)
     rs.rsJsonApiRequest('/rsHistory/getMaxStorageDuration', {}, (data, success) => {
@@ -114,7 +114,7 @@ const ConfigChat = () => {
                 value: acceptChatFrom,
                 onchange: (e) => {
                   acceptChatFrom = parseInt(e.target.value);
-                  rs.rsJsonApiRequest('/rsChats/setDistantChatPermissionFlags', { flags: acceptChatFrom }, () => {});
+                  rs.rsJsonApiRequest('/rsChats/setDistantChatPermissionFlags', { flags: acceptChatFrom }, () => {}, true);
                 },
               }, [
                 m('option', { value: 0 }, 'Everyone'),
