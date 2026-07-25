@@ -91,6 +91,104 @@ function getStatusTooltip(status) {
   }
 }
 
+function renderChatMessage(rawText) {
+  if (!rawText) return '';
+
+  // 1. Check for <img ... src="..."> HTML tags
+  const imgRegex = /<img\s+[^>]*src=["']([^"']+)["'][^>]*>/gi;
+  if (imgRegex.test(rawText)) {
+    imgRegex.lastIndex = 0;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = imgRegex.exec(rawText)) !== null) {
+      if (match.index > lastIndex) {
+        const precedingText = rawText.substring(lastIndex, match.index);
+        const cleanText = precedingText
+          .replaceAll('<br/>', '\n')
+          .replaceAll('<br>', '\n')
+          .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
+        if (cleanText) {
+          parts.push(renderTextWithEmoji(cleanText));
+        }
+      }
+
+      const src = match[1];
+      if (src) {
+        parts.push(
+          m('img.chat-embedded-image', {
+            src: src,
+            style: {
+              maxWidth: '100%',
+              maxHeight: '300px',
+              borderRadius: '0.375rem',
+              marginTop: '0.25rem',
+              marginBottom: '0.25rem',
+              display: 'block',
+              cursor: 'pointer',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            },
+            onclick: () => {
+              const w = window.open('');
+              if (w) {
+                w.document.write(`<body style="margin:0;background:#0f172a;display:flex;justify-content:center;align-items:center;min-height:100vh;"><img src="${src}" style="max-width:100%;max-height:100vh;object-fit:contain;"/></body>`);
+              }
+            }
+          })
+        );
+      }
+
+      lastIndex = imgRegex.lastIndex;
+    }
+
+    if (lastIndex < rawText.length) {
+      const trailingText = rawText.substring(lastIndex);
+      const cleanText = trailingText
+        .replaceAll('<br/>', '\n')
+        .replaceAll('<br>', '\n')
+        .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
+      if (cleanText) {
+        parts.push(renderTextWithEmoji(cleanText));
+      }
+    }
+
+    return parts.length > 0 ? parts : '';
+  }
+
+  // 2. Check for raw data:image/... base64 URLs
+  if (rawText.trim().startsWith('data:image/')) {
+    const src = rawText.trim();
+    return m('img.chat-embedded-image', {
+      src: src,
+      style: {
+        maxWidth: '100%',
+        maxHeight: '300px',
+        borderRadius: '0.375rem',
+        marginTop: '0.25rem',
+        marginBottom: '0.25rem',
+        display: 'block',
+        cursor: 'pointer',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      },
+      onclick: () => {
+        const w = window.open('');
+        if (w) {
+          w.document.write(`<body style="margin:0;background:#0f172a;display:flex;justify-content:center;align-items:center;min-height:100vh;"><img src="${src}" style="max-width:100%;max-height:100vh;object-fit:contain;"/></body>`);
+        }
+      }
+    });
+  }
+
+  // 3. Normal text message
+  const cleanText = rawText
+    .replaceAll('<br/>', '\n')
+    .replaceAll('<br>', '\n')
+    .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
+
+  return renderTextWithEmoji(cleanText);
+}
+
 /**
  * Wraps emoji characters in a span so CSS can size them independently.
  */
@@ -278,9 +376,7 @@ const Message = () => {
       if (username === gxsId && gxsId && gxsId.length > 12) {
         username = gxsId.substring(0, 8) + '...';
       }
-      const text = (msg.msg || msg.message || '')
-        .replaceAll('<br/>', '\n')
-        .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
+      const rawText = msg.msg || msg.message || '';
 
       const chatType = ChatLobbyModel.currentLobby && ChatLobbyModel.currentLobby.chatType;
       const isRoom = chatType === 3;
@@ -291,7 +387,7 @@ const Message = () => {
           '.message.compact',
           m('span.datetime', datetime),
           m('span.username', { style: { color: nickColor } }, username + ':'),
-          m('span.messagetext', renderTextWithEmoji(text))
+          m('span.messagetext', renderChatMessage(rawText))
         );
       }
 
@@ -299,7 +395,7 @@ const Message = () => {
         '.message' + (msg.incoming ? '.incoming' : '.outgoing'),
         m('span.datetime', datetime),
         m('span.username', username),
-        m('span.messagetext', renderTextWithEmoji(text))
+        m('span.messagetext', renderChatMessage(rawText))
       );
     },
   };
@@ -600,13 +696,6 @@ const ChatLobbyModel = {
   },
   sendMessage(msg, onsuccess) {
     const cid = this.chatId();
-    const echoMsg = {
-      chat_id: cid,
-      msg: msg,
-      sendTime: Math.floor(Date.now() / 1000),
-      lobby_peer_gxs_id: this.currentLobby.gxs_id,
-    };
-    this.addMessages([echoMsg], true);
 
     rs.rsJsonApiRequest(
       '/rsChats/sendChat',
@@ -616,10 +705,18 @@ const ChatLobbyModel = {
       },
       (data, success) => {
         if (success) {
-          onsuccess();
+          const echoMsg = {
+            chat_id: cid,
+            msg: msg,
+            sendTime: Math.floor(Date.now() / 1000),
+            lobby_peer_gxs_id: this.currentLobby.gxs_id,
+          };
+          this.addMessages([echoMsg], true);
+          if (onsuccess) onsuccess();
         } else {
-          console.error('[RS] Failed to send chat message');
-          onsuccess();
+          console.error('[RS] Failed to send chat message:', data);
+          alert('Failed to send chat message. The image/payload exceeds RetroShare max chat packet size.');
+          if (onsuccess) onsuccess();
         }
       }
     );
@@ -686,6 +783,7 @@ module.exports = {
   getStatusColor,
   getStatusTooltip,
   renderTextWithEmoji,
+  renderChatMessage,
   getSafeAvatar,
   MobileState,
   ChatRoomsModel,

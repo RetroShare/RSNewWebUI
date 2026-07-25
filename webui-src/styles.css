@@ -1733,25 +1733,33 @@ h1{font-size:3rem}h2{font-size:2.25rem}h3{font-size:1.875rem}h4{font-size:1.5rem
   field-sizing: content !important;
 }
 
-/* Attach file button and modal popup */
-.chat-hub-attach-btn {
-  background-color: transparent;
-  border: none;
-  font-size: 1.25rem;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0.5rem;
-  margin-right: 0.25rem;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s, transform 0.2s;
+/* Attach file, emoji, image action buttons in chat */
+.chat-hub-attach-btn,
+.chat-hub-action-btn {
+  background-color: transparent !important;
+  border: none !important;
+  font-size: 1.15rem !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  padding: 0.4rem 0.5rem !important;
+  border-radius: 0.375rem !important;
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  height: 36px !important;
+  width: 36px !important;
 }
 
-.chat-hub-attach-btn:hover {
-  color: #3b82f6;
-  transform: scale(1.05);
+.chat-hub-attach-btn:hover,
+.chat-hub-action-btn:hover {
+  background-color: #f1f5f9 !important;
+  color: #3b82f6 !important;
+  transform: none !important;
 }
 
 .attach-modal-overlay {

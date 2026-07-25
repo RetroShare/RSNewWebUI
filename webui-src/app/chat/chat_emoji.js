@@ -76,11 +76,15 @@ const EMOJI_DATA = {
   ],
 };
 
-function insertEmojiIntoTextarea(emoji) {
-  const textarea = document.querySelector('.chat-hub-textarea');
+function insertEmojiIntoTextarea(emoji, onSelect) {
+  if (typeof onSelect === 'function') {
+    onSelect(emoji);
+    return;
+  }
+  const textarea = document.querySelector('.chat-hub-textarea, .chat-textarea');
   if (!textarea) return;
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
+  const start = textarea.selectionStart || 0;
+  const end = textarea.selectionEnd || 0;
   const before = textarea.value.substring(0, start);
   const after = textarea.value.substring(end);
   textarea.value = before + emoji + after;
@@ -91,7 +95,7 @@ function insertEmojiIntoTextarea(emoji) {
 }
 
 const EmojiPicker = () => ({
-  view: () => {
+  view: ({ attrs: { onSelect } }) => {
     const search = ChatHubState.emojiSearch.toLowerCase();
     const cat = ChatHubState.emojiCategory;
     let emojis;
@@ -121,7 +125,7 @@ const EmojiPicker = () => ({
         emojis.map(e =>
           m('button.emoji-btn', {
             onclick: () => {
-              insertEmojiIntoTextarea(e);
+              insertEmojiIntoTextarea(e, onSelect);
               ChatHubState.showEmojiPicker = false;
               m.redraw();
             },

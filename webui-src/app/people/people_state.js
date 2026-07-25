@@ -206,34 +206,35 @@ function pollDistantChatStatus() {
     },
     (detail, success) => {
       if (success && detail.retval) {
-        const oldStatus = State.distantChatStatus ? State.distantChatStatus.status : null;
         State.distantChatStatus = detail.info;
 
-        if (oldStatus !== null && oldStatus !== detail.info.status) {
-          if (detail.info.status === 2) {
-            const text = 'Tunnel is secured. You can talk!';
-            const exists = State.chatMessages.some((m) => m.isSystem && m.msg === text);
-            if (!exists) {
-              State.chatMessages.push({
-                incoming: true,
-                isSystem: true,
-                msg: text,
-                sendTime: Math.floor(Date.now() / 1000),
-              });
-              State.chatMessages.sort((a, b) => a.sendTime - b.sendTime);
-            }
-          } else if (detail.info.status === 3) {
-            const text = 'Your partner closed the conversation.';
-            const exists = State.chatMessages.some((m) => m.isSystem && m.msg === text);
-            if (!exists) {
-              State.chatMessages.push({
-                incoming: true,
-                isSystem: true,
-                msg: text,
-                sendTime: Math.floor(Date.now() / 1000),
-              });
-              State.chatMessages.sort((a, b) => a.sendTime - b.sendTime);
-            }
+        if (detail.info.status === 2) {
+          const text = 'Tunnel is secured. You can talk!';
+          const exists = State.chatMessages.some(
+            (m) => m.isSystem && (m.msg === text || m.message === text)
+          );
+          if (!exists) {
+            State.chatMessages.push({
+              incoming: true,
+              isSystem: true,
+              msg: text,
+              sendTime: Math.floor(Date.now() / 1000),
+            });
+            State.chatMessages.sort((a, b) => a.sendTime - b.sendTime);
+          }
+        } else if (detail.info.status === 3) {
+          const text = 'Your partner closed the conversation.';
+          const exists = State.chatMessages.some(
+            (m) => m.isSystem && (m.msg === text || m.message === text)
+          );
+          if (!exists) {
+            State.chatMessages.push({
+              incoming: true,
+              isSystem: true,
+              msg: text,
+              sendTime: Math.floor(Date.now() / 1000),
+            });
+            State.chatMessages.sort((a, b) => a.sendTime - b.sendTime);
           }
         }
         m.redraw();
@@ -272,7 +273,14 @@ function initializeDistantChat() {
   if (!State.selectedId || !State.selectedOwnGxsIdForChat) return;
 
   State.chatPid = null;
-  State.chatMessages = [];
+  State.chatMessages = [
+    {
+      incoming: true,
+      isSystem: true,
+      msg: 'Starting distant chat... Please wait for secure tunnel.',
+      sendTime: Math.floor(Date.now() / 1000),
+    }
+  ];
   State.chatDisconnected = false;
   m.redraw();
 
@@ -351,26 +359,6 @@ function sendDistantChatMessage() {
   const text = State.chatInputMsg;
   State.chatInputMsg = '';
 
-  const echoMsg = {
-    chat_id: cid,
-    msg: text,
-    sendTime: Math.floor(Date.now() / 1000),
-    incoming: false,
-    lobby_peer_gxs_id: State.selectedOwnGxsIdForChat,
-  };
-  State.chatMessages.push(echoMsg);
-  if (State.selectedId) {
-    State.chatHistoryMap[State.selectedId] = {
-      lastMsg: text,
-      lastTime: Math.floor(Date.now() / 1000),
-    };
-  }
-  m.redraw();
-  setTimeout(() => {
-    const element = document.querySelector('.chat-messages');
-    if (element) element.scrollTop = element.scrollHeight;
-  }, 100);
-
   rs.rsJsonApiRequest(
     '/rsChats/sendChat',
     {
@@ -378,8 +366,31 @@ function sendDistantChatMessage() {
       msg: text,
     },
     (data, success) => {
-      if (!success) {
-        console.error('[RS] Failed to send distant chat message');
+      if (success) {
+        const echoMsg = {
+          chat_id: cid,
+          msg: text,
+          sendTime: Math.floor(Date.now() / 1000),
+          incoming: false,
+          lobby_peer_gxs_id: State.selectedOwnGxsIdForChat,
+        };
+        State.chatMessages.push(echoMsg);
+        if (State.selectedId) {
+          State.chatHistoryMap[State.selectedId] = {
+            lastMsg: text,
+            lastTime: Math.floor(Date.now() / 1000),
+          };
+        }
+        m.redraw();
+        setTimeout(() => {
+          const element = document.querySelector('.chat-messages');
+          if (element) element.scrollTop = element.scrollHeight;
+        }, 100);
+      } else {
+        console.error('[RS] Failed to send distant chat message:', data);
+        alert('Failed to send distant chat message. The image/payload exceeds RetroShare max chat packet size.');
+        State.chatInputMsg = text;
+        m.redraw();
       }
     }
   );

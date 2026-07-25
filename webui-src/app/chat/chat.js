@@ -24,7 +24,53 @@ const {
 
 chatEmoji.setDependencies({ ChatHubState });
 
-// ************************* helpers ****************************
+// Mirroring C++ RsHtml::makeEmbeddedImage for resizing chat images to fit RetroShare max packet limit (~30KB)
+function formatChatImage(file, callback) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const img = new Image();
+    img.onload = () => {
+      // Bounding box for chat images: 420x320 max
+      const maxWidth = 420;
+      const maxHeight = 320;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Dynamically step down JPEG quality until base64 string is under 28,000 characters (28KB)
+      let quality = 0.70;
+      let dataUrl = canvas.toDataURL('image/jpeg', quality);
+      while (dataUrl.length > 28000 && quality > 0.15) {
+        quality -= 0.10;
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+      }
+
+      if (dataUrl.length <= 32000) {
+        callback(`<img src="${dataUrl}" />`);
+      } else {
+        alert('Image file is too large to send over RetroShare chat packet size limit.');
+        callback(null);
+      }
+    };
+    img.onerror = () => {
+      callback(null);
+    };
+    img.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+}
 
 function loadOwnChatProfile() {
   rs.rsJsonApiRequest('/rsConfig/getConfigNetStatus', {}, (data) => {
@@ -286,7 +332,7 @@ const ChatConversationView = () => {
             '.chat-hub-input-area',
             [
               m(
-                'button.chat-hub-attach-btn',
+                'button.chat-hub-action-btn',
                 {
                   disabled: !canTalk,
                   style: !canTalk ? 'opacity: 0.5; cursor: not-allowed;' : '',
@@ -300,7 +346,7 @@ const ChatConversationView = () => {
               ),
               m('.emoji-picker-wrapper', [
                 m(
-                  'button.chat-hub-emoji-btn',
+                  'button.chat-hub-action-btn',
                   {
                     disabled: !canTalk,
                     style: !canTalk ? 'opacity: 0.5; cursor: not-allowed;' : '',
@@ -310,14 +356,61 @@ const ChatConversationView = () => {
                       ChatHubState.showEmojiPicker = !ChatHubState.showEmojiPicker;
                     },
                   },
-                  '😊'
+                  m('i.fas.fa-smile')
                 ),
                 ChatHubState.showEmojiPicker && m(chatEmoji.EmojiPicker),
               ]),
+              m('label.chat-hub-action-btn', {
+                title: 'Send image',
+                style: `cursor: ${canTalk ? 'pointer' : 'not-allowed'}; opacity: ${canTalk ? 1 : 0.5};`,
+              }, [
+                m('i.fas.fa-image'),
+                m('input[type=file][accept=image/*]', {
+                  style: 'display: none;',
+                  disabled: !canTalk,
+                  onchange: (e) => {
+                    if (!e.target.files || !e.target.files[0]) return;
+                    const file = e.target.files[0];
+                    const textarea = e.target.closest('.chat-hub-input-area').querySelector('textarea');
+                    formatChatImage(file, (imgTag) => {
+                      if (imgTag && textarea) {
+                        const start = textarea.selectionStart || 0;
+                        const end = textarea.selectionEnd || 0;
+                        const val = textarea.value;
+                        textarea.value = val.substring(0, start) + imgTag + val.substring(end);
+                        m.redraw();
+                      }
+                    });
+                    e.target.value = '';
+                  }
+                })
+              ]),
               m('textarea.chat-hub-textarea', {
-                placeholder: canTalk ? 'Type a message... Press Enter to send' : 'Waiting for tunnel to be secured...',
+                placeholder: canTalk ? 'Type a message... Press Enter to send (or paste image)' : 'Waiting for tunnel to be secured...',
                 disabled: !canTalk,
                 enterkeyhint: 'send',
+                onpaste: (e) => {
+                  if (!canTalk) return;
+                  const items = (e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData))?.items;
+                  if (!items) return;
+                  for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                      e.preventDefault();
+                      const blob = items[i].getAsFile();
+                      const textarea = e.target;
+                      formatChatImage(blob, (imgTag) => {
+                        if (imgTag && textarea) {
+                          const start = textarea.selectionStart || 0;
+                          const end = textarea.selectionEnd || 0;
+                          const val = textarea.value;
+                          textarea.value = val.substring(0, start) + imgTag + val.substring(end);
+                          m.redraw();
+                        }
+                      });
+                      break;
+                    }
+                  }
+                },
                 onkeydown: (e) => {
                   if ((e.key === 'Enter' || e.keyCode === 13) && !e.shiftKey) {
                     if (!canTalk) return false;
