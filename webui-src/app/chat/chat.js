@@ -1511,6 +1511,25 @@ const Layout = {
           m('i.fas.fa-quote-right', { style: 'color: #3b82f6;' }),
           'Quote Message'
         ]),
+        ChatHubState.messageContextMenu.gxsId &&
+          ChatHubState.messageContextMenu.gxsId !== '00000000000000000000000000000000' &&
+          m('.context-menu-item', {
+            style: 'padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.6rem; cursor: pointer; transition: background 0.15s ease;',
+            onmouseenter: (e) => (e.currentTarget.style.background = '#f1f5f9'),
+            onmouseleave: (e) => (e.currentTarget.style.background = 'transparent'),
+            onclick: () => {
+              const { gxsId } = ChatHubState.messageContextMenu;
+              const peopleState = require('people/people_state');
+              peopleState.State.selectedId = gxsId;
+              peopleState.State.activeFilter = 'all';
+              peopleState.fetchIdDetails(gxsId);
+              ChatHubState.messageContextMenu.show = false;
+              m.route.set('/people/All');
+            },
+          }, [
+            m('i.fas.fa-user-circle', { style: 'color: #0ea5e9;' }),
+            'Show Author in People'
+          ]),
         m('.context-menu-item', {
           style: 'padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.6rem; cursor: pointer; transition: background 0.15s ease;',
           onmouseenter: (e) => (e.currentTarget.style.background = '#f1f5f9'),
@@ -1522,7 +1541,7 @@ const Layout = {
             m.redraw();
           },
         }, [
-          m('i.far.fa-copy', { style: 'color: #64748b;' }),
+          m('i.fas.fa-copy', { style: 'color: #64748b;' }),
           'Copy Text'
         ]),
       ])

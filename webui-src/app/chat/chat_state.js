@@ -443,6 +443,7 @@ const Message = () => {
           y: e.clientY,
           messageText: targetText,
           username: username,
+          gxsId: gxsId,
         };
         m.redraw();
       };
@@ -885,6 +886,7 @@ const ChatHubState = {
     y: 0,
     messageText: '',
     username: '',
+    gxsId: '',
   },
 };
 
