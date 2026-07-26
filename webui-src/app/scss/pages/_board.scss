@@ -1,48 +1,874 @@
-/* subject */
-table.boards th:nth-child(1) {
-  width: 50%;
-  text-align: start;
-}
-/* subject */
-table.boards td:nth-child(1) {
-  text-align: start;
-  /* Truncate text with '...' */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* =========================================================
+   Global Modal & Lightbox Overlay (#popupmessage)
+   ========================================================= */
 
-table.boards tr:hover {
-  background-color: #eef3f6;
-  cursor: pointer;
-}
-
-table.boards tr.hidden {
+#popupmessage {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background-color: rgba(15, 23, 42, 0.75) !important;
+  backdrop-filter: blur(4px) !important;
+  z-index: 999999 !important;
   display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
 }
 
-#toggleunsub {
-  position: relative;
-  background: gray;
+.popup {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 1000000 !important;
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
 }
 
-#options {
-  width: 100px;
-  text-align: center;
-  font-size: medium;
-  margin-left: 20px;
-  height: 40px;
+.popup-content {
+  position: relative !important;
+  background: #ffffff !important;
+  border-radius: 12px !important;
+  padding: 1rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  overflow: auto !important;
+  box-sizing: border-box !important;
 }
 
-#composepopup {
-  height: 80%;
-  width: 70%;
+.popup-content span.close {
+  position: absolute !important;
+  top: 0.5rem !important;
+  right: 0.75rem !important;
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+  z-index: 10 !important;
+  transition: color 0.15s ease !important;
 }
 
-#mtags {
-  width: 160px;
-  text-align: center;
-  font-size: medium;
-  margin-left: 10px;
-  height: 40px;
+.popup-content span.close:hover {
+  color: #ef4444 !important;
 }
+
+.board-view-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1rem !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  padding: 0.5rem 0 !important;
+  box-sizing: border-box !important;
+}
+
+.board-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+.board-table th,
+.board-table td {
+  text-align: left !important;
+  padding: 0.65rem 0.85rem !important;
+}
+
+/* Toolbar Header Controls */
+.board-toolbar {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+  width: 100% !important;
+  padding: 0.5rem 0.85rem !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  box-sizing: border-box !important;
+}
+
+.board-toolbar__left {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.board-toolbar__right {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  flex-shrink: 0 !important;
+}
+
+.board-toolbar__count-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  padding: 0.3rem 0.65rem !important;
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  font-size: 0.825rem !important;
+  font-weight: 600 !important;
+  border-radius: 16px !important;
+  border: 1px solid #e2e8f0 !important;
+  white-space: nowrap !important;
+}
+
+.board-toolbar__count-badge i {
+  color: #007bff !important;
+}
+
+.board-toolbar__search {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  flex: 1 !important;
+  max-width: 380px !important;
+  min-width: 160px !important;
+}
+
+.board-toolbar__search-icon {
+  position: absolute !important;
+  left: 0.75rem !important;
+  color: #94a3b8 !important;
+  font-size: 0.85rem !important;
+  pointer-events: none !important;
+}
+
+.board-toolbar__search-input {
+  width: 100% !important;
+  padding: 0.35rem 0.65rem 0.35rem 2.1rem !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  font-size: 0.85rem !important;
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+}
+
+.board-toolbar__search-input:focus {
+  outline: none !important;
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15) !important;
+}
+
+.board-toolbar__view-toggle {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  background-color: #f1f5f9 !important;
+  padding: 2px !important;
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.board-toolbar__toggle-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.35rem !important;
+  padding: 0.3rem 0.65rem !important;
+  border: none !important;
+  background: transparent !important;
+  color: #64748b !important;
+  font-size: 0.825rem !important;
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.2s ease !important;
+}
+
+.board-toolbar__toggle-btn i {
+  font-size: 0.85rem !important;
+}
+
+.board-toolbar__toggle-btn:hover {
+  color: #1e293b !important;
+  background-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.board-toolbar__toggle-btn--active {
+  background-color: #007bff !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.board-toolbar__toggle-btn--active i {
+  color: #ffffff !important;
+}
+
+@media (max-width: 768px) {
+  .board-toolbar__toggle-btn span {
+    display: none !important;
+  }
+  .board-toolbar__toggle-btn {
+    padding: 0.35rem 0.55rem !important;
+  }
+}
+
+/* Pagination Controls (< 1 - 25 >) on exact same level right next to toggle */
+.board-pagination {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+  background-color: #ffffff !important;
+  padding: 2px 4px !important;
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.board-pagination__btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  min-height: 26px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 4px !important;
+  background: #ffffff !important;
+  color: #007bff !important;
+  font-size: 0.825rem !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.board-pagination__btn i {
+  font-size: 0.825rem !important;
+  color: #007bff !important;
+}
+
+.board-pagination__btn:hover:not(:disabled) {
+  background-color: #007bff !important;
+  color: #ffffff !important;
+  border-color: #007bff !important;
+}
+
+.board-pagination__btn:hover:not(:disabled) i {
+  color: #ffffff !important;
+}
+
+.board-pagination__btn:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  color: #94a3b8 !important;
+  border-color: #e2e8f0 !important;
+  background-color: #f1f5f9 !important;
+}
+
+.board-pagination__btn:disabled i {
+  color: #94a3b8 !important;
+}
+
+.board-pagination__label {
+  font-size: 0.825rem !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+  padding: 0 0.35rem !important;
+  white-space: nowrap !important;
+  user-select: none !important;
+}
+
+/* Bottom Pagination Container */
+.board-view-footer {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 1rem 0 0.5rem 0 !important;
+  width: 100% !important;
+}
+
+/* Board Grid Layout Modes */
+.board-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.board-grid--compact {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+  width: 100% !important;
+}
+
+.board-grid--card {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+  gap: 1.25rem !important;
+  width: 100% !important;
+}
+
+.board-grid__empty {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 4rem 2rem !important;
+  text-align: center !important;
+  background: #ffffff !important;
+  border: 2px dashed #cbd5e1 !important;
+  border-radius: 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.board-grid__empty-icon {
+  font-size: 3rem !important;
+  color: #cbd5e1 !important;
+  margin-bottom: 1rem !important;
+}
+
+.board-grid__empty-title {
+  font-size: 1.15rem !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  margin: 0 0 0.5rem 0 !important;
+}
+
+.board-grid__empty-desc {
+  font-size: 0.9rem !important;
+  color: #94a3b8 !important;
+  margin: 0 !important;
+}
+
+/* ===================================================
+   COMPACT VIEW MODE: FULL-WIDTH HORIZONTAL ROW BANNER
+   (Identical to Retroshare C++ Qt GUI Posted design)
+   =================================================== */
+.board-card {
+  box-sizing: border-box !important;
+}
+
+.board-card--compact {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-height: 70px !important;
+  padding: 0.45rem 0.75rem !important;
+  background-color: #eef2f5 !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 4px !important;
+  gap: 0.75rem !important;
+  box-sizing: border-box !important;
+  margin-bottom: 0.35rem !important;
+}
+
+.board-card--compact:hover {
+  background-color: #e2e8f0 !important;
+  border-color: #9ca3af !important;
+}
+
+/* Vote Pill (Matching Comments Button style with normal-sized icons) */
+.board-card__vote-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  padding: 0.2rem 0.55rem !important;
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 20px !important;
+  box-sizing: border-box !important;
+}
+
+button.board-card__vote-btn,
+.board-card__vote-pill .board-card__vote-btn {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0.1rem 0.2rem !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  border-radius: 4px !important;
+  transition: background-color 0.15s ease !important;
+  outline: none !important;
+}
+
+.board-card__vote-pill .board-card__vote-btn:hover {
+  background-color: #e2e8f0 !important;
+  box-shadow: none !important;
+}
+
+.board-card__vote-pill .board-card__vote-btn--up i {
+  color: #16a34a !important;
+  font-size: 1.15rem !important;
+}
+
+.board-card__vote-pill .board-card__vote-btn--down i {
+  color: #dc2626 !important;
+  font-size: 1.15rem !important;
+}
+
+.board-card__vote-pill .board-card__vote-score {
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  padding: 0 0.15rem !important;
+  line-height: 1 !important;
+  min-width: 1rem !important;
+  text-align: center !important;
+}
+
+/* Thumbnail Image Container */
+.board-card--compact .board-card__image-container {
+  width: 110px !important;
+  height: 62px !important;
+  flex-shrink: 0 !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+  background-color: #cbd5e1 !important;
+}
+
+.board-card--compact .board-card__image {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.board-card--compact .board-card__placeholder-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%) !important;
+}
+
+.board-card--compact .board-card__placeholder-img {
+  width: 24px !important;
+  height: 24px !important;
+  color: #64748b !important;
+}
+
+/* Main Details Section */
+.board-card--compact .board-card__content {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+}
+
+/* Title: Blue bold underlined italicized link (Matches Qt GUI) */
+.board-card--compact .board-card__title {
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  color: #2255aa !important;
+  text-decoration: underline !important;
+  font-style: italic !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  margin: 0 0 0.15rem 0 !important;
+  cursor: pointer !important;
+}
+
+.board-card--compact .board-card__title:hover {
+  color: #1d4ed8 !important;
+}
+
+/* Meta line: Posted by <author> <date> */
+.board-card--compact .board-card__meta {
+  font-size: 0.8rem !important;
+  color: #475569 !important;
+  margin-bottom: 0.2rem !important;
+}
+
+.board-card--compact .board-card__meta b {
+  color: #1e293b !important;
+}
+
+/* Footer: Comment button matching Qt GUI */
+.board-card--compact .board-card__footer {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0 !important;
+  border: none !important;
+  margin: 0 !important;
+}
+
+button.board-card__comments-btn,
+.board-card__comments-btn,
+.board-card--compact .board-card__comments-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  padding: 0.2rem 0.5rem !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #64748b !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  outline: none !important;
+}
+
+button.board-card__comments-btn:hover,
+.board-card__comments-btn:hover,
+.board-card--compact .board-card__comments-btn:hover {
+  color: #007bff !important;
+  text-decoration: underline !important;
+  box-shadow: none !important;
+}
+
+/* ===================================================
+   CARD VIEW MODE: ELEVATED GRID CARD
+   =================================================== */
+.board-card--card {
+  display: flex !important;
+  flex-direction: column !important;
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+.board-card--card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08) !important;
+  border-color: #cbd5e1 !important;
+}
+
+.board-card--card .board-card__vote-col {
+  display: none !important;
+}
+
+.board-card--card .board-card__image-container {
+  width: 100% !important;
+  height: 170px !important;
+  overflow: hidden !important;
+  background-color: #f1f5f9 !important;
+}
+
+.board-card--card .board-card__image {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.board-card--card .board-card__placeholder-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+}
+
+.board-card--card .board-card__placeholder-img {
+  width: 36px !important;
+  height: 36px !important;
+  color: #94a3b8 !important;
+}
+
+.board-card--card .board-card__content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  padding: 1rem !important;
+}
+
+.board-card--card .board-card__title {
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin: 0 0 0.4rem 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  cursor: pointer !important;
+}
+
+.board-card--card .board-card__title:hover {
+  color: #007bff !important;
+}
+
+.board-card--card .board-card__meta {
+  font-size: 0.8rem !important;
+  color: #64748b !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.board-card--card .board-card__notes-wrapper {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.35rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.board-card--card .board-card__notes {
+  font-size: 0.85rem !important;
+  line-height: 1.45 !important;
+  color: #475569 !important;
+  background-color: #f8fafc !important;
+  border-left: 3px solid #cbd5e1 !important;
+  padding: 0.4rem 0.6rem !important;
+  word-break: break-word !important;
+}
+
+.board-card--card .board-card__notes--clamped {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  white-space: pre-line !important;
+}
+
+.board-card--card .board-card__notes--expanded {
+  display: block !important;
+  white-space: pre-line !important;
+}
+
+.board-card--card .board-card__notes-toggle {
+  align-self: flex-start !important;
+  background: none !important;
+  border: none !important;
+  padding: 0.1rem 0.3rem !important;
+  color: #007bff !important;
+  font-size: 0.775rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+}
+
+.board-card--card .board-card__notes-toggle:hover {
+  text-decoration: underline !important;
+}
+
+.board-card--card .board-card__footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  margin-top: auto !important;
+  padding-top: 0.65rem !important;
+  border-top: 1px solid #f1f5f9 !important;
+}
+
+.board-card--card .board-card__comments-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  padding: 0.3rem 0.6rem !important;
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+}
+
+.board-card--card .board-card__comments-btn:hover {
+  background-color: #007bff !important;
+  color: #ffffff !important;
+  border-color: #007bff !important;
+}
+
+.board-card--card .board-card__comments-btn:hover i {
+  color: #ffffff !important;
+}
+
+/* =========================================================
+   PhotoView Lightbox Modal Styles (Matching Qt GUI PhotoView)
+   ========================================================= */
+
+/* Fullscreen overlay element appended to body by openPhotoModal() */
+#photo-view-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background-color: rgba(0, 0, 0, 0.85);
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-view-dialog {
+  background-color: #f8fafc !important;
+  border-radius: 8px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  width: 820px !important;
+  overflow: hidden !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.photo-view-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0.75rem 1rem !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.photo-view-title {
+  font-size: 1.05rem !important;
+  font-style: italic !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  margin: 0 !important;
+  flex: 1 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.photo-view-close-btn {
+  background: none !important;
+  border: none !important;
+  font-size: 1.6rem !important;
+  line-height: 1 !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  padding: 0 0.4rem !important;
+}
+
+.photo-view-close-btn:hover {
+  color: #ef4444 !important;
+}
+
+.photo-view-body {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  background-color: #0f172a !important;
+  flex: 1 !important;
+  min-height: 380px !important;
+  max-height: 68vh !important;
+  overflow: hidden !important;
+}
+
+/* Left/right nav columns (fixed 56px wide, vertically center the button) */
+.photo-view-nav-col {
+  width: 56px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Image wrapper fills remaining space */
+.photo-view-img-wrap {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  padding: 0.75rem !important;
+}
+
+.photo-view-img {
+  max-width: 100% !important;
+  max-height: 65vh !important;
+  object-fit: contain !important;
+  display: block !important;
+  border-radius: 4px !important;
+}
+
+.photo-view-no-img {
+  color: #94a3b8 !important;
+  font-size: 0.95rem !important;
+}
+
+/* Nav button — static in flex column, no absolute positioning */
+.photo-view-nav-btn {
+  width: 38px !important;
+  height: 38px !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  color: #007bff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3) !important;
+  transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
+}
+
+.photo-view-nav-btn i {
+  font-size: 1rem !important;
+  color: #007bff !important;
+}
+
+.photo-view-nav-btn:hover {
+  background-color: #007bff !important;
+  color: #ffffff !important;
+  border-color: #007bff !important;
+}
+
+.photo-view-nav-btn:hover i {
+  color: #ffffff !important;
+}
+
+.photo-view-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0.75rem 1rem !important;
+  background-color: #ffffff !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+.photo-view-meta {
+  font-size: 0.875rem !important;
+  color: #475569 !important;
+}
+
+.photo-view-meta b {
+  color: #0f172a !important;
+}
+
+/* Responsive: Hide board header description on mobile screens */
+@media (max-width: 768px) {
+  .media-item__desc {
+    display: none !important;
+  }
+  .media-item__details {
+    flex-basis: 100% !important;
+    width: 100% !important;
+  }
+}
+
+
+

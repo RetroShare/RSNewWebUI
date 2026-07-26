@@ -369,14 +369,33 @@ textarea.chatMsg {
 }
 
 .chat-own-profile-card {
-  padding: 1.25rem;
-  border-bottom: 1px solid #e2e8f0;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 0.85rem 1.25rem !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.75rem !important;
 
   .profile-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .chat-create-lobby-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    padding: 0.4rem 0.85rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    border-radius: 0.375rem !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
   }
 
   .profile-info {
@@ -1065,6 +1084,39 @@ textarea.chatMsg {
   align-items: center;
   gap: 0.5rem;
   border-radius: 0.375rem;
+}
+
+button.chat-hub-action-btn,
+label.chat-hub-action-btn,
+.chat-hub-action-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #64748b !important;
+  font-size: 1.15rem !important;
+  border-radius: 0.375rem !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  outline: none !important;
+
+  &:hover {
+    background-color: #e2e8f0 !important;
+    color: #3b82f6 !important;
+    box-shadow: none !important;
+  }
+
+  i {
+    font-size: 1.15rem !important;
+    color: inherit !important;
+  }
 }
 
 /* Compact Room Chat Style (No bubbles, unique nickname colors, IRC-style) */

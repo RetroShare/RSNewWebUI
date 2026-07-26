@@ -366,11 +366,12 @@
     //takes advantage of the fact the current `vnode3` is the first argument in
     //all lifecycle methods.
     function callHook(vnode3) {
-      var original = vnode3.state;
+      if (typeof this !== 'function') return;
+      var original = vnode3 ? vnode3.state : undefined;
       try {
         return this.apply(original, arguments);
       } finally {
-        checkState(vnode3, original);
+        if (vnode3) checkState(vnode3, original);
       }
     }
     // IE11 (at least) throws an UnspecifiedError when accessing document.activeElement when
@@ -1345,12 +1346,13 @@
       if (typeof source.onupdate === 'function') hooks.push(callHook.bind(source.onupdate, vnode3));
     }
     function shouldNotUpdate(vnode3, old) {
+      if (!vnode3 || !old || !old.dom) return false;
       do {
         if (vnode3.attrs != null && typeof vnode3.attrs.onbeforeupdate === 'function') {
           var force = callHook.call(vnode3.attrs.onbeforeupdate, vnode3, old);
           if (force !== undefined && !force) break;
         }
-        if (typeof vnode3.tag !== 'string' && typeof vnode3.state.onbeforeupdate === 'function') {
+        if (typeof vnode3.tag !== 'string' && vnode3.state && typeof vnode3.state.onbeforeupdate === 'function') {
           var force = callHook.call(vnode3.state.onbeforeupdate, vnode3, old);
           if (force !== undefined && !force) break;
         }

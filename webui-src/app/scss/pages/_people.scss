@@ -195,3 +195,169 @@ img.avatar {
   }
 }
 
+/* Main People Page Flex Layout Container */
+.people-container {
+  display: flex !important;
+  flex-direction: row !important;
+  height: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  background-color: #f1f5f9 !important;
+}
+
+/* Left Sidebar Pane (320px fixed width on Desktop) */
+.people-left-pane {
+  width: 320px !important;
+  min-width: 300px !important;
+  max-width: 350px !important;
+  height: 100% !important;
+  border-right: 1px solid #cbd5e1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #ffffff !important;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05) !important;
+  flex-shrink: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Right Content Details Pane */
+.people-right-pane {
+  flex: 1 !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  background-color: #f8fafc !important;
+}
+
+/* Scrollable list section inside left sidebar */
+.people-list-container {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 0.5rem 0 !important;
+}
+
+/* Active Chats list item */
+.chat-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding: 0.65rem 0.85rem !important;
+  margin: 0.2rem 0.5rem !important;
+  border-radius: 0.5rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
+
+  &:hover {
+    background-color: #f1f5f9 !important;
+  }
+
+  &.selected {
+    background-color: #e0f2fe !important;
+
+    .chat-name {
+      color: #0369a1 !important;
+      font-weight: 700 !important;
+    }
+  }
+
+  .chat-avatar-wrapper {
+    position: relative !important;
+    flex-shrink: 0 !important;
+
+    .status-dot {
+      position: absolute !important;
+      bottom: 0 !important;
+      right: 0 !important;
+      width: 10px !important;
+      height: 10px !important;
+      border-radius: 50% !important;
+      border: 2px solid #ffffff !important;
+    }
+  }
+
+  .chat-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+
+    .chat-name {
+      font-size: 0.95rem !important;
+      font-weight: 600 !important;
+      color: #1e293b !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+
+    .chat-last-msg {
+      font-size: 0.825rem !important;
+      color: #64748b !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      margin-top: 0.1rem !important;
+    }
+  }
+
+  .chat-meta {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    flex-shrink: 0 !important;
+
+    .chat-time {
+      font-size: 0.75rem !important;
+      color: #94a3b8 !important;
+      font-weight: 500 !important;
+    }
+  }
+}
+
+/* Responsive Layout for Mobile/Small Screens */
+@media (max-width: 768px) {
+  .people-container {
+    flex-direction: column !important;
+  }
+  .people-left-pane {
+    width: 100% !important;
+    max-width: none !important;
+    height: 45% !important;
+    border-right: none !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+  }
+  .people-right-pane {
+    height: 55% !important;
+  }
+
+  /* Hide text labels on mobile screens so profile action buttons show icons only */
+  .detail-actions button .btn-text,
+  .detail-header .detail-actions button .btn-text {
+    display: none !important;
+  }
+
+  /* Hide Distant Chat Tunnel and Chatting as text on mobile screens to save header space */
+  .chat-tunnel-status .tunnel-label,
+  .select-own-profile .chatting-as-label {
+    display: none !important;
+  }
+
+  .detail-actions button,
+  .detail-header .detail-actions button {
+    padding: 0.45rem 0.65rem !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  .detail-actions button i,
+  .detail-header .detail-actions button i {
+    margin: 0 !important;
+    font-size: 1.05rem !important;
+  }
+}
+

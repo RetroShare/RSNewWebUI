@@ -52,30 +52,30 @@ const DetailsTab = () => {
               m('i.fas.fa-fingerprint'),
               m('span', 'GPG ID: ' + gpgId),
             ]),
-          ]),
-          m('.detail-actions', [
-            m(
-              'button',
-              {
-                onclick: () => {
-                  const sslId = getOnlineSslId(gpgId);
-                  if (sslId) {
-                    State.activeTab = 'chat';
-                    startDirectChat(sslId);
-                  }
+            m('.detail-actions', { style: 'margin-top: 0.75rem;' }, [
+              m(
+                'button',
+                {
+                  onclick: () => {
+                    const sslId = getOnlineSslId(gpgId);
+                    if (sslId) {
+                      State.activeTab = 'chat';
+                      startDirectChat(sslId);
+                    }
+                  },
                 },
-              },
-              [m('i.fas.fa-comments'), ' Start Chat']
-            ),
-            m(
-              'button',
-              {
-                onclick: () => {
-                  State.showMailCompose = true;
+                [m('i.fas.fa-comments'), m('span.btn-text', ' Start Chat')]
+              ),
+              m(
+                'button',
+                {
+                  onclick: () => {
+                    State.showMailCompose = true;
+                  },
                 },
-              },
-              [m('i.fas.fa-envelope'), ' Send Mail']
-            ),
+                [m('i.fas.fa-envelope'), m('span.btn-text', ' Send Mail')]
+              ),
+            ]),
           ]),
         ]),
 

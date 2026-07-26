@@ -542,3 +542,58 @@
     }
   }
 }
+
+/* Responsive Layout for Mobile/Small Screens */
+@media (max-width: 768px) {
+  .network-container {
+    flex-direction: column !important;
+  }
+
+  .network-left-pane {
+    width: 100% !important;
+    max-width: none !important;
+    height: 45% !important;
+    border-right: none !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+  }
+
+  .network-right-pane {
+    height: 55% !important;
+    flex: 1 !important;
+  }
+
+  /* Hide text labels on mobile screens so profile action buttons show icons only */
+  .detail-actions button .btn-text,
+  .detail-header .detail-actions button .btn-text {
+    display: none !important;
+  }
+
+  .detail-actions button,
+  .detail-header .detail-actions button {
+    padding: 0.45rem 0.65rem !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  .detail-actions button i,
+  .detail-header .detail-actions button i {
+    margin: 0 !important;
+    font-size: 1.05rem !important;
+  }
+
+  .network-detail-view .detail-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+
+    .friend-avatar {
+      margin-bottom: 0.25rem !important;
+    }
+  }
+
+  .locations-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

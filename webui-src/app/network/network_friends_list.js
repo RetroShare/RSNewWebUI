@@ -3,6 +3,16 @@ const Data = require('network/network_data');
 const peopleUtil = require('people/people_util');
 const { State, startDirectChat, getOnlineSslId } = require('network/network_state');
 
+function formatRelativeTime(ts) {
+  if (!ts) return '';
+  const now = Math.floor(Date.now() / 1000);
+  const diff = now - ts;
+  if (diff < 30) return 'Just Now';
+  if (diff < 3600) return `${Math.floor(diff / 60)} min${Math.floor(diff / 60) > 1 ? 's' : ''}`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hr${Math.floor(diff / 3600) > 1 ? 's' : ''}`;
+  return `${Math.floor(diff / 86400)} d`;
+}
+
 const OwnProfileCard = () => {
   return {
     view: () => {
@@ -35,66 +45,164 @@ const FriendsList = () => {
   return {
     view: () => {
       const search = State.searchString.toLowerCase();
-      const filteredFriends = Object.entries(Data.gpgDetails).filter(
-        ([gpgId, friend]) => (friend.name || '').toLowerCase().includes(search)
-      );
+      const allGpgEntries = Object.entries(Data.gpgDetails || {});
+
+      // Compute active chats count
+      let activeChatsCount = 0;
+      allGpgEntries.forEach(([gpgId]) => {
+        const hist = State.chatHistoryMap && State.chatHistoryMap[gpgId];
+        if (hist && hist.lastMsg) {
+          activeChatsCount++;
+        }
+      });
+
+      let displayFriends = [];
+
+      if (State.mainTab === 'network') {
+        displayFriends = allGpgEntries.filter(([gpgId, friend]) =>
+          (friend.name || '').toLowerCase().includes(search)
+        );
+        displayFriends.sort((a, b) =>
+          a[1].isOnline === b[1].isOnline ? 0 : a[1].isOnline ? -1 : 1
+        );
+      } else {
+        // Chats Tab: filter friends with chat history
+        displayFriends = allGpgEntries.filter(([gpgId, friend]) => {
+          const hist = State.chatHistoryMap && State.chatHistoryMap[gpgId];
+          if (!hist || !hist.lastMsg) return false;
+          return (friend.name || '').toLowerCase().includes(search);
+        });
+
+        displayFriends.sort((a, b) => {
+          const histA = State.chatHistoryMap[a[0]];
+          const histB = State.chatHistoryMap[b[0]];
+          const timeA = histA ? histA.lastTime : 0;
+          const timeB = histB ? histB.lastTime : 0;
+          return timeB - timeA;
+        });
+      }
 
       return m('.friends-list-container', [
-        m('.searchbar-container', [
-          m('input.searchbar', {
-            type: 'text',
-            placeholder: 'Search friends...',
-            value: State.searchString,
-            oninput: (e) => {
-              State.searchString = e.target.value;
-            },
-          }),
+        m('.people-sidebar-header', [
+          m('.searchbar-wrapper', [
+            m('i.fas.fa-search'),
+            m('input.searchbar-input', {
+              type: 'text',
+              placeholder: State.mainTab === 'network' ? 'Search friends...' : 'Search chats...',
+              value: State.searchString,
+              oninput: (e) => {
+                State.searchString = e.target.value;
+              },
+            }),
+          ]),
+          m('.segmented-control', [
+            m(
+              'button.segment-tab' + (State.mainTab === 'network' ? '.active' : ''),
+              {
+                onclick: () => {
+                  State.mainTab = 'network';
+                },
+              },
+              [m('i.fas.fa-users'), ' Network']
+            ),
+            m(
+              'button.segment-tab' + (State.mainTab === 'chats' ? '.active' : ''),
+              {
+                onclick: () => {
+                  State.mainTab = 'chats';
+                },
+              },
+              [
+                m('i.fas.fa-comments'),
+                ' Chats',
+                activeChatsCount > 0 && m('span.segment-badge', activeChatsCount),
+              ]
+            ),
+          ]),
         ]),
         m('.friends-scroll', [
-          filteredFriends.length === 0
-            ? m('p', { style: 'padding: 1rem; color: #94a3b8; text-align: center;' }, 'No friends found')
-            : filteredFriends
-                .sort((a, b) => (a[1].isOnline === b[1].isOnline ? 0 : a[1].isOnline ? -1 : 1))
-                .map(([gpgId, friend]) => {
-                  const avatar = friend.avatar ? { mData: { base64: friend.avatar } } : undefined;
-                  const firstLetter = (friend.name || '?').slice(0, 1).toUpperCase();
-                  const isSelected = State.selectedFriendGpgId === gpgId;
+          displayFriends.length === 0
+            ? m(
+                'p',
+                { style: 'padding: 1rem; color: #94a3b8; text-align: center;' },
+                State.mainTab === 'network' ? 'No friends found' : 'No active chats found'
+              )
+            : displayFriends.map(([gpgId, friend]) => {
+                const avatar = friend.avatar ? { mData: { base64: friend.avatar } } : undefined;
+                const firstLetter = (friend.name || '?').slice(0, 1).toUpperCase();
+                const isSelected = State.selectedFriendGpgId === gpgId;
+                const hist = State.chatHistoryMap && State.chatHistoryMap[gpgId];
 
+                if (State.mainTab === 'chats') {
+                  // Render Chat List Item
                   return m(
-                    `.friend-list-item${isSelected ? '.selected' : ''}`,
+                    `.chat-item${isSelected ? '.selected' : ''}`,
                     {
                       key: gpgId,
                       onclick: () => {
                         State.selectedFriendGpgId = gpgId;
-                        State.currentChatPeerId = null;
-                        State.chatMessages = [];
-                        if (State.activeTab === 'chat') {
-                          const sslId = getOnlineSslId(gpgId);
-                          if (sslId) startDirectChat(sslId);
-                        }
+                        State.activeTab = 'chat';
+                        const sslId = getOnlineSslId(gpgId);
+                        if (sslId) startDirectChat(sslId);
                       },
                     },
                     [
-                      m('.friend-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: gpgId })),
-                      m('.friend-meta', [
-                        m('.friend-name', friend.name),
-                        m(
-                          `.friend-status${friend.isOnline ? '.online' : ''}`,
-                          friend.isOnline ? 'Online' : 'Offline'
-                        ),
-                        friend.customState &&
-                          m(
-                            '.friend-custom-status',
-                            {
-                              style: 'font-size: 0.85rem; color: #64748b; margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 160px;',
-                              title: friend.customState,
-                            },
-                            friend.customState
-                          ),
+                      m('.chat-avatar-wrapper', [
+                        m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: gpgId }),
+                        m('.status-dot', {
+                          style: {
+                            backgroundColor: friend.isOnline ? '#22c55e' : '#cbd5e1',
+                          },
+                        }),
+                      ]),
+                      m('.chat-info', [
+                        m('.chat-name', friend.name),
+                        m('.chat-last-msg', hist ? hist.lastMsg : ''),
+                      ]),
+                      m('.chat-meta', [
+                        hist && hist.lastTime && m('.chat-time', formatRelativeTime(hist.lastTime)),
                       ]),
                     ]
                   );
-                }),
+                }
+
+                // Render Network Friend List Item
+                return m(
+                  `.friend-list-item${isSelected ? '.selected' : ''}`,
+                  {
+                    key: gpgId,
+                    onclick: () => {
+                      State.selectedFriendGpgId = gpgId;
+                      State.currentChatPeerId = null;
+                      State.chatMessages = [];
+                      if (State.activeTab === 'chat') {
+                        const sslId = getOnlineSslId(gpgId);
+                        if (sslId) startDirectChat(sslId);
+                      }
+                    },
+                  },
+                  [
+                    m('.friend-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: gpgId })),
+                    m('.friend-meta', [
+                      m('.friend-name', friend.name),
+                      m(
+                        `.friend-status${friend.isOnline ? '.online' : ''}`,
+                        friend.isOnline ? 'Online' : 'Offline'
+                      ),
+                      friend.customState &&
+                        m(
+                          '.friend-custom-status',
+                          {
+                            style:
+                              'font-size: 0.85rem; color: #64748b; margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 160px;',
+                            title: friend.customState,
+                          },
+                          friend.customState
+                        ),
+                    ]),
+                  ]
+                );
+              }),
         ]),
       ]);
     },

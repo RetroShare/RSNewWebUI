@@ -9,6 +9,7 @@ const {
   fetchIdDetails,
   startDirectChat,
   getOnlineSslId,
+  preloadNetworkChatHistory,
 } = require('network/network_state');
 const { OwnProfileCard, FriendsList } = require('network/network_friends_list');
 const DetailsTab = require('network/network_details_tab');
@@ -17,7 +18,10 @@ const ChatTab = require('network/network_chat_tab');
 const NetworkLayout = () => {
   return {
     oninit: () => {
-      Data.refreshGpgDetails().then(() => m.redraw());
+      Data.refreshGpgDetails().then(() => {
+        preloadNetworkChatHistory();
+        m.redraw();
+      });
       loadOwnProfile();
       loadGxsIdentities();
     },

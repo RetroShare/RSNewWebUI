@@ -7,26 +7,26 @@ const peopleUtil = require('people/people_util');
 
 const getChannels = {
   All: [],
-  PopularChannels: [],
-  SubscribedChannels: [],
+  Popular: [],
+  Subscribed: [],
   MyChannels: [],
-  OtherChannels: [],
+  Other: [],
   async load() {
     const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelsSummaries');
     const data = res.body;
     getChannels.All = data.channels;
-    getChannels.SubscribedChannels = getChannels.All.filter(
+    getChannels.Subscribed = getChannels.All.filter(
       (channel) =>
         channel.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED ||
         channel.mSubscribeFlags === util.GROUP_MY_CHANNEL // my channel is subscribed
     );
-    // getChannels.PopularChannels = getChannels.All;
-    getChannels.PopularChannels = getChannels.All.filter(
-      (a) => !getChannels.SubscribedChannels.includes(a)
+    // getChannels.Popular = getChannels.All;
+    getChannels.Popular = getChannels.All.filter(
+      (a) => !getChannels.Subscribed.includes(a)
     );
-    getChannels.PopularChannels.sort((a, b) => b.mPop - a.mPop);
-    getChannels.OtherChannels = getChannels.PopularChannels.slice(5);
-    getChannels.PopularChannels = getChannels.PopularChannels.slice(0, 5);
+    getChannels.Popular.sort((a, b) => b.mPop - a.mPop);
+    getChannels.Other = getChannels.Popular.slice(5);
+    getChannels.Popular = getChannels.Popular.slice(0, 5);
 
     getChannels.MyChannels = getChannels.All.filter(
       (channel) => channel.mSubscribeFlags === util.GROUP_MY_CHANNEL
@@ -36,9 +36,9 @@ const getChannels = {
 
 const sections = {
   MyChannels: require('channels/my_channels'),
-  SubscribedChannels: require('channels/subscribed_channels'),
-  PopularChannels: require('channels/popular_channels'),
-  OtherChannels: require('channels/other_channels'),
+  Subscribed: require('channels/subscribed_channels'),
+  Popular: require('channels/popular_channels'),
+  Other: require('channels/other_channels'),
 };
 
 const Layout = () => {

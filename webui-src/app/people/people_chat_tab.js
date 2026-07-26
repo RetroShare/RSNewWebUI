@@ -113,7 +113,7 @@ const ChatTab = () => {
           style: 'padding: 0.5rem 1rem; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;',
         }, [
           m('.chat-tunnel-status', { style: 'display: flex; align-items: center; gap: 0.5rem;' }, [
-            m('span', { style: 'color: #64748b; font-weight: 500;' }, 'Distant Chat Tunnel'),
+            m('span.tunnel-label', { style: 'color: #64748b; font-weight: 500;' }, 'Distant Chat Tunnel'),
             m('i.fas.fa-circle', {
               style: {
                 color: getStatusColor(State.distantChatStatus ? State.distantChatStatus.status : 0),
@@ -125,7 +125,7 @@ const ChatTab = () => {
           ]),
           m('.chat-actions', { style: 'display: flex; align-items: center; gap: 0.75rem;' }, [
             m('.select-own-profile', { style: 'display: flex; align-items: center; gap: 0.5rem;' }, [
-              m('span', { style: 'color: #64748b;' }, 'Chatting as:'),
+              m('span.chatting-as-label', { style: 'color: #64748b;' }, 'Chatting as:'),
               (() => {
                 const ownId = State.selectedOwnGxsIdForChat;
                 if (ownId) fetchIdDetails(ownId);

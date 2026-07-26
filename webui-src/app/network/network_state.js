@@ -15,11 +15,13 @@ const State = {
   selectedOwnGxsId: '',
   selectedOwnGxsDetails: null,
   selectedFriendGpgId: null,
+  mainTab: 'network', // 'network' | 'chats'
   activeTab: 'details', // 'details' | 'chat'
   searchString: '',
   gpgToGxsIdMap: {},
   gxsIdToDetailsMap: {},
   gxsIdentities: [],
+  chatHistoryMap: {}, // gpgId -> { lastMsg, lastTime }
   currentChatPeerId: null,
   chatMessages: [],
   chatInputMsg: '',
@@ -125,6 +127,55 @@ function getOnlineSslId(gpgId) {
   return onlineLoc ? onlineLoc.id : friend.locations[0].id;
 }
 
+function isSystemMsg(msg) {
+  if (!msg) return false;
+  const str = String(msg);
+  return (
+    str.includes('Distant chat requested') ||
+    str.includes('Distant chat established') ||
+    str.includes('Distant chat closed') ||
+    str.includes('Distant chat status')
+  );
+}
+
+function preloadNetworkChatHistory() {
+  const gpgIds = Object.keys(Data.gpgDetails || {});
+  gpgIds.forEach((gpgId) => {
+    if (!gpgId || gpgId === '0000000000000000') return;
+
+    const privatePeerId = {
+      broadcast_status_peer_id: '00000000000000000000000000000000',
+      type: 1, // PRIVATE
+      peer_id: gpgId,
+      distant_chat_id: '00000000000000000000000000000000',
+      lobby_id: { xstr64: '0' },
+    };
+
+    rs.rsJsonApiRequest(
+      '/rsHistory/getMessages',
+      {
+        chatPeerId: privatePeerId,
+        loadCount: 20,
+      },
+      (msgData, success) => {
+        if (success && msgData && msgData.msgs) {
+          const userMsgs = msgData.msgs.filter(
+            (m) => !m.isSystem && !isSystemMsg(m.message || m.msg)
+          );
+          if (userMsgs.length > 0) {
+            const last = userMsgs[userMsgs.length - 1];
+            State.chatHistoryMap[gpgId] = {
+              lastMsg: last.message || last.msg || '',
+              lastTime: last.sendTime || last.recvTime || Math.floor(Date.now() / 1000),
+            };
+            m.redraw();
+          }
+        }
+      }
+    );
+  });
+}
+
 function loadDirectChatMessages() {
   rs.events[15].notify = (chatMessage) => {
     if (
@@ -133,6 +184,12 @@ function loadDirectChatMessages() {
       rs.idToHex(chatMessage.chat_id) === State.currentChatPeerId
     ) {
       State.chatMessages.push(chatMessage);
+      if (State.selectedFriendGpgId) {
+        State.chatHistoryMap[State.selectedFriendGpgId] = {
+          lastMsg: chatMessage.msg || chatMessage.message || '',
+          lastTime: chatMessage.sendTime || chatMessage.recvTime || Math.floor(Date.now() / 1000),
+        };
+      }
       m.redraw();
       scrollChatToBottom();
     }
@@ -153,13 +210,21 @@ function sendDirectChatMessage() {
     },
     (data, success) => {
       if (success) {
+        const nowSec = Math.floor(Date.now() / 1000);
         State.chatMessages.push({
           chat_id: { type: 1, peer_id: State.currentChatPeerId },
           msg,
-          sendTime: Date.now() / 1000,
+          sendTime: nowSec,
           incoming: false,
           own: true,
         });
+
+        if (State.selectedFriendGpgId) {
+          State.chatHistoryMap[State.selectedFriendGpgId] = {
+            lastMsg: msg,
+            lastTime: nowSec,
+          };
+        }
         m.redraw();
         scrollChatToBottom();
       } else {
@@ -184,6 +249,7 @@ module.exports = {
   loadGxsIdentities,
   startDirectChat,
   getOnlineSslId,
+  preloadNetworkChatHistory,
   loadDirectChatMessages,
   sendDirectChatMessage,
   scrollChatToBottom,
