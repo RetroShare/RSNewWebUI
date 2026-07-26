@@ -1106,17 +1106,21 @@ label.chat-hub-action-btn,
   cursor: pointer !important;
   transition: all 0.15s ease !important;
   outline: none !important;
+}
 
-  &:hover {
-    background-color: #e2e8f0 !important;
-    color: #3b82f6 !important;
-    box-shadow: none !important;
-  }
+button.chat-hub-action-btn:hover,
+label.chat-hub-action-btn:hover,
+.chat-hub-action-btn:hover {
+  background-color: #e2e8f0 !important;
+  color: #3b82f6 !important;
+  box-shadow: none !important;
+}
 
-  i {
-    font-size: 1.15rem !important;
-    color: inherit !important;
-  }
+button.chat-hub-action-btn i,
+label.chat-hub-action-btn i,
+.chat-hub-action-btn i {
+  font-size: 1.15rem !important;
+  color: inherit !important;
 }
 
 /* Compact Room Chat Style (No bubbles, unique nickname colors, IRC-style) */
@@ -1127,54 +1131,130 @@ label.chat-hub-action-btn,
   background-color: #ffffff !important;
   display: flex !important;
   flex-direction: column !important;
-
-  .message.compact {
-    display: block !important;
-    max-width: 100% !important;
-    padding: 0.1rem 0 !important;
-    border-radius: 0 !important;
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    align-self: flex-start !important;
-    font-size: 0.875rem !important;
-    line-height: 1.45 !important;
-    margin: 0 !important;
-    white-space: nowrap !important;
-    // overflow: hidden !important;
-    // text-overflow: ellipsis !important;
-
-    &:hover {
-      background-color: #f8fafc !important;
-      overflow: visible !important;
-      white-space: normal !important;
-    }
-
-    .datetime {
-      color: #a0a0a0 !important;
-      margin-right: 0.4rem !important;
-      font-size: 0.78rem !important;
-      font-family: monospace !important;
-      opacity: 1 !important;
-      display: inline !important;
-    }
-
-    .username {
-      font-weight: bold !important;
-      margin-right: 0.2rem !important;
-      font-size: 0.875rem !important;
-      display: inline !important;
-    }
-
-    .messagetext {
-      color: #1e293b !important;
-      white-space: normal !important;
-      word-break: break-word !important;
-      display: inline !important;
-      margin: 0 !important;
-    }
-  }
 }
 
+.chat-hub-messages.compact-container .message.compact,
+.messages.compact-container .message.compact {
+  display: block !important;
+  max-width: 100% !important;
+  padding: 0.1rem 0 !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  align-self: flex-start !important;
+  font-size: 0.875rem !important;
+  line-height: 1.45 !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
 
-
+.chat-hub-messages.compact-container .message.compact:hover,
+.messages.compact-container .message.compact:hover {
+  background-color: #f8fafc !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+.chat-hub-messages.compact-container .message.compact .datetime,
+.messages.compact-container .message.compact .datetime {
+  color: #a0a0a0 !important;
+  margin-right: 0.4rem !important;
+  font-size: 0.78rem !important;
+  font-family: monospace !important;
+  opacity: 1 !important;
+  display: inline !important;
+}
+
+.chat-hub-messages.compact-container .message.compact .username,
+.messages.compact-container .message.compact .username {
+  font-weight: bold !important;
+  margin-right: 0.2rem !important;
+  font-size: 0.875rem !important;
+  display: inline !important;
+}
+
+.chat-hub-messages.compact-container .message.compact .messagetext,
+.messages.compact-container .message.compact .messagetext {
+  color: #1e293b !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  display: inline !important;
+  margin: 0 !important;
+}
+
+/* User Tooltip Styling (Standalone Fixed Floating Tooltip) */
+.user-tooltip {
+  position: fixed !important;
+  width: 280px !important;
+  background-color: #ffffe1 !important;
+  border: 1px solid #7f7f7f !important;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.25) !important;
+  padding: 0.5rem !important;
+  border-radius: 0.25rem !important;
+  z-index: 10000 !important;
+  white-space: normal !important;
+  display: flex !important;
+  gap: 0.5rem !important;
+  align-items: flex-start !important;
+  color: #000000 !important;
+  font-size: 0.8rem !important;
+  text-align: left !important;
+  pointer-events: none !important;
+}
+
+.user-tooltip .tooltip-avatar {
+  flex-shrink: 0 !important;
+}
+
+.user-tooltip .tooltip-avatar .jdenticon-avatar,
+.user-tooltip .tooltip-avatar .defaultAvatar,
+.user-tooltip .tooltip-avatar img.avatar {
+  width: 56px !important;
+  height: 56px !important;
+  min-width: 56px !important;
+  min-height: 56px !important;
+  border-radius: 2px !important;
+  border: 1px solid #999999 !important;
+  box-shadow: none !important;
+  object-fit: cover !important;
+}
+
+.user-tooltip .tooltip-details {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.2rem !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+}
+
+.user-tooltip .tooltip-details .tooltip-row {
+  line-height: 1.2 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: baseline !important;
+  gap: 0.35rem !important;
+  white-space: normal !important;
+  word-break: break-all !important;
+}
+
+.user-tooltip .tooltip-details .tooltip-row .tooltip-label {
+  font-weight: bold !important;
+  color: #000000 !important;
+  font-size: 0.8rem !important;
+  flex-shrink: 0 !important;
+}
+
+.user-tooltip .tooltip-details .tooltip-row .tooltip-value {
+  font-weight: normal !important;
+  color: #000000 !important;
+  font-size: 0.8rem !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.user-tooltip .tooltip-details .tooltip-row .tooltip-value.tooltip-id {
+  font-family: monospace !important;
+  font-size: 0.75rem !important;
+  color: #0000bb !important;
+}

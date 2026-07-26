@@ -32,7 +32,12 @@ const UserAvatar = () => ({
         style: {
           width: sizeStr,
           height: sizeStr,
-          borderRadius: isSquare ? '0' : '',
+          minWidth: sizeStr,
+          minHeight: sizeStr,
+          flexShrink: '0',
+          aspectRatio: '1',
+          objectFit: 'cover',
+          borderRadius: isSquare ? '0' : '50%',
         }
       });
     }
@@ -41,9 +46,15 @@ const UserAvatar = () => ({
       const svgString = jdenticon.toSvg(identityId, pxSize);
       return m('div.jdenticon-avatar', {
         style: {
-          display: 'inline-block',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           width: sizeStr,
           height: sizeStr,
+          minWidth: sizeStr,
+          minHeight: sizeStr,
+          flexShrink: '0',
+          aspectRatio: '1',
           borderRadius: isSquare ? '0' : '50%',
           overflow: 'hidden',
           verticalAlign: 'middle',
@@ -67,8 +78,15 @@ const UserAvatar = () => ({
       'div.defaultAvatar',
       {
         style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           width: sizeStr,
           height: sizeStr,
+          minWidth: sizeStr,
+          minHeight: sizeStr,
+          flexShrink: '0',
+          aspectRatio: '1',
           borderRadius: isSquare ? '0' : '50%',
           backgroundColor: backgroundColor,
         }

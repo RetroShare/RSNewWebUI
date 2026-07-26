@@ -68,12 +68,12 @@ const sections = {
   drafts: require('mail/mail_draftbox'),
   sent: require('mail/mail_sentbox'),
   trash: require('mail/mail_trashbox'),
-};
-const sectionsquickview = {
   starred: require('mail/mail_starred'),
   system: require('mail/mail_system'),
   spam: require('mail/mail_spam'),
   attachment: require('mail/mail_attachment'),
+};
+const sectionsquickview = {
   important: require('mail/mail_important'),
   work: require('mail/mail_work'),
   todo: require('mail/mail_todo'),
@@ -81,8 +81,15 @@ const sectionsquickview = {
   personal: require('mail/mail_personal'),
 };
 const tagselect = {
-  showval: 'Tags',
-  opts: ['Tags', 'Important', 'Work', 'Personal'],
+  opts: [
+    { label: '🏷️ Filter by Tag...', val: '' },
+    { label: '📎 Attachments', val: 'attachment' },
+    { label: '🔴 Important', val: 'important' },
+    { label: '🟠 Work', val: 'work' },
+    { label: '🟢 Personal', val: 'personal' },
+    { label: '🔵 Todo', val: 'todo' },
+    { label: '🟣 Later', val: 'later' },
+  ],
 };
 const Layout = () => {
   let showCompose = false;
@@ -99,12 +106,12 @@ const Layout = () => {
         drafts: (Messages.drafts || []).length,
         sent: (Messages.sent || []).length,
         trash: (Messages.trash || []).length,
-      };
-      const sectionsQuickviewSize = {
         starred: (Messages.starred || []).length,
         system: (Messages.system || []).length,
         spam: (Messages.spam || []).length,
         attachment: (Messages.attachment || []).length,
+      };
+      const sectionsQuickviewSize = {
         important: (Messages.important || []).length,
         work: (Messages.work || []).length,
         todo: (Messages.todo || []).length,
@@ -141,15 +148,28 @@ const Layout = () => {
               m(
                 'select.mail-tag',
                 {
-                  value: tagselect.showval,
-                  onchange: (e) => (tagselect.showval = tagselect.opts[e.target.selectedIndex]),
+                  value: m.route.param().tab || '',
+                  onchange: (e) => {
+                    const selectedTag = e.target.value;
+                    if (selectedTag) {
+                      m.route.set('/mail/:tab', { tab: selectedTag });
+                    }
+                  },
                 },
-                [tagselect.opts.map((opt) => m('option', { value: opt }, opt.toLocaleString()))]
+                tagselect.opts.map((opt) => m('option', { value: opt.val }, opt.label))
               ),
               m(util.SearchBar, { list: {} }),
             ]),
             vnode.children,
           ])
+        ),
+        m(
+          'button.mobile-fab-compose',
+          {
+            title: 'Compose Mail',
+            onclick: () => setShowCompose(true),
+          },
+          m('i.fas.fa-pen')
         ),
         showCompose && m(
           '.composePopupOverlay#mailComposerPopup',
@@ -173,6 +193,7 @@ const tabConfig = {
   starred: { title: 'Starred', category: 'starred' },
   system: { title: 'System', category: 'system' },
   spam: { title: 'Spam', category: 'spam' },
+  attachment: { title: 'Attachments', category: 'attachment' },
   important: { title: 'Important', category: 'important' },
   work: { title: 'Work', category: 'work' },
   todo: { title: 'Todo', category: 'todo' },
@@ -216,7 +237,7 @@ module.exports = {
     if (tab === 'attachment') {
       return m(
         Layout,
-        m(sectionsquickview.attachment, {
+        m(sections.attachment, {
           list: util.sortList(Messages[tab]),
         })
       );

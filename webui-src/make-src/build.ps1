@@ -42,6 +42,9 @@ if (Test-Path "$src\app\scss\pages\_network.scss") {
 if (Test-Path "$src\app\scss\components\_statusbar.scss") {
     $extraCss += (Get-Content "$src\app\scss\components\_statusbar.scss" -Raw -Encoding UTF8) + "`n`n"
 }
+if (Test-Path "$src\app\scss\pages\_mail.scss") {
+    $extraCss += (Get-Content "$src\app\scss\pages\_mail.scss" -Raw -Encoding UTF8) + "`n`n"
+}
 
 $combinedCss = $cssBase + "`n`n" + $extraCss
 [System.IO.File]::WriteAllText("$dest\styles.css", $combinedCss, $utf8NoBom)

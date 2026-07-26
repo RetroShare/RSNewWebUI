@@ -53,19 +53,19 @@ function renderMailUserTooltip() {
     ? ((details.mReputation.mFriendsPositiveVotes || 0) - (details.mReputation.mFriendsNegativeVotes || 0))
     : 0;
 
-  const top = hUser.rect.top - 10;
-  const left = Math.min(Math.max(hUser.rect.left, 140), window.innerWidth - 280);
+  const rect = hUser.rect;
+  const top = rect ? Math.max(10, Math.min(rect.bottom + 4, window.innerHeight - 185)) : 100;
+  const left = rect ? Math.min(Math.max(rect.left, 20), window.innerWidth - 300) : 100;
 
   return m('.user-tooltip', {
     style: {
       position: 'fixed',
       top: `${top}px`,
       left: `${left}px`,
-      transform: 'translateY(-100%)',
       zIndex: 10000,
     }
   }, [
-    m('.tooltip-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: hUser.gxsId, size: 64 })),
+    m('.tooltip-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: hUser.gxsId, size: 64, isSquare: true })),
     m('.tooltip-details', [
       m('.tooltip-row', [m('span.tooltip-label', 'Identity name: '), m('span.tooltip-value', hUser.name)]),
       m('.tooltip-row', [m('span.tooltip-label', 'Identity Id: '), m('span.tooltip-value.tooltip-id', hUser.gxsId)]),
@@ -77,7 +77,7 @@ function renderMailUserTooltip() {
         m('span.tooltip-label', 'Votes: '),
         m('span.tooltip-value', {
           style: {
-            color: votes >= 0 ? '#22c55e' : '#ef4444',
+            color: votes >= 0 ? '#008000' : '#cc0000',
             fontWeight: 'bold'
           }
         }, (votes >= 0 ? '+' : '') + votes)
@@ -112,6 +112,22 @@ function loadTagTypes() {
   });
 }
 loadTagTypes();
+
+function formatMailDate(ts) {
+  if (!ts) return '';
+  const date = new Date(ts * 1000);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  const isThisYear = date.getFullYear() === now.getFullYear();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  if (isThisYear) {
+    return `${date.getDate()} ${months[date.getMonth()]}`;
+  }
+  return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear().toString().slice(2)}`;
+}
 
 // Utility functions
 const humanReadableSize = (fileSize) => {
@@ -179,7 +195,7 @@ const MessageSummary = () => {
         },
         [
           m(
-            'td',
+            'td.cell-star',
             m(`input.star-check[type=checkbox][id=msg-${v.attrs.details.msgId}]`, { checked: isStarred }),
             // Use label with  [for] to manipulate hidden checkbox
             m(
@@ -191,8 +207,8 @@ const MessageSummary = () => {
               m('i.fas.fa-star')
             )
           ),
-          files && m('td', files.length),
-          m('td', { style: 'border-bottom: inherit;' }, [
+          m('td.cell-attachment', files && files.length > 0 ? m('i.fas.fa-paperclip', { title: `${files.length} attachment(s)` }) : null),
+          m('td.cell-subject', [
             m('div', {
               style: {
                 display: 'flex',
@@ -213,7 +229,7 @@ const MessageSummary = () => {
             ])
           ]),
           m(
-            'td',
+            'td.cell-from',
             m(
               'div',
               {
@@ -257,7 +273,7 @@ const MessageSummary = () => {
               ]
             )
           ),
-          m('td', new Date(details.ts * 1000).toLocaleString()),
+          m('td.cell-date', { title: new Date(details.ts * 1000).toLocaleString() }, formatMailDate(details.ts)),
         ]
       ),
   };
@@ -265,7 +281,8 @@ const MessageSummary = () => {
 
 const AttachmentSection = () => {
   function handleAttachmentDownload(item) {
-    const { fname: fileName, hash, size: xstr64 } = item;
+    const { fname: fileName, hash, size } = item;
+    const xstr64 = typeof size === 'object' ? size.xstr64 : String(size);
     const flags = util.RS_FILE_REQ_ANONYMOUS_ROUTING;
     rs.rsJsonApiRequest(
       '/rsFiles/FileRequest',
@@ -279,26 +296,22 @@ const AttachmentSection = () => {
   }
   return {
     view: (v) =>
-      m('table.attachment-container', [
-        m('tr.attachment-header', [
-          m('th', 'File Name'),
-          m('th', 'From'),
-          m('th', 'Size'),
-          m('th', 'Date'),
-          m('th', 'Download'),
-        ]),
-        m(
-          'tbody',
-          v.attrs.files.map((file) =>
-            m('tr.attachment', [
-              m('td.attachment__name', [m('i.fas.fa-file'), m('span', file.fname)]),
-              m('td.attachment__from', rs.userList.userMap[file.from._addr_string] || '[Unknown]'),
-              m('td.attachment__size', humanReadableSize(file.size.xint64)),
-              m('td.attachment__date', new Date(file.ts * 1000).toLocaleString()),
-              m('td', m('button', { onclick: () => handleAttachmentDownload(file) }, 'Download')),
-            ])
-          )
-        ),
+      m('.attachments-wrapper', [
+        v.attrs.files.map((file) => {
+          const fileSizeNum = file.size ? (typeof file.size === 'object' ? file.size.xint64 || parseInt(file.size.xstr64) || 0 : Number(file.size) || 0) : 0;
+          return m('.attachment-card', [
+            m('.attachment-icon', m('i.fas.fa-paperclip')),
+            m('.attachment-info', [
+              m('.attachment-name', file.fname),
+              m('.attachment-size', humanReadableSize(fileSizeNum)),
+            ]),
+            m(
+              'button.btn-attachment-download',
+              { onclick: () => handleAttachmentDownload(file) },
+              [m('i.fas.fa-download'), m('span.btn-text', ' Download')]
+            ),
+          ]);
+        }),
       ]),
   };
 };
@@ -405,10 +418,10 @@ const MessageView = () => {
               m('i.fas.fa-arrow-left')
             ),
             m('.msg-view-nav__action', [
-              m('button', { onclick: () => { composeType = 'reply'; setShowCompose(true); } }, 'Reply'),
-              m('button', { onclick: () => { composeType = 'replyAll'; setShowCompose(true); } }, 'Reply All'),
-              m('button', { onclick: () => { composeType = 'forward'; setShowCompose(true); } }, 'Forward'),
-              m('button', { onclick: confirmMailDelete }, 'Delete'),
+              m('button', { onclick: () => { composeType = 'reply'; setShowCompose(true); } }, [m('i.fas.fa-reply'), m('span.btn-text', ' Reply')]),
+              m('button', { onclick: () => { composeType = 'replyAll'; setShowCompose(true); } }, [m('i.fas.fa-reply-all'), m('span.btn-text', ' Reply All')]),
+              m('button', { onclick: () => { composeType = 'forward'; setShowCompose(true); } }, [m('i.fas.fa-forward'), m('span.btn-text', ' Forward')]),
+              m('button.red', { onclick: confirmMailDelete }, [m('i.fas.fa-trash'), m('span.btn-text', ' Delete')]),
             ]),
           ]),
           m('.msg-view__header', [
@@ -741,7 +754,6 @@ const Sidebar = () => {
         '.sidebar',
         tabs.map((panelName, index) => {
           const displayName = panelName.charAt(0).toUpperCase() + panelName.slice(1);
-          const labelText = size[panelName] > 0 ? `${displayName} (${size[panelName]})` : displayName;
           return m(
             m.route.Link,
             {
@@ -755,7 +767,8 @@ const Sidebar = () => {
             },
             [
               sidebarIcons[panelName] || null,
-              labelText,
+              m('span.sidebar-link-text', displayName),
+              size[panelName] > 0 && m('span.sidebar-badge', size[panelName]),
             ]
           );
         })
@@ -772,7 +785,6 @@ const SidebarQuickView = () => {
         m('h6.bold', 'Quick View'),
         tabs.map((panelName, index) => {
           const displayName = panelName.charAt(0).toUpperCase() + panelName.slice(1);
-          const labelText = size[panelName] > 0 ? `${displayName} (${size[panelName]})` : displayName;
           return m(
             m.route.Link,
             {
@@ -787,7 +799,8 @@ const SidebarQuickView = () => {
             },
             [
               sidebarIcons[panelName] || null,
-              labelText,
+              m('span.sidebar-link-text', displayName),
+              size[panelName] > 0 && m('span.sidebar-badge', size[panelName]),
             ]
           );
         })

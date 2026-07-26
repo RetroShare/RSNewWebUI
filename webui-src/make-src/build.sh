@@ -33,8 +33,15 @@ if [ "$2" = "" ]||[ "$2" = "index.html" ]; then
 fi
 
 if [ "$2" = "" ]||[ "$2" = "styles.css" ]; then
-	echo copying css file
-	cp $src/styles.css $publicdest/
+	echo copying and assembling css file
+	cat $src/styles.css > $publicdest/styles.css
+	echo "" >> $publicdest/styles.css
+	for scssfile in $src/app/scss/pages/_*.scss $src/app/scss/components/_*.scss; do
+		if [ -f "$scssfile" ]; then
+			cat "$scssfile" >> $publicdest/styles.css
+			echo -e "\n\n" >> $publicdest/styles.css
+		fi
+	done
 fi
 
 if [ "$2" = "" ]||[ "$2" = "app.js" ]; then

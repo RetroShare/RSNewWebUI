@@ -117,6 +117,53 @@ function scrollChatToBottom() {
   }, 50);
 }
 
+function renderUserTooltip(gxsId, name) {
+  const details = ChatHubState.gxsDetails[gxsId];
+  if (!details) return null;
+
+  const avatar = getSafeAvatar(details);
+  const firstLetter = (name || '?').slice(0, 1).toUpperCase();
+  const votes = details.mReputation
+    ? (details.mReputation.mFriendsPositiveVotes - details.mReputation.mFriendsNegativeVotes)
+    : 0;
+
+  const rect = ChatHubState.hoveredUser ? ChatHubState.hoveredUser.rect : null;
+  const tooltipWidth = 280;
+  let left = rect ? rect.left - tooltipWidth - 10 : window.innerWidth - 300;
+  if (left < 10 && rect) left = rect.right + 10;
+  let top = rect ? rect.top : 100;
+  if (top + 160 > window.innerHeight) top = window.innerHeight - 170;
+  if (top < 10) top = 10;
+
+  return m('.user-tooltip', {
+    style: {
+      position: 'fixed',
+      top: `${top}px`,
+      left: `${left}px`,
+      zIndex: 10000,
+    }
+  }, [
+    m('.tooltip-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: gxsId, size: 56, isSquare: true })),
+    m('.tooltip-details', [
+      m('.tooltip-row', [m('span.tooltip-label', 'Identity name: '), m('span.tooltip-value', name)]),
+      m('.tooltip-row', [m('span.tooltip-label', 'Identity Id: '), m('span.tooltip-value.tooltip-id', gxsId)]),
+      details.mPgpId && details.mPgpId !== '0000000000000000' && m('.tooltip-row', [
+        m('span.tooltip-label', 'Node: '),
+        m('span.tooltip-value', `${rs.userList.username(details.mPgpId) || name} [${details.mPgpId}]`)
+      ]),
+      m('.tooltip-row', [
+        m('span.tooltip-label', 'Votes: '),
+        m('span.tooltip-value', {
+          style: {
+            color: votes >= 0 ? '#008000' : '#cc0000',
+            fontWeight: 'bold'
+          }
+        }, (votes >= 0 ? '+' : '') + votes)
+      ])
+    ])
+  ]);
+}
+
 function pollHashStatus(localpath) {
   rs.rsJsonApiRequest('/rsFiles/ExtraFileStatus', { localpath }, (data) => {
     if (data && data.retval && data.info && data.info.hash && data.info.hash !== '0000000000000000000000000000000000000000') {
@@ -641,12 +688,7 @@ const ChatConversationView = () => {
                 onmouseenter: (e) => {
                   if (ChatHubState.activeMenu) return;
                   const rect = e.currentTarget.getBoundingClientRect();
-                  const rightbar = document.querySelector('.chat-hub-rightbar');
-                  if (rightbar) {
-                    const parentRect = rightbar.getBoundingClientRect();
-                    const top = rect.top - parentRect.top + rect.height / 2;
-                    ChatHubState.hoveredUser = { gxsId, name, top };
-                  }
+                  ChatHubState.hoveredUser = { gxsId, name, rect };
                 },
                 onmouseleave: () => {
                   ChatHubState.hoveredUser = null;
@@ -717,46 +759,11 @@ const ChatConversationView = () => {
                     });
                   }
                   return null;
-                })()
+                })(),
               ]);
             });
           })()),
-          ChatHubState.hoveredUser && (() => {
-            const hUser = ChatHubState.hoveredUser;
-            const details = ChatHubState.gxsDetails[hUser.gxsId];
-            if (!details) return null;
-
-            const avatar = getSafeAvatar(details);
-            const firstLetter = (hUser.name || '?').slice(0, 1).toUpperCase();
-            const votes = details.mReputation
-              ? (details.mReputation.mFriendsPositiveVotes - details.mReputation.mFriendsNegativeVotes)
-              : 0;
-
-            return m('.user-tooltip', {
-              style: {
-                top: `${hUser.top}px`,
-              }
-            }, [
-              m('.tooltip-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: hUser.gxsId, size: 64 })),
-              m('.tooltip-details', [
-                m('.tooltip-row', [m('span.tooltip-label', 'Identity name: '), m('span.tooltip-value', hUser.name)]),
-                m('.tooltip-row', [m('span.tooltip-label', 'Identity Id: '), m('span.tooltip-value.tooltip-id', hUser.gxsId)]),
-                details.mPgpId && details.mPgpId !== '0000000000000000' && m('.tooltip-row', [
-                  m('span.tooltip-label', 'Node: '),
-                  m('span.tooltip-value', `${rs.userList.username(details.mPgpId) || hUser.name} [${details.mPgpId}]`)
-                ]),
-                m('.tooltip-row', [
-                  m('span.tooltip-label', 'Votes: '),
-                  m('span.tooltip-value', {
-                    style: {
-                      color: votes >= 0 ? '#22c55e' : '#ef4444',
-                      fontWeight: 'bold'
-                    }
-                  }, (votes >= 0 ? '+' : '') + votes)
-                ])
-              ])
-            ]);
-          })(),
+          ChatHubState.hoveredUser && renderUserTooltip(ChatHubState.hoveredUser.gxsId, ChatHubState.hoveredUser.name),
           ChatHubState.activeMenu && (() => {
             const menu = ChatHubState.activeMenu;
             const isOwn = menu.gxsId === rs.idToHex(ChatLobbyModel.currentLobby.gxs_id || '');
