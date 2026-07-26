@@ -936,6 +936,46 @@ const ChatConversationView = () => {
 
 // ***************************** Page Layouts ******************************
 
+function getLobbyPrivacyInfo(room) {
+  if (!room) return { type: 'Public', security: 'Anonymous IDs accepted' };
+
+  const flags =
+    room.lobby_privacy_type !== undefined
+      ? room.lobby_privacy_type
+      : room.lobby_privacy_level !== undefined
+      ? room.lobby_privacy_level
+      : room.privacy_type !== undefined
+      ? room.privacy_type
+      : room.lobby_privacy !== undefined
+      ? room.lobby_privacy
+      : room.privacy_level !== undefined
+      ? room.privacy_level
+      : room.lobby_flags !== undefined
+      ? room.lobby_flags
+      : 0;
+
+  let isPublic =
+    (flags & 4) !== 0 ||
+    (flags & 1) !== 0 ||
+    ChatHubState.selectedRoomType === 'public' ||
+    room.is_public === true;
+
+  if (flags === 1 || flags === 2) {
+    if ((flags & 1) === 1 && (flags & 4) === 0 && ChatHubState.selectedRoomType !== 'public') {
+      isPublic = false;
+    }
+  }
+
+  const typeStr = isPublic ? 'Public' : 'Private';
+  const isAuthOnly = (flags & 8) !== 0;
+  const securityStr = isAuthOnly ? 'No anonymous IDs' : 'Anonymous IDs accepted';
+
+  return {
+    type: typeStr,
+    security: securityStr,
+  };
+}
+
 const ChatRoomDetailView = () => {
   return {
     view: () => {
@@ -976,6 +1016,8 @@ const ChatRoomDetailView = () => {
       participantNames.sort((a, b) => a.localeCompare(b));
 
       const lobbyHexId = rs.idToHex(room.lobby_id);
+      const privacy = getLobbyPrivacyInfo(room);
+
 
       return m('.chat-room-detail-view', [
         m('.detail-section', [
@@ -985,6 +1027,10 @@ const ChatRoomDetailView = () => {
             m('.info-value', room.lobby_name || '<unnamed>'),
             m('.info-label', 'Topic'),
             m('.info-value', room.lobby_topic || 'None'),
+            m('.info-label', 'Type'),
+            m('.info-value', privacy.type),
+            m('.info-label', 'Security'),
+            m('.info-value', privacy.security),
             m('.info-label', 'Participants'),
             m('.info-value', participantCount + ' users'),
             m('.info-label', 'Your Identity'),
@@ -1020,6 +1066,7 @@ const ChatRoomJoinView = () => {
 
       const lobbyHexId = rs.idToHex(room.lobby_id);
       const participantCount = room.total_number_of_peers || 0;
+      const privacy = getLobbyPrivacyInfo(room);
 
       return m('.chat-room-detail-view', [
         m('.detail-section', [
@@ -1029,10 +1076,15 @@ const ChatRoomJoinView = () => {
             m('.info-value', room.lobby_name || '<unnamed>'),
             m('.info-label', 'Topic'),
             m('.info-value', room.lobby_topic || 'None'),
+            m('.info-label', 'Type'),
+            m('.info-value', privacy.type),
+            m('.info-label', 'Security'),
+            m('.info-value', privacy.security),
             m('.info-label', 'Participants'),
             m('.info-value', participantCount + ' users'),
           ]),
         ]),
+
 
         m('.detail-section', [
           m('h3', 'Join Room'),
