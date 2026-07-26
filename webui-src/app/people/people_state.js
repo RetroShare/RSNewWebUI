@@ -21,12 +21,28 @@ const State = {
   distantChatStatus: null,
   statusPollInterval: null,
   chatDisconnected: false,
+  activeDistantChats: {}, // gxsId -> { pid, status, messages, inputMsg, disconnected }
   activeMenu: null,
   showHistoryModal: false,
   historySearchQuery: '',
   fullHistoryMessages: [],
   isHistoryLoading: false,
 };
+
+function getDistantChatSession(gxsId) {
+  if (!gxsId) return null;
+  if (!State.activeDistantChats[gxsId]) {
+    State.activeDistantChats[gxsId] = {
+      pid: null,
+      status: null,
+      messages: [],
+      inputMsg: '',
+      disconnected: false,
+    };
+  }
+  return State.activeDistantChats[gxsId];
+}
+
 
 function fetchIdDetails(gxsId) {
   if (!gxsId) return;
@@ -175,11 +191,6 @@ function syncFilter(tab) {
 
   if (State.activeFilter !== newFilter) {
     State.activeFilter = newFilter;
-    State.selectedId = null;
-    State.chatPid = null;
-    State.chatMessages = [];
-    State.chatInputMsg = '';
-    State.activeTab = 'details';
   }
 }
 
@@ -203,6 +214,8 @@ function getStatusTooltip(status) {
 
 function pollDistantChatStatus() {
   if (!State.chatPid) return;
+  const session = State.selectedId ? getDistantChatSession(State.selectedId) : null;
+
   rs.rsJsonApiRequest(
     '/rsChats/getDistantChatStatus',
     {
@@ -211,6 +224,7 @@ function pollDistantChatStatus() {
     (detail, success) => {
       if (success && detail.retval) {
         State.distantChatStatus = detail.info;
+        if (session) session.status = detail.info;
 
         if (detail.info.status === 2) {
           const text = 'Tunnel is secured. You can talk!';
@@ -258,7 +272,6 @@ function stopStatusPolling() {
     clearInterval(State.statusPollInterval);
     State.statusPollInterval = null;
   }
-  State.distantChatStatus = null;
 }
 
 function isSystemMsg(msgText) {
@@ -273,11 +286,28 @@ function isSystemMsg(msgText) {
   );
 }
 
-function initializeDistantChat() {
+function initializeDistantChat(force = false) {
   if (!State.selectedId || !State.selectedOwnGxsIdForChat) return;
 
-  State.chatPid = null;
-  State.chatMessages = [
+  const session = getDistantChatSession(State.selectedId);
+
+  // If chat session is already established/initiating for this peer and not forced/disconnected:
+  if (!force && session.pid && !session.disconnected) {
+    State.chatPid = session.pid;
+    State.chatMessages = session.messages;
+    State.distantChatStatus = session.status;
+    State.chatDisconnected = session.disconnected;
+
+    loadChatMessages();
+    pollDistantChatStatus();
+    startStatusPolling();
+    return;
+  }
+
+  // Otherwise, start a new tunnel for this peer
+  session.pid = null;
+  session.status = null;
+  session.messages = [
     {
       incoming: true,
       isSystem: true,
@@ -285,6 +315,11 @@ function initializeDistantChat() {
       sendTime: Math.floor(Date.now() / 1000),
     }
   ];
+  session.disconnected = false;
+
+  State.chatPid = null;
+  State.chatMessages = session.messages;
+  State.distantChatStatus = null;
   State.chatDisconnected = false;
   m.redraw();
 
@@ -297,7 +332,9 @@ function initializeDistantChat() {
     },
     (res) => {
       if (res && res.pid) {
-        State.chatPid = rs.idToHex(res.pid);
+        const hexPid = rs.idToHex(res.pid);
+        session.pid = hexPid;
+        State.chatPid = hexPid;
         State.distantChatStatus = null;
         loadChatMessages();
         pollDistantChatStatus();
@@ -306,6 +343,7 @@ function initializeDistantChat() {
     }
   );
 }
+
 
 function loadChatMessages() {
   if (!State.chatPid) return;
@@ -564,6 +602,7 @@ function loadAllHistoryForSelectedPeer(callback) {
 
 module.exports = {
   State,
+  getDistantChatSession,
   isSystemMsg,
   preloadAllChatHistory,
   loadAllHistoryForSelectedPeer,
@@ -586,3 +625,4 @@ module.exports = {
   loadChatMessages,
   sendDistantChatMessage,
 };
+

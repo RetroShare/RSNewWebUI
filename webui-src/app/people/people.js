@@ -9,9 +9,11 @@ const {
   loadOwnGxsIds,
   preloadAllChatHistory,
   syncFilter,
+  startStatusPolling,
   stopStatusPolling,
   initializeDistantChat,
 } = require('people/people_state');
+
 const PeopleSidebar = require('people/people_sidebar');
 const DetailsTab = require('people/people_details_tab');
 const ChatTab = require('people/people_chat_tab');
@@ -36,9 +38,41 @@ const PeopleLayout = () => {
       // Register for chatEvents to receive live incoming messages
       rs.events[15].notify = (chatMessage) => {
         const msgCid = chatMessage.chat_id;
-        if (msgCid && msgCid.type === 2 && State.chatPid) {
+        if (msgCid && msgCid.type === 2) {
           const msgPid = rs.idToHex(msgCid.distant_chat_id);
-          if (msgPid === State.chatPid) {
+
+          // Find active session matching this distant chat PID
+          let session = null;
+          let targetGxsId = null;
+          Object.keys(State.activeDistantChats || {}).forEach((id) => {
+            if (State.activeDistantChats[id] && State.activeDistantChats[id].pid === msgPid) {
+              session = State.activeDistantChats[id];
+              targetGxsId = id;
+            }
+          });
+
+          if (session) {
+            const isNearDuplicate = session.messages.some(
+              (m) => (m.msg || m.message) === chatMessage.msg && Math.abs(m.sendTime - chatMessage.sendTime) < 5
+            );
+            if (!isNearDuplicate) {
+              session.messages.push(chatMessage);
+              session.messages.sort((a, b) => a.sendTime - b.sendTime);
+              if (targetGxsId) {
+                State.chatHistoryMap[targetGxsId] = {
+                  lastMsg: chatMessage.msg || chatMessage.message || '',
+                  lastTime: chatMessage.sendTime || Math.floor(Date.now() / 1000),
+                };
+              }
+              m.redraw();
+              if (State.selectedId === targetGxsId) {
+                setTimeout(() => {
+                  const element = document.querySelector('.chat-messages');
+                  if (element) element.scrollTop = element.scrollHeight;
+                }, 100);
+              }
+            }
+          } else if (State.chatPid && msgPid === State.chatPid) {
             const isNearDuplicate = State.chatMessages.some(
               (m) => (m.msg || m.message) === chatMessage.msg && Math.abs(m.sendTime - chatMessage.sendTime) < 5
             );
@@ -54,6 +88,10 @@ const PeopleLayout = () => {
           }
         }
       };
+
+      if (State.chatPid && !State.chatDisconnected) {
+        startStatusPolling();
+      }
     },
     onremove: () => {
       if (rs.events[15]) {
@@ -62,6 +100,7 @@ const PeopleLayout = () => {
       stopStatusPolling();
       window.removeEventListener('click', dismissMenu);
     },
+
     onupdate: (vnode) => {
       syncFilter(vnode.attrs.tab);
     },

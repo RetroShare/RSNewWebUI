@@ -141,7 +141,7 @@ const ChatTab = () => {
                     value: ownId,
                     onchange: (e) => {
                       State.selectedOwnGxsIdForChat = e.target.value;
-                      initializeDistantChat();
+                      initializeDistantChat(true);
                     },
                   }, State.ownGxsIds.map((id) => m('option', { value: id }, rs.userList.username(id)))),
                 ]);
@@ -170,6 +170,9 @@ const ChatTab = () => {
                     },
                     (data, success) => {
                       if (success) {
+                        if (State.selectedId && State.activeDistantChats[State.selectedId]) {
+                          delete State.activeDistantChats[State.selectedId];
+                        }
                         State.chatPid = null;
                         State.chatMessages = [];
                         State.distantChatStatus = null;
@@ -182,6 +185,7 @@ const ChatTab = () => {
                 }
               },
             }, [
+
               m('i.fas.fa-sign-out-alt'),
               'Leave Chat',
             ]),

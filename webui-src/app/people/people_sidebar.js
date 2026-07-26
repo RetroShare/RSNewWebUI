@@ -35,6 +35,17 @@ const PeopleSidebar = () => {
       // 1. Determine list based on mainTab ('people' vs 'chats')
       let displayItems = [];
 
+      // 0. Compute active chats count (conversations with real message history)
+      const allUserGroupIds = new Set((rs.userList.users || []).map((u) => u.mGroupId));
+      Object.keys(State.chatHistoryMap || {}).forEach((id) => allUserGroupIds.add(id));
+      let activeChatsCount = 0;
+      allUserGroupIds.forEach((gxsId) => {
+        const hist = State.chatHistoryMap && State.chatHistoryMap[gxsId];
+        if (hist && hist.lastMsg && !isSystemMsg(hist.lastMsg)) {
+          activeChatsCount++;
+        }
+      });
+
       if (State.mainTab === 'people') {
         let baseList = [];
         if (State.activeFilter === 'own') {
@@ -57,10 +68,7 @@ const PeopleSidebar = () => {
         });
       } else {
         // Chats Tab: ONLY contacts and identities that have real chat history (ignoring system tunnel status logs)
-        const userGroupIds = new Set((rs.userList.users || []).map((u) => u.mGroupId));
-        Object.keys(State.chatHistoryMap || {}).forEach((id) => userGroupIds.add(id));
-
-        displayItems = Array.from(userGroupIds)
+        displayItems = Array.from(allUserGroupIds)
           .map((gxsId) => {
             const entry = rs.userList.userMap[gxsId];
             const name = entry && entry.name ? entry.name : (rs.userList.username(gxsId) || 'Unknown');
@@ -127,9 +135,14 @@ const PeopleSidebar = () => {
                   m.redraw();
                 },
               },
-              [m('i.fas.fa-comments'), ' Chats']
+              [
+                m('i.fas.fa-comments'),
+                ' Chats',
+                activeChatsCount > 0 && m('span.segment-badge', activeChatsCount),
+              ]
             ),
           ]),
+
 
           // 3. Sub-Filter Row (People Tab)
           State.mainTab === 'people' &&
