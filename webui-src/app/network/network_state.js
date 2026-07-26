@@ -49,12 +49,14 @@ function loadOwnProfile() {
           }
         });
 
+        /* Disabled getAvatar API call to avoid 404 network errors
         rs.rsJsonApiRequest('/rsChats/getAvatar', { pid: State.ownProfile.ssl_id }, (avatarData) => {
           if (avatarData && avatarData.retval && avatarData.avatar_base64_string) {
             State.ownProfile.avatar = avatarData.avatar_base64_string;
             m.redraw();
           }
         });
+        */
       }
       m.redraw();
     }

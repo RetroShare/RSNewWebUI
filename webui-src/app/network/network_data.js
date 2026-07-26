@@ -47,17 +47,7 @@ Data.refreshGpgDetails = async function () {
             .catch(() => {})
             .then(() => {
               let avatar = '';
-              return rs
-                .rsJsonApiRequest(
-                  '/rsChats/getAvatar',
-                  { pid: data.id },
-                  (avatarData) => {
-                    if (avatarData && avatarData.retval && avatarData.avatar_base64_string) {
-                      avatar = avatarData.avatar_base64_string;
-                    }
-                  }
-                )
-                .catch(() => {})
+              return Promise.resolve()
                 .then(() => {
                   const gpgId = (data.gpg_id || '').toLowerCase();
                   const loc = {
