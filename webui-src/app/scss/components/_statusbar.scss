@@ -1,0 +1,42 @@
+@use '../abstracts' as *;
+
+/* Status Bar Styles */
+.statusbar {
+  @include flex($justify: space-between, $align: center);
+  height: 28px;
+  background-color: $dark-color;
+  border-top: 1px solid #2e2e38;
+  padding: 0 1rem;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  z-index: 100;
+  box-sizing: border-box;
+  user-select: none;
+  flex-shrink: 0;
+
+  &-left {
+    @include flex($align: center);
+  }
+
+  &-right {
+    @include flex($align: center, $gap: 1.5rem);
+  }
+
+  &-item {
+    @include flex($align: center);
+  }
+
+  &-divider {
+    width: 1px;
+    height: 14px;
+    background-color: #2e2e38;
+  }
+}
+
+.status-bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}

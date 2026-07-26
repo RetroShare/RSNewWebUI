@@ -89,3 +89,58 @@
 .config-files {
   @include flex(column, $gap: 1rem);
 }
+
+/* Hidden Service Configuration layout overrides */
+.proxy-server-container {
+  width: 100%;
+  @include flex(column, $gap: 1rem);
+}
+
+.proxy-description {
+  color: #334155;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.proxy-rows-container {
+  @include flex(column, $gap: 0.75rem);
+  width: 100%;
+}
+
+.proxy-row {
+  display: grid;
+  grid-template-columns: 160px 220px 220px auto;
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+}
+
+.proxy-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.proxy-addr-input,
+.proxy-port-input {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.proxy-status-container {
+  @include flex($align: center, $gap: 0.5rem);
+}
+
+.proxy-status-bullet {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid #475569;
+}
+
+.proxy-status-text {
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
