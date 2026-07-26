@@ -45,7 +45,7 @@ const navbar = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  marginRight: '10px',
+                  marginRight: isCollapsed ? 0 : '10px',
                 },
               },
               [
@@ -53,28 +53,11 @@ const navbar = () => {
                   src: 'images/retroshare.svg',
                   alt: 'retroshare_icon',
                 }),
-                m('i.fas.fa-circle', {
-                  style: {
-                    color: rs.connectionState.status ? '#2ecc71' : '#e74c3c',
-                    fontSize: '0.6em',
-                    marginTop: '5px',
-                    transition: 'color 0.3s ease',
-                  },
-                  title: rs.connectionState.status ? 'Connected to RetroShare Core' : 'Connection Lost',
-                }),
-                m('span.webui-version', { style: { fontSize: '0.7em', marginTop: '3px', color: '#888' } }, 'v131'),
-                m('i.fas.fa-sync-alt.refresh-icon', {
-                  style: { fontSize: '0.8em', marginTop: '2px', cursor: 'pointer', color: '#888' },
-                  onclick: () => window.location.reload(true),
-                  title: 'Force reload application',
-                }),
               ]
             ),
-            m('.nav-menu__logo-text', [
-              m('h5', 'RetroShare'),
-            ]),
+            m('.nav-menu__logo-text', [m('h5', 'RetroShare')]),
           ]),
-          m('.nav-menu__box', [
+          m('.nav-menu__box', { style: { flex: 1 } }, [
             Object.keys(vnode.attrs.links).map((linkName) => {
               const active = m.route.get().split('/')[1] === linkName;
               return m(
@@ -83,20 +66,9 @@ const navbar = () => {
                   href: vnode.attrs.links[linkName],
                   class: (active ? 'active-link' : '') + ' item',
                 },
-                [
-                  navIcon[linkName],
-                  m('span', linkName.charAt(0).toUpperCase() + linkName.slice(1)),
-                ]
+                [navIcon[linkName], m('span', linkName.charAt(0).toUpperCase() + linkName.slice(1))]
               );
             }),
-            m(
-              'a.logout-link.item',
-              {
-                onclick: () => rs.logout(),
-                style: { marginTop: 'auto', cursor: 'pointer' },
-              },
-              [m('i.fas.fa-sign-out-alt'), m('span', 'Logout')]
-            ),
             m(
               'button.toggle-nav',
               {
@@ -105,6 +77,84 @@ const navbar = () => {
               m('i.fas.fa-angle-double-left')
             ),
           ]),
+          m(
+            '.nav-menu__footer',
+            {
+              style: {
+                marginTop: 'auto',
+                padding: '0.75rem 0 0',
+                color: '#888',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.75rem',
+              },
+            },
+            [
+              m(
+                '.nav-menu__status',
+                {
+                  style: {
+                    display: 'flex',
+                    flexDirection: isCollapsed ? 'column' : 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: isCollapsed ? '0.35rem' : '0.6rem',
+                  },
+                },
+                [
+                  m('i.fas.fa-circle', {
+                    style: {
+                      color: rs.connectionState.status ? '#2ecc71' : '#e74c3c',
+                      fontSize: '0.6em',
+                      transition: 'color 0.3s ease',
+                    },
+                    title: rs.connectionState.status
+                      ? 'Connected to RetroShare Core'
+                      : 'Connection Lost',
+                  }),
+                  m('span.webui-version', { style: { fontSize: '0.7em' } }, 'v131'),
+                  m('i.fas.fa-sync-alt.refresh-icon', {
+                    style: { cursor: 'pointer', fontSize: '0.8em' },
+                    onclick: () => window.location.reload(true),
+                    title: 'Force reload application',
+                  }),
+                ]
+              ),
+              m(
+                'a.logout-link.item',
+                {
+                  onclick: () => rs.logout(),
+                  style: {
+                    cursor: 'pointer',
+                    margin: 0,
+                    padding: isCollapsed ? '0.675rem 0' : '0.675rem 0.5rem',
+                    width: isCollapsed ? '2.5rem' : '10rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: isCollapsed ? 'center' : 'flex-start',
+                    lineHeight: 1,
+                    borderRadius: '0.5rem',
+                    textDecoration: 'none',
+                    color: '#ccc',
+                    textTransform: 'capitalize',
+                  },
+                },
+                [
+                  m('i.fas.fa-sign-out-alt.sidenav-icon', {
+                    style: {
+                      width: '2.5rem',
+                      height: '1.4rem',
+                      display: 'grid',
+                      placeItems: 'center',
+                    },
+                  }),
+                  !isCollapsed && m('span', 'Logout'),
+                ]
+              ),
+            ]
+          ),
         ]
       ),
   };
@@ -128,10 +178,22 @@ const Layout = () => {
             config: '/config/network',
           },
         }),
-        m('.main-container', { style: { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflow: 'hidden' } }, [
-          m('.tab-content', { style: { flex: '1', overflow: 'auto' } }, vnode.children),
-          m(statusbar)
-        ]),
+        m(
+          '.main-container',
+          {
+            style: {
+              display: 'flex',
+              flexDirection: 'column',
+              width: '100%',
+              height: '100%',
+              overflow: 'hidden',
+            },
+          },
+          [
+            m('.tab-content', { style: { flex: '1', overflow: 'auto' } }, vnode.children),
+            m(statusbar),
+          ]
+        ),
       ]),
   };
 };
@@ -208,8 +270,8 @@ m.route(document.getElementById('main'), '/', {
 if (rs.loginKey.isVerified && rs.loginKey.username && rs.loginKey.passwd) {
   rs.logon(
     { Authorization: `Basic ${btoa(`${rs.loginKey.username}:${rs.loginKey.passwd}`)}` },
-    () => { }, // displayAuthError
-    () => { }, // displayErrorMessage
-    () => { }
+    () => {}, // displayAuthError
+    () => {}, // displayErrorMessage
+    () => {}
   );
 }

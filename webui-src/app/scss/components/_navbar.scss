@@ -11,7 +11,7 @@
   box-shadow: 0 5px 5px #222;
   @include flex(column, $align: center);
   height: 100%;
-  padding: 0.5rem 0.25rem;
+  padding: 0.25rem;
   margin-right: 0rem;
 
   &__logo {
