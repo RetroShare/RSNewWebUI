@@ -1,27 +1,87 @@
 const rs = require('rswebui');
 const m = require('mithril');
+const jdenticon = require('jdenticon');
 
 function checksudo(id) {
   return id === '0000000000000000';
 }
 
+function getAvatarColor(seed) {
+  let hash = 0;
+  if (seed) {
+    for (let i = 0; i < seed.length; i++) {
+      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 60%, 60%)`;
+}
+
 const UserAvatar = () => ({
   view: (v) => {
     const imageURI = v.attrs.avatar;
-    return imageURI === undefined || imageURI.mData.base64 === ''
-      ? m(
-        'div.defaultAvatar',
-        {
-          // image isn't getting loaded
-          // ? m('img.defaultAvatar', {
-          //   src: '../data/user.png'
-          // })
-        },
-        m('p', v.attrs.firstLetter)
-      )
-      : m('img.avatar', {
+    const identityId = v.attrs.identityId || v.attrs.id;
+    const rawSize = v.attrs.size || 48;
+    const sizeStr = typeof rawSize === 'number' ? `${rawSize}px` : rawSize;
+    const pxSize = typeof rawSize === 'number' ? rawSize : parseInt(rawSize) || 48;
+    const isSquare = !!v.attrs.isSquare;
+
+    if (imageURI && imageURI.mData && imageURI.mData.base64 !== '') {
+      return m('img.avatar', {
         src: 'data:image/png;base64,' + imageURI.mData.base64,
+        style: {
+          width: sizeStr,
+          height: sizeStr,
+          borderRadius: isSquare ? '0' : '',
+        }
       });
+    }
+
+    if (identityId && identityId !== '0000000000000000') {
+      const svgString = jdenticon.toSvg(identityId, pxSize);
+      return m('div.jdenticon-avatar', {
+        style: {
+          display: 'inline-block',
+          width: sizeStr,
+          height: sizeStr,
+          borderRadius: isSquare ? '0' : '50%',
+          overflow: 'hidden',
+          verticalAlign: 'middle',
+          marginRight: '0.3em',
+        },
+        oncreate: (vnode) => {
+          const svg = vnode.dom.querySelector('svg');
+          if (svg) {
+            svg.style.width = '100%';
+            svg.style.height = '100%';
+            svg.style.display = 'block';
+          }
+        }
+      }, m.trust(svgString));
+    }
+
+    const seed = v.attrs.seed || v.attrs.firstLetter || '';
+    const backgroundColor = getAvatarColor(seed);
+
+    return m(
+      'div.defaultAvatar',
+      {
+        style: {
+          width: sizeStr,
+          height: sizeStr,
+          borderRadius: isSquare ? '0' : '50%',
+          backgroundColor: backgroundColor,
+        }
+      },
+      m('p', {
+        style: {
+          color: '#ffffff',
+          fontWeight: '900',
+          margin: '0',
+          fontSize: `calc(${sizeStr} * 0.55)`,
+        }
+      }, v.attrs.firstLetter || '?')
+    );
   },
 });
 
@@ -120,6 +180,7 @@ const regularcontactInfo = () => {
           m(UserAvatar, {
             avatar: details.mAvatar,
             firstLetter: details.mNickname.slice(0, 1).toUpperCase(),
+            identityId: details.mId || v.attrs.id.mGroupId,
           }),
           m('.details', [
             m('p', 'ID:'),

@@ -7,6 +7,7 @@ const sections = {
   services: require('config/config_services'),
   files: require('config/config_files'),
   people: require('config/config_people'),
+  chat: require('config/config_chat'),
   mail: require('config/config_mail'),
 };
 

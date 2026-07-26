@@ -34,6 +34,85 @@ const MSG_ADDRESS_MODE_BCC = 0x03;
 
 const BOX_ALL = 0x06;
 
+const MessageCache = {};
+const UserNicknamesCache = {};
+const MailGxsDetailsCache = {};
+const MailHoverState = {
+  hoveredUser: null,
+};
+
+function renderMailUserTooltip() {
+  if (!MailHoverState.hoveredUser) return null;
+  const hUser = MailHoverState.hoveredUser;
+  const details = MailGxsDetailsCache[hUser.gxsId];
+  if (!details) return null;
+
+  const avatar = details.mAvatar && details.mAvatar.base64 ? details.mAvatar.base64 : null;
+  const firstLetter = (hUser.name || '?').slice(0, 1).toUpperCase();
+  const votes = details.mReputation
+    ? ((details.mReputation.mFriendsPositiveVotes || 0) - (details.mReputation.mFriendsNegativeVotes || 0))
+    : 0;
+
+  const top = hUser.rect.top - 10;
+  const left = Math.min(Math.max(hUser.rect.left, 140), window.innerWidth - 280);
+
+  return m('.user-tooltip', {
+    style: {
+      position: 'fixed',
+      top: `${top}px`,
+      left: `${left}px`,
+      transform: 'translateY(-100%)',
+      zIndex: 10000,
+    }
+  }, [
+    m('.tooltip-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: hUser.gxsId, size: 64 })),
+    m('.tooltip-details', [
+      m('.tooltip-row', [m('span.tooltip-label', 'Identity name: '), m('span.tooltip-value', hUser.name)]),
+      m('.tooltip-row', [m('span.tooltip-label', 'Identity Id: '), m('span.tooltip-value.tooltip-id', hUser.gxsId)]),
+      details.mPgpId && details.mPgpId !== '0000000000000000' && m('.tooltip-row', [
+        m('span.tooltip-label', 'Node: '),
+        m('span.tooltip-value', `${rs.userList.username(details.mPgpId) || hUser.name} [${details.mPgpId}]`)
+      ]),
+      m('.tooltip-row', [
+        m('span.tooltip-label', 'Votes: '),
+        m('span.tooltip-value', {
+          style: {
+            color: votes >= 0 ? '#22c55e' : '#ef4444',
+            fontWeight: 'bold'
+          }
+        }, (votes >= 0 ? '+' : '') + votes)
+      ])
+    ])
+  ]);
+}
+
+const tagTypesCache = {};
+const defaultTagTypes = {
+  1: { name: 'Important', color: '#ef4444' },
+  2: { name: 'Work', color: '#f97316' },
+  3: { name: 'Personal', color: '#22c55e' },
+  4: { name: 'Todo', color: '#3b82f6' },
+  5: { name: 'Later', color: '#a855f7' },
+};
+
+function getTagDetails(tagId) {
+  return tagTypesCache[tagId] || defaultTagTypes[tagId] || { name: `Tag ${tagId}`, color: '#cbd5e1' };
+}
+
+function loadTagTypes() {
+  rs.rsJsonApiRequest('/rsMail/getMessageTagTypes', {}, (res) => {
+    if (res && res.body && res.body.tags && res.body.tags.types) {
+      res.body.tags.types.forEach((tag) => {
+        tagTypesCache[tag.key] = {
+          name: tag.value.first,
+          color: `#${tag.value.second.toString(16).padStart(6, '0')}`,
+        };
+      });
+    }
+  });
+}
+loadTagTypes();
+
 // Utility functions
 const humanReadableSize = (fileSize) => {
   return fileSize / 1024 > 1024
@@ -65,10 +144,12 @@ const MessageSummary = () => {
         .then((res) => {
           if (res.body.retval) {
             details = res.body.msg;
+            details.msgtags = v.attrs.details.msgtags;
             files = details.files;
             isStarred = (details.msgflags & 0xf00) === RS_MSG_STAR;
             const flag = details.msgflags & 0xf0;
             msgStatus = flag === RS_MSG_NEW || flag === RS_MSG_UNREAD_BY_USER ? 'unread' : 'read';
+            MessageCache[v.attrs.details.msgId] = details;
           }
         })
         .then(() => {
@@ -76,7 +157,13 @@ const MessageSummary = () => {
             rs.rsJsonApiRequest(
               '/rsIdentity/getIdDetails',
               { id: details.from._addr_string },
-              (data) => (fromUserInfo = data.details)
+              (data) => {
+                fromUserInfo = data.details;
+                if (fromUserInfo) {
+                  UserNicknamesCache[details.from._addr_string] = fromUserInfo.mNickname || '';
+                  MailGxsDetailsCache[details.from._addr_string] = fromUserInfo;
+                }
+              }
             );
           }
         });
@@ -85,18 +172,18 @@ const MessageSummary = () => {
       m(
         'tr.msgbody',
         {
-          key: details.msgId,
+          key: v.attrs.details.msgId,
           class: msgStatus,
           onclick: () =>
-            m.route.set('/mail/:tab/:msgId', { tab: v.attrs.category, msgId: details.msgId }),
+            m.route.set('/mail/:tab/:msgId', { tab: v.attrs.category, msgId: v.attrs.details.msgId }),
         },
         [
           m(
             'td',
-            m(`input.star-check[type=checkbox][id=msg-${details.msgId}]`, { checked: isStarred }),
+            m(`input.star-check[type=checkbox][id=msg-${v.attrs.details.msgId}]`, { checked: isStarred }),
             // Use label with  [for] to manipulate hidden checkbox
             m(
-              `label.star-check[for=msg-${details.msgId}]`,
+              `label.star-check[for=msg-${v.attrs.details.msgId}]`,
               {
                 onclick: starMessage,
                 class: (details.msgflags & 0xf00) === RS_MSG_STAR ? 'starred' : 'unstarred',
@@ -105,10 +192,70 @@ const MessageSummary = () => {
             )
           ),
           files && m('td', files.length),
-          m('td', details.title),
+          m('td', { style: 'border-bottom: inherit;' }, [
+            m('div', {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }
+            }, [
+              m('span', details.title),
+              details.msgtags && details.msgtags.length > 0 && m('.mail-tags-container', { style: 'display: inline-flex; gap: 0.25rem;' },
+                details.msgtags.map((tagId) => {
+                  const tag = getTagDetails(tagId);
+                  return m('span.mail-tag-badge', {
+                    title: tag.name,
+                    style: `display: inline-block; width: 10px; height: 10px; border-radius: 2px; background-color: ${tag.color};`
+                  });
+                })
+              )
+            ])
+          ]),
           m(
             'td',
-            fromUserInfo && Number(fromUserInfo.mId) !== 0 ? fromUserInfo.mNickname : '[Unknown]'
+            m(
+              'div',
+              {
+                style: {
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  justifyContent: 'start',
+                  cursor: 'pointer',
+                },
+                onmouseenter: (e) => {
+                  if (!details?.from?._addr_string) return;
+                  const gxsId = details.from._addr_string;
+                  const name = fromUserInfo && Number(fromUserInfo.mId) !== 0 ? fromUserInfo.mNickname : '[Unknown]';
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  MailHoverState.hoveredUser = { gxsId, name, rect };
+                  if (fromUserInfo) MailGxsDetailsCache[gxsId] = fromUserInfo;
+                  if (!MailGxsDetailsCache[gxsId]) {
+                    rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: gxsId }, (d) => {
+                      if (d && d.details) {
+                        MailGxsDetailsCache[gxsId] = d.details;
+                        m.redraw();
+                      }
+                    });
+                  }
+                  m.redraw();
+                },
+                onmouseleave: () => {
+                  MailHoverState.hoveredUser = null;
+                  m.redraw();
+                }
+              },
+              [
+                m(peopleUtil.UserAvatar, {
+                  avatar: fromUserInfo?.mAvatar,
+                  firstLetter: (fromUserInfo?.mNickname || '').slice(0, 1).toUpperCase(),
+                  identityId: details.from?._addr_string,
+                  size: 24,
+                }),
+                m('span', fromUserInfo && Number(fromUserInfo.mId) !== 0 ? fromUserInfo.mNickname : '[Unknown]'),
+              ]
+            )
           ),
           m('td', new Date(details.ts * 1000).toLocaleString()),
         ]
@@ -158,6 +305,7 @@ const AttachmentSection = () => {
 
 const MessageView = () => {
   let showCompose = false;
+  let composeType = 'reply';
   // setFunction like react to show/hide popup
   function setShowCompose(bool) {
     showCompose = bool;
@@ -222,11 +370,27 @@ const MessageView = () => {
           } else if (mode === MSG_ADDRESS_MODE_BCC && !MailData.bccList[addrString]) {
             MailData.bccList[addrString] = destDetail;
           }
+          if (addrString && !UserNicknamesCache[addrString]) {
+            rs.rsJsonApiRequest(
+              '/rsIdentity/getIdDetails',
+              { id: addrString },
+              (data) => {
+                if (data?.details) {
+                  UserNicknamesCache[addrString] = data.details.mNickname || '';
+                }
+              }
+            );
+          }
         });
         rs.rsJsonApiRequest(
           '/rsIdentity/getIdDetails',
           { id: MailData?.sender?._addr_string },
-          (data) => (MailData.avatar = data?.details?.mAvatar)
+          (data) => {
+            if (data?.details) {
+              MailData.avatar = data.details.mAvatar;
+              UserNicknamesCache[MailData.sender._addr_string] = data.details.mNickname || '';
+            }
+          }
         );
       }
     },
@@ -241,9 +405,9 @@ const MessageView = () => {
               m('i.fas.fa-arrow-left')
             ),
             m('.msg-view-nav__action', [
-              m('button', { onclick: () => setShowCompose(true) }, 'Reply'),
-              m('button', 'Reply All'),
-              m('button', 'Forward'),
+              m('button', { onclick: () => { composeType = 'reply'; setShowCompose(true); } }, 'Reply'),
+              m('button', { onclick: () => { composeType = 'replyAll'; setShowCompose(true); } }, 'Reply All'),
+              m('button', { onclick: () => { composeType = 'forward'; setShowCompose(true); } }, 'Forward'),
               m('button', { onclick: confirmMailDelete }, 'Delete'),
             ]),
           ]),
@@ -253,15 +417,36 @@ const MessageView = () => {
               MailData.sender &&
               m(peopleUtil.UserAvatar, {
                 avatar: MailData.avatar,
-                firstLetter: rs.userList.userMap[MailData.sender._addr_string]
-                  ? rs.userList.userMap[MailData.sender._addr_string].slice(0, 1).toUpperCase()
-                  : '',
+                firstLetter: (UserNicknamesCache[MailData.sender._addr_string] || rs.userList.username(MailData.sender._addr_string) || '').slice(0, 1).toUpperCase(),
+                identityId: MailData.sender._addr_string,
               }),
               m('.msg-details__info', [
                 MailData.sender &&
-                m('.msg-details__info-item', [
+                m('.msg-details__info-item', {
+                  style: { cursor: 'pointer', display: 'inline-flex', gap: '0.25rem', alignItems: 'center' },
+                  onmouseenter: (e) => {
+                    if (!MailData.sender._addr_string) return;
+                    const gxsId = MailData.sender._addr_string;
+                    const name = UserNicknamesCache[gxsId] || rs.userList.username(gxsId) || 'Unknown';
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    MailHoverState.hoveredUser = { gxsId, name, rect };
+                    if (!MailGxsDetailsCache[gxsId]) {
+                      rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: gxsId }, (d) => {
+                        if (d && d.details) {
+                          MailGxsDetailsCache[gxsId] = d.details;
+                          m.redraw();
+                        }
+                      });
+                    }
+                    m.redraw();
+                  },
+                  onmouseleave: () => {
+                    MailHoverState.hoveredUser = null;
+                    m.redraw();
+                  }
+                }, [
                   m('b', 'From: '),
-                  rs.userList.userMap[MailData.sender._addr_string] || 'Unknown',
+                  UserNicknamesCache[MailData.sender._addr_string] || rs.userList.username(MailData.sender._addr_string) || 'Unknown',
                 ]),
                 m('.msg-details__info-item', [
                   m('b', 'To: '),
@@ -269,7 +454,7 @@ const MessageView = () => {
                     ? [
                       m('#truncate.truncated-view', [
                         Object.keys(MailData.toList).map((key, index) =>
-                          m('span', { key: index }, `${rs.userList.userMap[key] || 'Unknown'}, `)
+                          m('span', { key: index }, `${UserNicknamesCache[key] || rs.userList.username(key) || 'Unknown'}, `)
                         ),
                       ]),
                       m(
@@ -294,7 +479,7 @@ const MessageView = () => {
                 m('.msg-details__info-item', [
                   m('b', 'Cc: '),
                   Object.keys(MailData.ccList).map((key, index) =>
-                    m('p', { key: index }, `${rs.userList.userMap[key]}, `)
+                    m('span', { key: index }, `${UserNicknamesCache[key] || rs.userList.username(key) || 'Unknown'}, `)
                   ),
                 ]),
                 MailData.bccList &&
@@ -302,7 +487,7 @@ const MessageView = () => {
                 m('.msg-details__info-item', [
                   m('b', 'Bcc: '),
                   Object.keys(MailData.bccList).map((key, index) =>
-                    m('p', { key: index }, `${rs.userList.userMap[key]}, `)
+                    m('span', { key: index }, `${UserNicknamesCache[key] || rs.userList.username(key) || 'Unknown'}, `)
                   ),
                 ]),
               ]),
@@ -315,16 +500,16 @@ const MessageView = () => {
             m('.msg-view__attachment-items', m(AttachmentSection, { files: MailData.files })),
           ]),
         ],
-        m(
+        showCompose && m(
           '.composePopupOverlay#mailComposerPopup',
-          { style: { display: showCompose ? 'block' : 'none' } },
           m(
             '.composePopup',
             MailData.sender._addr_string
               ? m(compose, {
-                msgType: 'reply',
+                msgType: composeType,
                 senderId: MailData.sender._addr_string,
                 recipientList: MailData.toList,
+                ccList: MailData.ccList,
                 subject: MailData.subject,
                 replyMessage: MailData.message,
                 timeStamp: new Date(MailData.timeStamp * 1000),
@@ -333,24 +518,181 @@ const MessageView = () => {
               : m('.widget', m('.widget__heading', m('h3', 'Sender is not known'))),
             m('button.red.close-btn', { onclick: () => setShowCompose(false) }, m('i.fas.fa-times'))
           )
-        )
+        ),
+        renderMailUserTooltip(),
       ),
   };
 };
 
+const SortState = {
+  column: 'date',
+  direction: 'desc',
+};
+
+function setSort(column) {
+  if (SortState.column === column) {
+    SortState.direction = SortState.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    SortState.column = column;
+    SortState.direction = (column === 'date' || column === 'attachments' || column === 'starred') ? 'desc' : 'asc';
+  }
+}
+
+function sortList(list) {
+  if (!list) return [];
+  return [...list].sort((msgA, msgB) => {
+    let valA, valB;
+    switch (SortState.column) {
+      case 'starred': {
+        const aStarred = (MessageCache[msgA.msgId]?.msgflags & 0xf00) === RS_MSG_STAR || (msgA.msgflags & 0xf00) === RS_MSG_STAR;
+        const bStarred = (MessageCache[msgB.msgId]?.msgflags & 0xf00) === RS_MSG_STAR || (msgB.msgflags & 0xf00) === RS_MSG_STAR;
+        valA = aStarred ? 1 : 0;
+        valB = bStarred ? 1 : 0;
+        break;
+      }
+      case 'attachments': {
+        const aCount = MessageCache[msgA.msgId]?.files?.length || msgA.count || 0;
+        const bCount = MessageCache[msgB.msgId]?.files?.length || msgB.count || 0;
+        valA = Number(aCount);
+        valB = Number(bCount);
+        break;
+      }
+      case 'subject': {
+        const aTitle = MessageCache[msgA.msgId]?.title || msgA.title || '';
+        const bTitle = MessageCache[msgB.msgId]?.title || msgB.title || '';
+        valA = aTitle.toLowerCase();
+        valB = bTitle.toLowerCase();
+        break;
+      }
+      case 'from': {
+        const aSenderId = MessageCache[msgA.msgId]?.from?._addr_string || msgA.from?._addr_string;
+        const bSenderId = MessageCache[msgB.msgId]?.from?._addr_string || msgB.from?._addr_string;
+        const aName = aSenderId && rs.userList.userMap[aSenderId];
+        const bName = bSenderId && rs.userList.userMap[bSenderId];
+        const aFrom = (UserNicknamesCache[aSenderId] || (aName && aName.name) || aName || '') + '';
+        const bFrom = (UserNicknamesCache[bSenderId] || (bName && bName.name) || bName || '') + '';
+        valA = aFrom.toLowerCase();
+        valB = bFrom.toLowerCase();
+        break;
+      }
+      case 'date':
+      default: {
+        const aTs = MessageCache[msgA.msgId]?.ts || msgA.ts?.xint64 || msgA.ts || 0;
+        const bTs = MessageCache[msgB.msgId]?.ts || msgB.ts?.xint64 || msgB.ts || 0;
+        valA = Number(aTs);
+        valB = Number(bTs);
+        break;
+      }
+    }
+
+    if (valA < valB) return SortState.direction === 'asc' ? -1 : 1;
+    if (valA > valB) return SortState.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
+
 const Table = () => {
+  let currentPage = 0;
+  const pageSize = 50;
   return {
-    view: (v) =>
-      m('table.mails', [
-        m('tr', [
-          m('th[title=starred]', m('i.fas.fa-star')),
-          m('th[title=attachments]', m('i.fas.fa-paperclip')),
-          m('th', 'Subject'),
-          m('th', 'From'),
-          m('th', 'Date'),
+    view: (v) => {
+      const renderHeader = (colName, label, isIcon = false) => {
+        const isActive = SortState.column === colName;
+        const iconClass = isActive
+          ? (SortState.direction === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down')
+          : 'fas fa-sort';
+        return m(
+          'th.sortable-th',
+          {
+            onclick: () => setSort(colName),
+            style: { cursor: 'pointer', userSelect: 'none' },
+          },
+          [
+            isIcon ? label : m('span', label),
+            ' ',
+            m(`i.${iconClass}`, {
+              style: {
+                marginLeft: '0.25rem',
+                opacity: isActive ? 1 : 0.2,
+                transition: 'opacity 0.2s',
+              },
+            }),
+          ]
+        );
+      };
+
+      let totalItems = 0;
+      let tbody = v.children[0];
+      if (tbody && tbody.children) {
+        const flatChildren = Array.isArray(tbody.children) ? tbody.children.flat().filter(Boolean) : [tbody.children].filter(Boolean);
+        totalItems = flatChildren.length;
+        
+        const start = currentPage * pageSize;
+        const end = start + pageSize;
+        tbody.children = flatChildren.slice(start, end);
+      }
+
+      const totalPages = Math.ceil(totalItems / pageSize) || 1;
+      if (currentPage >= totalPages) currentPage = totalPages - 1;
+      if (currentPage < 0) currentPage = 0;
+
+      const paginationUI = totalItems > pageSize && m('.pagination', {
+        style: {
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '1rem',
+          padding: '1rem',
+          borderTop: '1px solid #eee',
+          fontSize: '1rem',
+          color: '#555',
+          userSelect: 'none'
+        }
+      }, [
+        m('button', {
+          disabled: currentPage === 0,
+          onclick: () => currentPage--,
+          style: {
+            padding: '0.4rem 0.8rem',
+            background: currentPage === 0 ? '#ccc' : '#019dff',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
+            boxShadow: 'none'
+          }
+        }, m('i.fas.fa-chevron-left')),
+        m('span.bold', `${totalItems > 0 ? currentPage * pageSize + 1 : 0} - ${Math.min((currentPage + 1) * pageSize, totalItems)} of ${totalItems}`),
+        m('button', {
+          disabled: currentPage >= totalPages - 1,
+          onclick: () => currentPage++,
+          style: {
+            padding: '0.4rem 0.8rem',
+            background: currentPage >= totalPages - 1 ? '#ccc' : '#019dff',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: currentPage >= totalPages - 1 ? 'not-allowed' : 'pointer',
+            boxShadow: 'none'
+          }
+        }, m('i.fas.fa-chevron-right'))
+      ]);
+
+      return m('.table-pagination-container', [
+        m('table.mails', [
+          m('tr', [
+            renderHeader('starred', m('i.fas.fa-star'), true),
+            renderHeader('attachments', m('i.fas.fa-paperclip'), true),
+            renderHeader('subject', 'Subject'),
+            renderHeader('from', 'From'),
+            renderHeader('date', 'Date'),
+          ]),
+          tbody,
         ]),
-        v.children,
-      ]),
+        paginationUI,
+        renderMailUserTooltip(),
+      ]);
+    },
   };
 };
 
@@ -375,25 +717,48 @@ const activeSideLink = {
   quicksideactive: -1,
 };
 
+const sidebarIcons = {
+  inbox: m('i.fas.fa-inbox', { style: 'color: #3b82f6; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+  outbox: m('i.fas.fa-envelope-open-text', { style: 'color: #10b981; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+  drafts: m('i.fas.fa-edit', { style: 'color: #6b7280; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+  sent: m('i.fas.fa-envelope-open', { style: 'color: #f59e0b; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+  trash: m('i.fas.fa-trash-alt', { style: 'color: #ef4444; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+  starred: m('i.fas.fa-star', { style: 'color: #eab308; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+  system: m('i.fas.fa-bell', { style: 'color: #3b82f6; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+  spam: m('i.fas.fa-fire', { style: 'color: #f97316; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+  attachment: m('i.fas.fa-paperclip', { style: 'color: #06b6d4; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+  important: m('i.fas.fa-square', { style: 'color: #ef4444; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+  work: m('i.fas.fa-square', { style: 'color: #f97316; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+  personal: m('i.fas.fa-square', { style: 'color: #22c55e; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+  todo: m('i.fas.fa-square', { style: 'color: #3b82f6; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+  later: m('i.fas.fa-square', { style: 'color: #a855f7; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+};
+
 const Sidebar = () => {
   return {
     view: ({ attrs: { tabs, baseRoute, size } }) =>
       m(
         '.sidebar',
-        tabs.map((panelName, index) =>
-          m(
+        tabs.map((panelName, index) => {
+          const displayName = panelName.charAt(0).toUpperCase() + panelName.slice(1);
+          const labelText = size[panelName] > 0 ? `${displayName} (${size[panelName]})` : displayName;
+          return m(
             m.route.Link,
             {
               class: index === activeSideLink.sideactive ? 'selected-sidebar-link' : '',
+              style: 'display: flex; align-items: center;',
               onclick: () => {
                 activeSideLink.sideactive = index;
                 activeSideLink.quicksideactive = -1;
               },
               href: baseRoute + panelName,
             },
-            size[panelName] > 0 ? `${panelName} (${size[panelName]})` : panelName
-          )
-        )
+            [
+              sidebarIcons[panelName] || null,
+              labelText,
+            ]
+          );
+        })
       ),
   };
 };
@@ -405,21 +770,27 @@ const SidebarQuickView = () => {
       m(
         '.sidebarquickview',
         m('h6.bold', 'Quick View'),
-        tabs.map((panelName, index) =>
-          m(
+        tabs.map((panelName, index) => {
+          const displayName = panelName.charAt(0).toUpperCase() + panelName.slice(1);
+          const labelText = size[panelName] > 0 ? `${displayName} (${size[panelName]})` : displayName;
+          return m(
             m.route.Link,
             {
               class:
                 index === activeSideLink.quicksideactive ? 'selected-sidebarquickview-link' : '',
+              style: 'display: flex; align-items: center;',
               onclick: () => {
                 activeSideLink.quicksideactive = index;
                 activeSideLink.sideactive = -1;
               },
               href: baseRoute + panelName,
             },
-            size[panelName] > 0 ? `${panelName} (${size[panelName]})` : panelName
-          )
-        )
+            [
+              sidebarIcons[panelName] || null,
+              labelText,
+            ]
+          );
+        })
       ),
   };
 };
@@ -432,6 +803,9 @@ module.exports = {
   SearchBar,
   Sidebar,
   SidebarQuickView,
+  SortState,
+  setSort,
+  sortList,
   RS_MSG_BOXMASK,
   RS_MSG_INBOX,
   RS_MSG_SENTBOX,

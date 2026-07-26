@@ -67,12 +67,14 @@
         & .textArea {
           padding: 0;
           width: 100%;
-          min-height: 75px;
+          height: auto;
           font-size: 1rem;
           font-family: monospace;
           background: transparent;
           border: none;
           resize: none;
+          overflow: hidden;
+          field-sizing: content;
         }
 
         & i {

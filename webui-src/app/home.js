@@ -72,6 +72,11 @@ const ConfirmCopied = () => {
 };
 
 const retroshareId = () => {
+  function autoResize(el) {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
   return {
     view(v) {
       return m('.retroshareID', [
@@ -83,6 +88,8 @@ const retroshareId = () => {
             onclick: () => {
               document.getElementById('retroId').select();
             },
+            oncreate: (vnode) => autoResize(vnode.dom),
+            onupdate: (vnode) => autoResize(vnode.dom),
           },
           v.attrs.ownCert
         ),

@@ -12,7 +12,7 @@
 
 .compose-mail {
   &__from {
-    @include flex($justify: space-between);
+    @include flex($justify: flex-start, $align: center, $gap: 0.5rem);
     padding-bottom: 0.5rem;
     border-bottom: 2px solid $light-color;
   }
@@ -230,6 +230,17 @@ table.mails {
   & > tr:hover {
     cursor: auto;
     background-color: white;
+  }
+
+  & th.sortable-th {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s, color 0.2s;
+
+    &:hover {
+      background-color: $light-color;
+      color: darken($light-color, 80%);
+    }
   }
 }
 

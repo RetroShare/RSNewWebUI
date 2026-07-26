@@ -52,6 +52,7 @@ const Layout = () => {
                 'tbody',
                 v.attrs.list.map((msg) =>
                   m(util.MessageSummary, {
+                    key: msg.msgId,
                     details: msg,
                     category: 'attachment',
                   })
