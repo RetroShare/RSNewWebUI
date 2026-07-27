@@ -1258,3 +1258,56 @@ label.chat-hub-action-btn i,
   font-size: 0.75rem !important;
   color: #0000bb !important;
 }
+
+/* Chat Modal Dialogs (Create Room, Attach File, Invite Friends) */
+.attach-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.attach-modal {
+  background: #ffffff;
+  border-radius: 0.5rem;
+  width: 480px;
+  max-width: 92vw;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  color: #1e293b;
+  box-sizing: border-box;
+}
+
+.attach-modal h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.attach-modal .attach-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.attach-modal .attach-modal-header h4 {
+  margin: 0;
+}
+
+.attach-modal .attach-modal-header .attach-modal-icon {
+  font-size: 1.25rem;
+  color: #3b82f6;
+}
+
+
