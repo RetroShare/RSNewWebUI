@@ -289,7 +289,7 @@ const ChatTab = () => {
           ]),
 
           m('textarea.chat-textarea', {
-            placeholder: canTalk ? 'Type your encrypted message here... (or paste image)' : 'Waiting for tunnel to be secured...',
+            placeholder: canTalk ? 'Type a message here...' : 'Waiting for tunnel to be secured...',
             disabled: !canTalk,
             value: State.chatInputMsg,
             style: 'flex: 1; resize: none; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.5rem; font-family: inherit; font-size: 0.9rem; outline: none; min-height: 40px; max-height: 120px;',

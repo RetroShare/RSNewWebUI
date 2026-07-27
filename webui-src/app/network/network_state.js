@@ -26,6 +26,12 @@ const State = {
   chatMessages: [],
   chatInputMsg: '',
   showMailCompose: false,
+  showAttachModal: false,
+  attachPath: '',
+  attachBrowseHint: false,
+  isHashing: false,
+  hashingError: '',
+  showEmojiPicker: false,
 };
 
 function loadOwnProfile() {

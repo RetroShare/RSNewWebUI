@@ -354,10 +354,41 @@ img.avatar {
     align-items: center !important;
   }
 
-  .detail-actions button i,
-  .detail-header .detail-actions button i {
-    margin: 0 !important;
-    font-size: 1.05rem !important;
+
+/* People Sidebar Right-Click Context Menu */
+.people-context-menu {
+  position: absolute !important;
+  z-index: 9999 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  padding: 0.35rem 0 !important;
+  min-width: 180px !important;
+  font-family: inherit !important;
+  overflow: hidden !important;
+
+  .menu-item {
+    display: flex !important;
+    align-items: center !important;
+    padding: 0.6rem 0.9rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: #1e293b !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+    user-select: none !important;
+
+    &:hover {
+      background-color: #f1f5f9 !important;
+      color: #0284c7 !important;
+    }
+
+    i {
+      font-size: 1rem !important;
+      width: 1.25rem !important;
+      text-align: center !important;
+    }
   }
 }
 
