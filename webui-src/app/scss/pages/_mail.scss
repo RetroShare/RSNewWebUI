@@ -8,6 +8,28 @@
     margin: 0.25rem;
     padding: 0.75rem 0;
   }
+
+  .sidebar a,
+  .sidebarquickview a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sidebar-badge {
+    margin-left: auto;
+    background-color: #3b82f6;
+    color: #ffffff;
+    font-size: 0.725rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.2rem;
+  }
 }
 
 .compose-mail {
@@ -482,6 +504,7 @@ table.attachment-container {
   }
 
   .side-bar .sidebar a .sidebar-badge {
+    margin-left: 0 !important;
     background: #3b82f6 !important;
     color: #ffffff !important;
     font-size: 0.7rem !important;
