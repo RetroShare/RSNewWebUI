@@ -223,6 +223,148 @@
   }
 }
 
+/* YouTube-style discussion thread on a board post. */
+.board-comments {
+  margin-top: 1.5rem;
+  max-width: 900px;
+  color: #0f172a;
+}
+
+.board-comments__heading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.board-comments__heading h3 { margin: 0; font-size: 1.15rem; }
+.board-comments__heading span { color: #64748b; font-size: .8rem; font-weight: 600; }
+.board-comments__heading i { margin-right: .35rem; }
+
+.board-comment-composer,
+.board-comment {
+  display: flex;
+  gap: .8rem;
+}
+
+.board-comment-avatar {
+  display: flex;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.board-comment-composer__body,
+.board-comment__content { min-width: 0; flex: 1; }
+.board-comment-composer__identity { max-width: 240px; margin-bottom: .45rem; font-size: .8rem; }
+
+.board-comment-composer__input {
+  width: 100%;
+  min-height: 36px;
+  padding: .45rem 0;
+  resize: vertical;
+  border: 0;
+  border-bottom: 1px solid #94a3b8;
+  border-radius: 0;
+  background: transparent;
+  color: #0f172a;
+  font: inherit;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+
+.board-comment-composer__input:focus { outline: 0; border-bottom: 2px solid #2563eb; }
+.board-comment-composer__input:disabled { cursor: not-allowed; opacity: .6; }
+
+.board-comment-composer__actions,
+.board-comment__actions {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  margin-top: .55rem;
+}
+
+.board-comment-composer__actions { justify-content: flex-end; }
+.board-comment-composer__actions button,
+.board-comment__actions button,
+.board-comment__like,
+.board-comment-composer__replying button {
+  border: 0;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.board-comment-composer__submit {
+  padding: .45rem .85rem !important;
+  border-radius: 999px !important;
+  background: #2563eb !important;
+  color: #fff !important;
+}
+.board-comment-composer__submit:disabled { background: #dbe3ef !important; color: #94a3b8 !important; cursor: not-allowed; }
+.board-comment-composer__cancel:hover,
+.board-comment__actions button:hover { color: #2563eb; }
+
+.board-comment-composer__replying { display: flex; align-items: center; gap: .25rem; margin-bottom: .35rem; color: #64748b; font-size: .8rem; }
+.board-comment-composer__replying button { margin-left: .3rem; }
+.board-comment-composer__hint,
+.board-comment-composer__error { margin: .4rem 0 0; font-size: .78rem; }
+.board-comment-composer__hint { color: #64748b; }
+.board-comment-composer__error { color: #dc2626; }
+
+.board-comments__list { margin-top: 1.8rem; }
+.board-comment { margin-top: 1.35rem; }
+.board-comment__header { display: flex; align-items: center; justify-content: space-between; min-height: 18px; }
+.board-comment__meta { display: flex; align-items: baseline; gap: .55rem; font-size: .8rem; }
+.board-comment__meta b { color: #1e293b; }
+.board-comment__meta span { color: #64748b; font-size: .75rem; }
+.board-comment__menu { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #0f172a; cursor: pointer; opacity: 0; }
+.board-comment:hover .board-comment__menu, .board-comment__menu:focus { opacity: 1; }
+.board-comment__menu:hover { background: #f1f5f9; }
+.board-comment__text { margin: .2rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }
+.board-comment__actions { gap: .65rem; margin-top: .35rem; }
+.board-comment__actions button { padding: .25rem .2rem; color: #0f172a; }
+.board-comment__like { padding: .25rem .35rem; color: #94a3b8; }
+.board-comment__actions i { margin-right: .2rem; }
+.board-comment__replies-toggle {
+  position: relative;
+  margin-top: .3rem;
+  padding: .25rem .35rem;
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: .78rem;
+  font-weight: 700;
+}
+.board-comment__replies-toggle:hover { background: #eff6ff; border-radius: 4px; }
+.board-comment__replies-toggle i { margin-left: .15rem; }
+.board-comment__replies-toggle::before { content: ''; position: absolute; left: -3.15rem; bottom: .8rem; width: 1.5rem; height: 2.2rem; border-left: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-radius: 0 0 0 .75rem; pointer-events: none; }
+.board-comment__replies { margin-top: .2rem; padding-left: 1rem; border-left: 2px solid #e2e8f0; }
+.board-comments__status,
+.board-comments__empty { margin: 2rem 0; color: #64748b; text-align: center; }
+.board-comments__empty i { font-size: 1.5rem; }
+
+@media (max-width: 560px) {
+  .board-comments__heading { justify-content: space-between; }
+  .board-comment-composer, .board-comment { gap: .6rem; }
+  .board-comment-avatar { flex-basis: 32px; width: 32px; height: 32px; font-size: .68rem; }
+  .board-comment__replies { padding-left: .6rem; }
+  .board-comment__replies-toggle::before { left: -2.65rem; width: 1.2rem; }
+  .board-card__notes-btn span { display: none; }
+  .board-card__notes-btn { width: 30px; height: 30px; justify-content: center; padding: 0 !important; }
+  .board-card__notes-btn i { margin: 0 !important; }
+}
+
 /* Pagination Controls (< 1 - 25 >) on exact same level right next to toggle */
 .board-pagination {
   display: inline-flex !important;
@@ -542,6 +684,23 @@ button.board-card__comments-btn:hover,
   box-shadow: none !important;
 }
 
+button.board-card__notes-btn,
+.board-card__notes-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  padding: 0.2rem 0.5rem !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #64748b !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+}
+
+.board-card__notes-btn:hover { color: #007bff !important; text-decoration: underline !important; }
+
 /* ===================================================
    CARD VIEW MODE: ELEVATED GRID CARD
    =================================================== */
@@ -700,6 +859,26 @@ button.board-card__comments-btn:hover,
 .board-card--card .board-card__comments-btn:hover i {
   color: #ffffff !important;
 }
+
+.board-card--card .board-card__notes-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  padding: 0.3rem 0.6rem !important;
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+}
+
+.board-card--card .board-card__notes-btn:hover { background-color: #e0f2fe !important; color: #0369a1 !important; border-color: #7dd3fc !important; text-decoration: none !important; }
+
+.board-notes-dialog { min-width: min(560px, 75vw); max-width: 75vw; }
+.board-notes-dialog h3 { margin: 0 2rem .8rem 0; color: #0f172a; }
+.board-notes-dialog__label { margin: 0 0 .35rem; color: #64748b; font-size: .78rem; font-weight: 700; text-transform: uppercase; }
+.board-notes-dialog__content { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: #1e293b; line-height: 1.55; }
 
 /* =========================================================
    PhotoView Lightbox Modal Styles (Matching Qt GUI PhotoView)
@@ -869,6 +1048,3 @@ button.board-card__comments-btn:hover,
     width: 100% !important;
   }
 }
-
-
-

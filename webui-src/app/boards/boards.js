@@ -12,19 +12,27 @@ const getBoards = {
   MyBoards: [],
   Other: [],
   async load() {
-    const res = await rs.rsJsonApiRequest('/rsPosted/getBoardsSummaries');
-    const data = res.body;
-    getBoards.All = data.groupInfo;
-    getBoards.Popular = getBoards.All;
-    getBoards.Popular.sort((a, b) => b.mPop - a.mPop);
-    getBoards.Other = getBoards.Popular.slice(5);
-    getBoards.Popular = getBoards.Popular.slice(0, 5);
-    getBoards.Subscribed = getBoards.All.filter(
-      (board) => board.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED
-    );
-    getBoards.MyBoards = getBoards.All.filter(
-      (board) => board.mSubscribeFlags === util.GROUP_MY_BOARD
-    );
+    try {
+      const res = await rs.rsJsonApiRequest('/rsPosted/getBoardsSummaries');
+      const boards = res && res.body && Array.isArray(res.body.groupInfo) ? res.body.groupInfo : null;
+      if (!boards) {
+        console.warn('Boards summaries response did not include groupInfo', res && res.body);
+        return;
+      }
+      getBoards.All = boards;
+      const popular = [...boards].sort((a, b) => (b.mPop || 0) - (a.mPop || 0));
+      getBoards.Other = popular.slice(5);
+      getBoards.Popular = popular.slice(0, 5);
+      getBoards.Subscribed = boards.filter(
+        (board) => board.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED
+      );
+      getBoards.MyBoards = boards.filter(
+        (board) => board.mSubscribeFlags === util.GROUP_MY_BOARD
+      );
+      m.redraw();
+    } catch (error) {
+      console.warn('Failed to load board summaries', error);
+    }
   },
 };
 
@@ -95,6 +103,7 @@ module.exports = {
       m(widget.Sidebar, {
         tabs: Object.keys(sections),
         baseRoute: '/boards/',
+        mobileDrawer: true,
       }),
       m('.node-panel', m(Layout, { pathInfo: vnode.attrs })),
     ];

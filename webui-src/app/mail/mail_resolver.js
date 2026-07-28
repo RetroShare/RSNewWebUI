@@ -87,7 +87,6 @@ const sectionsquickview = {
 const tagselect = {
   opts: [
     { label: '🏷️ Filter by Tag...', val: '' },
-    { label: '📎 Attachments', val: 'attachment' },
     { label: '🔴 Important', val: 'important' },
     { label: '🟠 Work', val: 'work' },
     { label: '🟢 Personal', val: 'personal' },
@@ -97,6 +96,7 @@ const tagselect = {
 };
 const Layout = () => {
   let showCompose = false;
+  let mobileNavOpen = false;
   // setFunction like react to show/hide popup
   function setShowCompose(bool) {
     showCompose = bool;
@@ -122,14 +122,29 @@ const Layout = () => {
         later: (Messages.later || []).length,
         personal: (Messages.personal || []).length,
       };
+      const activeTab = m.route.param().tab;
+      const activeBox = tabConfig[activeTab];
+      const activeBoxIcons = {
+        inbox: 'fa-inbox', outbox: 'fa-envelope-open-text', drafts: 'fa-edit', sent: 'fa-envelope-open',
+        trash: 'fa-trash-alt', starred: 'fa-star', system: 'fa-bell', spam: 'fa-fire', attachment: 'fa-paperclip',
+        important: 'fa-square', work: 'fa-square', todo: 'fa-square', later: 'fa-square', personal: 'fa-square',
+      };
 
       return [
         m('.side-bar', [
+          m('button.mail-mobile-nav-toggle[type=button][aria-label=Open mail navigation]', {
+            'aria-expanded': mobileNavOpen,
+            onclick: () => { mobileNavOpen = !mobileNavOpen; },
+          }, m('i.fas.fa-bars')),
+          m('.mail-nav-drawer', { class: mobileNavOpen ? 'mail-nav-drawer--open' : '' }, [
           m(
             'button.mail-compose-btn',
             {
               style: 'display: flex; align-items: center; justify-content: center; gap: 0.5rem;',
-              onclick: () => setShowCompose(true),
+              onclick: () => {
+                mobileNavOpen = false;
+                setShowCompose(true);
+              },
             },
             [m('i.fas.fa-pen'), 'Compose']
           ),
@@ -137,12 +152,15 @@ const Layout = () => {
             tabs: Object.keys(sections),
             size: sectionsSize,
             baseRoute: '/mail/',
+            onNavigate: () => { mobileNavOpen = false; },
           }),
           m(util.SidebarQuickView, {
             tabs: Object.keys(sectionsquickview),
             size: sectionsQuickviewSize,
             baseRoute: '/mail/',
+            onNavigate: () => { mobileNavOpen = false; },
           }),
+          ]),
         ]),
         m(
           '.node-panel',
@@ -164,7 +182,15 @@ const Layout = () => {
               ),
               m(util.SearchBar, { list: {} }),
             ]),
-            vnode.children,
+            activeBox
+              ? m('.mail-box-content', [
+                  m('.mail-mobile-box-title', [
+                    m('i.fas', { class: activeBoxIcons[activeTab] || 'fa-envelope' }),
+                    m('span', activeBox.title),
+                  ]),
+                  vnode.children,
+                ])
+              : vnode.children,
           ])
         ),
         m(

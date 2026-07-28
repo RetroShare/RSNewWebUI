@@ -12,25 +12,31 @@ const getChannels = {
   MyChannels: [],
   Other: [],
   async load() {
-    const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelsSummaries');
-    const data = res.body;
-    getChannels.All = data.channels;
-    getChannels.Subscribed = getChannels.All.filter(
+    try {
+      const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelsSummaries');
+      const channels = res && res.body && Array.isArray(res.body.channels) ? res.body.channels : null;
+      if (!channels) {
+        console.warn('Channels summaries response did not include channels', res && res.body);
+        return;
+      }
+      getChannels.All = channels;
+      getChannels.Subscribed = channels.filter(
       (channel) =>
         channel.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED ||
         channel.mSubscribeFlags === util.GROUP_MY_CHANNEL // my channel is subscribed
-    );
-    // getChannels.Popular = getChannels.All;
-    getChannels.Popular = getChannels.All.filter(
-      (a) => !getChannels.Subscribed.includes(a)
-    );
-    getChannels.Popular.sort((a, b) => b.mPop - a.mPop);
-    getChannels.Other = getChannels.Popular.slice(5);
-    getChannels.Popular = getChannels.Popular.slice(0, 5);
+      );
+      const popular = channels.filter((channel) => !getChannels.Subscribed.includes(channel));
+      popular.sort((a, b) => (b.mPop || 0) - (a.mPop || 0));
+      getChannels.Other = popular.slice(5);
+      getChannels.Popular = popular.slice(0, 5);
 
-    getChannels.MyChannels = getChannels.All.filter(
-      (channel) => channel.mSubscribeFlags === util.GROUP_MY_CHANNEL
-    );
+      getChannels.MyChannels = channels.filter(
+        (channel) => channel.mSubscribeFlags === util.GROUP_MY_CHANNEL
+      );
+      m.redraw();
+    } catch (error) {
+      console.warn('Failed to load channel summaries', error);
+    }
   },
 };
 
@@ -110,6 +116,7 @@ module.exports = {
       m(widget.Sidebar, {
         tabs: Object.keys(sections),
         baseRoute: '/channels/',
+        mobileDrawer: true,
       }),
       m('.node-panel', m(Layout, { pathInfo: vnode.attrs })),
     ];

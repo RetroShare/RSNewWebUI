@@ -19,6 +19,26 @@ const Data = {
   Comments: {}, // threadID, msgID -> {Comment, showReplies}
 };
 
+// Older Qt clients store board notes as rich HTML. Render them as readable,
+// inert text in the web UI instead of exposing the markup and embedded CSS.
+function plainText(value) {
+  if (value === null || value === undefined) return '';
+  const text = String(value);
+  if (!/<\/?[a-z][^>]*>/i.test(text)) return text.trim();
+  return text
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&(nbsp|#160);/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\n\s*\n+/g, '\n')
+    .trim();
+}
+
 async function updateContent(content, boardid) {
   const msgId = content.mMsgId || content.msgId || content;
   try {
@@ -262,6 +282,7 @@ module.exports = {
   SearchBar,
   popupmessage,
   voteForPost,
+  plainText,
   GXS_VOTE_UP,
   GXS_VOTE_DOWN,
   GROUP_SUBSCRIBE_ADMIN,

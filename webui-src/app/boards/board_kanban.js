@@ -3,6 +3,12 @@ const util = require('boards/boards_util');
 
 const PAGE_SIZE = 25;
 
+function numberValue(value) {
+  if (value && typeof value === 'object' && value.xint64 !== undefined) value = value.xint64;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
 /**
  * Fallback SVG Thumbnail when no image is available
  */
@@ -237,8 +243,6 @@ function openPhotoModal(photoList, photoIndex) {
  * BoardCard Component Factory
  */
 function BoardCard() {
-  let notesExpanded = false;
-
   return {
     view: (vnode) => {
       const { item, viewMode, onOpenComments, onOpenPhoto, forumId } = vnode.attrs;
@@ -246,7 +250,7 @@ function BoardCard() {
 
       // Extract item properties with fallback defaults
       const title = item.title || item.mMsgName || (item.post && item.post.mMeta && item.post.mMeta.mMsgName) || 'Untitled Post';
-      const notes = item.notes || item.mNotes || item.mBody || (item.post && (item.post.mNotes || item.post.mBody)) || '';
+      const notes = util.plainText(item.notes || item.mNotes || item.mBody || (item.post && (item.post.mNotes || item.post.mBody)) || '');
       const hasNotes = hasNotesText(notes);
 
       // Author & Date details
@@ -257,9 +261,10 @@ function BoardCard() {
         ? (typeof publishTs === 'object' && publishTs.xint64 ? new Date(publishTs.xint64 * 1000).toLocaleString() : new Date(publishTs * 1000).toLocaleString())
         : '';
 
-      // Vote score
-      const upVotes = meta.mUpVotes || 0;
-      const downVotes = meta.mDownVotes || 0;
+      // RsPostedPost keeps calculated vote totals on the post, not mMeta.
+      const post = item.post || item;
+      const upVotes = numberValue(post.mUpVotes !== undefined ? post.mUpVotes : meta.mUpVotes);
+      const downVotes = numberValue(post.mDownVotes !== undefined ? post.mDownVotes : meta.mDownVotes);
       const score = upVotes - downVotes;
 
       // Thumbnail resolution via extractImageSrc
@@ -270,7 +275,11 @@ function BoardCard() {
         ? item.commentCount
         : item.mCommentCount !== undefined
         ? item.mCommentCount
-        : (meta.mChildCount !== undefined ? meta.mChildCount : 0);
+        : item.mComments !== undefined
+        ? item.mComments
+        : (meta.mComments !== undefined
+          ? meta.mComments
+          : (meta.mChildCount !== undefined ? meta.mChildCount : 0));
 
       const msgId = item.msgId || item.mMsgId || (item.key ? item.key : null);
 
@@ -343,41 +352,23 @@ function BoardCard() {
               dateString ? m('span', ` ${dateString}`) : null,
             ]),
 
-            // Conditionally Rendered Notes Section
-            hasNotes && viewMode === 'card'
-              ? m('.board-card__notes-wrapper', [
-                  m(
-                    '.board-card__notes',
-                    {
-                      class: notesExpanded ? 'board-card__notes--expanded' : 'board-card__notes--clamped',
-                    },
-                    notes.trim()
-                  ),
-                  notes.trim().length > 120 || notes.trim().split('\n').length > 3
-                    ? m(
-                        'button.board-card__notes-toggle',
-                        {
-                          type: 'button',
-                          'aria-expanded': notesExpanded,
-                          onclick: (e) => {
-                            e.stopPropagation();
-                            notesExpanded = !notesExpanded;
-                            m.redraw();
-                          },
-                        },
-                        [
-                          m('span', notesExpanded ? 'Show Less' : 'Show More'),
-                          m('i.fas', {
-                            class: notesExpanded ? 'fa-chevron-up' : 'fa-chevron-down',
-                          }),
-                        ]
-                      )
-                    : null,
-                ])
-              : null,
-
-            // Card Actions Line (Comments Button + Vote Pill)
+            // Card Actions Line. Notes stay out of the card preview and open in a dedicated dialog.
             m('.board-card__footer', [
+              hasNotes ? m(
+                'button.board-card__notes-btn[type=button]',
+                {
+                  title: 'View notes',
+                  onclick: (e) => {
+                    e.stopPropagation();
+                    util.popupmessage(m('.board-notes-dialog', [
+                      m('h3', title),
+                      m('p.board-notes-dialog__label', 'Notes'),
+                      m('p.board-notes-dialog__content', notes),
+                    ]));
+                  },
+                },
+                [m('i.fas.fa-sticky-note'), m('span', 'View notes')]
+              ) : null,
               m(
                 'button.board-card__comments-btn',
                 {
@@ -406,10 +397,14 @@ function BoardCard() {
                 m(
                   'button.board-card__vote-btn.board-card__vote-btn--up[type=button][title=Upvote]',
                   {
-                    onclick: (e) => {
+                    onclick: async (e) => {
                       e.stopPropagation();
                       if (forumId && msgId) {
-                        util.voteForPost(forumId, msgId, util.GXS_VOTE_UP);
+                        const voted = await util.voteForPost(forumId, msgId, util.GXS_VOTE_UP);
+                        if (voted) {
+                          post.mUpVotes = numberValue(post.mUpVotes) + 1;
+                          m.redraw();
+                        }
                       }
                     },
                   },
@@ -419,10 +414,14 @@ function BoardCard() {
                 m(
                   'button.board-card__vote-btn.board-card__vote-btn--down[type=button][title=Downvote]',
                   {
-                    onclick: (e) => {
+                    onclick: async (e) => {
                       e.stopPropagation();
                       if (forumId && msgId) {
-                        util.voteForPost(forumId, msgId, util.GXS_VOTE_DOWN);
+                        const voted = await util.voteForPost(forumId, msgId, util.GXS_VOTE_DOWN);
+                        if (voted) {
+                          post.mDownVotes = numberValue(post.mDownVotes) + 1;
+                          m.redraw();
+                        }
                       }
                     },
                   },

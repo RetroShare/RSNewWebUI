@@ -2,6 +2,7 @@ const m = require('mithril');
 const util = require('boards/boards_util');
 const boardKanban = require('boards/board_kanban');
 const rs = require('rswebui');
+const peopleUtil = require('people/people_util');
 const Data = util.Data;
 
 function createboard() {
@@ -146,11 +147,14 @@ function BoardView() {
             thumb = p.thumbnail;
           }
 
-          const notesText = p.mNotes || p.mBody || meta.mNotes || p.notes || p.body || '';
+          const notesText = util.plainText(p.mNotes || p.mBody || meta.mNotes || p.notes || p.body || '');
           const titleText = meta.mMsgName || p.mMsgName || p.title || 'Untitled Post';
-          const commentCount = meta.mChildCount !== undefined
-            ? meta.mChildCount
-            : (p.commentCount !== undefined ? p.commentCount : 0);
+          // RsPosted exposes the calculated count as mComments on the post.
+          const commentCount = p.mComments !== undefined
+            ? p.mComments
+            : (meta.mChildCount !== undefined
+              ? meta.mChildCount
+              : (p.mCommentCount !== undefined ? p.mCommentCount : (p.commentCount !== undefined ? p.commentCount : 0)));
 
           return {
             key: key,
@@ -263,30 +267,97 @@ function BoardView() {
 
 /**
  * PostView: Board post detail page (shown at /boards/:tab/:mGroupId/:mMsgId)
- * Reads from Data.Posts[forumId][msgId], fetches comments via /rsPosted/getPostComments
+ * Reads from Data.Posts[forumId][msgId]. The Posted API returns comments together
+ * with board content, so comments for this post are filtered by their thread id.
  */
 function PostView() {
   let comments = [];
   let loadingComments = true;
-  let newComment = '';
+  let identities = [];
   let authorId = null;
+  let replyTo = null;
+  let composerText = '';
+  let submitting = false;
+  let submitError = '';
+  const expandedReplies = {};
+
+  const metaOf = (comment) => (comment && comment.mMeta) || {};
+  const idOf = (comment) => metaOf(comment).mMsgId || comment.msgId || comment.id;
+  const parentOf = (comment) => metaOf(comment).mParentId || comment.parentId || '';
+  const textOf = (comment) => comment.mComment || comment.comment || comment.mBody || '';
+  const nameOf = (id) => !id || Number(id) === 0 ? 'Anonymous' : (rs.userList.username(id) || rs.userList.userMap[id] || `${String(id).slice(0, 10)}…`);
+  const initials = (name) => String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+  const timeOf = (value) => {
+    const seconds = value && typeof value === 'object' ? value.xint64 : value;
+    const date = Number(seconds) ? new Date(Number(seconds) * 1000) : null;
+    return date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : '';
+  };
+
+  function treeOfComments() {
+    const nodes = {};
+    const roots = [];
+    comments.forEach((comment) => {
+      const id = idOf(comment);
+      if (id) nodes[id] = { comment, children: [] };
+    });
+    Object.keys(nodes).forEach((id) => {
+      const node = nodes[id];
+      const parent = parentOf(node.comment);
+      if (parent && nodes[parent] && parent !== id) nodes[parent].children.push(node);
+      else roots.push(node);
+    });
+    const chronological = (a, b) => Number(metaOf(a.comment).mPublishTs && (metaOf(a.comment).mPublishTs.xint64 || metaOf(a.comment).mPublishTs)) - Number(metaOf(b.comment).mPublishTs && (metaOf(b.comment).mPublishTs.xint64 || metaOf(b.comment).mPublishTs));
+    roots.sort(chronological);
+    Object.keys(nodes).forEach((id) => nodes[id].children.sort(chronological));
+    return roots;
+  }
 
   async function loadComments(forumId, msgId) {
     loadingComments = true;
     comments = [];
     try {
-      const res = await rs.rsJsonApiRequest('/rsPosted/getPostComments', {
-        boardId: forumId,
-        postId: msgId,
-      });
+      const res = await rs.rsJsonApiRequest('/rsPosted/getBoardAllContent', { boardId: forumId });
       if (res && res.body && res.body.retval) {
-        comments = res.body.comments || [];
+        comments = (res.body.comments || res.body.commentList || []).filter((comment) => {
+          const meta = metaOf(comment);
+          return meta.mThreadId === msgId || (!meta.mThreadId && meta.mParentId === msgId);
+        });
       }
     } catch (e) {
       console.warn('PostView: failed to load comments', e);
     }
     loadingComments = false;
     m.redraw();
+  }
+
+  async function submitComment(forumId, msgId) {
+    const comment = composerText.trim();
+    if (!comment || !authorId || submitting) return;
+    submitting = true;
+    submitError = '';
+    try {
+      const res = await rs.rsJsonApiRequest('/rsPosted/createCommentV2', {
+        boardId: forumId,
+        postId: msgId,
+        comment,
+        authorId,
+        parentId: replyTo ? idOf(replyTo) : msgId,
+      });
+      if (!res || !res.body || res.body.retval === false) {
+        submitError = (res && res.body && res.body.errorMessage) || 'Your comment could not be posted.';
+        return;
+      }
+      composerText = '';
+      replyTo = null;
+      await loadComments(forumId, msgId);
+      await util.updateDisplayBoards(forumId);
+    } catch (e) {
+      console.warn('PostView: failed to submit comment', e);
+      submitError = 'Your comment could not be posted. Please try again.';
+    } finally {
+      submitting = false;
+      m.redraw();
+    }
   }
 
   return {
@@ -297,11 +368,11 @@ function PostView() {
       }
       loadComments(v.attrs.forumId, v.attrs.msgId);
 
-      // Get own identity for posting comments
-      rs.rsJsonApiRequest('/rsIdentity/getOwnIds', {}, (data) => {
-        if (data && data.ids && data.ids.length > 0) {
-          authorId = data.ids[0];
-        }
+      // A board comment must be signed by one of the user's identities.
+      peopleUtil.ownIds((ids) => {
+        identities = (ids || []).filter((id) => Number(id) !== 0);
+        authorId = identities[0] || null;
+        m.redraw();
       });
     },
     view: (v) => {
@@ -312,7 +383,7 @@ function PostView() {
       const meta = (p && p.mMeta) ? p.mMeta : {};
 
       const title = meta.mMsgName || p.mMsgName || p.title || 'Post';
-      const notes = p.mNotes || p.mBody || p.notes || p.body || '';
+      const notes = util.plainText(p.mNotes || p.mBody || p.notes || p.body || '');
       const author = meta.mAuthorId ? meta.mAuthorId.substring(0, 10) : 'Unknown';
       const publishTs = meta.mPublishTs || p.mPublishTs || null;
       const dateStr = publishTs
@@ -356,38 +427,61 @@ function PostView() {
           ]),
           notes ? m('p', { style: { whiteSpace: 'pre-wrap', margin: '1rem 0' } }, notes) : null,
           m('hr'),
-          m('.comments-section', [
-            m('h3', 'Comments'),
-            loadingComments
-              ? m('p', 'Loading comments...')
-              : comments.length === 0
-              ? m('p', { style: { color: '#888' } }, 'No comments yet.')
-              : m(
-                  'ul',
-                  { style: { listStyle: 'none', padding: 0 } },
-                  comments.map((c) => {
-                    const cmeta = (c && c.mMeta) ? c.mMeta : {};
-                    const cAuthor = cmeta.mAuthorId ? cmeta.mAuthorId.substring(0, 10) : 'Unknown';
-                    const cTs = cmeta.mPublishTs;
-                    const cDate = cTs
-                      ? (typeof cTs === 'object' && cTs.xint64
-                          ? new Date(cTs.xint64 * 1000).toLocaleString()
-                          : new Date(cTs * 1000).toLocaleString())
-                      : '';
-                    return m('li', { style: { padding: '0.6rem 0', borderBottom: '1px solid #333' } }, [
-                      m('div', { style: { fontSize: '0.8em', color: '#888', marginBottom: '0.2rem' } }, [
-                        m('b', cAuthor),
-                        cDate ? m('span', ` • ${cDate}`) : null,
-                      ]),
-                      m('p', { style: { margin: 0 } }, c.mComment || c.comment || ''),
-                    ]);
-                  })
-                ),
+          m('.board-comments', [
+            m('.board-comments__heading', [m('h3', `${comments.length} Comment${comments.length === 1 ? '' : 's'}`), m('span', [m('i.fas.fa-sort-amount-down'), ' Oldest first'])]),
+            m('.board-comment-composer', [
+              m('.board-comment-avatar', initials(nameOf(authorId))),
+              m('.board-comment-composer__body', [
+                replyTo ? m('.board-comment-composer__replying', ['Replying to ', m('b', nameOf(metaOf(replyTo).mAuthorId)), m('button[type=button][aria-label=Cancel reply]', { onclick: () => { replyTo = null; composerText = ''; } }, m('i.fas.fa-times'))]) : null,
+                identities.length > 1 ? m('select.board-comment-composer__identity', { value: authorId, onchange: (e) => { authorId = e.target.value; } }, identities.map((id) => m('option', { value: id }, nameOf(id)))) : null,
+                m('textarea.board-comment-composer__input[rows=1][placeholder=Add a comment…]', { value: composerText, disabled: !authorId || submitting, oninput: (e) => { composerText = e.target.value; }, onkeydown: (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') submitComment(forumId, msgId); } }),
+                !authorId ? m('p.board-comment-composer__hint', 'Create or select an identity to post a comment.') : null,
+                submitError ? m('p.board-comment-composer__error', submitError) : null,
+                m('.board-comment-composer__actions', [
+                  composerText || replyTo ? m('button.board-comment-composer__cancel[type=button]', { onclick: () => { composerText = ''; replyTo = null; submitError = ''; } }, 'Cancel') : null,
+                  m('button.board-comment-composer__submit[type=button]', { disabled: !composerText.trim() || !authorId || submitting, onclick: () => submitComment(forumId, msgId) }, submitting ? 'Posting…' : 'Comment')
+                ])
+              ])
+            ]),
+            loadingComments ? m('.board-comments__status', [m('i.fas.fa-spinner.fa-spin'), ' Loading comments…'])
+              : comments.length === 0 ? m('.board-comments__empty', [m('i.far.fa-comment'), m('p', 'No comments yet. Start the conversation.')])
+              : m('.board-comments__list', treeOfComments().map((node) => renderComment(node, 0))),
           ]),
         ]),
       ];
     },
   };
+
+  function renderComment(node, depth) {
+    const comment = node.comment;
+    const key = idOf(comment);
+    const meta = metaOf(comment);
+    const name = nameOf(meta.mAuthorId);
+    const repliesCount = node.children.length;
+    const repliesExpanded = expandedReplies[key] === true;
+    return m('.board-comment', { key: idOf(comment), class: depth ? 'board-comment--reply' : '' }, [
+      m('.board-comment-avatar', initials(name)),
+      m('.board-comment__content', [
+        m('.board-comment__header', [
+          m('.board-comment__meta', [m('b', name), timeOf(meta.mPublishTs) ? m('span', timeOf(meta.mPublishTs)) : null]),
+          m('button.board-comment__menu[type=button][aria-label=Comment options][title=Comment options]', m('i.fas.fa-ellipsis-v')),
+        ]),
+        m('p.board-comment__text', textOf(comment)),
+        m('.board-comment__actions', [
+          m('span.board-comment__like', [m('i.far.fa-thumbs-up'), ' Like']),
+          m('button[type=button]', { onclick: () => { replyTo = comment; composerText = ''; submitError = ''; } }, 'Reply')
+        ]),
+        repliesCount ? m('button.board-comment__replies-toggle[type=button]', {
+          'aria-expanded': repliesExpanded,
+          onclick: () => { expandedReplies[key] = !repliesExpanded; },
+        }, [
+          `${repliesCount} ${repliesCount === 1 ? 'reply' : 'replies'} `,
+          m('i.fas', { class: repliesExpanded ? 'fa-chevron-up' : 'fa-chevron-down' }),
+        ]) : null,
+        repliesCount && repliesExpanded ? m('.board-comment__replies', node.children.map((reply) => renderComment(reply, depth + 1))) : null,
+      ])
+    ]);
+  }
 }
 
 module.exports = {

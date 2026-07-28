@@ -16,6 +16,7 @@ const Layout = {
     m(widget.Sidebar, {
       tabs: Object.keys(sections),
       baseRoute: '/config/',
+      mobileDrawer: true,
     }),
     m('.node-panel', vnode.children),
   ],

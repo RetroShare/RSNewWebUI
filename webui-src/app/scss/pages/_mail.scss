@@ -748,3 +748,70 @@ table.attachment-container {
     height: 95% !important;
   }
 }
+
+.mail-mobile-nav-toggle { display: none; }
+.mail-nav-drawer { display: contents; }
+.mail-mobile-box-title { display: none; }
+
+/* Mail folders become a left drawer on phones. */
+@media (max-width: 768px) {
+  .side-bar {
+    height: 44px !important;
+    padding: .25rem !important;
+    overflow: visible !important;
+  }
+
+  .mail-mobile-nav-toggle {
+    display: inline-flex !important;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #0f172a;
+    cursor: pointer;
+    font-size: 1.15rem;
+  }
+
+  .mail-nav-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1100;
+    display: flex !important;
+    flex-direction: column;
+    width: min(82vw, 300px);
+    height: 100dvh;
+    padding: 1rem 0;
+    overflow-y: auto;
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 8px 0 24px rgba(15, 23, 42, .16);
+    transform: translateX(-105%);
+    transition: transform 180ms ease;
+  }
+
+  .mail-nav-drawer--open { transform: translateX(0); }
+  .mail-mobile-box-title {
+    display: flex !important;
+    align-items: center;
+    gap: .55rem;
+    margin: .35rem 0 .55rem;
+    color: #0f172a;
+    font-size: 1.45rem;
+    font-weight: 600;
+  }
+  .mail-mobile-box-title i { color: #3b82f6; font-size: 1.35rem; }
+  .mail-box-content > .widget__heading { display: none; }
+  .mail-nav-drawer .mail-compose-btn { display: flex !important; margin: 0 .85rem .75rem !important; }
+  .mail-nav-drawer .sidebar,
+  .mail-nav-drawer .sidebarquickview { display: flex !important; flex-direction: column !important; width: 100% !important; }
+  .mail-nav-drawer .sidebarquickview { margin-top: .5rem; border-top: 1px solid #e2e8f0; padding-top: .5rem; }
+  .mail-nav-drawer .sidebarquickview h6 { display: block !important; margin: 0 .9rem .35rem; color: #64748b; }
+  .mail-nav-drawer .sidebar a,
+  .mail-nav-drawer .sidebarquickview a { display: flex !important; width: auto; padding: .7rem 1rem !important; border-radius: 0 !important; }
+  .mail-nav-drawer .sidebar a .sidebar-link-text { display: inline !important; }
+  .mail-nav-drawer .sidebar a i { margin-right: .75rem !important; font-size: 1.1rem !important; }
+}

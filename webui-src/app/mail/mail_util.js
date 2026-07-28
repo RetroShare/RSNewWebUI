@@ -749,7 +749,7 @@ const sidebarIcons = {
 
 const Sidebar = () => {
   return {
-    view: ({ attrs: { tabs, baseRoute, size } }) =>
+    view: ({ attrs: { tabs, baseRoute, size, onNavigate } }) =>
       m(
         '.sidebar',
         tabs.map((panelName, index) => {
@@ -762,6 +762,7 @@ const Sidebar = () => {
               onclick: () => {
                 activeSideLink.sideactive = index;
                 activeSideLink.quicksideactive = -1;
+                if (onNavigate) onNavigate();
               },
               href: baseRoute + panelName,
             },
@@ -779,7 +780,7 @@ const Sidebar = () => {
 const SidebarQuickView = () => {
   // for the Mail tab, to be moved later.
   return {
-    view: ({ attrs: { tabs, baseRoute, size } }) =>
+    view: ({ attrs: { tabs, baseRoute, size, onNavigate } }) =>
       m(
         '.sidebarquickview',
         m('h6.bold', 'Quick View'),
@@ -794,6 +795,7 @@ const SidebarQuickView = () => {
               onclick: () => {
                 activeSideLink.quicksideactive = index;
                 activeSideLink.sideactive = -1;
+                if (onNavigate) onNavigate();
               },
               href: baseRoute + panelName,
             },
