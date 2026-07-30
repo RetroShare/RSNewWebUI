@@ -245,15 +245,18 @@ function popupmessage(message) {
   );
 }
 
-async function voteForPost(postGrpId, postMsgId, voteType) {
+async function voteForPost(postGrpId, postMsgId, voteType, voterId = null) {
   try {
-    const resId = await rs.rsJsonApiRequest('/rsIdentity/getOwnIds', {});
-    const ownIds = (resId && resId.body && resId.body.ids) ? resId.body.ids : [];
-    if (ownIds.length === 0) {
-      alert('No identity found to vote.');
-      return false;
+    let authorId = voterId;
+    if (!authorId) {
+      const resId = await rs.rsJsonApiRequest('/rsIdentity/getOwnIds', {});
+      const ownIds = (resId && resId.body && resId.body.ids) ? resId.body.ids : [];
+      if (ownIds.length === 0) {
+        alert('No identity found to vote.');
+        return false;
+      }
+      authorId = ownIds[0];
     }
-    const authorId = ownIds[0];
 
     const res = await rs.rsJsonApiRequest('/rsPosted/voteForPost', {
       postGrpId: postGrpId,

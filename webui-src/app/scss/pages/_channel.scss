@@ -78,6 +78,116 @@ table {
     }
   }
 }
+
+.posts-container-card .channel-post__placeholder {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  color: #64748b;
+  background: linear-gradient(135deg, #f8fafc, #dbe5f1);
+}
+.channel-post__placeholder i { font-size: 1.35rem; color: #64748b; }
+.channel-post__placeholder span { font-size: 2rem; font-weight: 700; color: #2563eb; }
+.channel-post__placeholder small { font-size: .72rem; font-weight: 600; }
+
+/* Compact YouTube-style post description with an opt-in expansion control. */
+.post-description {
+  margin: 1rem 0;
+  padding: .85rem 1rem;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #1e293b;
+}
+.post-description__text { overflow-wrap: anywhere; line-height: 1.5; }
+.post-description__text > :first-child { margin-top: 0; }
+.post-description__text > :last-child { margin-bottom: 0; }
+.post-description__text--collapsed {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.post-description__toggle {
+  margin-top: .35rem;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: #0f172a !important;
+  font-size: .85rem !important;
+  font-weight: 700 !important;
+}
+.post-description__toggle:hover { color: #2563eb !important; text-decoration: underline; }
+
+/* Keep image and generated-thumbnail cards the same size instead of stretching
+ * a sparse grid row to the full height of the Posts panel. */
+.posts-container { align-content: start; grid-auto-rows: 240px; }
+.posts-container-card { height: 240px; min-height: 0; overflow: hidden; }
+.posts-container-card > img,
+.posts-container-card > .channel-post__placeholder { min-height: 0; }
+
+@media (max-width: 700px) {
+  .posts-container { grid-auto-rows: 210px; gap: 1rem; }
+  .posts-container-card { height: 210px; }
+}
+
+/* Channel attachment table -> compact cards on phones. */
+@media (max-width: 700px) {
+  .file-section { margin-top: 1.25rem; }
+
+  table.channel-files,
+  table.channel-files tbody,
+  table.channel-files tr,
+  table.channel-files td {
+    display: block;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  table.channel-files { padding: 0; table-layout: auto; }
+  table.channel-files thead { display: none; }
+
+  table.channel-files tr {
+    margin: 0 0 .7rem;
+    padding: .7rem;
+    border: 1px solid #dbe3ef;
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  table.channel-files td {
+    min-width: 0;
+    padding: .25rem 0;
+    border: 0;
+    text-align: left;
+  }
+
+  table.channel-files td::before {
+    display: block;
+    margin-bottom: .1rem;
+    color: #64748b;
+    content: attr(data-label);
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  table.channel-files .channel-file__name {
+    overflow-wrap: anywhere;
+    color: #0f172a;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  table.channel-files .channel-file__size { color: #475569; }
+  table.channel-files .channel-file__action { padding-top: .5rem; }
+  table.channel-files .channel-file__action > button { min-width: 116px; }
+  table.channel-files .channel-file__action .file-view { margin-top: .6rem; }
+}
 /* #options{
   width: 100px;
   text-align: center;

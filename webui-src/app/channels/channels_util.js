@@ -173,8 +173,8 @@ const FilesTable = () => {
   return {
     oninit: (v) => {},
     view: (v) =>
-      m('table.files', [
-        m('tr', [m('th', 'File Name'), m('th', 'Size'), m('th', m('i.fas.fa-download'))]),
+      m('table.files.channel-files', [
+        m('thead', m('tr', [m('th', 'File Name'), m('th', 'Size'), m('th', m('i.fas.fa-download'))])),
         v.children,
       ]),
   };

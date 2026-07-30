@@ -240,6 +240,8 @@
 .board-comments__heading h3 { margin: 0; font-size: 1.15rem; }
 .board-comments__heading span { color: #64748b; font-size: .8rem; font-weight: 600; }
 .board-comments__heading i { margin-right: .35rem; }
+.board-comments__voter { display: inline-flex; align-items: center; gap: .4rem; margin-left: auto; color: #64748b; font-size: .75rem; font-weight: 600; white-space: nowrap; }
+.board-comments__voter select { max-width: 180px; padding: .25rem .4rem; font-size: .78rem; }
 
 .board-comment-composer,
 .board-comment {
@@ -355,7 +357,9 @@
 .board-comments__empty i { font-size: 1.5rem; }
 
 @media (max-width: 560px) {
-  .board-comments__heading { justify-content: space-between; }
+  .board-comments__heading { flex-wrap: wrap; justify-content: space-between; gap: .5rem; }
+  .board-comments__voter { width: 100%; margin-left: 0; }
+  .board-comments__voter select { flex: 1; max-width: none; }
   .board-comment-composer, .board-comment { gap: .6rem; }
   .board-comment-avatar { flex-basis: 32px; width: 32px; height: 32px; font-size: .68rem; }
   .board-comment__replies { padding-left: .6rem; }
@@ -603,6 +607,17 @@ button.board-card__vote-btn,
   justify-content: center !important;
   background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%) !important;
 }
+
+.board-card__placeholder-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .3rem;
+  color: #64748b;
+  font-size: .72rem;
+  font-weight: 600;
+}
+.board-card__placeholder-content i { font-size: 1.35rem; }
 
 .board-card--compact .board-card__placeholder-img {
   width: 24px !important;

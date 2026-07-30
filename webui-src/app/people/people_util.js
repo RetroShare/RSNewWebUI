@@ -137,15 +137,21 @@ function sortIds(list) {
 }
 
 async function ownIds(consumer = () => { }, onlySigned = false) {
-  await rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {}, (owns) => {
+  try {
+    const signedResponse = await rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {});
+    const signedIds = (signedResponse && signedResponse.body && signedResponse.body.ids) || [];
     if (onlySigned) {
-      consumer(sortIds(owns.ids));
-    } else {
-      rs.rsJsonApiRequest('/rsIdentity/getOwnPseudonimousIds', {}, (pseudo) => {
-        if (pseudo.ids) consumer(sortIds(pseudo.ids.concat(owns.ids)));
-      });
+      consumer(sortIds(signedIds));
+      return;
     }
-  });
+
+    const pseudonymousResponse = await rs.rsJsonApiRequest('/rsIdentity/getOwnPseudonimousIds', {});
+    const pseudonymousIds = (pseudonymousResponse && pseudonymousResponse.body && pseudonymousResponse.body.ids) || [];
+    consumer(sortIds(pseudonymousIds.concat(signedIds)));
+  } catch (error) {
+    console.warn('Unable to load own identities', error);
+    consumer([]);
+  }
 }
 const SearchBar = () => {
   let searchString = '';

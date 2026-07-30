@@ -13,24 +13,15 @@ function numberValue(value) {
  * Fallback SVG Thumbnail when no image is available
  */
 const FallbackImage = () =>
-  m(
-    'svg.board-card__placeholder-img',
-    {
-      xmlns: 'http://www.w3.org/2000/svg',
-      viewBox: '0 0 24 24',
-      fill: 'none',
-      stroke: 'currentColor',
-      strokeWidth: '1.5',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-      'aria-hidden': 'true',
+  m('.board-card__placeholder-content', {
+    style: {
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: '.3rem', color: '#64748b', fontSize: '.72rem', fontWeight: '600', textAlign: 'center',
     },
-    [
-      m('rect', { x: '3', y: '3', width: '18', height: '18', rx: '2', ry: '2' }),
-      m('circle', { cx: '8.5', cy: '8.5', r: '1.5' }),
-      m('polyline', { points: '21 15 16 10 5 21' }),
-    ]
-  );
+  }, [
+    m('i.fas.fa-image[aria-hidden=true]', { style: { fontSize: '1.35rem' } }),
+    m('span', 'No image'),
+  ]);
 
 /**
  * Check if notes string contains non-whitespace text

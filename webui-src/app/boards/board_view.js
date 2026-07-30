@@ -3,6 +3,7 @@ const util = require('boards/boards_util');
 const boardKanban = require('boards/board_kanban');
 const rs = require('rswebui');
 const peopleUtil = require('people/people_util');
+const chatEmoji = require('chat/chat_emoji');
 const Data = util.Data;
 
 function createboard() {
@@ -275,10 +276,13 @@ function PostView() {
   let loadingComments = true;
   let identities = [];
   let authorId = null;
+  let voteIdentity = null;
   let replyTo = null;
   let composerText = '';
   let submitting = false;
   let submitError = '';
+  let notesExpanded = false;
+  let showEmojiPicker = false;
   const expandedReplies = {};
 
   const metaOf = (comment) => (comment && comment.mMeta) || {};
@@ -372,6 +376,7 @@ function PostView() {
       peopleUtil.ownIds((ids) => {
         identities = (ids || []).filter((id) => Number(id) !== 0);
         authorId = identities[0] || null;
+        voteIdentity = identities[0] || null;
         m.redraw();
       });
     },
@@ -384,6 +389,7 @@ function PostView() {
 
       const title = meta.mMsgName || p.mMsgName || p.title || 'Post';
       const notes = util.plainText(p.mNotes || p.mBody || p.notes || p.body || '');
+      const hasLongNotes = notes.length > 280;
       const author = meta.mAuthorId ? meta.mAuthorId.substring(0, 10) : 'Unknown';
       const publishTs = meta.mPublishTs || p.mPublishTs || null;
       const dateStr = publishTs
@@ -425,26 +431,46 @@ function PostView() {
             m('b', author),
             dateStr ? m('span', ` • ${dateStr}`) : null,
           ]),
-          notes ? m('p', { style: { whiteSpace: 'pre-wrap', margin: '1rem 0' } }, notes) : null,
+          notes ? m('.post-description.board-post-description', [
+            m('.post-description__text', { class: notesExpanded ? '' : 'post-description__text--collapsed', style: { whiteSpace: 'pre-wrap', maxHeight: notesExpanded ? 'none' : '4.5em', overflow: 'hidden', lineHeight: '1.5' } }, notes),
+            hasLongNotes ? m('button.post-description__toggle[type=button]', { onclick: () => { notesExpanded = !notesExpanded; } }, notesExpanded ? 'Show less' : '…more') : null,
+          ]) : null,
           m('hr'),
           m('.board-comments', [
-            m('.board-comments__heading', [m('h3', `${comments.length} Comment${comments.length === 1 ? '' : 's'}`), m('span', [m('i.fas.fa-sort-amount-down'), ' Oldest first'])]),
+            m('.board-comments__heading', [
+              m('h3', `${comments.length} Comment${comments.length === 1 ? '' : 's'}`),
+              m('span', [m('i.fas.fa-sort-amount-down'), ' Oldest first']),
+              m('.board-comments__voter', [
+                m('label[for=board-comment-voter]', 'Voter identity'),
+                m('select#board-comment-voter', {
+                  value: voteIdentity || '',
+                  disabled: identities.length === 0,
+                  onchange: (e) => { voteIdentity = e.target.value; },
+                }, identities.length
+                  ? identities.map((id) => m('option', { value: id }, nameOf(id)))
+                  : m('option', { value: '' }, 'Loading identities…')),
+              ]),
+            ]),
             m('.board-comment-composer', [
               m('.board-comment-avatar', initials(nameOf(authorId))),
               m('.board-comment-composer__body', [
                 replyTo ? m('.board-comment-composer__replying', ['Replying to ', m('b', nameOf(metaOf(replyTo).mAuthorId)), m('button[type=button][aria-label=Cancel reply]', { onclick: () => { replyTo = null; composerText = ''; } }, m('i.fas.fa-times'))]) : null,
-                identities.length > 1 ? m('select.board-comment-composer__identity', { value: authorId, onchange: (e) => { authorId = e.target.value; } }, identities.map((id) => m('option', { value: id }, nameOf(id)))) : null,
+                identities.length ? m('select.board-comment-composer__identity', { value: authorId, onchange: (e) => { authorId = e.target.value; } }, identities.map((id) => m('option', { value: id }, nameOf(id)))) : null,
                 m('textarea.board-comment-composer__input[rows=1][placeholder=Add a comment…]', { value: composerText, disabled: !authorId || submitting, oninput: (e) => { composerText = e.target.value; }, onkeydown: (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') submitComment(forumId, msgId); } }),
                 !authorId ? m('p.board-comment-composer__hint', 'Create or select an identity to post a comment.') : null,
                 submitError ? m('p.board-comment-composer__error', submitError) : null,
                 m('.board-comment-composer__actions', [
+                  m('.board-comment-composer__emoji', { style: { position: 'relative', marginRight: 'auto' } }, [
+                    m('button[type=button][title=Insert emoji][aria-label=Insert emoji]', { style: { width: '32px', height: '32px', padding: '0', borderRadius: '50%', border: '0', boxShadow: 'none', background: showEmojiPicker ? '#e0f2fe' : 'transparent', color: '#475569', fontSize: '1.15rem' }, onclick: () => { showEmojiPicker = !showEmojiPicker; } }, m('i.fas.fa-smile')),
+                    showEmojiPicker ? m('.board-comment-emoji-popover', { style: { position: 'absolute', zIndex: '20', top: '38px', left: '0', width: '250px', maxHeight: '180px', overflowY: 'auto', padding: '.5rem', display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '.2rem', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', boxShadow: '0 8px 20px rgba(0,0,0,.16)' } }, chatEmoji.EMOJI_DATA.Smileys.slice(0, 48).map((emoji) => m('button[type=button]', { style: { width: '28px', height: '28px', padding: '0', border: '0', boxShadow: 'none', background: 'transparent', fontSize: '1.1rem' }, onclick: () => { composerText += emoji; showEmojiPicker = false; } }, emoji))) : null,
+                  ]),
                   composerText || replyTo ? m('button.board-comment-composer__cancel[type=button]', { onclick: () => { composerText = ''; replyTo = null; submitError = ''; } }, 'Cancel') : null,
                   m('button.board-comment-composer__submit[type=button]', { disabled: !composerText.trim() || !authorId || submitting, onclick: () => submitComment(forumId, msgId) }, submitting ? 'Posting…' : 'Comment')
                 ])
               ])
             ]),
             loadingComments ? m('.board-comments__status', [m('i.fas.fa-spinner.fa-spin'), ' Loading comments…'])
-              : comments.length === 0 ? m('.board-comments__empty', [m('i.far.fa-comment'), m('p', 'No comments yet. Start the conversation.')])
+              : comments.length === 0 ? m('.board-comments__empty', [m('i.fas.fa-comment'), m('p', 'No comments yet. Start the conversation.')])
               : m('.board-comments__list', treeOfComments().map((node) => renderComment(node, 0))),
           ]),
         ]),
@@ -468,7 +494,14 @@ function PostView() {
         ]),
         m('p.board-comment__text', textOf(comment)),
         m('.board-comment__actions', [
-          m('span.board-comment__like', [m('i.far.fa-thumbs-up'), ' Like']),
+          m('button[type=button]', {
+            disabled: !voteIdentity,
+            onclick: () => util.voteForPost(forumId, key, util.GXS_VOTE_UP, voteIdentity),
+          }, [m('i.fas.fa-thumbs-up'), ` ${comment.mUpVotes || 0}`]),
+          m('button[type=button]', {
+            disabled: !voteIdentity,
+            onclick: () => util.voteForPost(forumId, key, util.GXS_VOTE_DOWN, voteIdentity),
+          }, m('i.fas.fa-thumbs-down')),
           m('button[type=button]', { onclick: () => { replyTo = comment; composerText = ''; submitError = ''; } }, 'Reply')
         ]),
         repliesCount ? m('button.board-comment__replies-toggle[type=button]', {
