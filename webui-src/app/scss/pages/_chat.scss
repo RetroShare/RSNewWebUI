@@ -845,6 +845,45 @@ textarea.chatMsg {
   font-size: 0.85rem;
 }
 
+/* Room-header actions remain available on phones without consuming the
+ * message area: their accessible title still describes each icon. */
+@media (max-width: 700px) {
+  .chat-hub-header-bar {
+    height: auto;
+    min-height: 48px;
+    padding: .45rem .55rem;
+    gap: .45rem;
+  }
+
+  .chat-hub-header-bar .chat-header-info {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .chat-hub-header-bar .chat-header-info .chat-header-name {
+    font-size: .95rem;
+  }
+
+  .chat-hub-header-bar .chat-header-actions {
+    flex: 0 0 auto;
+    gap: .25rem;
+  }
+
+  .chat-hub-header-bar .chat-header-actions button {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
+  }
+
+  .chat-hub-header-bar .chat-header-actions button i {
+    margin: 0;
+    font-size: .95rem;
+  }
+}
+
 .chat-hub-tabs-container {
   background-color: #ffffff;
   border-bottom: 1px solid #cbd5e1;

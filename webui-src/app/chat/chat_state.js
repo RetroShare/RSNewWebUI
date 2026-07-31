@@ -1,7 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const peopleUtil = require('people/people_util');
-const people = require('people/people');
 
 // **************** utility functions ********************
 

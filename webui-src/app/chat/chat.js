@@ -458,7 +458,7 @@ const ChatConversationView = () => {
                 })
               ]),
               m('textarea.chat-hub-textarea', {
-                placeholder: canTalk ? 'Type a message... Press Enter to send (or paste image)' : 'Waiting for tunnel to be secured...',
+                placeholder: 'Type a message...',
                 disabled: !canTalk,
                 enterkeyhint: 'send',
                 onpaste: (e) => {

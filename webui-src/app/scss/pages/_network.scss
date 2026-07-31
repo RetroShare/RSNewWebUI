@@ -596,4 +596,43 @@
   .locations-grid {
     grid-template-columns: 1fr !important;
   }
+
+  /* Direct-chat composer: preserve room for typing on a narrow screen. */
+  .network-chat-view .chat-input-area {
+    padding: .4rem !important;
+    gap: .2rem !important;
+    min-width: 0;
+  }
+
+  .network-chat-view .chat-input-area .chat-hub-action-btn,
+  .network-chat-view .chat-input-area label.chat-hub-action-btn {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    padding: 0 !important;
+    font-size: .95rem !important;
+  }
+
+  .network-chat-view .chat-input-area .emoji-picker-wrapper {
+    flex: 0 0 28px;
+  }
+
+  .network-chat-view .chat-input-area textarea.chat-textarea {
+    min-width: 0 !important;
+    padding: .4rem !important;
+  }
+
+  .network-chat-view .chat-input-area .send-btn {
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    font-size: 0 !important;
+    justify-content: center;
+  }
+
+  .network-chat-view .chat-input-area .send-btn i {
+    margin: 0 !important;
+    font-size: 1rem !important;
+  }
 }

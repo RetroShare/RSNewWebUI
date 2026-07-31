@@ -144,3 +144,157 @@
   color: #1e293b;
 }
 
+/* Network configuration uses desktop-sized inline styles. Override them on
+ * phones so labels, fields, proxy details, and long IP addresses stay inside
+ * the viewport. */
+@media (max-width: 700px) {
+  .config-network {
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .config-network .widget {
+    min-width: 0;
+    padding: .8rem;
+  }
+
+  .config-network .nw-config-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: .35rem !important;
+    min-width: 0;
+  }
+
+  .config-network .nw-config-row > label,
+  .config-network .nw-config-row > p {
+    margin: 0 !important;
+  }
+
+  .config-network .nw-mode-group,
+  .config-network .nat-control-group,
+  .config-network .addr-control-group,
+  .config-network .proxy-control-group,
+  .config-network .addr-port-group {
+    width: 100%;
+    min-width: 0;
+    gap: .5rem !important;
+  }
+
+  .config-network input[type=text],
+  .config-network input[type=number],
+  .config-network select {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .config-network .port-group,
+  .config-network .status-indicator {
+    margin-left: 0 !important;
+  }
+
+  .config-network .port-group input[type=number] {
+    width: 90px !important;
+  }
+
+  .config-network .external-address {
+    width: 100%;
+    height: auto;
+    max-height: 9rem;
+    padding-left: 1.25rem;
+    overflow: auto;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    box-sizing: border-box;
+  }
+}
+
+/* Chat settings: replace the desktop grid/table with phone-friendly rows. */
+@media (max-width: 700px) {
+  .node-config .config-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: .6rem !important;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .node-config .default-id-selector {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .node-config .default-id-selector select,
+  .node-config .config-grid > select {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    box-sizing: border-box;
+  }
+
+  .node-config .storage-input-group {
+    justify-content: flex-start;
+  }
+
+  .node-config .table-container {
+    overflow: visible !important;
+  }
+
+  .node-config .history-config-table,
+  .node-config .history-config-table tbody,
+  .node-config .history-config-table tr,
+  .node-config .history-config-table td {
+    display: block;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .node-config .history-config-table {
+    table-layout: auto;
+  }
+
+  .node-config .history-config-table thead {
+    display: none;
+  }
+
+  .node-config .history-config-table tr {
+    margin: 0;
+    padding: .75rem;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  .node-config .history-config-table tr:last-child {
+    border-bottom: 0 !important;
+  }
+
+  .node-config .history-config-table td {
+    padding: .25rem 0 !important;
+    text-align: left !important;
+  }
+
+  .node-config .history-config-table td:nth-child(2),
+  .node-config .history-config-table td:nth-child(3) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+  }
+
+  .node-config .history-config-table td:nth-child(2)::before {
+    content: 'Enable history';
+    color: #64748b;
+    font-size: .8rem;
+    font-weight: 600;
+  }
+
+  .node-config .history-config-table td:nth-child(3)::before {
+    content: 'Max saved messages';
+    color: #64748b;
+    font-size: .8rem;
+    font-weight: 600;
+  }
+}
+
