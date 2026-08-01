@@ -23,7 +23,7 @@
   }
 
   &-item {
-    @include flex($align: center);
+    @include flex($align: center, $gap: 0.3rem);
   }
 
   &-divider {

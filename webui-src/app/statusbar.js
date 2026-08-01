@@ -355,16 +355,26 @@ const StatusBar = {
 
         // NAT — hidden when in hidden/darknet mode (same as Qt)
         !isHiddenMode && m('.statusbar-divider'),
-        !isHiddenMode && m('.statusbar-item', { title: natTooltip, style: 'cursor: help;' }, [
+        !isHiddenMode && m('.statusbar-item.statusbar-item--nat', {
+          title: natTooltip,
+          style: 'cursor: help; margin-left: 0.6rem;',
+        }, [
           m('span.statusbar-label', { style: 'margin-right: 0.35rem;' }, 'NAT:'),
-          m('.status-bullet', { style: { backgroundColor: natColor } }),
+          m('.status-bullet', {
+            style: { backgroundColor: natColor, marginLeft: '0.15rem', marginRight: '0.45rem' },
+          }),
         ]),
 
         // DHT — hidden when in hidden/darknet mode (same as Qt)
         !isHiddenMode && m('.statusbar-divider'),
-        !isHiddenMode && m('.statusbar-item', { title: dhtTooltip, style: 'cursor: help;' }, [
+        !isHiddenMode && m('.statusbar-item.statusbar-item--dht', {
+          title: dhtTooltip,
+          style: 'cursor: help; margin-left: 0.6rem;',
+        }, [
           m('span.statusbar-label', { style: 'margin-right: 0.35rem;' }, 'DHT:'),
-          m('.status-bullet', { style: { backgroundColor: dhtColor } }),
+          m('.status-bullet', {
+            style: { backgroundColor: dhtColor, marginLeft: '0.15rem', marginRight: '0.35rem' },
+          }),
           State.dhtActive && State.dhtOk && m('span.statusbar-extra-info', { style: 'margin-left: 0.35rem;' }, `${formatUnit(State.dhtRsNetSize)} (${formatUnit(State.dhtNetSize)})`),
         ]),
 
