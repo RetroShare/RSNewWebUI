@@ -157,6 +157,9 @@ npm run build
 npm run lint
 ```
 
+These npm commands use `build.bat` on native Windows and `build.sh` on other
+platforms.
+
 Commit SCSS changes together with the regenerated `webui-src/styles.css`.
 `qmake .` packages that committed CSS but does not compile SCSS. Running
 `make` alone does not rebuild this `TEMPLATE = subdirs` project; rerun
@@ -189,8 +192,9 @@ when testing watched changes through RetroShare.
 
 Before submitting, run the full build and lint commands, then point
 RetroShare's **Web interface directory** at `webui/` and manually test the
-affected screens. ESLint, generated JavaScript syntax, and shell syntax are
-checked by `npm run lint`; no formatting script is defined.
+affected screens. ESLint, generated JavaScript syntax, the build dispatcher,
+and shell syntax on non-Windows systems are checked by `npm run lint`; no
+formatting script is defined.
 
 ### References
 

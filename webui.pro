@@ -33,7 +33,7 @@ WEBUI_SRC_CSS = $$PWD/webui-src/styles.css
 
 WEBUI_SRC_IMAGE = $$PWD/data/retroshare.svg
 
-win32-g++ {
+win32 {
     isEmpty(QMAKE_SH) {
         # Windows native build
         WEBUI_SRC_SCRIPT = $$PWD/webui-src/make-src/build.bat
