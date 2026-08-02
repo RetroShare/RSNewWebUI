@@ -7,7 +7,9 @@ which communicates with the client through the JSON API.
 
 - Retroshare v0.6.5+ with JSON API enabled(see instructions below)
 - A modern JavaScript-enabled web browser
-- [`qmake`](https://doc.qt.io/qt-5/qmake-manual.html)(optional)
+- Node.js 24 LTS or newer and npm when building from SCSS sources
+- A POSIX-compatible `sh` on Linux or macOS
+- [`qmake`](https://doc.qt.io/qt-5/qmake-manual.html) (optional packaging integration)
 
 ## Installation
 
@@ -29,27 +31,22 @@ itself:
    ```
 
 2. **Build the files**:
-   If you have `qmake` installed, you just need to run it in the base directory:
+   If you have `qmake` installed, you need to run this command from the repository root to build it:
 
    ```bash
    qmake .
    ```
 
-   If you do not have `qmake`, go to `webui-src/make-src/` and run the build
-   script. Note that qmake is enough to do the build.
-
-   ##### On Linux/MacOS:
+   `qmake` packages the committed generated `webui-src/styles.css`. Without `qmake`, run the shell build script instead:
 
    ```bash
-   cd webui-src/make-src
-   sh build.sh
+   sh webui-src/make-src/build.sh
    ```
 
-   ##### On Windows:
+   On Windows, use the batch script to bundle the checked-in generated files:
 
    ```bash
-   cd webui-src\make-src\
-   ./build.bat
+   webui-src\make-src\build.bat
    ```
 
 ### Compile Retroshare with JSON API
@@ -127,58 +124,73 @@ webui password and enter the ID and login password of your node).
 
 ## Contributing
 
-For contributing, It is recommended that you read this entire section to have a
-better idea.
+### Setup
 
-### Setup WebUI for contributing
+Development requires Node.js 24 or newer, npm, `sh` on macOS or Linux, and a
+RetroShare instance with the JSON API and Web Interface enabled for manual
+testing.
 
-Follow these steps to setup the project and make it ready for
-contribution/customisation :
+Fork and clone the repository, then install the locked dependencies:
 
-- Fork and Clone this repository to your local machine.
-- `cd` into the cloned repo:
-  ```
-  cd RSNewWebUI
-  ```
-- Run this command to install the dependecies for the project.
-  ```
-  pnpm install
-  ```
-
-### Run the WebUI
-
-- Run this command to watch for any changes in the `scss` files and compile them
-  to css.
-
-  ```
-  pnpm watch
-  ```
-
-- You can now start to edit the source code. But you must run the below command
-  to see the changes reflected in the browser everytime you edit the code for
-  webui which is in the `webui-src/app/` directory.
-
-  ```
-  qmake .
-  ```
-
-### Linting and Formatting
-
-Linting and formatting can be done with editor/IDE plugins.
-
-Or to do it manually,
-
-Install `prettier` and `eslint` (required for linting & formatting code):
-
-```sh
-npm install -g prettier eslint
+```bash
+cd RSNewWebUI/webui-src
+npm ci
 ```
 
-Next, run the following in the `webui-src` directory:
+### Source and generated files
 
-To run the linter: `eslint app`
+Edit files under `webui-src/app/`, including SCSS under
+`webui-src/app/scss/`. Do not edit these generated files by hand:
 
-To run the formatter: `prettier -c app`
+- `webui-src/styles.css` is generated from `webui-src/app/scss/main.scss`.
+- `webui/app.js`, `webui/styles.css`, and `webui/index.html` are build output.
+
+`webui-src/app/mithril.js` is the vendored Mithril 2.3.8 runtime. Replace it
+only during an intentional Mithril upgrade.
+
+### Build and test
+
+From `webui-src/`, compile SCSS and create the deployable `webui/` directory:
+
+```bash
+npm run build
+npm run lint
+```
+
+Commit SCSS changes together with the regenerated `webui-src/styles.css`.
+`qmake .` packages that committed CSS but does not compile SCSS. Running
+`make` alone does not rebuild this `TEMPLATE = subdirs` project; rerun
+`qmake .` from the repository root when using qmake.
+
+The shell bundler works without Node.js, but only copies the existing CSS. Run
+it from `webui-src/` with `sh`:
+
+```bash
+sh make-src/build.sh
+```
+
+For focused rebuilds, run these commands from `webui-src/`:
+
+```bash
+# JavaScript only
+sh make-src/build.sh "" app.js
+
+# HTML only
+sh make-src/build.sh "" index.html
+
+# Compile and copy CSS only
+./node_modules/.bin/sass --no-source-map --style=compressed app/scss/main.scss styles.css
+sh make-src/build.sh "" styles.css
+```
+
+`npm run watch` recompiles SCSS into `webui-src/styles.css`; it does not copy
+the CSS into `webui/` or rebuild JavaScript. Use the CSS-only command above
+when testing watched changes through RetroShare.
+
+Before submitting, run the full build and lint commands, then point
+RetroShare's **Web interface directory** at `webui/` and manually test the
+affected screens. ESLint, generated JavaScript syntax, and shell syntax are
+checked by `npm run lint`; no formatting script is defined.
 
 ### References
 
