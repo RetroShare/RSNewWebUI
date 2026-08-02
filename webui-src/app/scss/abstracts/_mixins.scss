@@ -15,11 +15,11 @@
   border: 0;
   border-radius: 5px;
   cursor: pointer;
-  box-shadow: inset -3px -3px 0 darken($color: $bg-color, $amount: 20);
+  box-shadow: inset -3px -3px 0 color.adjust($bg-color, $lightness: -20%);
 
   &:active {
     outline: none;
-    box-shadow: inset 3px 3px 0 darken($color: $bg-color, $amount: 20);
+    box-shadow: inset 3px 3px 0 color.adjust($bg-color, $lightness: -20%);
   }
 }
 
