@@ -7,18 +7,11 @@ const chatEmoji = require('chat/chat_emoji');
 const HistoryBrowserModal = require('people/people_history');
 
 const {
-  get64Num,
-  loadLobbyDetails,
-  loadDistantChatDetails,
   sortLobbies,
-  getNicknameColor,
   getStatusColor,
   getStatusTooltip,
-  renderTextWithEmoji,
   getSafeAvatar,
-  MobileState,
   ChatRoomsModel,
-  Message,
   ChatLobbyModel,
   ChatHubState,
 } = chatState;
@@ -123,13 +116,13 @@ function pollHashStatus(localpath) {
       const info = data.info;
       const sizeNum = info.size.xint64 || parseInt(info.size.xstr64) || info.size;
       const fileLink = `<a href="retroshare://file?name=${encodeURIComponent(info.name)}&size=${sizeNum}&hash=${info.hash}">${info.name}</a> (${rs.formatBytes(sizeNum)})`;
-      
+
       const textarea = document.querySelector('.chat-hub-textarea');
       if (textarea) {
         const val = textarea.value;
         textarea.value = val ? val + '\n' + fileLink : fileLink;
       }
-      
+
       ChatHubState.showAttachModal = false;
       ChatHubState.isHashing = false;
       ChatHubState.attachPath = '';
@@ -143,75 +136,6 @@ function pollHashStatus(localpath) {
 }
 
 // ************************* views ****************************
-
-const Lobby = () => {
-  return {
-    view: (vnode) => {
-      const { info, tagname, onclick, lobbytagname = 'mainname' } = vnode.attrs;
-      return m(
-        ChatLobbyModel.selected(info, '.selected-lobby', tagname),
-        {
-          key: rs.idToHex(info.lobby_id),
-          onclick,
-        },
-        [
-          m('h5', { class: lobbytagname }, info.lobby_name === '' ? '<unnamed>' : info.lobby_name),
-          m('.topic', info.lobby_topic),
-        ]
-      );
-    },
-  };
-};
-
-const LobbyList = {
-  view(vnode) {
-    const tagname = vnode.attrs.tagname;
-    const lobbytagname = vnode.attrs.lobbytagname;
-    const onclick = vnode.attrs.onclick || (() => null);
-    return [
-      vnode.attrs.rooms.map((info) =>
-        m(Lobby, {
-          info,
-          tagname,
-          lobbytagname,
-          onclick: onclick(info),
-        })
-      ),
-    ];
-  },
-};
-
-const SubscribedLobbies = {
-  view() {
-    return m('.widget', [
-      m('.widget__heading', m('h3', 'Subscribed chat rooms')),
-      m('.widget__body', [
-        m(LobbyList, {
-          rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)),
-          tagname: '.lobby.subscribed',
-          onclick: ChatLobbyModel.switchToEvent,
-        }),
-      ]),
-    ]);
-  },
-};
-
-const PublicLobbies = {
-  view() {
-    return m('.widget', [
-      m('.widget__heading', m('h3', 'Public chat rooms')),
-      m('.widget__body', [
-        m(LobbyList, {
-          rooms: (ChatRoomsModel.allRooms || []).filter((info) => !ChatRoomsModel.subscribed(info)),
-          tagname: '.lobby.public',
-          onclick: ChatLobbyModel.setupEvent,
-        }),
-      ]),
-    ]);
-  },
-};
-
-// ************************* Chat Hub Sub-Components ****************************
 
 const ChatRoomHeader = () => {
   return {
@@ -982,8 +906,6 @@ const ChatRoomDetailView = () => {
       const room = ChatHubState.selectedRoom;
       if (!room) return null;
 
-      let participantCount = 0;
-      let participantNames = [];
       let participants = [];
 
       if (room.gxs_ids) {
@@ -994,7 +916,7 @@ const ChatRoomDetailView = () => {
           }));
         } else if (typeof room.gxs_ids === 'object') {
           participants = Object.keys(room.gxs_ids).map((key) => ({
-            key: key,
+            key,
             name: rs.userList.username(key) || key
           }));
         }
@@ -1011,8 +933,8 @@ const ChatRoomDetailView = () => {
         }
       }
 
-      participantCount = participants.length;
-      participantNames = participants.map((p) => p.name);
+      const participantCount = participants.length;
+      const participantNames = participants.map((p) => p.name);
       participantNames.sort((a, b) => a.localeCompare(b));
 
       const lobbyHexId = rs.idToHex(room.lobby_id);
@@ -1316,7 +1238,7 @@ const Layout = {
         ChatHubState.showCreateRoomModal && m('.attach-modal-overlay', [
           m('.attach-modal', [
             m('h4', 'Create New Chat Room'),
-            
+
             m('.form-field', { style: 'display: flex; flex-direction: column; gap: 0.25rem;' }, [
               m('label', { style: 'font-weight: bold; font-size: 0.9rem; color: #475569;' }, 'Room Name:'),
               m('input[type=text]', {
@@ -1326,7 +1248,7 @@ const Layout = {
                 style: 'padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; font-size: 0.9rem;'
               })
             ]),
-            
+
             m('.form-field', { style: 'display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.5rem;' }, [
               m('label', { style: 'font-weight: bold; font-size: 0.9rem; color: #475569;' }, 'Topic:'),
               m('input[type=text]', {
@@ -1344,7 +1266,7 @@ const Layout = {
                 onchange: (e) => { ChatHubState.newRoomIdentity = e.target.value; },
                 style: 'padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; font-size: 0.9rem; background-color: #ffffff;'
               }, [
-                ChatHubState.ownGxsIdentities && ChatHubState.ownGxsIdentities.map(id => {
+                ChatHubState.ownGxsIdentities && ChatHubState.ownGxsIdentities.map((id) => {
                   const details = ChatHubState.gxsDetails[id];
                   const name = details ? (details.mNickname || details.mGroupName) : id;
                   return m('option', { value: id }, name);
@@ -1386,7 +1308,7 @@ const Layout = {
                   let flags = 0;
                   if (isPublic) flags |= 4;
                   if (isSigned) flags |= 8;
-                  
+
                   rs.rsJsonApiRequest('/rsChats/createChatLobby', {
                     lobby_name: name,
                     lobby_identity: identity,
@@ -1599,74 +1521,6 @@ const Layout = {
       ])
     ]);
   },
-};
-
-const LayoutSingle = () => {
-  const onResize = () => {
-    const element = document.querySelector('.messages');
-    if (element) element.scrollTop = element.scrollHeight;
-  };
-  return {
-    oninit: () => {
-      ChatLobbyModel.loadLobby(m.route.param('lobby'));
-      window.addEventListener('resize', onResize);
-    },
-    onremove: () => window.removeEventListener('resize', onResize),
-    view: (vnode) => {
-      const chatType = ChatLobbyModel.currentLobby.chatType;
-      const isPrivate = chatType === 1 || chatType === 2;
-      const isRoom = chatType === 3;
-      return m(
-        '.node-panel.chat-panel.chat-room',
-        {
-          class:
-            (MobileState.showLobbies ? 'show-lobbies ' : '') +
-            (MobileState.showUsers ? 'show-users ' : '') +
-            (isPrivate ? 'no-lobbies' : ''),
-        },
-        [
-          m('.chat-overlay', { onclick: () => MobileState.closeAll() }),
-          m(
-            '.messages' + (isRoom ? '.compact-container' : ''),
-            { onclick: () => MobileState.closeAll() },
-            ChatLobbyModel.messages
-          ),
-          m(
-            '.chatMessage',
-            {},
-            [
-              m('textarea.chatMsg', {
-                placeholder: 'Type a message...',
-                enterkeyhint: 'send',
-                onkeydown: (e) => {
-                  if ((e.key === 'Enter' || e.keyCode === 13) && !e.shiftKey) {
-                    const msg = e.target.value;
-                    if (msg.trim() === '') return false;
-                    e.target.value = ' sending ... ';
-                    ChatLobbyModel.sendMessage(msg, () => (e.target.value = ''));
-                    return false;
-                  }
-                },
-              }),
-              m(
-                'button.chat-send-btn',
-                {
-                  onclick: (e) => {
-                    const textarea = e.target.closest('.chatMessage').querySelector('textarea');
-                    const msg = textarea.value;
-                    if (msg.trim() === '') return;
-                    textarea.value = ' sending ... ';
-                    ChatLobbyModel.sendMessage(msg, () => (textarea.value = ''));
-                  },
-                },
-                m('i.fas.fa-paper-plane')
-              ),
-            ]
-          ),
-        ]
-      );
-    },
-  };
 };
 
 /*

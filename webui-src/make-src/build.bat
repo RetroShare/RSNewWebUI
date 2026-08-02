@@ -8,7 +8,7 @@ echo "### Starting WebUI build ###"
 set src=%~dp0..\..\webui-src
 
 rem Output destination
-if "%~1" == "" (
+if "%~1"=="" (
 	set publicdest=%~dp0..\..\webui
 ) else (
 	set publicdest=%~1\webui
@@ -36,6 +36,7 @@ copy %src%\make-src\template.js %publicdest%\app.js
 
 pushd %src%\app
 set "basefolder=%cd%\"
+set "lastsection="
 for /R %%F in (*.js) do call :addfile-js "%basefolder%" "%%F"
 popd
 
@@ -54,7 +55,15 @@ set registername=%~dpn2
 set registername=!registername:%basefolder%=!
 set registername=%registername:\=/%
 
-echo - adding %registername% ...
+for /f "tokens=1,2 delims=/" %%A in ("!registername!") do (
+	if "%%B"=="" (
+		echo - adding !registername! ...
+		set "lastsection="
+	) else if not "!lastsection!"=="%%A" (
+		echo - adding %%A/* ...
+		set "lastsection=%%A"
+	)
+)
 echo require.register("%registername%", function(exports, require, module) { >> %publicdest%\app.js
 type %fname% >> %publicdest%\app.js
 echo. >> %publicdest%\app.js

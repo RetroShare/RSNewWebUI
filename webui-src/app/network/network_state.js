@@ -149,7 +149,7 @@ function sendDirectChatMessage() {
     '/rsChats/sendChat',
     {
       id: { type: 1, peer_id: State.currentChatPeerId },
-      msg: msg,
+      msg,
     },
     (data, success) => {
       if (success) {

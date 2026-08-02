@@ -195,7 +195,7 @@ const GenericMailList = () => {
                 m(util.MessageSummary, {
                   key: msg.msgId,
                   details: msg,
-                  category: category,
+                  category,
                 })
               )
             )

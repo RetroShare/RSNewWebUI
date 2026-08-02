@@ -33,7 +33,7 @@ const PeopleSidebar = () => {
     },
     view: () => {
       // 1. Determine list based on mainTab ('people' vs 'chats')
-      let displayItems = [];
+      let displayItems;
 
       // 0. Compute active chats count (conversations with real message history)
       const allUserGroupIds = new Set((rs.userList.users || []).map((u) => u.mGroupId));
@@ -47,7 +47,7 @@ const PeopleSidebar = () => {
       });
 
       if (State.mainTab === 'people') {
-        let baseList = [];
+        let baseList;
         if (State.activeFilter === 'own') {
           baseList = peopleUtil.sortIds(State.ownGxsIds) || [];
         } else if (State.activeFilter === 'contacts') {
@@ -57,13 +57,13 @@ const PeopleSidebar = () => {
         }
 
         displayItems = baseList.filter((item) => {
-          let name = State.activeFilter === 'own' ? (rs.userList.username(item) || 'Unknown') : (item.mGroupName || 'Unknown');
+          const name = State.activeFilter === 'own' ? (rs.userList.username(item) || 'Unknown') : (item.mGroupName || 'Unknown');
           return name.toLowerCase().includes(State.searchString.toLowerCase());
         });
 
         displayItems.sort((a, b) => {
-          let nameA = State.activeFilter === 'own' ? (rs.userList.username(a) || '') : (a.mGroupName || '');
-          let nameB = State.activeFilter === 'own' ? (rs.userList.username(b) || '') : (b.mGroupName || '');
+          const nameA = State.activeFilter === 'own' ? (rs.userList.username(a) || '') : (a.mGroupName || '');
+          const nameB = State.activeFilter === 'own' ? (rs.userList.username(b) || '') : (b.mGroupName || '');
           return nameA.localeCompare(nameB);
         });
       } else {

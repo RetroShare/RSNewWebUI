@@ -1,7 +1,5 @@
 const m = require('mithril');
 const rs = require('rswebui');
-const peopleUtil = require('people/people_util');
-const people = require('people/people');
 
 // **************** utility functions ********************
 
@@ -35,7 +33,7 @@ function loadDistantChatDetails(pid, apply) {
   rs.rsJsonApiRequest(
     '/rsChats/getDistantChatStatus',
     {
-      pid: pid,
+      pid,
     },
     (detail, success) => {
       if (success && detail.retval) {
@@ -118,7 +116,7 @@ function renderChatMessage(rawText) {
       if (src) {
         parts.push(
           m('img.chat-embedded-image', {
-            src: src,
+            src,
             style: {
               maxWidth: '100%',
               maxHeight: '300px',
@@ -160,7 +158,7 @@ function renderChatMessage(rawText) {
   if (rawText.trim().startsWith('data:image/')) {
     const src = rawText.trim();
     return m('img.chat-embedded-image', {
-      src: src,
+      src,
       style: {
         maxWidth: '100%',
         maxHeight: '300px',
@@ -248,7 +246,7 @@ function renderTextWithEmoji(text) {
   const parts = [];
   let last = 0;
   let match;
-  // eslint-disable-next-line no-cond-assign
+
   while ((match = emojiRegex.exec(text)) !== null) {
     if (match[0].length === 0) { emojiRegex.lastIndex++; continue; }
     if (match.index > last) parts.push(text.slice(last, match.index));
@@ -442,8 +440,8 @@ const Message = () => {
           x: e.clientX,
           y: e.clientY,
           messageText: targetText,
-          username: username,
-          gxsId: gxsId,
+          username,
+          gxsId,
         };
         m.redraw();
       };
@@ -581,7 +579,7 @@ const ChatLobbyModel = {
   loadHistory(id, type) {
     const chatPeerId = {
       broadcast_status_peer_id: '00000000000000000000000000000000',
-      type: type,
+      type,
       peer_id: '00000000000000000000000000000000',
       distant_chat_id: '00000000000000000000000000000000',
       lobby_id: { xstr64: '0' },
@@ -594,7 +592,7 @@ const ChatLobbyModel = {
     rs.rsJsonApiRequest(
       '/rsHistory/getMessages',
       {
-        chatPeerId: chatPeerId,
+        chatPeerId,
         loadCount: 20,
       },
       (data, success) => {
@@ -623,11 +621,11 @@ const ChatLobbyModel = {
     rs.rsJsonApiRequest(
       '/rsHistory/getMessages',
       {
-        chatPeerId: chatPeerId,
+        chatPeerId,
         loadCount: 0,
       },
       (data, success) => {
-        let msgs = (success && data && data.msgs) ? data.msgs : [];
+        const msgs = (success && data && data.msgs) ? data.msgs : [];
         msgs.sort((a, b) => (a.sendTime || a.recvTime) - (b.sendTime || b.recvTime));
         ChatHubState.fullHistoryMessages = msgs;
         ChatHubState.isHistoryLoading = false;
@@ -642,7 +640,7 @@ const ChatLobbyModel = {
       '/rsChats/setIdentityForChatLobby',
       {
         lobby_id: { xstr64: lobbyId },
-        nick: nick,
+        nick,
       },
       () => m.route.set('/chat/:lobby', { lobby: lobbyId }),
       true
@@ -685,7 +683,7 @@ const ChatLobbyModel = {
     const id = this.lastLobbyId || m.route.param('lobby');
     const cid = {
       broadcast_status_peer_id: '00000000000000000000000000000000',
-      type: type,
+      type,
       peer_id: '00000000000000000000000000000000',
       distant_chat_id: '00000000000000000000000000000000',
       lobby_id: { xstr64: '0' },
@@ -805,13 +803,13 @@ const ChatLobbyModel = {
       '/rsChats/sendChat',
       {
         id: cid,
-        msg: msg,
+        msg,
       },
       (data, success) => {
         if (success) {
           const echoMsg = {
             chat_id: cid,
-            msg: msg,
+            msg,
             sendTime: Math.floor(Date.now() / 1000),
             lobby_peer_gxs_id: this.currentLobby.gxs_id,
           };

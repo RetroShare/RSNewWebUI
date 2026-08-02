@@ -1,68 +1,85 @@
-#!/bin/bash
+#!/bin/sh
 
-# create webfiles from sources at compile time (works without npm/node.js)
+# Create webfiles from sources at compile time (works without npm/node.js)
+#
+# Usage: build.sh [DEST_PARENT] [TARGET_FILE] [EXTRA_COPY_DIR]
+#   DEST_PARENT     parent dir of the generated webui/ (default: repo root)
+#   TARGET_FILE     build only this file (index.html|styles.css|app.js); default: all
+#   EXTRA_COPY_DIR  also copy TARGET_FILE into EXTRA_COPY_DIR/webui/
+
+set -eu
 
 echo "### Starting WebUI build ###"
 
-src=$(readlink -f $(dirname $0))/../../webui-src
+# Resolve the script's own directory portably.
+script_dir=$(cd -- "$(dirname -- "$0")" && pwd -P)
+src="$script_dir/../../webui-src"
 
-if [ "$1" = "" ]; then
-	publicdest=$(readlink -f $(dirname $0))/../../webui
+dest_parent="${1:-}"
+target="${2:-}"
+extra_copy_dir="${3:-}"
+
+if [ -z "$dest_parent" ]; then
+  publicdest="$script_dir/../../webui"
 else
-	publicdest=$1/webui
+  publicdest="$dest_parent/webui"
 fi
 
-if [ "$2" = "" ]; then
-	if [ -d "$publicdest" ]; then
-		echo removing existing $publicdest
-		rm $publicdest -R
-	fi
+# Full rebuild (no specific target): remove any existing output first.
+if [ -z "$target" ] && [ -d "$publicdest" ]; then
+  echo "removing existing $publicdest"
+  rm -rf -- "$publicdest"
 fi
 
-if [ ! -d  "$publicdest" ]; then
-	echo creating $publicdest
-	mkdir $publicdest
+mkdir -p -- "$publicdest"
+
+if [ -z "$target" ] || [ "$target" = "index.html" ]; then
+  echo "copying html file"
+  cp -- "$src/index.html" "$publicdest/"
 fi
 
-# For using recursive directory search(requires bash v4+)
-shopt -s globstar
-
-if [ "$2" = "" ]||[ "$2" = "index.html" ]; then
-	echo copying html file
-    cp $src/index.html $publicdest/
+if [ -z "$target" ] || [ "$target" = "styles.css" ]; then
+  echo "copying css file"
+  cp -- "$src/styles.css" "$publicdest/"
 fi
 
-if [ "$2" = "" ]||[ "$2" = "styles.css" ]; then
-	echo copying css file
-	cp $src/styles.css $publicdest/
+if [ -z "$target" ] || [ "$target" = "app.js" ]; then
+  echo "building app.js:"
+  echo "- copying template.js ..."
+  cp -- "$src/make-src/template.js" "$publicdest/app.js"
+
+  js_root="$src/app"
+  find "$js_root" -type f -name '*.js' | LC_ALL=C sort | while IFS= read -r filename; do
+    fname="${filename#"$js_root/"}"
+    fname="${fname%.*}"
+    case "$fname" in
+    */*)
+      section="${fname%%/*}/*"
+      if [ "$section" != "${last_section:-}" ]; then
+        echo "- adding $section ..."
+        last_section="$section"
+      fi
+      ;;
+    *)
+      echo "- adding $fname ..."
+      last_section=
+      ;;
+    esac
+    {
+      printf 'require.register("%s", function(exports, require, module) {\n' "$fname"
+      cat -- "$filename"
+      printf '\n});\n'
+    } >>"$publicdest/app.js"
+  done
 fi
 
-if [ "$2" = "" ]||[ "$2" = "app.js" ]; then
-	echo building app.js:
-	echo - copying template.js ...
-	cp $src/make-src/template.js $publicdest/app.js
+echo "copying assets folder"
+cp -R -- "$src/assets/." "$publicdest/"
 
-        js_source=$src/app/
-	for filename in $src/app/**/*.js; do
-                fname="${filename#$js_source}"
-		fname="${fname%.*}"
-		echo - adding $fname ...
-		echo require.register\(\"$fname\", function\(exports, require, module\) { >> $publicdest/app.js
-		cat $filename >> $publicdest/app.js
-		echo >> $publicdest/app.js
-		echo }\)\; >> $publicdest/app.js
-	done
+if [ -n "$target" ] && [ -n "$extra_copy_dir" ]; then
+  mkdir -p -- "$extra_copy_dir/webui"
+  echo "copying $target to $extra_copy_dir/webui/$target"
+  cp -- "$publicdest/$target" "$extra_copy_dir/webui/$target"
 fi
 
-echo copying assets folder
-cp -r $src/assets/* $publicdest/
-
-if [ "$2" != "" ]&&[ "$3" != "" ]; then
-	if [ ! -d "$3/webui" ]; then
-		echo creating $3/webui
-		mkdir $3/webui
-	fi
-	echo copying $2 nach $3/webui/$2
-	cp $publicdest/$2 $3/webui/$2
-fi
 echo "### WebUI build complete ###"

@@ -579,8 +579,8 @@ const displayHiddenServiceInfo = () => {
       details && details.hiddenNodeAddress &&
         m('.hidden-service-info', { style: 'display: flex; flex-direction: column; gap: 0.75rem; width: 100%;' }, [
           m('p.proxy-description', { style: 'margin-bottom: 0.5rem; color: #475569;' }, details.hiddenType === 4
-            ? "I2P has been automatically configured by Retroshare. You shouldn't need to change anything here."
-            : "Tor has been automatically configured by Retroshare. You shouldn't need to change anything here."
+            ? 'I2P has been automatically configured by Retroshare. You shouldn\'t need to change anything here.'
+            : 'Tor has been automatically configured by Retroshare. You shouldn\'t need to change anything here.'
           ),
           // Local Address + Local Port row
           m('.nw-config-row', { style: 'display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: center;' }, [
