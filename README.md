@@ -1,228 +1,206 @@
-# Web Interface for Retroshare
+# RetroShare Web Interface
 
-A web-based frontend for [Retroshare](https://github.com/Retroshare/Retroshare)
-which communicates with the client through the JSON API.
+This project is the browser interface for
+[RetroShare](https://github.com/RetroShare/RetroShare). It talks to RetroShare
+through its JSON API.
 
-## Requirements
+Recent RetroShare releases already include this interface. Follow this guide if
+you want to build it yourself, change it, or contribute to it.
 
-- Retroshare v0.6.5+ with JSON API enabled(see instructions below)
-- A modern JavaScript-enabled web browser
-- Node.js 24 LTS or newer and npm when building from SCSS sources
-- A POSIX-compatible `sh` on Linux or macOS
-- [`qmake`](https://doc.qt.io/qt-5/qmake-manual.html) (optional packaging integration)
+## What you need
 
-## Installation
+- RetroShare 0.6.5 or newer, with the JSON API enabled
+- A modern web browser
 
-> **Note:** The Web Interface is shipped by default in the latest release of
-> Retroshare. If you want to customise it or [contribute](#contributing) to it
-> then proceed with the following steps.
+## Set up RetroShare
 
-### Install WebUI
+### Enable the JSON API
 
-First, you need to download and install the web interface javascript code
-itself:
+1. Open RetroShare.
+2. Go to **Preferences > JSON API**.
+3. Enable **RetroShare JSON API Server**.
 
-1. **Clone the repo**:
-   You can clone using git, or download the zip file and extract it
+### Enable the Web Interface
 
-   ```bash
-   git clone https://github.com/Retroshare/RSNewWebUI
-   cd RSNewWebUI
-   ```
+1. Go to **Preferences > Web Interface**.
+2. Enable the Web Interface.
+3. Choose a password.
+4. Set **Web interface directory** to this repository's `webui/` directory if
+   RetroShare does not find it automatically.
+5. Click **Apply**.
 
-2. **Build the files**:
-   If you have `qmake` installed, you need to run this command from the repository root to build it:
+The JSON API page should now show an authenticated token named
+`webui:<your password>`.
 
-   ```bash
-   qmake .
-   ```
+## Open the interface
 
-   `qmake` packages the committed generated `webui-src/styles.css`. Without `qmake`, run the shell build script instead:
+Open [https://localhost:9092/index.html](https://localhost:9092/index.html) in
+your browser. If you changed the JSON API port, replace `9092` with that port.
 
-   ```bash
-   sh webui-src/make-src/build.sh
-   ```
+### Connect to a remote or headless server
 
-   On Windows, use the batch script to bundle the checked-in generated files:
+The Web Interface listens on localhost by default. To reach RetroShare on a
+remote server, run this command on your local computer:
 
-   ```bash
-   webui-src\make-src\build.bat
-   ```
-
-### Compile Retroshare with JSON API
-
-If you are on older versions of Retroshare then it needs to be compiled with
-non-default options as follows:
-
-```bash
-qmake CONFIG+="debug rs_jsonapi rs_webui"
-make
+```sh
+ssh -L 9092:localhost:9092 -N login@server
 ```
 
-See the [RetroShare repo](https://github.com/Retroshare/Retroshare) for more
-detailed instructions on compiling RetroShare. You should afterwards see a tab
-'JSON API' and a tab 'Web Interface' in the **Preferences**.
-
-### Enable JSON API
-
-You need to enable the JSON API, through which the web interface communicates
-with the client:
-
-1. Open Retroshare, go to `Preferences > JSON API`.
-2. Make sure the **Enable Retroshare JSON API Server** box is checked.
-
-### Enable Web Interface
-
-1. Go to `Preferences > Webinterface`.
-2. Make sure the **Enable Retroshare WEB Interface** box is checked.
-3. Enter a password to protect access to the web interface.
-
-If necessary, point the **Web interface directory** to the place where the webui
-files are compiled. This is usually `RSNewWebUI/webui/`.
-
-In any case, click on "Apply settings" after making the changes. If everything
-goes ok, you should see a new token `webui:[your password]` under the
-**Authenticated Tokens** section in the **JSON API** preferences page.
-
-## Usage
-
-### Basic Usage
-
-This is the default link to access the WebInterface.
-<br>
-Open this link your browser ->
+Keep that command running, then open
 [https://localhost:9092/index.html](https://localhost:9092/index.html).
 
-> Note: If you changed the port in the JSON API preferences pages, the port
-> in the above line needs to be changed accordingly.
+The Web Interface cannot create a new RetroShare node. Create the node with the
+desktop interface first, then copy its RetroShare data directory to the server.
+On Linux this directory is usually `.retroshare/`.
 
-### Advanced Usage
+Start the service on the server with:
 
-The Web interface is only accessible from localhost (127.0.0.1). If you want to
-access the web interface of a headless retroshare server, then you need to
-create a SSH tunnel as follows:
-
-```
-ssh login@server -L 9092:localhost:9092 -N
+```sh
+./retroshare-service/src/retroshare-service -U list -W
 ```
 
-After that, the Web interface of the Retroshare running on 'server' is tunneled
-to your local machine and accessible through localhost:9092.
-
-Running a headless retroshare server is one possibility. The Webinterface
-however does not allow you to create new nodes. Therefore the steps are:
-
-1. Create a node using the standard Qt UI. That can be done in another machine.
-2. Copy the retroshare data directory (.retroshare/ on linux) on the server.
-3. On the server, launch a headless retroshare using that node:
-   ```
-    ./retroshare-service/src/retroshare-service -U list -W
-   ```
-
-After that follow instructions to launch your profile (you need to choose a
-webui password and enter the ID and login password of your node).
+Follow the prompts to select the profile and enter its passwords.
 
 ## Contributing
 
-### Setup
+To work on the source, you need:
 
-Development requires Node.js 24 or newer, npm, `sh` on macOS or Linux, and a
-RetroShare instance with the JSON API and Web Interface enabled for manual
-testing.
+- Node.js 24 or newer and npm
+- `sh` on macOS or Linux; Windows uses the included batch file
+- `qmake` only if you want to use RetroShare's qmake build integration
 
-Fork and clone the repository, then install the locked dependencies:
+### First-time setup
 
-```bash
+Fork the repository, clone your fork, and install the locked dependencies:
+
+```sh
+git clone https://github.com/YOUR-USERNAME/RSNewWebUI.git
 cd RSNewWebUI/webui-src
 npm ci
 ```
 
-### Source and generated files
+### Where to make changes
 
-Edit files under `webui-src/app/`, including SCSS under
-`webui-src/app/scss/`. Do not edit these generated files by hand:
+- JavaScript source is in `webui-src/app/`.
+- SCSS source is in `webui-src/app/scss/`.
+- `webui-src/styles.css` is generated from `app/scss/main.scss`. Do not edit it
+  by hand, but commit it with the SCSS changes that generated it.
+- Everything in `webui/` is build output. Do not edit those files by hand.
+- `webui-src/app/mithril.js` contains Mithril 2.3.8. Change it only when
+  intentionally upgrading Mithril.
 
-- `webui-src/styles.css` is generated from `webui-src/app/scss/main.scss`.
-- `webui/app.js`, `webui/styles.css`, and `webui/index.html` are build output.
+### Normal development commands
 
-`webui-src/app/mithril.js` is the vendored Mithril 2.3.8 runtime. Replace it
-only during an intentional Mithril upgrade.
+Run these commands from `webui-src/`:
 
-### Build and test
-
-From `webui-src/`, compile SCSS and create the deployable `webui/` directory:
-
-```bash
+```sh
 npm run build
 npm run lint
 ```
 
-These npm commands use `build.bat` on native Windows and `build.sh` on other
-platforms.
+`npm run build` compiles the SCSS and creates the complete `webui/` directory.
+It automatically uses `build.bat` on Windows and `build.sh` on macOS or Linux.
 
-Commit SCSS changes together with the regenerated `webui-src/styles.css`.
-`qmake .` packages that committed CSS but does not compile SCSS. Running
-`make` alone does not rebuild this `TEMPLATE = subdirs` project; rerun
-`qmake .` from the repository root when using qmake.
+`npm run lint` checks the source files and does not require `webui/` to exist.
 
-The shell bundler works without Node.js, but only copies the existing CSS. Run
-it from `webui-src/` with `sh`:
+To rebuild CSS whenever an SCSS file changes, run:
 
-```bash
-sh make-src/build.sh
+```sh
+npm run watch
 ```
 
-For focused rebuilds, run these commands from `webui-src/`:
+Watch mode updates `webui-src/styles.css` only. Run `npm run build` when you
+also need to update the files in `webui/`.
 
-```bash
+### Using qmake during development
+
+Run qmake from the repository root:
+
+```sh
+qmake .
+```
+
+qmake copies the committed `webui-src/styles.css`; it does not compile SCSS.
+After changing SCSS, run `npm run build` first. Rerun `qmake .` when you need
+qmake to package newer WebUI files; `make` alone does not do that for this
+project.
+
+A standalone checkout may show a warning about a missing `../retroshare.pri`.
+The WebUI files are still generated.
+
+### Building without npm or qmake
+
+These commands create `webui/` from the files already stored in the repository.
+They do not compile SCSS.
+
+From the repository root on macOS or Linux:
+
+```sh
+sh webui-src/make-src/build.sh
+```
+
+From the repository root on Windows:
+
+```bat
+webui-src\make-src\build.bat
+```
+
+### Optional focused builds
+
+The normal `npm run build` command is the easiest choice. On macOS or Linux,
+you can rebuild only one generated file from `webui-src/`:
+
+```sh
 # JavaScript only
 sh make-src/build.sh "" app.js
 
 # HTML only
 sh make-src/build.sh "" index.html
 
-# Compile and copy CSS only
+# CSS only
 ./node_modules/.bin/sass --no-source-map --style=compressed app/scss/main.scss styles.css
 sh make-src/build.sh "" styles.css
 ```
 
-`npm run watch` recompiles SCSS into `webui-src/styles.css`; it does not copy
-the CSS into `webui/` or rebuild JavaScript. Use the CSS-only command above
-when testing watched changes through RetroShare.
+### Before opening a pull request
 
-Before submitting, run the full build and lint commands, then point
-RetroShare's **Web interface directory** at `webui/` and manually test the
-affected screens. ESLint, generated JavaScript syntax, the build dispatcher,
-and shell syntax on non-Windows systems are checked by `npm run lint`; no
-formatting script is defined.
+1. Run `npm run build`.
+2. Run `npm run lint`.
+3. Point RetroShare's **Web interface directory** to this repository's
+   `webui/` directory.
+4. Manually test the screens you changed.
+5. If you changed SCSS, include the regenerated `webui-src/styles.css`.
 
-### References
+There is no separate formatting command.
 
-Now, While contributing you can checkout these resources as you might need to
-look up for these often.
+### Building older RetroShare versions
 
-- [mithril](https://mithril.js.org/hyperscript.html)
-- You can list files with @jsonapi in libretroshare/src/retroshare of
-  [retroshare](https://github.com/RetroShare/RetroShare):
+If you are testing with an older RetroShare version, you may need to build it
+with the JSON API and WebUI enabled:
 
-  ```
-  grep -c "@jsonapi" *.h|grep -v ":0"
-  ```
+```sh
+qmake CONFIG+="debug rs_jsonapi rs_webui"
+make
+```
 
-<hr>
+See the [RetroShare repository](https://github.com/RetroShare/RetroShare) for
+complete build instructions. After building, RetroShare preferences should
+contain both **JSON API** and **Web Interface** pages.
 
-And, that's it. You are more than welcome to contribute to this project. If you
-have any questions/difficulties in setting up or running the project, you can
-raise an issue and we will be more than willing to help you out.
+### Useful references
 
-### Bug Reports & Feature requests
+- [Mithril documentation](https://mithril.js.org/)
+- [RetroShare source](https://github.com/RetroShare/RetroShare)
 
-Please create an [issue](https://github.com/Retroshare/RsNewWebUI/issues)
-concisely describing the bug you faced, or the feature you would like to see
-implemented.
+To find RetroShare headers that expose JSON API methods, run this from
+`libretroshare/src/retroshare/` in the RetroShare source tree:
 
-### Development
+```sh
+grep -c "@jsonapi" *.h | grep -v ":0"
+```
 
-Whether you are a JavaScript developer or a Web designer, you can help make the
-web interface better. Get in touch with us on the Developer forums in
-Retroshare.
+## Get help or report a problem
+
+Open a [GitHub issue](https://github.com/RetroShare/RSNewWebUI/issues) and
+briefly explain what happened, what you expected, and how someone can reproduce
+it. You can also join the RetroShare developer forums to discuss development.
