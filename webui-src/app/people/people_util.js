@@ -70,7 +70,7 @@ const UserAvatar = () => ({
           width: sizeStr,
           height: sizeStr,
           borderRadius: isSquare ? '0' : '50%',
-          backgroundColor: backgroundColor,
+          backgroundColor,
         }
       },
       m('p', {

@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../abstracts/' as *;
 
 .file-view {
@@ -71,7 +72,7 @@ table.friendsfiles td:nth-child(2) {
   margin-top: 1rem;
   padding: 8px;
   @include flex($gap: 8px);
-  border: 1px solid transparentize($dark-color, 0.8);
+  border: 1px solid color.adjust($dark-color, $alpha: -0.8);
   border-radius: 6px;
   height: 100%;
   overflow: auto;
@@ -79,11 +80,11 @@ table.friendsfiles td:nth-child(2) {
   &__keywords {
     flex-basis: 15%;
     padding-right: 0.25rem;
-    border-right: 1px solid transparentize($dark-color, 0.9);
+    border-right: 1px solid color.adjust($dark-color, $alpha: -0.9);
 
     & .keywords-container {
       @include flex(column);
-      border-top: 2.5px solid transparentize($dark-color, 0.92);
+      border-top: 2.5px solid color.adjust($dark-color, $alpha: -0.92);
       margin-top: 0.125rem;
       padding-top: 0.25rem;
 

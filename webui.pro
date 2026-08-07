@@ -33,7 +33,7 @@ WEBUI_SRC_CSS = $$PWD/webui-src/styles.css
 
 WEBUI_SRC_IMAGE = $$PWD/data/retroshare.svg
 
-win32-g++ {
+win32 {
     isEmpty(QMAKE_SH) {
         # Windows native build
         WEBUI_SRC_SCRIPT = $$PWD/webui-src/make-src/build.bat
@@ -72,7 +72,7 @@ win32-g++ {
 } else {
     # create dummy files, we need it to include files on first try
 
-    system(bash webui-src/make-src/build.sh .)
+    system(sh webui-src/make-src/build.sh .)
 
     WEBUI_SRC_SCRIPT = webui-src/make-src/build.sh
 
@@ -80,19 +80,19 @@ win32-g++ {
 
     create_webfiles_html.output = webui/index.html
     create_webfiles_html.input = WEBUI_SRC_HTML
-    create_webfiles_html.commands = bash $$_PRO_FILE_PWD_/webui-src/make-src/build.sh $$_PRO_FILE_PWD_ index.html .
+    create_webfiles_html.commands = sh $$_PRO_FILE_PWD_/webui-src/make-src/build.sh $$_PRO_FILE_PWD_ index.html .
     create_webfiles_html.variable_out = JUNK
     create_webfiles_html.CONFIG = combine no_link
 
     create_webfiles_js.output = webui/app.js
     create_webfiles_js.input = WEBUI_SRC_JS
-    create_webfiles_js.commands = bash $$_PRO_FILE_PWD_/webui-src/make-src/build.sh $$_PRO_FILE_PWD_ app.js .
+    create_webfiles_js.commands = sh $$_PRO_FILE_PWD_/webui-src/make-src/build.sh $$_PRO_FILE_PWD_ app.js .
     create_webfiles_js.variable_out = JUNK
     create_webfiles_js.CONFIG = combine no_link
 
     create_webfiles_css.output = webui/styles.css
     create_webfiles_css.input = WEBUI_SRC_CSS
-    create_webfiles_css.commands = bash $$_PRO_FILE_PWD_/webui-src/make-src/build.sh $$_PRO_FILE_PWD_ styles.css .
+    create_webfiles_css.commands = sh $$_PRO_FILE_PWD_/webui-src/make-src/build.sh $$_PRO_FILE_PWD_ styles.css .
     create_webfiles_css.variable_out = JUNK
     create_webfiles_css.CONFIG = combine no_link
 

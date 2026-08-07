@@ -18,7 +18,7 @@ function formatFileSize(bytes) {
 const Layout = () => {
   let showCc = false;
   let showBcc = false;
-  let ownAvatars = {};
+  const ownAvatars = {};
   let attachments = [];
   let showEmojiPicker = false;
   let emojiSearch = '';
@@ -397,7 +397,7 @@ const Layout = () => {
           const attHtml = `
             <br/><hr style="border:none;border-top:1px solid #e2e8f0;margin:1rem 0;"/><div style="margin-top:10px;font-weight:bold;color:#475569;font-size:0.9rem;">Attachments (${attachments.length}):</div>
             <ul style="list-style:none;padding:0;margin:6px 0;">
-              ${attachments.map(att => `<li style="padding:4px 0;color:#1e293b;font-size:0.875rem;">📎 <b>${att.name}</b> <span style="color:#94a3b8;font-size:0.8em;">(${att.size})</span></li>`).join('')}
+              ${attachments.map((att) => `<li style="padding:4px 0;color:#1e293b;font-size:0.875rem;">📎 <b>${att.name}</b> <span style="color:#94a3b8;font-size:0.8em;">(${att.size})</span></li>`).join('')}
             </ul>
           `;
           fullMailBody += attHtml;
@@ -701,7 +701,7 @@ const Layout = () => {
                   }),
                 ]),
                 !emojiSearch && m('.emoji-cat-bar', { style: 'display: flex; background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 0.25rem; overflow-x: auto;' },
-                  chatEmoji.EMOJI_CATEGORIES.map(c =>
+                  chatEmoji.EMOJI_CATEGORIES.map((c) =>
                     m('button', {
                       style: `border: none; background: ${c === emojiCategory ? '#ffffff' : 'transparent'}; border-radius: 0.25rem; padding: 0.3rem 0.4rem; cursor: pointer; font-size: 1rem; box-shadow: ${c === emojiCategory ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'};`,
                       title: c,
@@ -711,9 +711,9 @@ const Layout = () => {
                 ),
                 m('.emoji-grid-body', { style: 'padding: 0.5rem; display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.25rem; max-height: 230px; overflow-y: auto;' },
                   (emojiSearch
-                    ? Object.values(chatEmoji.EMOJI_DATA).flat().filter(e => e.includes(emojiSearch))
+                    ? Object.values(chatEmoji.EMOJI_DATA).flat().filter((e) => e.includes(emojiSearch))
                     : (chatEmoji.EMOJI_DATA[emojiCategory] || [])
-                  ).map(e =>
+                  ).map((e) =>
                     m('button', {
                       style: 'border: none; background: transparent; font-size: 1.25rem; cursor: pointer; padding: 0.25rem; border-radius: 0.25rem; transition: background 0.15s ease;',
                       onmouseenter: (ev) => (ev.currentTarget.style.background = '#f1f5f9'),

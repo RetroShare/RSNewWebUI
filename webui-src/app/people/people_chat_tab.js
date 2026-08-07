@@ -100,14 +100,6 @@ const ChatTab = () => {
 
       const canTalk = State.distantChatStatus && State.distantChatStatus.status === 2;
 
-      // Filter history by search query for history modal
-      const query = (State.historySearchQuery || '').toLowerCase();
-      const filteredHistory = (State.fullHistoryMessages || []).filter((msg) => {
-        if (!query) return true;
-        const text = (msg.msg || msg.message || '').toLowerCase();
-        return text.includes(query);
-      });
-
       return m('.network-chat-view', [
         m('.chat-identity-select-container', {
           style: 'padding: 0.5rem 1rem; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;',

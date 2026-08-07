@@ -39,7 +39,7 @@ function createboard() {
           m('label[for=thumbnail]', 'Thumbnail: '),
           m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
             onchange: async (e) => {
-              let reader = new FileReader();
+              const reader = new FileReader();
               reader.onloadend = function () {
                 thumbnail = reader.result.substring(reader.result.indexOf(',') + 1);
               };
