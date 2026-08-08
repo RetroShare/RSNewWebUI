@@ -89,6 +89,27 @@ function getStatusTooltip(status) {
   }
 }
 
+// Chat messages travel as HTML. Stripping the tags is not enough: the entities
+// they leave behind are still raw text and end up displayed verbatim, the most
+// visible one being the &nbsp; that Qt emits for leading and repeated spaces.
+// A textarea decodes them without ever parsing markup, since its content model
+// is plain text and nothing in the string can become an element.
+function decodeHtmlEntities(text) {
+  const el = document.createElement('textarea');
+  el.innerHTML = text;
+  return el.value;
+}
+
+// Turn the HTML payload of a chat message into the text we display.
+function htmlToText(text) {
+  return decodeHtmlEntities(
+    text
+      .replaceAll('<br/>', '\n')
+      .replaceAll('<br>', '\n')
+      .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '')
+  );
+}
+
 function renderChatMessage(rawText) {
   if (!rawText) return '';
 
@@ -103,10 +124,7 @@ function renderChatMessage(rawText) {
     while ((match = imgRegex.exec(rawText)) !== null) {
       if (match.index > lastIndex) {
         const precedingText = rawText.substring(lastIndex, match.index);
-        const cleanText = precedingText
-          .replaceAll('<br/>', '\n')
-          .replaceAll('<br>', '\n')
-          .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
+        const cleanText = htmlToText(precedingText);
         if (cleanText) {
           parts.push(renderTextWithEmoji(cleanText));
         }
@@ -142,10 +160,7 @@ function renderChatMessage(rawText) {
 
     if (lastIndex < rawText.length) {
       const trailingText = rawText.substring(lastIndex);
-      const cleanText = trailingText
-        .replaceAll('<br/>', '\n')
-        .replaceAll('<br>', '\n')
-        .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
+      const cleanText = htmlToText(trailingText);
       if (cleanText) {
         parts.push(renderFormattedMessageText(cleanText));
       }
@@ -179,12 +194,11 @@ function renderChatMessage(rawText) {
   }
 
   // 3. Normal text message
-  const cleanText = rawText
-    .replace(/<blockquote[^>]*>/gi, '\n> ')
-    .replace(/<\/blockquote>/gi, '\n')
-    .replaceAll('<br/>', '\n')
-    .replaceAll('<br>', '\n')
-    .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
+  const cleanText = htmlToText(
+    rawText
+      .replace(/<blockquote[^>]*>/gi, '\n> ')
+      .replace(/<\/blockquote>/gi, '\n')
+  );
 
   return renderFormattedMessageText(cleanText);
 }
