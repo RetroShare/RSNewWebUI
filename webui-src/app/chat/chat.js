@@ -170,13 +170,13 @@ function pollHashStatus(localpath) {
       const info = data.info;
       const sizeNum = info.size.xint64 || parseInt(info.size.xstr64) || info.size;
       const fileLink = `<a href="retroshare://file?name=${encodeURIComponent(info.name)}&size=${sizeNum}&hash=${info.hash}">${info.name}</a> (${rs.formatBytes(sizeNum)})`;
-      
+
       const textarea = document.querySelector('.chat-hub-textarea');
       if (textarea) {
         const val = textarea.value;
         textarea.value = val ? val + '\n' + fileLink : fileLink;
       }
-      
+
       ChatHubState.showAttachModal = false;
       ChatHubState.isHashing = false;
       ChatHubState.attachPath = '';
@@ -1021,7 +1021,7 @@ const ChatRoomDetailView = () => {
           }));
         } else if (typeof room.gxs_ids === 'object') {
           participants = Object.keys(room.gxs_ids).map((key) => ({
-            key: key,
+            key,
             name: rs.userList.username(key) || key
           }));
         }
@@ -1344,7 +1344,7 @@ const Layout = {
       ChatHubState.showCreateRoomModal && m('.attach-modal-overlay', [
         m('.attach-modal', [
           m('h4', 'Create New Chat Room'),
-          
+
           m('.form-field', { style: 'display: flex; flex-direction: column; gap: 0.25rem;' }, [
             m('label', { style: 'font-weight: bold; font-size: 0.9rem; color: #475569;' }, 'Room Name:'),
             m('input[type=text]', {
@@ -1354,7 +1354,7 @@ const Layout = {
               style: 'padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; font-size: 0.9rem;'
             })
           ]),
-          
+
           m('.form-field', { style: 'display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.5rem;' }, [
             m('label', { style: 'font-weight: bold; font-size: 0.9rem; color: #475569;' }, 'Topic:'),
             m('input[type=text]', {
@@ -1372,7 +1372,7 @@ const Layout = {
               onchange: (e) => { ChatHubState.newRoomIdentity = e.target.value; },
               style: 'padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; font-size: 0.9rem; background-color: #ffffff;'
             }, [
-              ChatHubState.ownGxsIdentities && ChatHubState.ownGxsIdentities.map(id => {
+              ChatHubState.ownGxsIdentities && ChatHubState.ownGxsIdentities.map((id) => {
                 const details = ChatHubState.gxsDetails[id];
                 const name = details ? (details.mNickname || details.mGroupName) : id;
                 return m('option', { value: id }, name);
@@ -1414,7 +1414,7 @@ const Layout = {
                 let flags = 0;
                 if (isPublic) flags |= 4;
                 if (isSigned) flags |= 8;
-                
+
                 rs.rsJsonApiRequest('/rsChats/createChatLobby', {
                   lobby_name: name,
                   lobby_identity: identity,

@@ -134,7 +134,7 @@ function BoardView() {
           const itemObj = plist[key] || {};
           const p = itemObj.post || itemObj;
           const meta = p.mMeta || {};
-          
+
           let thumb = '';
           if (p.mImage && p.mImage.mData && p.mImage.mData.base64) {
             thumb = p.mImage.mData.base64;
@@ -158,12 +158,12 @@ function BoardView() {
               : (p.mCommentCount !== undefined ? p.mCommentCount : (p.commentCount !== undefined ? p.commentCount : 0)));
 
           return {
-            key: key,
+            key,
             msgId: key,
             title: titleText,
             thumbnail: thumb,
             notes: notesText,
-            commentCount: commentCount,
+            commentCount,
             post: p,
           };
         });
@@ -257,7 +257,7 @@ function BoardView() {
             m('.posts__heading', m('h3', 'Posts')),
             m(boardKanban.BoardView, {
               forumId: v.attrs.id,
-              items: items,
+              items,
             })
           ),
         ]),

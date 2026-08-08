@@ -123,7 +123,7 @@ function PhotoViewModal() {
   function navigate(photoList, newIndex) {
     currentIndex = newIndex;
     m.render(getPhotoOverlay(), m(PhotoViewModal, {
-      photoList: photoList,
+      photoList,
       photoIndex: currentIndex,
     }));
   }
@@ -225,8 +225,8 @@ function openPhotoModal(photoList, photoIndex) {
     justifyContent: 'center',
   });
   m.render(overlay, m(PhotoViewModal, {
-    photoList: photoList,
-    photoIndex: photoIndex,
+    photoList,
+    photoIndex,
   }));
 }
 
@@ -324,7 +324,7 @@ function BoardCard() {
             m(
               'h4.board-card__title',
               {
-                title: title,
+                title,
                 tabindex: 0,
                 onclick: (e) => {
                   e.stopPropagation();
@@ -537,7 +537,7 @@ function Toolbar() {
 function openCommentsModal(item, msgId, forumId) {
   const tab = m.route.param().tab || 'Subscribed';
   m.route.set('/boards/:tab/:mGroupId/:mMsgId', {
-    tab: tab,
+    tab,
     mGroupId: forumId,
     mMsgId: msgId,
   });
@@ -607,7 +607,7 @@ function BoardView() {
         // Top Toolbar with Pagination
         m(Toolbar, {
           key: 'toolbar-node',
-          viewMode: viewMode,
+          viewMode,
           onViewModeChange: (newMode) => {
             viewMode = newMode;
             m.redraw();
@@ -618,8 +618,8 @@ function BoardView() {
             filterText = text;
             currentPage = 1;
           },
-          currentPage: currentPage,
-          totalPages: totalPages,
+          currentPage,
+          totalPages,
           onPageChange: (newPage) => {
             currentPage = newPage;
             m.redraw();
@@ -642,9 +642,9 @@ function BoardView() {
                 const itemKey = item.key || item.msgId || item.mMsgId || index;
                 return m(BoardCard, {
                   key: `card-${itemKey}`,
-                  item: item,
-                  viewMode: viewMode,
-                  forumId: forumId,
+                  item,
+                  viewMode,
+                  forumId,
                   onOpenComments: onOpenComments || ((itemObj, mId, fId) => openCommentsModal(itemObj, mId, fId)),
                   onOpenPhoto: (clickedItem) => {
                     const photoIdx = modalPhotos.findIndex((pi) => {

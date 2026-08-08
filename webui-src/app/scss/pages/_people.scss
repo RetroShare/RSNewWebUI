@@ -195,6 +195,40 @@ img.avatar {
   }
 }
 
+
+
+// Recent-chats split-pane + friends context menu (people_sidebar.js).
+// Recovered from compiled styles.css; hard-coded colors kept as-was.
+
+.friends-list-container .people-context-menu {
+  position: absolute;
+  left: 2rem;
+  width: 210px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  border-radius: 0.375rem;
+  z-index: 1010;
+  padding: 0.25rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.friends-list-container .people-context-menu .menu-item {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  color: #334155;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.friends-list-container .people-context-menu .menu-item:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
 /* Main People Page Flex Layout Container */
 .people-container {
   display: flex !important;
@@ -353,7 +387,7 @@ img.avatar {
     justify-content: center !important;
     align-items: center !important;
   }
-
+}
 
 /* People Sidebar Right-Click Context Menu */
 .people-context-menu {

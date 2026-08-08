@@ -635,11 +635,11 @@ const Table = () => {
       };
 
       let totalItems = 0;
-      let tbody = v.children[0];
+      const tbody = v.children[0];
       if (tbody && tbody.children) {
         const flatChildren = Array.isArray(tbody.children) ? tbody.children.flat().filter(Boolean) : [tbody.children].filter(Boolean);
         totalItems = flatChildren.length;
-        
+
         const start = currentPage * pageSize;
         const end = start + pageSize;
         tbody.children = flatChildren.slice(start, end);

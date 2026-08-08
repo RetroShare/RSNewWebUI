@@ -104,6 +104,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative; // anchors the absolutely-positioned .people-context-menu
 
   .searchbar-container {
     padding: 0.75rem 1rem;

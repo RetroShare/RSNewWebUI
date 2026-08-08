@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../abstracts/' as *;
 
 .side-bar {
@@ -204,7 +205,7 @@ table.mails {
     /* attachments */
     &:nth-child(2) {
       width: 5%;
-      color: darken($light-color, 50%);
+      color: color.adjust($light-color, $lightness: -50%);
     }
     /* subject */
     &:nth-child(3) {
@@ -261,7 +262,7 @@ table.mails {
 
     &:hover {
       background-color: $light-color;
-      color: darken($light-color, 80%);
+      color: color.adjust($light-color, $lightness: -80%);
     }
   }
 }

@@ -41,7 +41,7 @@ function renderPolygon(shapePoints, x, y, angle, shapeAngle, size, color) {
 
 function toSvg(hash, width) {
   if (!hash || hash.length < 18) {
-    hash = "00000000000000000000000000000000";
+    hash = '00000000000000000000000000000000';
   }
 
   const csh = parseInt(hash.substr(0, 1), 16);

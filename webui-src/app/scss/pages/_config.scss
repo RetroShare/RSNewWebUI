@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../abstracts' as *;
 
 .mail {
@@ -7,13 +8,13 @@
   }
   &-tags {
     padding: 0.5rem;
-    border: 1px solid transparentize($dark-color, 0.8);
+    border: 1px solid color.adjust($dark-color, $alpha: -0.8);
     border-radius: 6px;
     &__container {
       @include flex(column);
       & .tag-item {
         @include flex($align: center, $gap: 4px);
-        border-bottom: 1px solid transparentize($dark-color, 0.9);
+        border-bottom: 1px solid color.adjust($dark-color, $alpha: -0.9);
         padding: 2px 0;
 
         &:last-child {

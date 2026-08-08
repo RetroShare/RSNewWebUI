@@ -10,8 +10,8 @@ const ConfigChat = () => {
   let maxStorageDays = 10;
 
   // History states
-  let historyEnable = { private: true, distant: true, lobby: true };
-  let historySaveCount = { private: 500, distant: 500, lobby: 500 };
+  const historyEnable = { private: true, distant: true, lobby: true };
+  const historySaveCount = { private: 500, distant: 500, lobby: 500 };
 
   function loadSettings() {
     // Load Own Identities
