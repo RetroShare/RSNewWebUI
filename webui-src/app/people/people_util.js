@@ -88,7 +88,7 @@ const UserAvatar = () => ({
           flexShrink: '0',
           aspectRatio: '1',
           borderRadius: isSquare ? '0' : '50%',
-          backgroundColor: backgroundColor,
+          backgroundColor,
         }
       },
       m('p', {

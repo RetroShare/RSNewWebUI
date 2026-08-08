@@ -359,7 +359,7 @@ function loadChatMessages() {
   rs.rsJsonApiRequest(
     '/rsHistory/getMessages',
     {
-      chatPeerId: chatPeerId,
+      chatPeerId,
       loadCount: 50,
     },
     (data, success) => {
@@ -509,7 +509,7 @@ function preloadAllChatHistory() {
                 if (!existing || lastTime > existing.lastTime) {
                   State.chatHistoryMap[gxsId] = {
                     lastMsg: last.message || last.msg || '',
-                    lastTime: lastTime,
+                    lastTime,
                   };
                   m.redraw();
                 }
@@ -573,7 +573,7 @@ function loadAllHistoryForSelectedPeer(callback) {
     rs.rsJsonApiRequest(
       '/rsHistory/getMessages',
       {
-        chatPeerId: chatPeerId,
+        chatPeerId,
         loadCount: 0, // 0 = load all messages in C++
       },
       (msgData, success) => {
@@ -588,7 +588,7 @@ function loadAllHistoryForSelectedPeer(callback) {
             const key = `${mItem.sendTime || mItem.recvTime}_${text}`;
             if (!map.has(key)) map.set(key, mItem);
           });
-          let uniqueMsgs = Array.from(map.values());
+          const uniqueMsgs = Array.from(map.values());
           uniqueMsgs.sort((a, b) => (a.sendTime || a.recvTime) - (b.sendTime || b.recvTime));
           State.fullHistoryMessages = uniqueMsgs;
           State.isHistoryLoading = false;

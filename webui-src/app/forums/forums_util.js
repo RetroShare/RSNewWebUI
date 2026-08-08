@@ -106,7 +106,7 @@ async function updatedisplayforums(keyid) {
 
               const threadStruct = {
                 thread: { mMeta: meta, mMsg: null },
-                replies: replies,
+                replies,
                 showReplies: false,
               };
 
@@ -156,7 +156,7 @@ async function loadPostContent(forumId, msgId) {
 
   try {
     const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumContent', {
-      forumId: forumId,
+      forumId,
       msgsIds: [msgId],
     });
     if (res && res.body && res.body.retval && res.body.msgs && res.body.msgs.length > 0) {

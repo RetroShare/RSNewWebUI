@@ -1,16 +1,17 @@
 const m = require('mithril');
 const rs = require('rswebui');
 
-const GROUP_SUBSCRIBE_ADMIN          = 0x01;
-const GROUP_SUBSCRIBE_PUBLISH        = 0x02;
-const GROUP_SUBSCRIBE_SUBSCRIBED     = 0x04;
+const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this group
+const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
+const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; // means: you are subscribed to a group, which makes you a source for this group to your friend nodes.
 const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
 const GROUP_MY_BOARD = GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
 const GXS_VOTE_DOWN = 0x0001;
 const GXS_VOTE_UP = 0x0002;
 
-const PUBLIC = 1;
-const EXTERNAL = 2;
+// rsgxscircles.h:50
+const PUBLIC = 1; // Public distribution
+const EXTERNAL = 2; // Restricted to an external circle, based on GxsIds
 const NODES_GROUP = 3;
 
 const Data = {
