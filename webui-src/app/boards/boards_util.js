@@ -35,7 +35,7 @@ function plainText(value) {
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>')
     .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
+    .replace(/&#39;/gi, '\'')
     .replace(/\n\s*\n+/g, '\n')
     .trim();
 }
@@ -144,7 +144,7 @@ async function updateDisplayBoards(keyid, details) {
           posts.forEach((post) => {
             const msgId = (post.mMeta && post.mMeta.mMsgId) ? post.mMeta.mMsgId : post.mMsgId;
             if (msgId) {
-              Data.Posts[keyid][msgId] = { post: post, isSearched: true };
+              Data.Posts[keyid][msgId] = { post, isSearched: true };
             }
           });
           m.redraw();
@@ -260,9 +260,9 @@ async function voteForPost(postGrpId, postMsgId, voteType, voterId = null) {
     }
 
     const res = await rs.rsJsonApiRequest('/rsPosted/voteForPost', {
-      postGrpId: postGrpId,
-      postMsgId: postMsgId,
-      authorId: authorId,
+      postGrpId,
+      postMsgId,
+      authorId,
       vote: voteType,
     });
 

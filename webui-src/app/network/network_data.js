@@ -46,7 +46,7 @@ Data.refreshGpgDetails = async function () {
             )
             .catch(() => {})
             .then(() => {
-              let avatar = '';
+              const avatar = '';
               return Promise.resolve()
                 .then(() => {
                   const gpgId = (data.gpg_id || '').toLowerCase();
