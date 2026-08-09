@@ -128,9 +128,10 @@ function renderUserTooltip(gxsId, name) {
     : 0;
 
   const rect = ChatHubState.hoveredUser ? ChatHubState.hoveredUser.rect : null;
-  const tooltipWidth = 390;
-  let left = rect ? rect.left - tooltipWidth - 15 : window.innerWidth - 420;
-  if (left < 10 && rect) left = rect.right + 15;
+  const tooltipWidth = 280;
+  const tooltipGap = 10;
+  let left = rect ? rect.left - tooltipWidth - tooltipGap : window.innerWidth - tooltipWidth - tooltipGap;
+  if (left < tooltipGap && rect) left = rect.right + tooltipGap;
   let top = rect ? rect.top : 100;
   if (top + 160 > window.innerHeight) top = window.innerHeight - 170;
   if (top < 10) top = 10;
@@ -1568,7 +1569,10 @@ const Layout = {
             ]),
         ]),
       ChatHubState.messageContextMenu.show && m('.chat-msg-context-menu', {
-        style: `position: fixed; top: ${ChatHubState.messageContextMenu.y}px; left: ${ChatHubState.messageContextMenu.x}px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 0.35rem 0; z-index: 3000; min-width: 160px;`,
+        style: {
+          top: `${Math.max(8, Math.min(ChatHubState.messageContextMenu.y, window.innerHeight - 132))}px`,
+          left: `${Math.max(8, Math.min(ChatHubState.messageContextMenu.x, window.innerWidth - 228))}px`,
+        },
         onclick: (e) => e.stopPropagation(),
       }, [
         m('.context-menu-item', {
