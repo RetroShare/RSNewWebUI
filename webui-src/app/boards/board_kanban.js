@@ -71,9 +71,9 @@ function extractImageSrc(item) {
   // Check notes/body text for embedded data:image or web URL
   const text = p.mNotes || p.mBody || item.notes || item.body || '';
   if (typeof text === 'string') {
-    const dataMatch = text.match(/data:image\/[a-zA-Z]+;base64,[^"\s\)]+/);
+    const dataMatch = text.match(/data:image\/[a-zA-Z]+;base64,[^"\s)]+/);
     if (dataMatch) return dataMatch[0];
-    const urlMatch = text.match(/https?:\/\/[^\s"\)<]+\.(?:png|jpg|jpeg|gif|webp)/i);
+    const urlMatch = text.match(/https?:\/\/[^\s")<]+\.(?:png|jpg|jpeg|gif|webp)/i);
     if (urlMatch) return urlMatch[0];
   }
 
@@ -100,18 +100,6 @@ function closePhotoOverlay() {
     _photoOverlayEl.style.display = 'none';
     m.render(_photoOverlayEl, null);
   }
-}
-
-/**
- * Close regular popup (non-photo)
- */
-function closePopup() {
-  const el = document.getElementById('modal-container');
-  if (el) {
-    el.style.display = 'none';
-    m.render(el, null);
-  }
-  closePhotoOverlay();
 }
 
 /**
@@ -236,7 +224,7 @@ function openPhotoModal(photoList, photoIndex) {
 function BoardCard() {
   return {
     view: (vnode) => {
-      const { item, viewMode, onOpenComments, onOpenPhoto, forumId } = vnode.attrs;
+      const { item, viewMode, onOpenComments, onOpenPhoto, forumId, voterId } = vnode.attrs;
       if (!item) return null;
 
       // Extract item properties with fallback defaults
@@ -388,10 +376,12 @@ function BoardCard() {
                 m(
                   'button.board-card__vote-btn.board-card__vote-btn--up[type=button][title=Upvote]',
                   {
+                    disabled: !voterId,
+                    title: voterId ? 'Upvote' : 'Select a voter identity first',
                     onclick: async (e) => {
                       e.stopPropagation();
                       if (forumId && msgId) {
-                        const voted = await util.voteForPost(forumId, msgId, util.GXS_VOTE_UP);
+                        const voted = await util.voteForPost(forumId, msgId, util.GXS_VOTE_UP, voterId);
                         if (voted) {
                           post.mUpVotes = numberValue(post.mUpVotes) + 1;
                           m.redraw();
@@ -405,10 +395,12 @@ function BoardCard() {
                 m(
                   'button.board-card__vote-btn.board-card__vote-btn--down[type=button][title=Downvote]',
                   {
+                    disabled: !voterId,
+                    title: voterId ? 'Downvote' : 'Select a voter identity first',
                     onclick: async (e) => {
                       e.stopPropagation();
                       if (forumId && msgId) {
-                        const voted = await util.voteForPost(forumId, msgId, util.GXS_VOTE_DOWN);
+                        const voted = await util.voteForPost(forumId, msgId, util.GXS_VOTE_DOWN, voterId);
                         if (voted) {
                           post.mDownVotes = numberValue(post.mDownVotes) + 1;
                           m.redraw();
@@ -444,6 +436,10 @@ function Toolbar() {
         onPageChange,
         startItem,
         endItem,
+        voterIdentities = [],
+        voterId,
+        voterIdentitiesLoading,
+        onVoterIdChange,
       } = vnode.attrs;
 
       return m('.board-toolbar', { role: 'toolbar', 'aria-label': 'Board View Controls' }, [
@@ -525,6 +521,17 @@ function Toolbar() {
                 ),
               ])
             : null,
+          m('.board-toolbar__voter', [
+            m('select#board-post-voter', {
+              value: voterId || '',
+              disabled: voterIdentitiesLoading || voterIdentities.length === 0,
+              onchange: (e) => onVoterIdChange && onVoterIdChange(e.target.value),
+              title: 'Identity used to vote on posts',
+              'aria-label': 'Identity used to vote on posts',
+            }, voterIdentities.length > 0
+              ? voterIdentities.map((identity) => m('option', { value: identity.id }, identity.label))
+              : m('option', { value: '' }, voterIdentitiesLoading ? 'Loading identities...' : 'No identity available')),
+          ]),
         ]),
       ]);
     },
@@ -554,7 +561,10 @@ function BoardView() {
 
   return {
     view: (vnode) => {
-      const { items = [], forumId, onOpenComments } = vnode.attrs;
+      const {
+        items = [], forumId, onOpenComments, voterIdentities = [], voterId,
+        voterIdentitiesLoading, onVoterIdChange,
+      } = vnode.attrs;
 
       // Filter items
       const filteredItems = items.filter((item) => {
@@ -626,6 +636,10 @@ function BoardView() {
           },
           startItem: startItemNum,
           endItem: endItemNum,
+          voterIdentities,
+          voterId,
+          voterIdentitiesLoading,
+          onVoterIdChange,
         }),
 
         // Board Grid (rendering paged slice of 25 items max)
@@ -645,6 +659,7 @@ function BoardView() {
                   item,
                   viewMode,
                   forumId,
+                  voterId,
                   onOpenComments: onOpenComments || ((itemObj, mId, fId) => openCommentsModal(itemObj, mId, fId)),
                   onOpenPhoto: (clickedItem) => {
                     const photoIdx = modalPhotos.findIndex((pi) => {

@@ -130,27 +130,72 @@ function sortIds(list) {
   if (list !== undefined) {
     const result = [...list];
 
-    result.sort((a, b) => rs.userList.username(a).localeCompare(rs.userList.username(b)));
+    result.sort((a, b) => {
+      const nameA = rs.userList.username(a) || String(a);
+      const nameB = rs.userList.username(b) || String(b);
+      return nameA.localeCompare(nameB);
+    });
     return result;
   }
   return list;
 }
 
-async function ownIds(consumer = () => { }, onlySigned = false) {
+const OWN_IDS_CACHE_MS = 30000;
+const ownIdsCache = {
+  all: { ids: null, loadedAt: 0, promise: null },
+  signed: { ids: null, loadedAt: 0, promise: null },
+};
+
+async function loadOwnIds(onlySigned) {
+  if (onlySigned) {
+    const response = await rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {});
+    return (response && response.body && response.body.ids) || [];
+  }
+
+  // Modern RetroShare exposes the complete list in one request. Keep the two
+  // specialised calls as a compatibility fallback for older cores.
   try {
-    const signedResponse = await rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {});
-    const signedIds = (signedResponse && signedResponse.body && signedResponse.body.ids) || [];
-    if (onlySigned) {
-      consumer(sortIds(signedIds));
-      return;
+    const response = await rs.rsJsonApiRequest('/rsIdentity/getOwnIds', {});
+    if (response && response.body && Array.isArray(response.body.ids)) return response.body.ids;
+  } catch {
+    // Fall through to the legacy endpoints below.
+  }
+
+  const [signedResponse, pseudonymousResponse] = await Promise.all([
+    rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {}),
+    rs.rsJsonApiRequest('/rsIdentity/getOwnPseudonimousIds', {}),
+  ]);
+  const signedIds = (signedResponse && signedResponse.body && signedResponse.body.ids) || [];
+  const pseudonymousIds = (pseudonymousResponse && pseudonymousResponse.body && pseudonymousResponse.body.ids) || [];
+  return pseudonymousIds.concat(signedIds);
+}
+
+async function ownIds(consumer = () => { }, onlySigned = false) {
+  const cache = onlySigned ? ownIdsCache.signed : ownIdsCache.all;
+  try {
+    if (cache.ids && Date.now() - cache.loadedAt < OWN_IDS_CACHE_MS) {
+      const cachedIds = [...cache.ids];
+      consumer(cachedIds);
+      return cachedIds;
     }
 
-    const pseudonymousResponse = await rs.rsJsonApiRequest('/rsIdentity/getOwnPseudonimousIds', {});
-    const pseudonymousIds = (pseudonymousResponse && pseudonymousResponse.body && pseudonymousResponse.body.ids) || [];
-    consumer(sortIds(pseudonymousIds.concat(signedIds)));
+    if (!cache.promise) {
+      cache.promise = loadOwnIds(onlySigned)
+        .then((ids) => {
+          cache.ids = sortIds(Array.from(new Set(ids || [])));
+          cache.loadedAt = Date.now();
+          return cache.ids;
+        })
+        .finally(() => { cache.promise = null; });
+    }
+
+    const ids = [...await cache.promise];
+    consumer(ids);
+    return ids;
   } catch (error) {
     console.warn('Unable to load own identities', error);
     consumer([]);
+    return [];
   }
 }
 const SearchBar = () => {

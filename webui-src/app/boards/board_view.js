@@ -98,11 +98,25 @@ function createboard() {
 
 function BoardView() {
   let lastLoadedBoardId = null;
+  let voterIdentities = [];
+  let voterId = null;
+  let voterIdentitiesLoading = true;
 
   return {
     oninit: (v) => {
       lastLoadedBoardId = v.attrs.id;
       util.updateDisplayBoards(v.attrs.id);
+      peopleUtil.ownIds((ids) => {
+        voterIdentities = (ids || [])
+          .filter((id) => Number(id) !== 0)
+          .map((id) => ({
+            id,
+            label: rs.userList.username(id) || rs.userList.userMap[id] || `${String(id).slice(0, 10)}...`,
+          }));
+        voterId = voterIdentities[0] ? voterIdentities[0].id : null;
+        voterIdentitiesLoading = false;
+        m.redraw();
+      });
     },
     onupdate: (v) => {
       if (v.attrs.id && v.attrs.id !== lastLoadedBoardId) {
@@ -258,6 +272,12 @@ function BoardView() {
             m(boardKanban.BoardView, {
               forumId: v.attrs.id,
               items,
+              voterIdentities,
+              voterId,
+              voterIdentitiesLoading,
+              onVoterIdChange: (id) => {
+                voterId = id || null;
+              },
             })
           ),
         ]),
@@ -277,6 +297,7 @@ function PostView() {
   let identities = [];
   let authorId = null;
   let voteIdentity = null;
+  let postVoteSubmitting = false;
   let replyTo = null;
   let composerText = '';
   let submitting = false;
@@ -397,6 +418,12 @@ function PostView() {
             ? new Date(publishTs.xint64 * 1000).toLocaleString()
             : new Date(publishTs * 1000).toLocaleString())
         : '';
+      const numberValue = (value) => {
+        if (value && typeof value === 'object') return Number(value.xint64 || value.xint32 || 0);
+        return Number(value || 0);
+      };
+      const postUpVotes = numberValue(p.mUpVotes !== undefined ? p.mUpVotes : meta.mUpVotes);
+      const postDownVotes = numberValue(p.mDownVotes !== undefined ? p.mDownVotes : meta.mDownVotes);
 
       let imgSrc = '';
       if (p.mImage && p.mImage.mData && p.mImage.mData.base64 && p.mImage.mData.base64.trim()) {
@@ -431,6 +458,41 @@ function PostView() {
             m('b', author),
             dateStr ? m('span', ` • ${dateStr}`) : null,
           ]),
+          m('.board-post-voting', [
+            m('.board-post-voting__identity', [
+              m('label[for=board-post-voter]', 'Vote as'),
+              m('select#board-post-voter', {
+                value: voteIdentity || '',
+                disabled: identities.length === 0 || postVoteSubmitting,
+                onchange: (e) => { voteIdentity = e.target.value; },
+              }, identities.length
+                ? identities.map((id) => m('option', { value: id }, nameOf(id)))
+                : m('option', { value: '' }, 'Loading identities…')),
+            ]),
+            m('.board-post-voting__buttons', [
+              m('button[type=button][title=Upvote post]', {
+                disabled: !voteIdentity || postVoteSubmitting,
+                onclick: async () => {
+                  postVoteSubmitting = true;
+                  m.redraw();
+                  await util.voteForPost(forumId, msgId, util.GXS_VOTE_UP, voteIdentity);
+                  postVoteSubmitting = false;
+                  m.redraw();
+                },
+              }, [m('i.fas.fa-arrow-up'), ` ${postUpVotes}`]),
+              m('span.board-post-voting__score', postUpVotes - postDownVotes),
+              m('button[type=button][title=Downvote post]', {
+                disabled: !voteIdentity || postVoteSubmitting,
+                onclick: async () => {
+                  postVoteSubmitting = true;
+                  m.redraw();
+                  await util.voteForPost(forumId, msgId, util.GXS_VOTE_DOWN, voteIdentity);
+                  postVoteSubmitting = false;
+                  m.redraw();
+                },
+              }, [m('i.fas.fa-arrow-down'), ` ${postDownVotes}`]),
+            ]),
+          ]),
           notes ? m('.post-description.board-post-description', [
             m('.post-description__text', { class: notesExpanded ? '' : 'post-description__text--collapsed', style: { whiteSpace: 'pre-wrap', maxHeight: notesExpanded ? 'none' : '4.5em', overflow: 'hidden', lineHeight: '1.5' } }, notes),
             hasLongNotes ? m('button.post-description__toggle[type=button]', { onclick: () => { notesExpanded = !notesExpanded; } }, notesExpanded ? 'Show less' : '…more') : null,
@@ -440,16 +502,6 @@ function PostView() {
             m('.board-comments__heading', [
               m('h3', `${comments.length} Comment${comments.length === 1 ? '' : 's'}`),
               m('span', [m('i.fas.fa-sort-amount-down'), ' Oldest first']),
-              m('.board-comments__voter', [
-                m('label[for=board-comment-voter]', 'Voter identity'),
-                m('select#board-comment-voter', {
-                  value: voteIdentity || '',
-                  disabled: identities.length === 0,
-                  onchange: (e) => { voteIdentity = e.target.value; },
-                }, identities.length
-                  ? identities.map((id) => m('option', { value: id }, nameOf(id)))
-                  : m('option', { value: '' }, 'Loading identities…')),
-              ]),
             ]),
             m('.board-comment-composer', [
               m('.board-comment-avatar', initials(nameOf(authorId))),
@@ -471,14 +523,14 @@ function PostView() {
             ]),
             loadingComments ? m('.board-comments__status', [m('i.fas.fa-spinner.fa-spin'), ' Loading comments…'])
               : comments.length === 0 ? m('.board-comments__empty', [m('i.fas.fa-comment'), m('p', 'No comments yet. Start the conversation.')])
-              : m('.board-comments__list', treeOfComments().map((node) => renderComment(node, 0))),
+              : m('.board-comments__list', treeOfComments().map((node) => renderComment(node, 0, forumId, msgId))),
           ]),
         ]),
       ];
     },
   };
 
-  function renderComment(node, depth) {
+  function renderComment(node, depth, forumId, msgId) {
     const comment = node.comment;
     const key = idOf(comment);
     const meta = metaOf(comment);
@@ -496,11 +548,11 @@ function PostView() {
         m('.board-comment__actions', [
           m('button[type=button]', {
             disabled: !voteIdentity,
-            onclick: () => util.voteForPost(forumId, key, util.GXS_VOTE_UP, voteIdentity),
+            onclick: () => util.voteForComment(forumId, msgId, key, util.GXS_VOTE_UP, voteIdentity),
           }, [m('i.fas.fa-thumbs-up'), ` ${comment.mUpVotes || 0}`]),
           m('button[type=button]', {
             disabled: !voteIdentity,
-            onclick: () => util.voteForPost(forumId, key, util.GXS_VOTE_DOWN, voteIdentity),
+            onclick: () => util.voteForComment(forumId, msgId, key, util.GXS_VOTE_DOWN, voteIdentity),
           }, m('i.fas.fa-thumbs-down')),
           m('button[type=button]', { onclick: () => { replyTo = comment; composerText = ''; submitError = ''; } }, 'Reply')
         ]),
@@ -511,7 +563,9 @@ function PostView() {
           `${repliesCount} ${repliesCount === 1 ? 'reply' : 'replies'} `,
           m('i.fas', { class: repliesExpanded ? 'fa-chevron-up' : 'fa-chevron-down' }),
         ]) : null,
-        repliesCount && repliesExpanded ? m('.board-comment__replies', node.children.map((reply) => renderComment(reply, depth + 1))) : null,
+        repliesCount && repliesExpanded
+          ? m('.board-comment__replies', node.children.map((reply) => renderComment(reply, depth + 1, forumId, msgId)))
+          : null,
       ])
     ]);
   }

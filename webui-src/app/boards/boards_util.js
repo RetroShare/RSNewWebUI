@@ -277,6 +277,28 @@ async function voteForPost(postGrpId, postMsgId, voteType, voterId = null) {
   return false;
 }
 
+async function voteForComment(boardId, postId, commentId, voteType, authorId) {
+  if (!authorId) return false;
+  try {
+    const res = await rs.rsJsonApiRequest('/rsPosted/voteForComment', {
+      boardId,
+      postId,
+      commentId,
+      authorId,
+      vote: voteType,
+    });
+    if (res && res.body && res.body.retval) {
+      updateDisplayBoards(boardId);
+      m.redraw();
+      return true;
+    }
+    console.warn('voteForComment failed:', res && res.body && res.body.errorMessage);
+  } catch (error) {
+    console.error('voteForComment error:', error);
+  }
+  return false;
+}
+
 module.exports = {
   Data,
   updateDisplayBoards,
@@ -286,6 +308,7 @@ module.exports = {
   SearchBar,
   popupmessage,
   voteForPost,
+  voteForComment,
   plainText,
   GXS_VOTE_UP,
   GXS_VOTE_DOWN,
