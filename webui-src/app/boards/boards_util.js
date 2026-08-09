@@ -1,5 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const peopleUtil = require('people/people_util');
 
 const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this group
 const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
@@ -250,8 +251,9 @@ async function voteForPost(postGrpId, postMsgId, voteType, voterId = null) {
   try {
     let authorId = voterId;
     if (!authorId) {
-      const resId = await rs.rsJsonApiRequest('/rsIdentity/getOwnIds', {});
-      const ownIds = (resId && resId.body && resId.body.ids) ? resId.body.ids : [];
+      //  Goes through people_util so the endpoints and their caching stay in
+      //  one place: /rsIdentity/getOwnIds is deprecated and answers 404.
+      const ownIds = await peopleUtil.ownIds();
       if (ownIds.length === 0) {
         alert('No identity found to vote.');
         return false;

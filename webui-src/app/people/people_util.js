@@ -152,15 +152,9 @@ async function loadOwnIds(onlySigned) {
     return (response && response.body && response.body.ids) || [];
   }
 
-  // Modern RetroShare exposes the complete list in one request. Keep the two
-  // specialised calls as a compatibility fallback for older cores.
-  try {
-    const response = await rs.rsJsonApiRequest('/rsIdentity/getOwnIds', {});
-    if (response && response.body && Array.isArray(response.body.ids)) return response.body.ids;
-  } catch {
-    // Fall through to the legacy endpoints below.
-  }
-
+  // The complete list is these two calls put together. /rsIdentity/getOwnIds
+  // is not an alternative to them: it is the deprecated one, it carries no
+  // @jsonapi annotation, and the core answers 404.
   const [signedResponse, pseudonymousResponse] = await Promise.all([
     rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {}),
     rs.rsJsonApiRequest('/rsIdentity/getOwnPseudonimousIds', {}),
