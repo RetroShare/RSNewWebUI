@@ -1,9 +1,16 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const Data = require('network/network_data');
-const { State, startDirectChat, getOnlineSslId, sendDirectChatMessage } = require('network/network_state');
+const {
+  State,
+  startDirectChat,
+  getOnlineSslId,
+  sendDirectChatMessage,
+  loadAllDirectChatHistory,
+} = require('network/network_state');
 const { renderChatMessage } = require('chat/chat_state');
 const chatEmoji = require('chat/chat_emoji');
+const HistoryBrowserModal = require('people/people_history');
 
 // Direct peer-to-peer chat images do NOT require 200KB compression limit
 function formatDirectChatImage(file, callback) {
@@ -133,18 +140,27 @@ const ChatTab = () => {
                 }),
                 m('span', { style: { color: locOnline ? '#10b981' : '#ef4444', fontWeight: '500' } }, locOnline ? 'Online' : 'Offline')
               ])
-            ])
+            ]),
+            m('button.blue.history-btn', {
+              title: 'View all direct chat history with this friend',
+              style: 'padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem; border: none; cursor: pointer; background-color: #3b82f6; color: #ffffff; font-weight: 600;',
+              onclick: () => {
+                State.showHistoryModal = true;
+                State.historySearchQuery = '';
+                loadAllDirectChatHistory();
+              },
+            }, [m('i.fas.fa-history'), 'History'])
           ]);
         })(),
         m(
           '.chat-messages[id=chat-messages-container]',
           State.chatMessages.map((msg) => {
-            const isOwn = msg.own === true;
+            const isOwn = msg.own === true || msg.incoming === false;
             const senderName = isOwn
               ? (State.ownProfile.name || 'Me')
               : friend.name;
-            const time = new Date(msg.sendTime * 1000).toLocaleTimeString();
-            const text = msg.msg || '';
+            const time = new Date((msg.sendTime || msg.recvTime || 0) * 1000).toLocaleTimeString();
+            const text = msg.msg || msg.message || '';
 
             return m(
               '.chat-bubble-container' + (isOwn ? '.outgoing' : '.incoming'),
@@ -156,6 +172,11 @@ const ChatTab = () => {
             );
           })
         ),
+        m(HistoryBrowserModal, {
+          state: State,
+          name: friend.name,
+          ownName: State.ownProfile.name || 'You',
+        }),
         m('.chat-input-area', { style: 'display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; background: #ffffff; border-top: 1px solid #cbd5e1;' }, [
           m('button.chat-hub-action-btn', {
             title: 'Attach file link',

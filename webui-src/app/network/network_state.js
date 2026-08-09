@@ -35,6 +35,10 @@ const State = {
   isHashing: false,
   hashingError: '',
   showEmojiPicker: false,
+  showHistoryModal: false,
+  historySearchQuery: '',
+  fullHistoryMessages: [],
+  isHistoryLoading: false,
 };
 
 function loadOwnProfile() {
@@ -141,6 +145,7 @@ function startDirectChat(sslId) {
   State.currentChatPeerId = sslId;
   State.chatMessages = [];
   loadDirectChatMessages();
+  loadRecentDirectChatHistory();
 }
 
 function getOnlineSslId(gpgId) {
@@ -201,10 +206,13 @@ function preloadNetworkChatHistory() {
 
 function loadDirectChatMessages() {
   rs.events[15].notify = (chatMessage) => {
+    const messagePeerId = chatMessage.chat_id && chatMessage.chat_id.peer_id
+      ? rs.idToHex(chatMessage.chat_id.peer_id)
+      : '';
     if (
       chatMessage.chat_id &&
-      (chatMessage.chat_id.type === 1 || chatMessage.chat_id.type === 2) &&
-      rs.idToHex(chatMessage.chat_id) === State.currentChatPeerId
+      chatMessage.chat_id.type === 1 &&
+      messagePeerId === State.currentChatPeerId
     ) {
       State.chatMessages.push(chatMessage);
       if (State.selectedFriendGpgId) {
@@ -217,6 +225,64 @@ function loadDirectChatMessages() {
       scrollChatToBottom();
     }
   };
+}
+
+function directChatId(peerId) {
+  return {
+    broadcast_status_peer_id: '00000000000000000000000000000000',
+    type: 1,
+    peer_id: peerId,
+    distant_chat_id: '00000000000000000000000000000000',
+    lobby_id: { xstr64: '0' },
+  };
+}
+
+function mergeDirectChatMessages(messages) {
+  const unique = new Map();
+  messages.forEach((message) => {
+    const text = message.msg || message.message || '';
+    const time = message.sendTime || message.recvTime || 0;
+    const incoming = message.incoming === true;
+    unique.set(`${time}_${incoming}_${text}`, message);
+  });
+  return Array.from(unique.values()).sort(
+    (a, b) => (a.sendTime || a.recvTime || 0) - (b.sendTime || b.recvTime || 0)
+  );
+}
+
+function loadRecentDirectChatHistory() {
+  const peerId = State.currentChatPeerId;
+  if (!peerId) return;
+  rs.rsJsonApiRequest('/rsHistory/getMessages', {
+    chatPeerId: directChatId(peerId),
+    loadCount: 20,
+  }, (data, success) => {
+    if (peerId !== State.currentChatPeerId) return;
+    if (success && data && Array.isArray(data.msgs)) {
+      State.chatMessages = mergeDirectChatMessages(data.msgs.concat(State.chatMessages));
+      m.redraw();
+      scrollChatToBottom();
+    }
+  });
+}
+
+function loadAllDirectChatHistory() {
+  const peerId = State.currentChatPeerId;
+  if (!peerId) return;
+  State.isHistoryLoading = true;
+  State.fullHistoryMessages = [];
+  m.redraw();
+  rs.rsJsonApiRequest('/rsHistory/getMessages', {
+    chatPeerId: directChatId(peerId),
+    loadCount: 0,
+  }, (data, success) => {
+    if (peerId !== State.currentChatPeerId) return;
+    State.fullHistoryMessages = success && data && Array.isArray(data.msgs)
+      ? mergeDirectChatMessages(data.msgs)
+      : [];
+    State.isHistoryLoading = false;
+    m.redraw();
+  });
 }
 
 function sendDirectChatMessage() {
@@ -274,6 +340,8 @@ module.exports = {
   getOnlineSslId,
   preloadNetworkChatHistory,
   loadDirectChatMessages,
+  loadRecentDirectChatHistory,
+  loadAllDirectChatHistory,
   sendDirectChatMessage,
   scrollChatToBottom,
 };
