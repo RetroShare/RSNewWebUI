@@ -21,13 +21,19 @@ const OwnProfileCard = () => {
       const displayName = State.ownProfile.location
         ? `${State.ownProfile.name || 'Unknown'} (${State.ownProfile.location})`
         : State.ownProfile.name || 'Loading...';
+      const status = Data.getStatusPresentation(State.ownProfile.statusValue, true);
 
       return m('.own-profile-card', [
         m('.profile-header', [
           m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: State.ownProfile.name }),
           m('.profile-info', [
             m('.profile-name', { title: displayName }, displayName),
-            m('.profile-status', 'Online'),
+            m('.profile-status', {
+              style: {
+                color: status.color,
+                '--profile-status-color': status.color,
+              },
+            }, status.label),
             State.ownProfile.customState &&
               m(
                 '.profile-custom-status',
@@ -135,6 +141,7 @@ const FriendsList = () => {
                 const firstLetter = (friend.name || '?').slice(0, 1).toUpperCase();
                 const isSelected = State.selectedFriendGpgId === gpgId;
                 const hist = State.chatHistoryMap && State.chatHistoryMap[gpgId];
+                const status = Data.getStatusPresentation(friend.statusValue, friend.isOnline);
 
                 if (State.mainTab === 'chats') {
                   // Render Chat List Item
@@ -154,8 +161,9 @@ const FriendsList = () => {
                         m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: gpgId }),
                         m('.status-dot', {
                           style: {
-                            backgroundColor: friend.isOnline ? '#22c55e' : '#cbd5e1',
+                            backgroundColor: status.color,
                           },
+                          title: status.label,
                         }),
                       ]),
                       m('.chat-info', [
@@ -188,10 +196,7 @@ const FriendsList = () => {
                     m('.friend-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: gpgId })),
                     m('.friend-meta', [
                       m('.friend-name', friend.name),
-                      m(
-                        `.friend-status${friend.isOnline ? '.online' : ''}`,
-                        friend.isOnline ? 'Online' : 'Offline'
-                      ),
+                      m('.friend-status', { style: { color: status.color } }, status.label),
                       friend.customState &&
                         m(
                           '.friend-custom-status',

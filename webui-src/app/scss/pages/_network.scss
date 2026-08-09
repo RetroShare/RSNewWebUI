@@ -61,7 +61,7 @@
         display: inline-block;
         width: 8px;
         height: 8px;
-        background-color: #10b981;
+        background-color: var(--profile-status-color, #10b981);
         border-radius: 50%;
       }
     }

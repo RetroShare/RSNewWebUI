@@ -10,6 +10,8 @@ const State = {
     ssl_id: '',
     gpg_id: '',
     customState: '',
+    statusValue: 3,
+    statusTimestamp: 0,
     avatar: '',
   },
   ownGxsIds: [],
@@ -36,6 +38,14 @@ const State = {
 };
 
 function loadOwnProfile() {
+  rs.rsJsonApiRequest('/rsStatus/getOwnStatus', {}, (statusData) => {
+    if (statusData && statusData.retval && statusData.statusInfo) {
+      State.ownProfile.statusValue = statusData.statusInfo.status;
+      State.ownProfile.statusTimestamp = statusData.statusInfo.time_stamp || 0;
+      m.redraw();
+    }
+  }).catch(() => {});
+
   rs.rsJsonApiRequest('/rsConfig/getConfigNetStatus', {}, (data) => {
     if (data && data.status) {
       State.ownProfile.name = data.status.ownName || 'Unknown';
