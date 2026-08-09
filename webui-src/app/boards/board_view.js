@@ -229,12 +229,9 @@ function BoardView() {
         m('.widget__body', [
           m('.media-item', [
             m('.media-item__details', [
-              m('img', {
-                src:
-                  !bimage || !bimage.mData || bimage.mData.base64 === ''
-                    ? 'data/streaming.png'
-                    : `data:image/png;base64,${bimage.mData.base64}`,
-              }),
+              bimage && bimage.mData && bimage.mData.base64
+                ? m('img', { src: `data:image/png;base64,${bimage.mData.base64}` })
+                : null,
               m('.media-item__details-info', [
                 m('div', [m('b', 'Posts: '), m('span', bposts)]),
                 m('div', [

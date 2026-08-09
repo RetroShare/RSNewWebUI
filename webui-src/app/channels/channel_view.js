@@ -397,12 +397,9 @@ const ChannelView = () => {
       m('.widget__body', [
         m('.media-item', [
           m('.media-item__details', [
-            m('img', {
-              src:
-                cimage.mData.base64 === ''
-                  ? 'data/streaming.png'
-                  : `data:image/png;base64,${cimage.mData.base64}`,
-            }),
+            cimage && cimage.mData && cimage.mData.base64
+              ? m('img', { src: `data:image/png;base64,${cimage.mData.base64}` })
+              : null,
             m('.media-item__details-info', [
               m('div', [m('b', 'Posts: '), m('span', cposts)]),
               m('div', [
