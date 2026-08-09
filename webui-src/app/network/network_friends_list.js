@@ -18,12 +18,15 @@ const OwnProfileCard = () => {
     view: () => {
       const avatar = State.ownProfile.avatar ? { mData: { base64: State.ownProfile.avatar } } : undefined;
       const firstLetter = (State.ownProfile.name || 'U').slice(0, 1).toUpperCase();
+      const displayName = State.ownProfile.location
+        ? `${State.ownProfile.name || 'Unknown'} (${State.ownProfile.location})`
+        : State.ownProfile.name || 'Loading...';
 
       return m('.own-profile-card', [
         m('.profile-header', [
           m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: State.ownProfile.name }),
           m('.profile-info', [
-            m('.profile-name', State.ownProfile.name || 'Loading...'),
+            m('.profile-name', { title: displayName }, displayName),
             m('.profile-status', 'Online'),
             State.ownProfile.customState &&
               m(

@@ -6,6 +6,7 @@ const peopleUtil = require('people/people_util');
 const State = {
   ownProfile: {
     name: 'Loading...',
+    location: '',
     ssl_id: '',
     gpg_id: '',
     customState: '',
@@ -42,15 +43,19 @@ function loadOwnProfile() {
 
       if (State.ownProfile.ssl_id) {
         rs.rsJsonApiRequest('/rsChats/getCustomStateString', { peer_id: State.ownProfile.ssl_id }, (statusData) => {
-          if (statusData && statusData.retval) {
-            State.ownProfile.customState = statusData.retval;
+          if (statusData) {
+            const customState = typeof statusData.retval === 'string'
+              ? statusData.retval
+              : statusData.customState || statusData.custom_state || statusData.status || '';
+            State.ownProfile.customState = customState;
             m.redraw();
           }
         });
 
         rs.rsJsonApiRequest('/rsPeers/getPeerDetails', { sslId: State.ownProfile.ssl_id }, (detData) => {
-          if (detData && detData.det && detData.det.gpg_id) {
-            State.ownProfile.gpg_id = detData.det.gpg_id;
+          if (detData && detData.det) {
+            State.ownProfile.gpg_id = detData.det.gpg_id || '';
+            State.ownProfile.location = detData.det.location || '';
             m.redraw();
           }
         });
