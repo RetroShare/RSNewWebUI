@@ -25,15 +25,15 @@ const OwnProfileCard = () => {
 
       return m('.own-profile-card', [
         m('.profile-header', [
-          m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: State.ownProfile.name }),
+          m('.profile-avatar-wrapper', [
+            m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: State.ownProfile.name }),
+            m('.status-dot', {
+              style: { backgroundColor: status.color },
+              title: status.label,
+            }),
+          ]),
           m('.profile-info', [
             m('.profile-name', { title: displayName }, displayName),
-            m('.profile-status', {
-              style: {
-                color: status.color,
-                '--profile-status-color': status.color,
-              },
-            }, status.label),
             State.ownProfile.customState &&
               m(
                 '.profile-custom-status',
@@ -144,6 +144,8 @@ const FriendsList = () => {
                 const hist = State.chatHistoryMap && State.chatHistoryMap[gpgId];
                 const status = Data.getStatusPresentation(friend.statusValue, friend.isOnline);
 
+                const isOnlineOrActive = friend.isOnline || (status && status.value > 0);
+
                 if (State.mainTab === 'chats') {
                   // Render Chat List Item
                   return m(
@@ -168,7 +170,13 @@ const FriendsList = () => {
                         }),
                       ]),
                       m('.chat-info', [
-                        m('.chat-name', friend.name),
+                        m(
+                          '.chat-name',
+                          {
+                            style: isOnlineOrActive ? { color: status.color, fontWeight: '700' } : {},
+                          },
+                          friend.name
+                        ),
                         m('.chat-last-msg', hist ? hist.lastMsg : ''),
                       ]),
                       m('.chat-meta', [
@@ -194,16 +202,27 @@ const FriendsList = () => {
                     },
                   },
                   [
-                    m('.friend-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: gpgId })),
+                    m('.friend-avatar', [
+                      m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: gpgId }),
+                      m('.status-dot', {
+                        style: { backgroundColor: status.color },
+                        title: status.label,
+                      }),
+                    ]),
                     m('.friend-meta', [
-                      m('.friend-name', friend.name),
-                      m('.friend-status', { style: { color: status.color } }, status.label),
+                      m(
+                        '.friend-name',
+                        {
+                          style: isOnlineOrActive ? { color: status.color, fontWeight: '700' } : {},
+                        },
+                        friend.name
+                      ),
                       friend.customState &&
                         m(
                           '.friend-custom-status',
                           {
                             style:
-                              'font-size: 0.85rem; color: #64748b; margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 160px;',
+                              'font-size: 0.85rem; color: #64748b; margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;',
                             title: friend.customState,
                           },
                           friend.customState

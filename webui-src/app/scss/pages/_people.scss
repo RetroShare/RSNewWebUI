@@ -303,10 +303,10 @@ img.avatar {
 
     .status-dot {
       position: absolute !important;
-      bottom: 0 !important;
-      right: 0 !important;
-      width: 10px !important;
-      height: 10px !important;
+      bottom: -1px !important;
+      right: -1px !important;
+      width: 13px !important;
+      height: 13px !important;
       border-radius: 50% !important;
       border: 2px solid #ffffff !important;
     }

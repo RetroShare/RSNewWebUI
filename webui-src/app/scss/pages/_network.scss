@@ -31,6 +31,22 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+
+    .profile-avatar-wrapper {
+      position: relative;
+      flex-shrink: 0;
+
+      .status-dot {
+        position: absolute;
+        bottom: -1px;
+        right: -1px;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+      }
+    }
   }
 
   .profile-info {
@@ -159,7 +175,19 @@
   }
 
   .friend-avatar {
+    position: relative;
     flex-shrink: 0;
+
+    .status-dot {
+      position: absolute;
+      bottom: -1px;
+      right: -1px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    }
   }
 
   .friend-meta {
