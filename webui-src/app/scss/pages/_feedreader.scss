@@ -1,0 +1,31 @@
+.feedreader-page { height: 100%; display: flex; flex-direction: column; color: #333; }
+.feedreader-toolbar, .feedreader-section-title, .feedreader-article-actions { display: flex; align-items: center; gap: .6rem; }
+.feedreader-toolbar { padding: 1rem; border-bottom: 1px solid #ddd; h2 { margin-right: auto; } }
+.feedreader-columns { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(190px,.8fr) minmax(260px,1fr) minmax(320px,1.7fr); }
+.feedreader-tree, .feedreader-messages, .feedreader-reader { min-width: 0; overflow: auto; border-right: 1px solid #ddd; }
+.feedreader-tree-item {
+  display: flex; gap: .55rem; align-items: center; padding-block: .65rem; cursor: pointer;
+  &:hover, &.selected { background: #e9f4fa; }
+  span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+.feedreader-icon-button { margin-left: auto; border: 0; background: transparent; }
+.feedreader-section-title { padding: .8rem 1rem; border-bottom: 1px solid #ddd; justify-content: space-between; }
+.feedreader-message-row {
+  display: flex; flex-direction: column; gap: .2rem; padding: .8rem 1rem; border-bottom: 1px solid #eee; cursor: pointer;
+  &.unread { border-left: 4px solid #3ba4d7; }
+  &.read { opacity: .72; }
+  &.selected, &:hover { background: #f2f8fb; }
+  time, span { color: #777; font-size: .85rem; }
+}
+.feedreader-reader { padding: 1.25rem; border-right: 0; img { max-width: 100%; height: auto; } }
+.feedreader-article-meta { color: #777; font-size: .85rem; }
+.feedreader-article-body { line-height: 1.55; margin-top: 1.5rem; overflow-wrap: anywhere; }
+.feedreader-article-actions { margin-top: 1.5rem; }
+.feedreader-placeholder { padding: 1.25rem; color: #777; }
+.feedreader-error { padding: .7rem 1rem; color: #a00; background: #fee; }
+.feedreader-add { padding: .8rem 1rem; display: flex; gap: .6rem; align-items: center; border-bottom: 1px solid #ddd; input { min-width: 12rem; } }
+@media (max-width: 900px) {
+  .feedreader-columns { grid-template-columns: 1fr; overflow: auto; }
+  .feedreader-tree, .feedreader-messages, .feedreader-reader { min-height: 14rem; border-right: 0; border-bottom: 1px solid #ddd; }
+  .feedreader-toolbar, .feedreader-add { flex-wrap: wrap; }
+}

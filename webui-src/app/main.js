@@ -11,6 +11,7 @@ const files = require('files/files_resolver');
 const channels = require('channels/channels');
 const forums = require('forums/forums');
 const boards = require('boards/boards');
+const feedreader = require('feedreader/feedreader');
 const config = require('config/config_resolver');
 const statusbar = require('statusbar');
 
@@ -24,6 +25,7 @@ const navIcon = {
   channels: m('i.fas.fa-tv.sidenav-icon'),
   forums: m('i.fas.fa-bullhorn.sidenav-icon'),
   boards: m('i.fas.fa-globe.sidenav-icon'),
+  feedreader: m('i.fas.fa-rss.sidenav-icon'),
   config: m('i.fas.fa-cogs.sidenav-icon'),
 };
 
@@ -175,6 +177,7 @@ const Layout = () => {
             channels: '/channels/MyChannels',
             forums: '/forums/MyForums',
             boards: '/boards/MyBoards',
+            feedreader: '/feedreader',
             config: '/config/network',
           },
         }),
@@ -260,6 +263,9 @@ m.route(document.getElementById('main'), '/', {
   },
   '/boards/:tab/:mGroupId/:mMsgId': {
     render: (v) => m(Layout, m(boards, v.attrs)),
+  },
+  '/feedreader': {
+    render: () => m(Layout, m(feedreader)),
   },
   '/config/:tab': {
     render: (v) => m(Layout, m(config, v.attrs)),
