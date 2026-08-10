@@ -1,7 +1,7 @@
 const m = require('mithril');
 const Data = require('network/network_data');
 const peopleUtil = require('people/people_util');
-const { State, startDirectChat, getOnlineSslId } = require('network/network_state');
+const { State, startDirectChat, getOnlineSslId, setOwnCustomStateString } = require('network/network_state');
 
 function formatRelativeTime(ts) {
   if (!ts) return '';
@@ -14,6 +14,9 @@ function formatRelativeTime(ts) {
 }
 
 const OwnProfileCard = () => {
+  let isEditing = false;
+  let statusInputText = '';
+
   return {
     view: () => {
       const avatar = State.ownProfile.avatar ? { mData: { base64: State.ownProfile.avatar } } : undefined;
@@ -34,16 +37,55 @@ const OwnProfileCard = () => {
           ]),
           m('.profile-info', [
             m('.profile-name', { title: displayName }, displayName),
-            State.ownProfile.customState &&
-              m(
-                '.profile-custom-status',
-                {
-                  style:
-                    'font-size: 0.825rem; color: #64748b; font-style: italic; margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;',
-                  title: State.ownProfile.customState,
-                },
-                State.ownProfile.customState
-              ),
+            isEditing
+              ? m('.profile-custom-status-edit', {
+                  style: 'display: flex; align-items: center; gap: 4px; margin-top: 3px;'
+                }, [
+                  m('input[type=text]', {
+                    value: statusInputText,
+                    placeholder: 'Set custom status...',
+                    style: 'font-size: 0.8rem; padding: 2px 6px; border: 1px solid #3ba4d7; border-radius: 4px; width: 125px; outline: none; background: #ffffff;',
+                    oninput: (e) => { statusInputText = e.target.value; },
+                    onkeydown: (e) => {
+                      if (e.key === 'Enter') {
+                        setOwnCustomStateString(statusInputText);
+                        isEditing = false;
+                      } else if (e.key === 'Escape') {
+                        isEditing = false;
+                      }
+                    },
+                    oncreate: (vnode) => vnode.dom.focus(),
+                  }),
+                  m('i.fas.fa-check', {
+                    style: 'cursor: pointer; color: #10b981; font-size: 0.85rem; padding: 2px;',
+                    title: 'Save status',
+                    onclick: () => {
+                      setOwnCustomStateString(statusInputText);
+                      isEditing = false;
+                    },
+                  }),
+                  m('i.fas.fa-times', {
+                    style: 'cursor: pointer; color: #ef4444; font-size: 0.85rem; padding: 2px;',
+                    title: 'Cancel',
+                    onclick: () => {
+                      isEditing = false;
+                    },
+                  }),
+                ])
+              : m(
+                  '.profile-custom-status',
+                  {
+                    style: State.ownProfile.customState
+                      ? 'font-size: 0.825rem; color: #64748b; font-style: italic; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px; cursor: pointer; margin-top: 2px;'
+                      : 'font-size: 0.825rem; color: #94a3b8; font-style: italic; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px; cursor: pointer; margin-top: 2px;',
+                    title: 'Edit status message',
+                    onclick: () => {
+                      statusInputText = State.ownProfile.customState || '';
+                      isEditing = true;
+                    },
+                  },
+                  State.ownProfile.customState || 'Set custom status...'
+                ),
           ]),
         ]),
       ]);

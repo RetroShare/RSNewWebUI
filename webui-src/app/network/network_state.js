@@ -371,9 +371,21 @@ function scrollChatToBottom() {
   }, 100);
 }
 
+function setOwnCustomStateString(statusString) {
+  const str = (statusString || '').trim();
+  rs.rsJsonApiRequest('/rsChats/setCustomStateString', { status_string: str }, () => {
+    State.ownProfile.customState = str;
+    m.redraw();
+  }).catch(() => {
+    State.ownProfile.customState = str;
+    m.redraw();
+  });
+}
+
 module.exports = {
   State,
   loadOwnProfile,
+  setOwnCustomStateString,
   loadSelectedOwnGxsDetails,
   fetchIdDetails,
   loadGxsIdentities,
