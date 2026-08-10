@@ -32,7 +32,12 @@ const UserAvatar = () => ({
         style: {
           width: sizeStr,
           height: sizeStr,
-          borderRadius: isSquare ? '0' : '',
+          minWidth: sizeStr,
+          minHeight: sizeStr,
+          flexShrink: '0',
+          aspectRatio: '1',
+          objectFit: 'cover',
+          borderRadius: isSquare ? '0' : '50%',
         }
       });
     }
@@ -41,9 +46,15 @@ const UserAvatar = () => ({
       const svgString = jdenticon.toSvg(identityId, pxSize);
       return m('div.jdenticon-avatar', {
         style: {
-          display: 'inline-block',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           width: sizeStr,
           height: sizeStr,
+          minWidth: sizeStr,
+          minHeight: sizeStr,
+          flexShrink: '0',
+          aspectRatio: '1',
           borderRadius: isSquare ? '0' : '50%',
           overflow: 'hidden',
           verticalAlign: 'middle',
@@ -67,8 +78,15 @@ const UserAvatar = () => ({
       'div.defaultAvatar',
       {
         style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           width: sizeStr,
           height: sizeStr,
+          minWidth: sizeStr,
+          minHeight: sizeStr,
+          flexShrink: '0',
+          aspectRatio: '1',
           borderRadius: isSquare ? '0' : '50%',
           backgroundColor,
         }
@@ -112,22 +130,67 @@ function sortIds(list) {
   if (list !== undefined) {
     const result = [...list];
 
-    result.sort((a, b) => rs.userList.username(a).localeCompare(rs.userList.username(b)));
+    result.sort((a, b) => {
+      const nameA = rs.userList.username(a) || String(a);
+      const nameB = rs.userList.username(b) || String(b);
+      return nameA.localeCompare(nameB);
+    });
     return result;
   }
   return list;
 }
 
+const OWN_IDS_CACHE_MS = 30000;
+const ownIdsCache = {
+  all: { ids: null, loadedAt: 0, promise: null },
+  signed: { ids: null, loadedAt: 0, promise: null },
+};
+
+async function loadOwnIds(onlySigned) {
+  if (onlySigned) {
+    const response = await rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {});
+    return (response && response.body && response.body.ids) || [];
+  }
+
+  // The complete list is these two calls put together. /rsIdentity/getOwnIds
+  // is not an alternative to them: it is the deprecated one, it carries no
+  // @jsonapi annotation, and the core answers 404.
+  const [signedResponse, pseudonymousResponse] = await Promise.all([
+    rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {}),
+    rs.rsJsonApiRequest('/rsIdentity/getOwnPseudonimousIds', {}),
+  ]);
+  const signedIds = (signedResponse && signedResponse.body && signedResponse.body.ids) || [];
+  const pseudonymousIds = (pseudonymousResponse && pseudonymousResponse.body && pseudonymousResponse.body.ids) || [];
+  return pseudonymousIds.concat(signedIds);
+}
+
 async function ownIds(consumer = () => { }, onlySigned = false) {
-  await rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {}, (owns) => {
-    if (onlySigned) {
-      consumer(sortIds(owns.ids));
-    } else {
-      rs.rsJsonApiRequest('/rsIdentity/getOwnPseudonimousIds', {}, (pseudo) => {
-        if (pseudo.ids) consumer(sortIds(pseudo.ids.concat(owns.ids)));
-      });
+  const cache = onlySigned ? ownIdsCache.signed : ownIdsCache.all;
+  try {
+    if (cache.ids && Date.now() - cache.loadedAt < OWN_IDS_CACHE_MS) {
+      const cachedIds = [...cache.ids];
+      consumer(cachedIds);
+      return cachedIds;
     }
-  });
+
+    if (!cache.promise) {
+      cache.promise = loadOwnIds(onlySigned)
+        .then((ids) => {
+          cache.ids = sortIds(Array.from(new Set(ids || [])));
+          cache.loadedAt = Date.now();
+          return cache.ids;
+        })
+        .finally(() => { cache.promise = null; });
+    }
+
+    const ids = [...await cache.promise];
+    consumer(ids);
+    return ids;
+  } catch (error) {
+    console.warn('Unable to load own identities', error);
+    consumer([]);
+    return [];
+  }
 }
 const SearchBar = () => {
   let searchString = '';

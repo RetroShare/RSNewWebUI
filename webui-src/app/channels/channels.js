@@ -7,38 +7,44 @@ const peopleUtil = require('people/people_util');
 
 const getChannels = {
   All: [],
-  PopularChannels: [],
-  SubscribedChannels: [],
+  Popular: [],
+  Subscribed: [],
   MyChannels: [],
-  OtherChannels: [],
+  Other: [],
   async load() {
-    const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelsSummaries');
-    const data = res.body;
-    getChannels.All = data.channels;
-    getChannels.SubscribedChannels = getChannels.All.filter(
+    try {
+      const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelsSummaries');
+      const channels = res && res.body && Array.isArray(res.body.channels) ? res.body.channels : null;
+      if (!channels) {
+        console.warn('Channels summaries response did not include channels', res && res.body);
+        return;
+      }
+      getChannels.All = channels;
+      getChannels.Subscribed = channels.filter(
       (channel) =>
         channel.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED ||
         channel.mSubscribeFlags === util.GROUP_MY_CHANNEL // my channel is subscribed
-    );
-    // getChannels.PopularChannels = getChannels.All;
-    getChannels.PopularChannels = getChannels.All.filter(
-      (a) => !getChannels.SubscribedChannels.includes(a)
-    );
-    getChannels.PopularChannels.sort((a, b) => b.mPop - a.mPop);
-    getChannels.OtherChannels = getChannels.PopularChannels.slice(5);
-    getChannels.PopularChannels = getChannels.PopularChannels.slice(0, 5);
+      );
+      const popular = channels.filter((channel) => !getChannels.Subscribed.includes(channel));
+      popular.sort((a, b) => (b.mPop || 0) - (a.mPop || 0));
+      getChannels.Other = popular.slice(5);
+      getChannels.Popular = popular.slice(0, 5);
 
-    getChannels.MyChannels = getChannels.All.filter(
-      (channel) => channel.mSubscribeFlags === util.GROUP_MY_CHANNEL
-    );
+      getChannels.MyChannels = channels.filter(
+        (channel) => channel.mSubscribeFlags === util.GROUP_MY_CHANNEL
+      );
+      m.redraw();
+    } catch (error) {
+      console.warn('Failed to load channel summaries', error);
+    }
   },
 };
 
 const sections = {
   MyChannels: require('channels/my_channels'),
-  SubscribedChannels: require('channels/subscribed_channels'),
-  PopularChannels: require('channels/popular_channels'),
-  OtherChannels: require('channels/other_channels'),
+  Subscribed: require('channels/subscribed_channels'),
+  Popular: require('channels/popular_channels'),
+  Other: require('channels/other_channels'),
 };
 
 const Layout = () => {
@@ -110,6 +116,7 @@ module.exports = {
       m(widget.Sidebar, {
         tabs: Object.keys(sections),
         baseRoute: '/channels/',
+        mobileDrawer: true,
       }),
       m('.node-panel', m(Layout, { pathInfo: vnode.attrs })),
     ];

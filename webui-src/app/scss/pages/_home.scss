@@ -120,3 +120,62 @@
     }
   }
 }
+
+/* Responsive Mobile Home Page Styles */
+@media (max-width: 768px) {
+  .homepage {
+    margin: 1rem auto !important;
+    padding: 0 1rem !important;
+    gap: 2rem !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+
+    .logo {
+      flex-direction: column !important;
+      gap: 0.5rem !important;
+      text-align: center !important;
+
+      & img {
+        width: 60px !important;
+      }
+
+      .retroshareText {
+        .retrotext {
+          font-size: 1.6rem !important;
+        }
+        & > b {
+          font-size: 0.75rem !important;
+        }
+      }
+    }
+
+    .certificate {
+      gap: 2rem !important;
+
+      &__heading {
+        & > h1 {
+          font-size: 1.35rem !important;
+          margin-bottom: 0.5rem !important;
+        }
+        font-size: 0.85rem !important;
+      }
+
+      &__content {
+        padding: 1rem 0.75rem !important;
+        gap: 1.25rem !important;
+
+        .retroshareID {
+          padding: 0.5rem !important;
+          font-size: 0.85rem !important;
+          max-width: 100% !important;
+
+          .textArea {
+            font-size: 0.8rem !important;
+            word-break: break-all !important;
+            overflow-wrap: anywhere !important;
+          }
+        }
+      }
+    }
+  }
+}

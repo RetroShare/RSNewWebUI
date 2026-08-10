@@ -55,7 +55,9 @@ table.friendsfiles td {
   word-wrap: break-word;
 }
 table.friendsfiles th:nth-child(1) {
-  width: 2%;
+  width: 1.5rem;
+  padding-left: 0.25rem;
+  padding-right: 0;
 }
 table.friendsfiles th:nth-child(2) {
   width: 50%;
@@ -65,6 +67,12 @@ table.friendsfiles th:nth-child(4) {
 }
 table.friendsfiles td:nth-child(2) {
   text-align: start;
+  padding-left: 0.25rem;
+}
+table.friendsfiles td:nth-child(1) {
+  width: 1.5rem;
+  padding-left: 0.25rem;
+  padding-right: 0;
 }
 
 // File Search
@@ -171,6 +179,147 @@ table.friendsfiles td:nth-child(2) {
   button {
     margin-left: 0.5rem;
   }
+}
+
+/* File search results use div rows, not table rows.  Give those rows their
+   own grid instead of relying on the older table selectors above. */
+.file-search-container {
+  align-items: stretch;
+  min-height: 16rem;
+  padding: 1rem;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+
+  &__keywords {
+    flex: 0 0 13rem;
+    padding: 0 1rem 0 0;
+
+    .keywords-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .keywords-header h5 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .clear-btn {
+      padding: 0.35rem 0.7rem;
+    }
+
+    .keywords-container a {
+      padding: 0.45rem 0.55rem;
+      border-radius: 0.35rem;
+      font-size: 0.95rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      &:hover,
+      &.selected {
+        background: rgba(0, 154, 235, 0.1);
+        color: $primary-color;
+      }
+    }
+  }
+
+  &__results {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: visible;
+
+    > h5 {
+      margin: 0;
+      color: #64748b;
+    }
+  }
+}
+
+.results-container {
+  width: 100%;
+  border: 1px solid #dbe3ec;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.results-row {
+  display: grid;
+  grid-template-columns: minmax(12rem, 2fr) minmax(5.5rem, 0.6fr) minmax(12rem, 1.6fr) auto;
+  gap: 1rem;
+  align-items: center;
+}
+
+.results-header {
+  background: #f1f5f9;
+  border-bottom: 1px solid #dbe3ec;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+
+  .results-row {
+    padding: 0.65rem 0.85rem;
+  }
+}
+
+.results-list .file-item {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid #edf2f7;
+  transition: background-color 0.15s ease;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &:hover {
+    background: #f8fafc;
+  }
+}
+
+.results-cell {
+  min-width: 0;
+}
+
+.results-cell.name-col {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #0f172a;
+  font-weight: 600;
+
+  i {
+    color: #0284c7;
+    font-size: 1.1rem;
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.results-cell.size-col {
+  color: #475569;
+  white-space: nowrap;
+}
+
+.results-cell.hash-col {
+  overflow: hidden;
+  color: #64748b;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.download-btn-v65 {
+  padding: 0.45rem 0.75rem;
+  white-space: nowrap;
 }
 
 .shareManagerPopupOverlay {
@@ -356,6 +505,93 @@ table.friendsfiles td:nth-child(2) {
     background: white;
   }
 
+  /* Friends Files is a hierarchy, so keep its controls and details together
+     as a compact list row instead of stacking every table cell as a card. */
+  table.friendsfiles tr {
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.35rem;
+    margin-bottom: 0.5rem;
+    padding: 0.65rem 0.5rem;
+  }
+
+  table.friendsfiles td {
+    display: block;
+    width: auto !important;
+    margin: 0;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  table.friendsfiles td:nth-child(1) {
+    grid-column: 1;
+  }
+
+  table.friendsfiles td:nth-child(2) {
+    grid-column: 2;
+    left: 0 !important;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  table.friendsfiles td:nth-child(3) {
+    grid-column: 3;
+    white-space: nowrap;
+  }
+
+  table.friendsfiles td:nth-child(4) {
+    grid-column: 2 / -1;
+    margin-top: 0.4rem;
+  }
+
+  table.myfiles tr {
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.35rem;
+    margin-bottom: 0.5rem;
+    padding: 0.65rem 0.5rem;
+  }
+
+  table.myfiles td {
+    display: block;
+    width: auto !important;
+    margin: 0;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  table.myfiles td:nth-child(1) {
+    grid-column: 1;
+  }
+
+  table.myfiles td:nth-child(2) {
+    grid-column: 2;
+    left: 0 !important;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  table.myfiles td:nth-child(3) {
+    grid-column: 3;
+    white-space: nowrap;
+  }
+
+  .my-files__configure-shares {
+    width: 2.4rem;
+    min-width: 2.4rem;
+    padding: 0.55rem !important;
+  }
+
+  .my-files__configure-shares span {
+    display: none;
+  }
+
   /* Search Container Layout */
   .file-search-container {
     flex-direction: column;
@@ -392,5 +628,62 @@ table.friendsfiles td:nth-child(2) {
   .results-container td {
     margin-bottom: 0.5rem;
     word-break: break-all;
+  }
+
+  .search-form {
+    width: auto;
+    flex: 1;
+    max-width: 18rem;
+  }
+
+  .file-search-container {
+    gap: 0.75rem;
+    padding: 0.75rem;
+
+    &__keywords {
+      padding: 0 0 0.75rem;
+      margin: 0;
+    }
+
+    &__results {
+      width: 100%;
+    }
+  }
+
+  .results-header {
+    display: none;
+  }
+
+  .results-list .file-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'name action'
+      'size hash';
+    gap: 0.45rem 0.75rem;
+    padding: 0.8rem;
+  }
+
+  .results-cell.name-col {
+    grid-area: name;
+  }
+
+  .results-cell.size-col {
+    grid-area: size;
+    font-size: 0.82rem;
+  }
+
+  .results-cell.hash-col {
+    grid-area: hash;
+    max-width: 10rem;
+    text-align: right;
+  }
+
+  .results-cell.action-col {
+    grid-area: action;
+  }
+
+  .download-btn-v65 {
+    padding: 0.4rem 0.6rem;
   }
 }

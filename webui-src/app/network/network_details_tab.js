@@ -37,6 +37,7 @@ const DetailsTab = () => {
       if (!friend) return null;
 
       const friendGxsId = State.gpgToGxsIdMap[gpgId.toLowerCase()];
+      const status = Data.getStatusPresentation(friend.statusValue, friend.isOnline);
 
       return m('.network-detail-view', [
         m('.detail-header', [
@@ -52,30 +53,30 @@ const DetailsTab = () => {
               m('i.fas.fa-fingerprint'),
               m('span', 'GPG ID: ' + gpgId),
             ]),
-          ]),
-          m('.detail-actions', [
-            m(
-              'button',
-              {
-                onclick: () => {
-                  const sslId = getOnlineSslId(gpgId);
-                  if (sslId) {
-                    State.activeTab = 'chat';
-                    startDirectChat(sslId);
-                  }
+            m('.detail-actions', { style: 'margin-top: 0.75rem;' }, [
+              m(
+                'button',
+                {
+                  onclick: () => {
+                    const sslId = getOnlineSslId(gpgId);
+                    if (sslId) {
+                      State.activeTab = 'chat';
+                      startDirectChat(sslId);
+                    }
+                  },
                 },
-              },
-              [m('i.fas.fa-comments'), ' Start Chat']
-            ),
-            m(
-              'button',
-              {
-                onclick: () => {
-                  State.showMailCompose = true;
+                [m('i.fas.fa-comments'), m('span.btn-text', ' Start Chat')]
+              ),
+              m(
+                'button',
+                {
+                  onclick: () => {
+                    State.showMailCompose = true;
+                  },
                 },
-              },
-              [m('i.fas.fa-envelope'), ' Send Mail']
-            ),
+                [m('i.fas.fa-envelope'), m('span.btn-text', ' Send Mail')]
+              ),
+            ]),
           ]),
         ]),
 
@@ -85,8 +86,8 @@ const DetailsTab = () => {
             m('.info-label', 'Status'),
             m(
               '.info-value',
-              { style: friend.isOnline ? 'color: #10b981; font-weight: 600;' : '' },
-              friend.isOnline ? 'Online' : 'Offline'
+              { style: `color: ${status.color}; font-weight: 600;` },
+              status.label
             ),
             m('.info-label', 'Custom Status'),
             m(
@@ -110,13 +111,15 @@ const DetailsTab = () => {
             friend.locations
               .slice()
               .sort((a, b) => (a.isOnline === b.isOnline ? 0 : a.isOnline ? -1 : 1))
-              .map((loc) =>
-              m('.location-card', { key: loc.id }, [
+              .map((loc) => {
+              const locStatus = Data.getStatusPresentation(loc.statusValue, loc.isOnline);
+              return m('.location-card', { key: loc.id }, [
                 m('.loc-header', [
                   m('.loc-name', loc.name),
                   m(
-                    '.loc-status' + (loc.isOnline ? '.online' : '.offline'),
-                    loc.isOnline ? 'Online' : 'Offline'
+                    '.loc-status',
+                    { style: { color: locStatus.color } },
+                    locStatus.label
                   ),
                 ]),
                 m('.loc-body', [
@@ -139,8 +142,8 @@ const DetailsTab = () => {
                     'Remove Location'
                   ),
                 ]),
-              ])
-            )
+              ]);
+            })
           ),
         ]),
       ]);

@@ -7,12 +7,36 @@ const peopleUtil = require('people/people_util');
 const sha1 = require('channels/sha1');
 const fileUtil = require('files/files_util');
 const fileDown = require('files/files_downloads');
+const chatEmoji = require('chat/chat_emoji');
 
 const filesUploadHashes = {
   // figure out a better way later.
   PostFiles: [],
   Thumbnail: [],
 };
+
+function channelThumbnailSrc(post) {
+  const thumbnail = post && (post.mThumbnail || post.thumbnail || post.mImage);
+  const base64 = thumbnail && thumbnail.mData && thumbnail.mData.base64
+    ? thumbnail.mData.base64
+    : typeof thumbnail === 'string'
+      ? thumbnail
+      : thumbnail && thumbnail.base64;
+  if (!base64 || !String(base64).trim()) return '';
+  return String(base64).startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
+}
+
+const ChannelFallbackThumbnail = () => ({
+  view: (vnode) => m('.channel-post__placeholder', { style: {
+    display: vnode.attrs.hidden ? 'none' : 'flex', flex: '1 1 auto', minHeight: '0',
+    flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '.35rem',
+    color: '#64748b', background: 'linear-gradient(135deg, #f8fafc, #dbe5f1)',
+  } }, [
+    m('i.fas.fa-image[aria-hidden=true]', { style: { fontSize: '1.35rem', color: '#64748b' } }),
+    m('span', { style: { fontSize: '2rem', fontWeight: '700', color: '#2563eb' } }, (vnode.attrs.title || 'Post').trim().slice(0, 1).toUpperCase()),
+    m('small', { style: { fontSize: '.72rem', fontWeight: '600' } }, 'No image'),
+  ]),
+});
 
 async function parsefile(file, type) {
   const fileSize = file.size;
@@ -373,12 +397,9 @@ const ChannelView = () => {
       m('.widget__body', [
         m('.media-item', [
           m('.media-item__details', [
-            m('img', {
-              src:
-                cimage.mData.base64 === ''
-                  ? 'data/streaming.png'
-                  : `data:image/png;base64,${cimage.mData.base64}`,
-            }),
+            cimage && cimage.mData && cimage.mData.base64
+              ? m('img', { src: `data:image/png;base64,${cimage.mData.base64}` })
+              : null,
             m('.media-item__details-info', [
               m('div', [m('b', 'Posts: '), m('span', cposts)]),
               m('div', [
@@ -428,7 +449,14 @@ const ChannelView = () => {
                 m(
                   '.posts-container-card',
                   {
-                    style: 'display: ' + (plist[key].isSearched ? 'flex' : 'none'), // for search
+                    style: {
+                      display: plist[key].isSearched ? 'flex' : 'none', // for search
+                      height: '240px',
+                      minHeight: '0',
+                      overflow: 'hidden',
+                      flexDirection: 'column',
+                      alignSelf: 'start',
+                    },
                     onclick: () => {
                       m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
                         tab: m.route.param().tab,
@@ -438,13 +466,19 @@ const ChannelView = () => {
                     },
                   },
                   [
-                    m('img', {
-                      src:
-                        plist[key].post.mThumbnail.mData.base64 === ''
-                          ? 'data/streaming.png'
-                          : 'data:image/png;base64,' + plist[key].post.mThumbnail.mData.base64,
-                      alt: 'No Thumbnail',
-                    }),
+                    channelThumbnailSrc(plist[key].post)
+                      ? [
+                          m('img', {
+                            src: channelThumbnailSrc(plist[key].post),
+                            alt: plist[key].post.mMeta.mMsgName || 'Post thumbnail',
+                            onerror: (e) => {
+                              e.target.style.display = 'none';
+                              if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                            },
+                          }),
+                          m(ChannelFallbackThumbnail, { title: plist[key].post.mMeta.mMsgName, hidden: true }),
+                        ]
+                      : m(ChannelFallbackThumbnail, { title: plist[key].post.mMeta.mMsgName }),
                     m('p', plist[key].post.mMeta.mMsgName),
                   ]
                 ),
@@ -665,19 +699,155 @@ function displaycomment() {
   };
 }
 
+/* Modern threaded comment experience for channel posts. */
+const ChannelComments = () => {
+  let replyTo = null;
+  let text = '';
+  let identity = null;
+  let submitting = false;
+  let error = '';
+  let showEmojiPicker = false;
+  const expandedReplies = {};
+
+  const metaOf = (comment) => (comment && comment.mMeta) || {};
+  const idOf = (comment) => metaOf(comment).mMsgId || comment.msgId;
+  const nameOf = (id) => rs.userList.username(id) || rs.userList.userMap[id] || `${String(id || 'Unknown').slice(0, 10)}…`;
+  const initials = (name) => String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+  const dateOf = (value) => {
+    const seconds = value && typeof value === 'object' ? value.xint64 : value;
+    return Number(seconds) ? new Date(Number(seconds) * 1000).toLocaleString() : '';
+  };
+
+  function tree(threadId) {
+    const nodes = {};
+    const roots = [];
+    Object.keys(Data.Comments[threadId] || {}).forEach((key) => {
+      const entry = Data.Comments[threadId][key];
+      const comment = entry.comment || entry;
+      if (idOf(comment)) nodes[idOf(comment)] = { comment, children: [] };
+    });
+    Object.keys(nodes).forEach((key) => {
+      const node = nodes[key];
+      const parent = metaOf(node.comment).mParentId;
+      if (parent && parent !== threadId && nodes[parent]) nodes[parent].children.push(node);
+      else roots.push(node);
+    });
+    const chronological = (a, b) => Number(metaOf(a.comment).mPublishTs && (metaOf(a.comment).mPublishTs.xint64 || metaOf(a.comment).mPublishTs)) - Number(metaOf(b.comment).mPublishTs && (metaOf(b.comment).mPublishTs.xint64 || metaOf(b.comment).mPublishTs));
+    roots.sort(chronological);
+    Object.keys(nodes).forEach((key) => nodes[key].children.sort(chronological));
+    return roots;
+  }
+
+  async function submit(vnode) {
+    const comment = text.trim();
+    if (!comment || !identity || submitting) return;
+    submitting = true;
+    error = '';
+    try {
+      const res = await rs.rsJsonApiRequest('/rsgxschannels/createCommentV2', {
+        channelId: vnode.attrs.channelId,
+        threadId: vnode.attrs.threadId,
+        comment,
+        authorId: identity,
+        parentId: replyTo ? idOf(replyTo) : vnode.attrs.threadId,
+      });
+      if (!res || !res.body || res.body.retval === false) {
+        error = (res && res.body && res.body.errorMessage) || 'Your comment could not be posted.';
+        return;
+      }
+      text = '';
+      replyTo = null;
+      await util.updatedisplaychannels(vnode.attrs.channelId);
+    } catch (submitError) {
+      console.warn('Channel comment submission failed', submitError);
+      error = 'Your comment could not be posted. Please try again.';
+    } finally {
+      submitting = false;
+      m.redraw();
+    }
+  }
+
+  function renderComment(node, vnode) {
+    const comment = node.comment;
+    const meta = metaOf(comment);
+    const id = idOf(comment);
+    const name = nameOf(meta.mAuthorId);
+    const votes = (Data.Votes[meta.mThreadId] && Data.Votes[meta.mThreadId][id]) || { upvotes: 0, downvotes: 0 };
+    const repliesExpanded = expandedReplies[id] === true;
+    return m('.board-comment', { key: id }, [
+      m('.board-comment-avatar', initials(name)),
+      m('.board-comment__content', [
+        m('.board-comment__header', [
+          m('.board-comment__meta', [m('b', name), dateOf(meta.mPublishTs) ? m('span', dateOf(meta.mPublishTs)) : null]),
+          m('button.board-comment__menu[type=button][aria-label=Comment options]', m('i.fas.fa-ellipsis-v')),
+        ]),
+        m('p.board-comment__text', comment.mComment || comment.comment || ''),
+        m('.board-comment__actions', [
+          m('button[type=button]', { disabled: !vnode.attrs.voteIdentity, onclick: () => addvote(util.GXS_VOTE_UP, vnode.attrs.channelId, vnode.attrs.threadId, vnode.attrs.voteIdentity, id) }, [m('i.fas.fa-thumbs-up'), ` ${votes.upvotes || 0}`]),
+          m('button[type=button]', { disabled: !vnode.attrs.voteIdentity, onclick: () => addvote(util.GXS_VOTE_DOWN, vnode.attrs.channelId, vnode.attrs.threadId, vnode.attrs.voteIdentity, id) }, m('i.fas.fa-thumbs-down')),
+          m('button[type=button]', { onclick: () => { replyTo = comment; text = ''; error = ''; } }, 'Reply'),
+        ]),
+        node.children.length ? m('button.board-comment__replies-toggle[type=button]', { 'aria-expanded': repliesExpanded, onclick: () => { expandedReplies[id] = !repliesExpanded; } }, [`${node.children.length} ${node.children.length === 1 ? 'reply' : 'replies'} `, m('i.fas', { class: repliesExpanded ? 'fa-chevron-up' : 'fa-chevron-down' })]) : null,
+        node.children.length && repliesExpanded ? m('.board-comment__replies', node.children.map((child) => renderComment(child, vnode))) : null,
+      ]),
+    ]);
+  }
+
+  return {
+    view: (vnode) => {
+      const identities = (vnode.attrs.identities || []).filter((id) => Number(id) !== 0);
+      if (!identity && identities.length) identity = identities[0];
+      const comments = tree(vnode.attrs.threadId);
+      return m('.board-comments.channel-comments', [
+        m('.board-comments__heading', [
+          m('h3', `${Object.keys(Data.Comments[vnode.attrs.threadId] || {}).length} Comment${Object.keys(Data.Comments[vnode.attrs.threadId] || {}).length === 1 ? '' : 's'}`),
+          m('span', [m('i.fas.fa-sort-amount-down'), ' Oldest first']),
+          m('.board-comments__voter', [
+            m('label[for=channel-comment-voter]', 'Voter identity'),
+            m('select#channel-comment-voter', {
+              value: vnode.attrs.voteIdentity || '',
+              disabled: identities.length === 0,
+              onchange: (e) => vnode.attrs.onVoteIdentity(e.target.value),
+            }, identities.length
+              ? identities.map((id) => m('option', { value: id }, nameOf(id)))
+              : m('option', { value: '' }, vnode.attrs.identitiesLoading ? 'Loading identities…' : 'No identity available')),
+          ]),
+        ]),
+        m('.board-comment-composer', [
+          m('.board-comment-avatar', initials(nameOf(identity))),
+          m('.board-comment-composer__body', [
+            replyTo ? m('.board-comment-composer__replying', ['Replying to ', m('b', nameOf(metaOf(replyTo).mAuthorId)), m('button[type=button][aria-label=Cancel reply]', { onclick: () => { replyTo = null; text = ''; } }, m('i.fas.fa-times'))]) : null,
+            identities.length ? m('select.board-comment-composer__identity', { value: identity, onchange: (e) => { identity = e.target.value; } }, identities.map((id) => m('option', { value: id }, nameOf(id)))) : null,
+            m('textarea.board-comment-composer__input[rows=1][placeholder=Add a comment…]', { value: text, disabled: !identity || submitting, oninput: (e) => { text = e.target.value; }, onkeydown: (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') submit(vnode); } }),
+            !identity ? m('p.board-comment-composer__hint', vnode.attrs.identitiesLoading ? 'Loading identities…' : 'Create or select an identity to post a comment.') : null,
+            error ? m('p.board-comment-composer__error', error) : null,
+            m('.board-comment-composer__actions', [
+              m('.board-comment-composer__emoji', { style: { position: 'relative', marginRight: 'auto' } }, [
+                m('button[type=button][title=Insert emoji][aria-label=Insert emoji]', { style: { width: '32px', height: '32px', padding: '0', borderRadius: '50%', border: '0', boxShadow: 'none', background: showEmojiPicker ? '#e0f2fe' : 'transparent', color: '#475569', fontSize: '1.15rem' }, onclick: () => { showEmojiPicker = !showEmojiPicker; } }, m('i.fas.fa-smile')),
+                showEmojiPicker ? m('.board-comment-emoji-popover', { style: { position: 'absolute', zIndex: '20', top: '38px', left: '0', width: '250px', maxHeight: '180px', overflowY: 'auto', padding: '.5rem', display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '.2rem', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', boxShadow: '0 8px 20px rgba(0,0,0,.16)' } }, chatEmoji.EMOJI_DATA.Smileys.slice(0, 48).map((emoji) => m('button[type=button]', { style: { width: '28px', height: '28px', padding: '0', border: '0', boxShadow: 'none', background: 'transparent', fontSize: '1.1rem' }, onclick: () => { text += emoji; showEmojiPicker = false; } }, emoji))) : null,
+              ]),
+              text || replyTo ? m('button.board-comment-composer__cancel[type=button]', { onclick: () => { text = ''; replyTo = null; error = ''; } }, 'Cancel') : null,
+              m('button.board-comment-composer__submit[type=button]', { disabled: !text.trim() || !identity || submitting, onclick: () => submit(vnode) }, submitting ? 'Posting…' : 'Comment'),
+            ]),
+          ]),
+        ]),
+        comments.length ? m('.board-comments__list', comments.map((node) => renderComment(node, vnode))) : m('.board-comments__empty', [m('i.fas.fa-comment'), m('p', 'No comments yet. Start the conversation.')]),
+      ]);
+    },
+  };
+};
+
 const PostView = () => {
   let post = {};
-  let topComments = {};
   const filesInfo = {};
   let voteIdentity;
   let ownId;
+  let identitiesLoading = true;
+  let messageExpanded = false;
   return {
     oninit: async (v) => {
       if (Data.Posts[v.attrs.channelId] && Data.Posts[v.attrs.channelId][v.attrs.msgId]) {
         post = Data.Posts[v.attrs.channelId][v.attrs.msgId].post;
-      }
-      if (Data.TopComments[v.attrs.msgId]) {
-        topComments = Data.TopComments[v.attrs.msgId]; // get all the top level parent comments
       }
       if (post) {
         post.mFiles.map(async (file) => {
@@ -696,10 +866,16 @@ const PostView = () => {
           }
         }
         voteIdentity = ownId[0];
+        identitiesLoading = false;
       });
       fileDown.Downloads.loadStatus(); // for retrieving downloading files.
     },
-    view: (v) => [
+    view: (v) => {
+      const message = post.mMsg || '';
+      const messageText = String(message).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const hasEmbeddedImage = /<img\b|data:image\//i.test(String(message));
+      const hasLongMessage = messageText.length > 280 || hasEmbeddedImage;
+      return [
       m(
         'a[title=Back]',
         {
@@ -713,7 +889,19 @@ const PostView = () => {
       ),
       m('.widget__heading', m('h3', post.mMeta.mMsgName)),
       m('.widget__body', [
-        m('p', { style: { whiteSpace: 'normal' } }, m.trust(post.mMsg)),
+        message ? m('.post-description', [
+          m('.post-description__text', {
+            style: {
+              maxHeight: messageExpanded ? 'none' : '4.5em',
+              overflow: 'hidden',
+              lineHeight: '1.5',
+            },
+          }, m.trust(message)),
+          hasLongMessage ? m('button.post-description__toggle[type=button]', {
+            style: { marginTop: '.35rem', padding: '0', border: '0', boxShadow: 'none', background: 'transparent', color: '#0f172a', fontSize: '.85rem', fontWeight: '700' },
+            onclick: () => { messageExpanded = !messageExpanded; },
+          }, messageExpanded ? 'Show less' : '…more') : null,
+        ]) : null,
         m('.file-section', [
           m('h3', 'Files(' + post.mAttachmentCount + ')'),
           m(
@@ -722,132 +910,77 @@ const PostView = () => {
               'tbody',
               post.mFiles.map((file) =>
                 m('tr', [
-                  m('td', file.mName),
-                  m('td', rs.formatBytes(file.mSize.xint64)),
-                  m(
-                    'button',
-                    {
-                      style: { fontSize: '0.9em' },
-                      onclick: async () =>
-                        widget.popupMessage([
-                          m('p', 'Start Download?'),
-                          m(
-                            'button',
-                            {
-                              onclick: async () => {
-                                if (filesInfo[file.mHash] && !filesInfo[file.mHash].retval) {
-                                  const res = await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
-                                    fileName: file.mName,
-                                    hash: file.mHash,
-                                    flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
-                                    size: {
-                                      xstr64: file.mSize.xstr64,
-                                    },
-                                  });
-                                  res.body.retval === false
-                                    ? widget.popupMessage([
-                                        m('h3', 'Error'),
-                                        m('hr'),
-                                        m('p', res.body.errorMessage),
-                                      ])
-                                    : widget.popupMessage([
-                                        m('h3', 'Success'),
-                                        m('hr'),
-                                        m('p', 'Download Started'),
-                                      ]);
-                                  m.redraw();
-                                }
+                  m('td.channel-file__name[data-label=File name]', file.mName),
+                  m('td.channel-file__size[data-label=Size]', rs.formatBytes(file.mSize.xint64)),
+                  m('td.channel-file__action[data-label=Download]', [
+                    m(
+                      'button',
+                      {
+                        style: { fontSize: '0.9em' },
+                        onclick: async () =>
+                          widget.popupMessage([
+                            m('p', 'Start Download?'),
+                            m(
+                              'button',
+                              {
+                                onclick: async () => {
+                                  if (filesInfo[file.mHash] && !filesInfo[file.mHash].retval) {
+                                    const res = await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                                      fileName: file.mName,
+                                      hash: file.mHash,
+                                      flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                                      size: {
+                                        xstr64: file.mSize.xstr64,
+                                      },
+                                    });
+                                    res.body.retval === false
+                                      ? widget.popupMessage([
+                                          m('h3', 'Error'),
+                                          m('hr'),
+                                          m('p', res.body.errorMessage),
+                                        ])
+                                      : widget.popupMessage([
+                                          m('h3', 'Success'),
+                                          m('hr'),
+                                          m('p', 'Download Started'),
+                                        ]);
+                                    m.redraw();
+                                  }
+                                },
                               },
-                            },
-                            'Start Download'
-                          ),
-                        ]),
-                    },
-                    filesInfo[file.mHash]
-                      ? filesInfo[file.mHash].retval
-                        ? 'Open File'
-                        : ['Download', m('i.fas.fa-download')]
-                      : 'Please Wait...'
-                  ),
-                  fileDown.list[file.mHash] && // using the file from files_util to display download.
-                    m(fileUtil.File, {
+                              'Start Download'
+                            ),
+                          ]),
+                      },
+                      filesInfo[file.mHash]
+                        ? filesInfo[file.mHash].retval
+                          ? 'Open File'
+                          : ['Download ', m('i.fas.fa-download')]
+                        : 'Please Wait...'
+                    ),
+                    fileDown.list[file.mHash] && m(fileUtil.File, {
                       info: fileDown.list[file.mHash],
                       direction: 'down',
                       transferred: fileDown.list[file.mHash].transfered.xint64,
                       parts: [],
                     }),
+                  ]),
                 ])
               )
             )
           ),
         ]),
-        m('.comments-section', [
-          m('h3', 'Comments'),
-          m('.comments-section__menu', [
-            m(
-              'button',
-              {
-                onclick: () => {
-                  widget.popupMessage(
-                    m(AddComment, {
-                      parent_comment: '',
-                      channelId: v.attrs.channelId,
-                      authorId: ownId,
-                      threadId: v.attrs.msgId,
-                      parentId: v.attrs.msgId,
-                    })
-                  );
-                },
-              },
-              'Add Comment'
-            ),
-            m('.comments-section__menu-id', [
-              m('label[for=idtags', 'Voter ID: '),
-              m(
-                'select[id=idtags]',
-                {
-                  value: voteIdentity,
-                  onchange: (e) => {
-                    voteIdentity = ownId[e.target.selectedIndex];
-                  },
-                },
-                [
-                  ownId &&
-                    ownId.map((o) =>
-                      m(
-                        'option',
-                        { value: o },
-                        `${rs.userList.userMap[o].toLocaleString()} (${o.slice(0, 8)}...)`
-                      )
-                    ),
-                ]
-              ),
-            ]),
-          ]),
-        ]),
-        m(
-          util.CommentsTable,
-          m(
-            'tbody',
-            Object.keys(topComments).map((key, index) =>
-              Data.Comments[topComments[key].mMeta.mThreadId] &&
-              Data.Comments[topComments[key].mMeta.mThreadId][topComments[key].mMeta.mMsgId]
-                ? m(displaycomment, {
-                    // calls the recursive function for all the parents.
-                    identity: ownId,
-                    voteIdentity,
-                    commentStruct:
-                      Data.Comments[topComments[key].mMeta.mThreadId][
-                        topComments[key].mMeta.mMsgId
-                      ],
-                    replyDepth: 0,
-                  })
-                : ''
-            )
-          )
-        ),
+        m(ChannelComments, {
+          channelId: v.attrs.channelId,
+          threadId: v.attrs.msgId,
+          identities: ownId,
+          voteIdentity,
+          identitiesLoading,
+          onVoteIdentity: (id) => { voteIdentity = id; },
+        }),
       ]),
-    ],
+      ];
+    },
   };
 };
 

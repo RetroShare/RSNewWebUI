@@ -20,6 +20,29 @@ async function loadSslDetails() {
 const Data = {
   gpgDetails: {},
 };
+
+function normalizeStatusValue(value, fallback) {
+  if (value && typeof value === 'object') value = value.value ?? value.status ?? value.xint32;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) return numeric;
+    const names = { OFFLINE: 0, AWAY: 1, BUSY: 2, ONLINE: 3, INACTIVE: 4 };
+    const match = Object.keys(names).find((name) => value.toUpperCase().includes(name));
+    if (match) return names[match];
+  }
+  return fallback;
+}
+
+Data.getStatusPresentation = function (statusValue, isOnline = false) {
+  const value = normalizeStatusValue(statusValue, isOnline ? 3 : 0);
+  return {
+    value,
+    label: ['Offline', 'Away', 'Busy', 'Online', 'Inactive'][value] || (isOnline ? 'Online' : 'Offline'),
+    color: ['#94a3b8', '#eab308', '#ef4444', '#10b981', '#f59e0b'][value] || '#94a3b8',
+  };
+};
+
 Data.refreshGpgDetails = async function () {
   const details = {};
   const sslDetails = await loadSslDetails();
@@ -34,6 +57,8 @@ Data.refreshGpgDetails = async function () {
         )
         .then(() => {
           let customState = '';
+          let statusValue = isOnline ? 3 : 0;
+          let statusTimestamp = 0;
           return rs
             .rsJsonApiRequest(
               '/rsChats/getCustomStateString',
@@ -45,19 +70,19 @@ Data.refreshGpgDetails = async function () {
               }
             )
             .catch(() => {})
+            .then(() => rs.rsJsonApiRequest(
+              '/rsStatus/getStatus',
+              { id: data.id },
+              (statusData) => {
+                if (statusData && statusData.retval && statusData.statusInfo) {
+                  statusValue = normalizeStatusValue(statusData.statusInfo.status, statusValue);
+                  statusTimestamp = statusData.statusInfo.time_stamp || 0;
+                }
+              }
+            ).catch(() => {}))
             .then(() => {
-              let avatar = '';
-              return rs
-                .rsJsonApiRequest(
-                  '/rsChats/getAvatar',
-                  { pid: data.id },
-                  (avatarData) => {
-                    if (avatarData && avatarData.retval && avatarData.avatar_base64_string) {
-                      avatar = avatarData.avatar_base64_string;
-                    }
-                  }
-                )
-                .catch(() => {})
+              const avatar = '';
+              return Promise.resolve()
                 .then(() => {
                   const gpgId = (data.gpg_id || '').toLowerCase();
                   const loc = {
@@ -67,6 +92,8 @@ Data.refreshGpgDetails = async function () {
                     isOnline,
                     gpg_id: gpgId,
                     customState,
+                    statusValue,
+                    statusTimestamp,
                     avatar,
                   };
 
@@ -77,6 +104,8 @@ Data.refreshGpgDetails = async function () {
                       isOnline,
                       locations: [loc],
                       customState,
+                      statusValue,
+                      statusTimestamp,
                       avatar: avatar || '',
                     };
                   } else {
@@ -86,6 +115,10 @@ Data.refreshGpgDetails = async function () {
                     }
                     if (!details[gpgId].customState || (isOnline && customState)) {
                       details[gpgId].customState = customState;
+                    }
+                    if (isOnline || !details[gpgId].isOnline) {
+                      details[gpgId].statusValue = statusValue;
+                      details[gpgId].statusTimestamp = statusTimestamp;
                     }
                   }
                   details[gpgId].isOnline = details[gpgId].isOnline || isOnline;

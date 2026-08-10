@@ -15,15 +15,15 @@
   flex-shrink: 0;
 
   &-left {
-    @include flex($align: center);
+    @include flex($align: center, $gap: 0.75rem);
   }
 
   &-right {
-    @include flex($align: center, $gap: 1.5rem);
+    @include flex($align: center, $gap: 0.75rem);
   }
 
   &-item {
-    @include flex($align: center);
+    @include flex($align: center, $gap: 0.3rem);
   }
 
   &-divider {
@@ -39,4 +39,28 @@
   border-radius: 50%;
   display: inline-block;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 768px) {
+  .statusbar {
+    height: 22px !important;
+    padding: 0 0.4rem !important;
+    font-size: 0.72rem !important;
+
+    .statusbar-left,
+    .statusbar-right {
+      gap: 0.35rem !important;
+    }
+
+    .statusbar-label,
+    .statusbar-total-bytes,
+    .statusbar-extra-info {
+      display: none !important;
+    }
+
+    .statusbar-divider {
+      height: 10px !important;
+      margin: 0 0.1rem !important;
+    }
+  }
 }

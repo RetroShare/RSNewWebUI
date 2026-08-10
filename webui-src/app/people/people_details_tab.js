@@ -100,7 +100,7 @@ const DetailsTab = () => {
                             })
                           ),
                       },
-                      [m('i.fas.fa-edit'), ' Edit']
+                      [m('i.fas.fa-edit'), m('span.btn-text', ' Edit')]
                     ),
                     m(
                       'button.btn.red',
@@ -113,7 +113,7 @@ const DetailsTab = () => {
                             })
                           ),
                       },
-                      [m('i.fas.fa-trash-alt'), ' Delete']
+                      [m('i.fas.fa-trash-alt'), m('span.btn-text', ' Delete')]
                     ),
                   ]
                 : [
@@ -125,7 +125,7 @@ const DetailsTab = () => {
                           initializeDistantChat();
                         },
                       },
-                      [m('i.fas.fa-comment-alt'), ' Start Chat']
+                      [m('i.fas.fa-comment-alt'), m('span.btn-text', ' Start Chat')]
                     ),
                     m(
                       'button.btn.blue',
@@ -134,7 +134,7 @@ const DetailsTab = () => {
                           State.showMailCompose = true;
                         },
                       },
-                      [m('i.fas.fa-envelope'), ' Send Mail']
+                      [m('i.fas.fa-envelope'), m('span.btn-text', ' Send Mail')]
                     ),
                     m(
                       'button.btn' + (isContact ? '.red' : '.blue'),
@@ -151,8 +151,8 @@ const DetailsTab = () => {
                         },
                       },
                       isContact
-                        ? [m('i.fas.fa-user-minus'), ' Remove Contact']
-                        : [m('i.fas.fa-user-plus'), ' Add Contact']
+                        ? [m('i.fas.fa-user-minus'), m('span.btn-text', ' Remove Contact')]
+                        : [m('i.fas.fa-user-plus'), m('span.btn-text', ' Add Contact')]
                     ),
                   ],
             ]),

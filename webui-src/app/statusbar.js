@@ -346,25 +346,36 @@ const StatusBar = {
     }
 
     return m('.statusbar', [
-      m('.statusbar-left', { style: 'display: flex; align-items: center; gap: 0.75rem;' }, [
+      m('.statusbar-left', [
         m('.statusbar-item', [
-          m('i.fas.fa-users', { style: 'margin-right: 0.5rem; color: #94a3b8;' }),
-          m('span', `Friends: ${State.onlineCount}/${State.friendCount}`),
+          m('i.fas.fa-users', { style: 'margin-right: 0.35rem; color: #94a3b8;' }),
+          m('span.statusbar-label', 'Friends:\u00a0'),
+          m('span.statusbar-value', `${State.onlineCount}/${State.friendCount}`),
         ]),
 
         // NAT — hidden when in hidden/darknet mode (same as Qt)
         !isHiddenMode && m('.statusbar-divider'),
-        !isHiddenMode && m('.statusbar-item', { title: natTooltip, style: 'cursor: help;' }, [
-          m('span', { style: 'margin-right: 0.5rem;' }, 'NAT:'),
-          m('.status-bullet', { style: { backgroundColor: natColor } }),
+        !isHiddenMode && m('.statusbar-item.statusbar-item--nat', {
+          title: natTooltip,
+          style: 'cursor: help; margin-left: 0.6rem;',
+        }, [
+          m('span.statusbar-label', { style: 'margin-right: 0.35rem;' }, 'NAT:'),
+          m('.status-bullet', {
+            style: { backgroundColor: natColor, marginLeft: '0.15rem', marginRight: '0.45rem' },
+          }),
         ]),
 
         // DHT — hidden when in hidden/darknet mode (same as Qt)
         !isHiddenMode && m('.statusbar-divider'),
-        !isHiddenMode && m('.statusbar-item', { title: dhtTooltip, style: 'cursor: help;' }, [
-          m('span', { style: 'margin-right: 0.5rem;' }, 'DHT:'),
-          m('.status-bullet', { style: { backgroundColor: dhtColor } }),
-          State.dhtActive && State.dhtOk && m('span', { style: 'margin-left: 0.5rem;' }, `${formatUnit(State.dhtRsNetSize)} (${formatUnit(State.dhtNetSize)})`),
+        !isHiddenMode && m('.statusbar-item.statusbar-item--dht', {
+          title: dhtTooltip,
+          style: 'cursor: help; margin-left: 0.6rem;',
+        }, [
+          m('span.statusbar-label', { style: 'margin-right: 0.35rem;' }, 'DHT:'),
+          m('.status-bullet', {
+            style: { backgroundColor: dhtColor, marginLeft: '0.15rem', marginRight: '0.35rem' },
+          }),
+          State.dhtActive && State.dhtOk && m('span.statusbar-extra-info', { style: 'margin-left: 0.35rem;' }, `${formatUnit(State.dhtRsNetSize)} (${formatUnit(State.dhtNetSize)})`),
         ]),
 
         // Tor / I2P — only shown when in hidden/darknet mode (same as Qt)
@@ -379,23 +390,25 @@ const StatusBar = {
       ]),
 
       // RatesStatus — Bandwidth speeds & total cumulative transfer (Down | Up)
-      m('.statusbar-right', { style: 'display: flex; align-items: center; gap: 0.75rem;' }, [
+      m('.statusbar-right', [
         m('.statusbar-item', {
           title: `Downloaded: ${formatBytes(State.totalIn)}`,
-          style: 'cursor: help; display: flex; align-items: center;'
+          style: 'cursor: help;'
         }, [
-          m('i.fas.fa-arrow-down', { style: 'color: #22c55e; margin-right: 0.35rem;' }),
-          m('span', `Down: ${State.rateIn.toFixed(2)} kB/s`),
-          m('span', { style: 'color: #64748b; font-size: 0.8rem; margin-left: 0.35rem;' }, `(${formatBytes(State.totalIn)})`),
+          m('i.fas.fa-arrow-down', { style: 'color: #22c55e; margin-right: 0.25rem;' }),
+          m('span.statusbar-label', 'Down:\u00a0'),
+          m('span.statusbar-value', `${State.rateIn.toFixed(1)} kB/s`),
+          m('span.statusbar-total-bytes', { style: 'color: #64748b; font-size: 0.8rem; margin-left: 0.25rem;' }, `(${formatBytes(State.totalIn)})`),
         ]),
         m('.statusbar-divider'),
         m('.statusbar-item', {
           title: `Uploaded: ${formatBytes(State.totalOut)}`,
-          style: 'cursor: help; display: flex; align-items: center;'
+          style: 'cursor: help;'
         }, [
-          m('i.fas.fa-arrow-up', { style: 'color: #3b82f6; margin-right: 0.35rem;' }),
-          m('span', `Up: ${State.rateOut.toFixed(2)} kB/s`),
-          m('span', { style: 'color: #64748b; font-size: 0.8rem; margin-left: 0.35rem;' }, `(${formatBytes(State.totalOut)})`),
+          m('i.fas.fa-arrow-up', { style: 'color: #3b82f6; margin-right: 0.25rem;' }),
+          m('span.statusbar-label', 'Up:\u00a0'),
+          m('span.statusbar-value', `${State.rateOut.toFixed(1)} kB/s`),
+          m('span.statusbar-total-bytes', { style: 'color: #64748b; font-size: 0.8rem; margin-left: 0.25rem;' }, `(${formatBytes(State.totalOut)})`),
         ]),
       ]),
     ]);

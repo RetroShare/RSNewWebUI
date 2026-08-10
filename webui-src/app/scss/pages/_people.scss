@@ -229,100 +229,200 @@ img.avatar {
   color: #0f172a;
 }
 
+/* Main People Page Flex Layout Container */
 .people-container {
-  display: flex;
-  height: calc(100vh - 55px);
-  width: 100%;
-  overflow: hidden;
+  display: flex !important;
+  flex-direction: row !important;
+  height: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  background-color: #f1f5f9 !important;
 }
 
+/* Left Sidebar Pane (320px fixed width on Desktop) */
 .people-left-pane {
-  width: 320px;
-  border-right: 1px solid #cbd5e1;
-  display: flex;
-  flex-direction: column;
-  background-color: #ffffff;
-  overflow: hidden;
+  width: 320px !important;
+  min-width: 300px !important;
+  max-width: 350px !important;
+  height: 100% !important;
+  border-right: 1px solid #cbd5e1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #ffffff !important;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05) !important;
+  flex-shrink: 0 !important;
+  overflow: hidden !important;
 }
 
+/* Right Content Details Pane */
 .people-right-pane {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background-color: #f8fafc;
+  flex: 1 !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  background-color: #f8fafc !important;
 }
 
-.people-left-pane .chat-item {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  gap: 0.75rem;
-  border-bottom: 1px solid #f1f5f9;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-  position: relative;
+/* Scrollable list section inside left sidebar */
+.people-list-container {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 0.5rem 0 !important;
 }
 
-.people-left-pane .chat-item:hover {
-  background-color: #f8fafc;
+/* Active Chats list item */
+.chat-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding: 0.65rem 0.85rem !important;
+  margin: 0.2rem 0.5rem !important;
+  border-radius: 0.5rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
+
+  &:hover {
+    background-color: #f1f5f9 !important;
+  }
+
+  &.selected {
+    background-color: #e0f2fe !important;
+
+    .chat-name {
+      color: #0369a1 !important;
+      font-weight: 700 !important;
+    }
+  }
+
+  .chat-avatar-wrapper {
+    position: relative !important;
+    flex-shrink: 0 !important;
+
+    .status-dot {
+      position: absolute !important;
+      bottom: -1px !important;
+      right: -1px !important;
+      width: 13px !important;
+      height: 13px !important;
+      border-radius: 50% !important;
+      border: 2px solid #ffffff !important;
+    }
+  }
+
+  .chat-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+
+    .chat-name {
+      font-size: 0.95rem !important;
+      font-weight: 600 !important;
+      color: #1e293b !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+
+    .chat-last-msg {
+      font-size: 0.825rem !important;
+      color: #64748b !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      margin-top: 0.1rem !important;
+    }
+  }
+
+  .chat-meta {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    flex-shrink: 0 !important;
+
+    .chat-time {
+      font-size: 0.75rem !important;
+      color: #94a3b8 !important;
+      font-weight: 500 !important;
+    }
+  }
 }
 
-.people-left-pane .chat-item.selected {
-  background-color: #eff6ff;
-  border-left: 3px solid #3b82f6;
+/* Responsive Layout for Mobile/Small Screens */
+@media (max-width: 768px) {
+  .people-container {
+    flex-direction: column !important;
+  }
+  .people-left-pane {
+    width: 100% !important;
+    max-width: none !important;
+    height: 45% !important;
+    border-right: none !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+  }
+  .people-right-pane {
+    height: 55% !important;
+  }
+
+  /* Hide text labels on mobile screens so profile action buttons show icons only */
+  .detail-actions button .btn-text,
+  .detail-header .detail-actions button .btn-text {
+    display: none !important;
+  }
+
+  /* Hide Distant Chat Tunnel and Chatting as text on mobile screens to save header space */
+  .chat-tunnel-status .tunnel-label,
+  .select-own-profile .chatting-as-label {
+    display: none !important;
+  }
+
+  .detail-actions button,
+  .detail-header .detail-actions button {
+    padding: 0.45rem 0.65rem !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
 }
 
-.people-left-pane .chat-item .chat-avatar-wrapper {
-  position: relative;
-  flex-shrink: 0;
+/* People Sidebar Right-Click Context Menu */
+.people-context-menu {
+  position: absolute !important;
+  z-index: 9999 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  padding: 0.35rem 0 !important;
+  min-width: 180px !important;
+  font-family: inherit !important;
+  overflow: hidden !important;
+
+  .menu-item {
+    display: flex !important;
+    align-items: center !important;
+    padding: 0.6rem 0.9rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: #1e293b !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+    user-select: none !important;
+
+    &:hover {
+      background-color: #f1f5f9 !important;
+      color: #0284c7 !important;
+    }
+
+    i {
+      font-size: 1rem !important;
+      width: 1.25rem !important;
+      text-align: center !important;
+    }
+  }
 }
 
-.people-left-pane .chat-item .chat-avatar-wrapper .status-dot {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 2px solid #ffffff;
-}
-
-.people-left-pane .chat-item .chat-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.people-left-pane .chat-item .chat-info .chat-name {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #1e293b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.people-left-pane .chat-item .chat-info .chat-last-msg {
-  font-size: 0.8rem;
-  color: #64748b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.people-left-pane .chat-item .chat-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.25rem;
-  flex-shrink: 0;
-}
-
-.people-left-pane .chat-item .chat-meta .chat-time {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  white-space: nowrap;
-}

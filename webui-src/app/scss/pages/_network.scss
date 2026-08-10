@@ -31,6 +31,22 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+
+    .profile-avatar-wrapper {
+      position: relative;
+      flex-shrink: 0;
+
+      .status-dot {
+        position: absolute;
+        bottom: -1px;
+        right: -1px;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+      }
+    }
   }
 
   .profile-info {
@@ -61,7 +77,7 @@
         display: inline-block;
         width: 8px;
         height: 8px;
-        background-color: #10b981;
+        background-color: var(--profile-status-color, #10b981);
         border-radius: 50%;
       }
     }
@@ -159,7 +175,19 @@
   }
 
   .friend-avatar {
+    position: relative;
     flex-shrink: 0;
+
+    .status-dot {
+      position: absolute;
+      bottom: -1px;
+      right: -1px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    }
   }
 
   .friend-meta {
@@ -541,5 +569,99 @@
       max-width: 350px;
       font-size: 0.9rem;
     }
+  }
+}
+
+/* Responsive Layout for Mobile/Small Screens */
+@media (max-width: 768px) {
+  .network-container {
+    flex-direction: column !important;
+  }
+
+  .network-left-pane {
+    width: 100% !important;
+    max-width: none !important;
+    height: 45% !important;
+    border-right: none !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+  }
+
+  .network-right-pane {
+    height: 55% !important;
+    flex: 1 !important;
+  }
+
+  /* Hide text labels on mobile screens so profile action buttons show icons only */
+  .detail-actions button .btn-text,
+  .detail-header .detail-actions button .btn-text {
+    display: none !important;
+  }
+
+  .detail-actions button,
+  .detail-header .detail-actions button {
+    padding: 0.45rem 0.65rem !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  .detail-actions button i,
+  .detail-header .detail-actions button i {
+    margin: 0 !important;
+    font-size: 1.05rem !important;
+  }
+
+  .network-detail-view .detail-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+
+    .friend-avatar {
+      margin-bottom: 0.25rem !important;
+    }
+  }
+
+  .locations-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Direct-chat composer: preserve room for typing on a narrow screen. */
+  .network-chat-view .chat-input-area {
+    padding: .4rem !important;
+    gap: .2rem !important;
+    min-width: 0;
+  }
+
+  .network-chat-view .chat-input-area .chat-hub-action-btn,
+  .network-chat-view .chat-input-area label.chat-hub-action-btn {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    padding: 0 !important;
+    font-size: .95rem !important;
+  }
+
+  .network-chat-view .chat-input-area .emoji-picker-wrapper {
+    flex: 0 0 28px;
+  }
+
+  .network-chat-view .chat-input-area textarea.chat-textarea {
+    min-width: 0 !important;
+    padding: .4rem !important;
+  }
+
+  .network-chat-view .chat-input-area .send-btn {
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    font-size: 0 !important;
+    justify-content: center;
+  }
+
+  .network-chat-view .chat-input-area .send-btn i {
+    margin: 0 !important;
+    font-size: 1rem !important;
   }
 }

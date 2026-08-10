@@ -5,6 +5,10 @@ const peopleState = require('people/people_state');
 const HistoryBrowserModal = () => {
   return {
     oninit: (vnode) => {
+      if (vnode.attrs && vnode.attrs.state) {
+        vnode.attrs.state.historySearchQuery = '';
+        return;
+      }
       const chatState = require('chat/chat_state');
       const isRoom = vnode.attrs && vnode.attrs.isRoom;
       if (isRoom) {
@@ -21,15 +25,16 @@ const HistoryBrowserModal = () => {
     view: (vnode) => {
       const chatState = require('chat/chat_state');
       const isRoom = vnode.attrs && vnode.attrs.isRoom;
-      const stateObj = isRoom ? chatState.ChatHubState : peopleState.State;
+      const externalState = vnode.attrs && vnode.attrs.state;
+      const stateObj = externalState || (isRoom ? chatState.ChatHubState : peopleState.State);
 
       if (!stateObj.showHistoryModal) return null;
 
-      let name = 'Chat History';
-      if (isRoom) {
+      let name = (vnode.attrs && vnode.attrs.name) || 'Chat History';
+      if (!externalState && isRoom) {
         const lobby = chatState.ChatLobbyModel.currentLobby;
         name = lobby ? lobby.lobby_name : 'Chat Room';
-      } else {
+      } else if (!externalState) {
         const details = peopleState.State.selectedId ? peopleState.State.gxsIdToDetailsMap[peopleState.State.selectedId] : null;
         name = details ? (details.mNickname || details.mGroupName || 'Contact') : 'Contact';
       }
@@ -99,7 +104,9 @@ const HistoryBrowserModal = () => {
                 : filteredHistory.map((msg) => {
                     const isIncoming = msg.incoming;
                     let senderName = msg.peerName || (isIncoming ? name : 'You');
-                    if (!isIncoming) {
+                    if (!isIncoming && externalState) {
+                      senderName = (vnode.attrs && vnode.attrs.ownName) || 'You';
+                    } else if (!isIncoming) {
                       const ownId = isRoom ? (chatState.ChatLobbyModel.currentLobby ? chatState.ChatLobbyModel.currentLobby.gxs_id : '') : peopleState.State.selectedOwnGxsIdForChat;
                       senderName = rs.userList.username(ownId) || 'You';
                     }

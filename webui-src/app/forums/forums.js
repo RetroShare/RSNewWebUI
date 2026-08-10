@@ -7,15 +7,15 @@ const peopleUtil = require('people/people_util');
 
 const getForums = {
   All: [],
-  PopularForums: [],
-  SubscribedForums: [],
+  Popular: [],
+  Subscribed: [],
   MyForums: [],
   async load() {
     const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumsSummaries');
     if (res && res.body && res.body.forums) {
       getForums.All = res.body.forums;
-      getForums.PopularForums = getForums.All;
-      getForums.SubscribedForums = getForums.All.filter(
+      getForums.Popular = getForums.All;
+      getForums.Subscribed = getForums.All.filter(
         (forum) =>
           forum.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED ||
           forum.mSubscribeFlags === util.GROUP_MY_FORUM
@@ -28,9 +28,9 @@ const getForums = {
 };
 const sections = {
   MyForums: require('forums/my_forums'),
-  SubscribedForums: require('forums/subscribed_forums'),
-  PopularForums: require('forums/popular_forums'),
-  OtherForums: require('forums/other_forums'),
+  Subscribed: require('forums/subscribed_forums'),
+  Popular: require('forums/popular_forums'),
+  Other: require('forums/other_forums'),
 };
 
 const Layout = () => {
@@ -94,6 +94,7 @@ module.exports = {
       m(widget.Sidebar, {
         tabs: Object.keys(sections),
         baseRoute: '/forums/',
+        mobileDrawer: true,
       }),
       m('.node-panel', m(Layout, { pathInfo: vnode.attrs })),
     ];

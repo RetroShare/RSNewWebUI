@@ -31,52 +31,81 @@ const Data = {
   Votes: {},
 };
 
-async function updatecontent(content, channelid) {
+//  getChannelContent takes a set of ids, so a whole channel is fetched in a few
+//  requests instead of one per item. Chunked rather than sent as a single call so
+//  that no request grows unbounded and so the UI can paint as batches land.
+const CONTENT_BATCH_SIZE = 200;
+
+function storePost(post, channelid) {
+  const msgId = post.mMeta && post.mMeta.mMsgId;
+  if (!msgId) {
+    return;
+  }
+  Data.Posts[channelid][msgId] = { post, isSearched: true };
+}
+
+function storeComment(comm) {
+  const meta = comm.mMeta;
+  if (!meta) {
+    return;
+  }
+  if (Data.Comments[meta.mThreadId] === undefined) {
+    Data.Comments[meta.mThreadId] = {};
+  }
+  Data.Comments[meta.mThreadId][meta.mMsgId] = { comment: comm, showReplies: false }; //  Comments[post][comment]
+  if (Data.TopComments[meta.mThreadId] === undefined) {
+    Data.TopComments[meta.mThreadId] = {};
+  }
+  if (meta.mThreadId === meta.mParentId) {
+    // this is a check for the top level comments
+    Data.TopComments[meta.mThreadId][meta.mMsgId] = comm;
+    //  pushing top comments respective to post
+  } else {
+    if (Data.ParentCommentMap[meta.mParentId] === undefined) {
+      Data.ParentCommentMap[meta.mParentId] = {};
+    }
+    Data.ParentCommentMap[meta.mParentId][meta.mMsgId] = comm;
+  }
+}
+
+function storeVote(vote) {
+  const meta = vote.mMeta;
+  if (!meta) {
+    return;
+  }
+  if (Data.Votes[meta.mThreadId] === undefined) {
+    Data.Votes[meta.mThreadId] = {};
+  }
+  if (Data.Votes[meta.mThreadId][meta.mParentId] === undefined) {
+    Data.Votes[meta.mThreadId][meta.mParentId] = { upvotes: 0, downvotes: 0 };
+  }
+  if (vote.mVoteType === GXS_VOTE_UP) {
+    Data.Votes[meta.mThreadId][meta.mParentId].upvotes += 1;
+  }
+
+  if (vote.mVoteType === GXS_VOTE_DOWN) {
+    Data.Votes[meta.mThreadId][meta.mParentId].downvotes += 1;
+  }
+}
+
+async function updatecontent(contentIds, channelid) {
+  const ids = Array.isArray(contentIds) ? contentIds : [contentIds];
+  if (ids.length === 0) {
+    return;
+  }
   const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelContent', {
     channelId: channelid,
-    contentsIds: [content.mMsgId],
+    contentsIds: ids,
   });
-  if (res.body.retval && res.body.posts.length > 0) {
-    Data.Posts[channelid][content.mMsgId] = { post: res.body.posts[0], isSearched: true };
-  } else if (res.body.retval && res.body.comments.length > 0) {
-    if (Data.Comments[content.mThreadId] === undefined) {
-      Data.Comments[content.mThreadId] = {};
-    }
-    Data.Comments[content.mThreadId][content.mMsgId] = {
-      comment: res.body.comments[0],
-      showReplies: false,
-    }; //  Comments[post][comment]
-    const comm = res.body.comments[0];
-    if (Data.TopComments[comm.mMeta.mThreadId] === undefined) {
-      Data.TopComments[comm.mMeta.mThreadId] = {};
-    }
-    if (comm.mMeta.mThreadId === comm.mMeta.mParentId) {
-      // this is a check for the top level comments
-      Data.TopComments[comm.mMeta.mThreadId][comm.mMeta.mMsgId] = comm;
-      //  pushing top comments respective to post
-    } else {
-      if (Data.ParentCommentMap[comm.mMeta.mParentId] === undefined) {
-        Data.ParentCommentMap[comm.mMeta.mParentId] = {};
-      }
-      Data.ParentCommentMap[comm.mMeta.mParentId][comm.mMeta.mMsgId] = comm;
-    }
-  } else if (res.body.retval && res.body.votes.length > 0) {
-    const vote = res.body.votes[0];
-
-    if (Data.Votes[vote.mMeta.mThreadId] === undefined) {
-      Data.Votes[vote.mMeta.mThreadId] = {};
-    }
-    if (Data.Votes[vote.mMeta.mThreadId][vote.mMeta.mParentId] === undefined) {
-      Data.Votes[vote.mMeta.mThreadId][vote.mMeta.mParentId] = { upvotes: 0, downvotes: 0 };
-    }
-    if (vote.mVoteType === GXS_VOTE_UP) {
-      Data.Votes[vote.mMeta.mThreadId][vote.mMeta.mParentId].upvotes += 1;
-    }
-
-    if (vote.mVoteType === GXS_VOTE_DOWN) {
-      Data.Votes[vote.mMeta.mThreadId][vote.mMeta.mParentId].downvotes += 1;
-    }
+  //  rsJsonApiRequest resolves to undefined when the request never made it out
+  if (!res || !res.body || !res.body.retval) {
+    return;
   }
+  //  A batch mixes the three kinds, so all three lists have to be walked. The
+  //  metadata of each item is used rather than the summary it was asked from.
+  (res.body.posts || []).forEach((post) => storePost(post, channelid));
+  (res.body.comments || []).forEach(storeComment);
+  (res.body.votes || []).forEach(storeVote);
 }
 
 async function updatedisplaychannels(keyid, details) {
@@ -107,10 +136,16 @@ async function updatedisplaychannels(keyid, details) {
     channelId: keyid,
   });
 
-  if (res2.body.retval) {
-    res2.body.summaries.map(async (content) => {
-      await updatecontent(content, keyid);
-    });
+  if (!res2 || !res2.body || !res2.body.retval || !Array.isArray(res2.body.summaries)) {
+    return;
+  }
+
+  const ids = res2.body.summaries.map((content) => content.mMsgId).filter(Boolean);
+  //  Sequential on purpose: this runs once per channel of the list, so firing the
+  //  batches concurrently would put the browser back where it started.
+  for (let i = 0; i < ids.length; i += CONTENT_BATCH_SIZE) {
+    await updatecontent(ids.slice(i, i + CONTENT_BATCH_SIZE), keyid);
+    m.redraw();
   }
 }
 const DisplayChannelsFromList = () => {
@@ -173,8 +208,8 @@ const FilesTable = () => {
   return {
     oninit: (v) => {},
     view: (v) =>
-      m('table.files', [
-        m('tr', [m('th', 'File Name'), m('th', 'Size'), m('th', m('i.fas.fa-download'))]),
+      m('table.files.channel-files', [
+        m('thead', m('tr', [m('th', 'File Name'), m('th', 'Size'), m('th', m('i.fas.fa-download'))])),
         v.children,
       ]),
   };

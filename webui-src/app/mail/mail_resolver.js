@@ -33,7 +33,11 @@ const Messages = {
           (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_OUTBOX
         );
         Messages.drafts = Messages.all.filter(
-          (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_DRAFTBOX
+          (msg) =>
+            (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_DRAFTBOX ||
+            (msg.msgflags & 0x05) === 0x05 ||
+            (msg.msgflags & 0x04) !== 0 ||
+            (msg.msgflags & 0x08) !== 0
         );
         Messages.trash = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_TRASH);
         Messages.starred = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_STAR);
@@ -68,12 +72,12 @@ const sections = {
   drafts: require('mail/mail_draftbox'),
   sent: require('mail/mail_sentbox'),
   trash: require('mail/mail_trashbox'),
-};
-const sectionsquickview = {
   starred: require('mail/mail_starred'),
   system: require('mail/mail_system'),
   spam: require('mail/mail_spam'),
   attachment: require('mail/mail_attachment'),
+};
+const sectionsquickview = {
   important: require('mail/mail_important'),
   work: require('mail/mail_work'),
   todo: require('mail/mail_todo'),
@@ -81,11 +85,18 @@ const sectionsquickview = {
   personal: require('mail/mail_personal'),
 };
 const tagselect = {
-  showval: 'Tags',
-  opts: ['Tags', 'Important', 'Work', 'Personal'],
+  opts: [
+    { label: '🏷️ Filter by Tag...', val: '' },
+    { label: '🔴 Important', val: 'important' },
+    { label: '🟠 Work', val: 'work' },
+    { label: '🟢 Personal', val: 'personal' },
+    { label: '🔵 Todo', val: 'todo' },
+    { label: '🟣 Later', val: 'later' },
+  ],
 };
 const Layout = () => {
   let showCompose = false;
+  let mobileNavOpen = false;
   // setFunction like react to show/hide popup
   function setShowCompose(bool) {
     showCompose = bool;
@@ -99,26 +110,41 @@ const Layout = () => {
         drafts: (Messages.drafts || []).length,
         sent: (Messages.sent || []).length,
         trash: (Messages.trash || []).length,
-      };
-      const sectionsQuickviewSize = {
         starred: (Messages.starred || []).length,
         system: (Messages.system || []).length,
         spam: (Messages.spam || []).length,
         attachment: (Messages.attachment || []).length,
+      };
+      const sectionsQuickviewSize = {
         important: (Messages.important || []).length,
         work: (Messages.work || []).length,
         todo: (Messages.todo || []).length,
         later: (Messages.later || []).length,
         personal: (Messages.personal || []).length,
       };
+      const activeTab = m.route.param().tab;
+      const activeBox = tabConfig[activeTab];
+      const activeBoxIcons = {
+        inbox: 'fa-inbox', outbox: 'fa-envelope-open-text', drafts: 'fa-edit', sent: 'fa-envelope-open',
+        trash: 'fa-trash-alt', starred: 'fa-star', system: 'fa-bell', spam: 'fa-fire', attachment: 'fa-paperclip',
+        important: 'fa-square', work: 'fa-square', todo: 'fa-square', later: 'fa-square', personal: 'fa-square',
+      };
 
       return [
         m('.side-bar', [
+          m('button.mail-mobile-nav-toggle[type=button][aria-label=Open mail navigation]', {
+            'aria-expanded': mobileNavOpen,
+            onclick: () => { mobileNavOpen = !mobileNavOpen; },
+          }, m('i.fas.fa-bars')),
+          m('.mail-nav-drawer', { class: mobileNavOpen ? 'mail-nav-drawer--open' : '' }, [
           m(
             'button.mail-compose-btn',
             {
               style: 'display: flex; align-items: center; justify-content: center; gap: 0.5rem;',
-              onclick: () => setShowCompose(true),
+              onclick: () => {
+                mobileNavOpen = false;
+                setShowCompose(true);
+              },
             },
             [m('i.fas.fa-pen'), 'Compose']
           ),
@@ -126,12 +152,15 @@ const Layout = () => {
             tabs: Object.keys(sections),
             size: sectionsSize,
             baseRoute: '/mail/',
+            onNavigate: () => { mobileNavOpen = false; },
           }),
           m(util.SidebarQuickView, {
             tabs: Object.keys(sectionsquickview),
             size: sectionsQuickviewSize,
             baseRoute: '/mail/',
+            onNavigate: () => { mobileNavOpen = false; },
           }),
+          ]),
         ]),
         m(
           '.node-panel',
@@ -141,15 +170,36 @@ const Layout = () => {
               m(
                 'select.mail-tag',
                 {
-                  value: tagselect.showval,
-                  onchange: (e) => (tagselect.showval = tagselect.opts[e.target.selectedIndex]),
+                  value: m.route.param().tab || '',
+                  onchange: (e) => {
+                    const selectedTag = e.target.value;
+                    if (selectedTag) {
+                      m.route.set('/mail/:tab', { tab: selectedTag });
+                    }
+                  },
                 },
-                [tagselect.opts.map((opt) => m('option', { value: opt }, opt.toLocaleString()))]
+                tagselect.opts.map((opt) => m('option', { value: opt.val }, opt.label))
               ),
               m(util.SearchBar, { list: {} }),
             ]),
-            vnode.children,
+            activeBox
+              ? m('.mail-box-content', [
+                  m('.mail-mobile-box-title', [
+                    m('i.fas', { class: activeBoxIcons[activeTab] || 'fa-envelope' }),
+                    m('span', activeBox.title),
+                  ]),
+                  vnode.children,
+                ])
+              : vnode.children,
           ])
+        ),
+        m(
+          'button.mobile-fab-compose',
+          {
+            title: 'Compose Mail',
+            onclick: () => setShowCompose(true),
+          },
+          m('i.fas.fa-pen')
         ),
         showCompose && m(
           '.composePopupOverlay#mailComposerPopup',
@@ -173,6 +223,7 @@ const tabConfig = {
   starred: { title: 'Starred', category: 'starred' },
   system: { title: 'System', category: 'system' },
   spam: { title: 'Spam', category: 'spam' },
+  attachment: { title: 'Attachments', category: 'attachment' },
   important: { title: 'Important', category: 'important' },
   work: { title: 'Work', category: 'work' },
   todo: { title: 'Todo', category: 'todo' },
@@ -216,7 +267,7 @@ module.exports = {
     if (tab === 'attachment') {
       return m(
         Layout,
-        m(sectionsquickview.attachment, {
+        m(sections.attachment, {
           list: util.sortList(Messages[tab]),
         })
       );

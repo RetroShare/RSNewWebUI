@@ -21,8 +21,13 @@ function handleSubmit() {
 const SearchBar = () => {
   return {
     view: () =>
-      m('form.search-form', { onsubmit: handleSubmit }, [
-        m('input[type=text][placeholder=search keyword]', {
+      m('form.search-form', {
+        onsubmit: (event) => {
+          event.preventDefault();
+          handleSubmit();
+        },
+      }, [
+        m('input[type=text][placeholder=Search files]', {
           value: matchString,
           oninput: (e) => (matchString = e.target.value),
         }),
@@ -144,9 +149,16 @@ const Layout = () => {
                   fproxy.fileProxyObj[currentItem.slice(1)]
                     ? fproxy.fileProxyObj[currentItem.slice(1)].map((item) =>
                       m('div.results-row.file-item', [
-                        m('.results-cell.name-col', [m(getFileIcon(item.fName)), m('span', item.fName)]),
-                        m('.results-cell.size-col', rs.formatBytes((item.fSize && (item.fSize.xint64 || item.fSize.xstr64)) || 0)),
-                        m('.results-cell.hash-col', item.fHash),
+                        m('.results-cell.name-col', { 'data-label': 'Name' }, [
+                          m(getFileIcon(item.fName)),
+                          m('span', item.fName),
+                        ]),
+                        m(
+                          '.results-cell.size-col',
+                          { 'data-label': 'Size' },
+                          rs.formatBytes((item.fSize && (item.fSize.xint64 || item.fSize.xstr64)) || 0)
+                        ),
+                        m('.results-cell.hash-col', { 'data-label': 'Hash' }, item.fHash),
                         m(
                           '.results-cell.action-col',
                           m(

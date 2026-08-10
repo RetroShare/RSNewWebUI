@@ -327,66 +327,87 @@ const PeopleSidebar = () => {
             const menu = State.activeMenu;
             const isOwn = State.ownGxsIds.includes(menu.gxsId);
 
-            return m('.people-context-menu', {
-              style: {
-                top: `${menu.top}px`,
-                left: menu.left !== undefined ? `${menu.left}px` : '10px',
-                position: 'absolute',
-                zIndex: 1000,
-              },
-              onclick: (e) => {
-                e.stopPropagation();
-              },
-            }, [
-              !isOwn && m('.menu-item', {
-                onclick: () => {
+            return [
+              m('.menu-backdrop', {
+                style: {
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 9998,
+                },
+                onclick: (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   State.activeMenu = null;
-                  State.selectedId = menu.gxsId;
-                  State.activeTab = 'chat';
-                  State.chatPid = null;
-                  State.chatMessages = [];
-                  initializeDistantChat();
                   m.redraw();
                 },
-              }, [
-                m('i.fas.fa-comments', { style: 'color: #3b82f6; margin-right: 0.5rem;' }),
-                'Start chat',
-              ]),
-              !isOwn && m('.menu-item', {
-                onclick: () => {
+                oncontextmenu: (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   State.activeMenu = null;
-                  State.selectedId = menu.gxsId;
-                  State.activeTab = 'details';
-                  State.showMailCompose = true;
                   m.redraw();
                 },
-              }, [
-                m('i.fas.fa-envelope', { style: 'color: #10b981; margin-right: 0.5rem;' }),
-                'Send mail',
-              ]),
-              !isOwn && m('.menu-item', {
-                onclick: () => {
-                  State.activeMenu = null;
-                  rs.rsJsonApiRequest(
-                    '/rsIdentity/setAsRegularContact',
-                    { id: menu.gxsId, isContact: !menu.isContact },
-                    (data, success) => {
-                      if (success) {
-                        loadGxsIdentities();
-                      }
-                    }
-                  );
+              }),
+              m('.people-context-menu', {
+                style: {
+                  top: `${menu.top}px`,
+                  left: menu.left !== undefined ? `${menu.left}px` : '10px',
+                  position: 'absolute',
+                  zIndex: 9999,
+                },
+                onclick: (e) => {
+                  e.stopPropagation();
                 },
               }, [
-                m('i.fas' + (menu.isContact ? '.fa-user-minus' : '.fa-user-plus'), {
-                  style: {
-                    color: menu.isContact ? '#ef4444' : '#3b82f6',
-                    marginRight: '0.5rem',
+                !isOwn && m('.menu-item', {
+                  onclick: () => {
+                    State.activeMenu = null;
+                    State.selectedId = menu.gxsId;
+                    State.activeTab = 'chat';
+                    State.chatPid = null;
+                    State.chatMessages = [];
+                    initializeDistantChat();
+                    m.redraw();
                   },
-                }),
-                menu.isContact ? 'Remove from Contacts' : 'Add to Contacts',
+                }, [
+                  m('i.fas.fa-comments', { style: 'color: #3b82f6; margin-right: 0.5rem;' }),
+                  'Start chat',
+                ]),
+                !isOwn && m('.menu-item', {
+                  onclick: () => {
+                    State.activeMenu = null;
+                    State.selectedId = menu.gxsId;
+                    State.activeTab = 'details';
+                    State.showMailCompose = true;
+                    m.redraw();
+                  },
+                }, [
+                  m('i.fas.fa-envelope', { style: 'color: #10b981; margin-right: 0.5rem;' }),
+                  'Send mail',
+                ]),
+                !isOwn && m('.menu-item', {
+                  onclick: () => {
+                    State.activeMenu = null;
+                    rs.rsJsonApiRequest(
+                      '/rsIdentity/setAsRegularContact',
+                      { id: menu.gxsId, isContact: !menu.isContact },
+                      (data, success) => {
+                        if (success) {
+                          loadGxsIdentities();
+                        }
+                      }
+                    );
+                  },
+                }, [
+                  m('i.fas' + (menu.isContact ? '.fa-user-minus' : '.fa-user-plus'), {
+                    style: {
+                      color: menu.isContact ? '#ef4444' : '#3b82f6',
+                      marginRight: '0.5rem',
+                    },
+                  }),
+                  menu.isContact ? 'Remove from Contacts' : 'Add to Contacts',
+                ]),
               ]),
-            ]);
+            ];
           })(),
         ]),
       ]);
