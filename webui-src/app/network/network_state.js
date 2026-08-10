@@ -50,21 +50,62 @@ function loadOwnProfile() {
     }
   }).catch(() => {});
 
+  const fetchOwnCustomState = () => {
+    rs.rsJsonApiRequest('/rsChats/getOwnCustomStateString', {}, (statusData) => {
+      if (statusData) {
+        let customState = '';
+        if (typeof statusData.retval === 'string') {
+          customState = statusData.retval;
+        } else if (typeof statusData === 'string') {
+          customState = statusData;
+        } else if (statusData.retval && typeof statusData.retval === 'object') {
+          customState =
+            statusData.retval.status ||
+            statusData.retval.customState ||
+            statusData.retval.custom_state ||
+            statusData.retval.status_string ||
+            '';
+        } else {
+          customState =
+            statusData.customState ||
+            statusData.custom_state ||
+            statusData.status ||
+            statusData.status_string ||
+            statusData.ownCustomStateString ||
+            '';
+        }
+        State.ownProfile.customState = customState;
+        m.redraw();
+      }
+    }).catch(() => {
+      if (State.ownProfile.ssl_id) {
+        rs.rsJsonApiRequest(
+          '/rsChats/getCustomStateString',
+          { peer_id: State.ownProfile.ssl_id },
+          (statusData) => {
+            if (statusData) {
+              const customState =
+                typeof statusData.retval === 'string'
+                  ? statusData.retval
+                  : statusData.customState || statusData.custom_state || statusData.status || '';
+              State.ownProfile.customState = customState;
+              m.redraw();
+            }
+          }
+        ).catch(() => {});
+      }
+    });
+  };
+
+  fetchOwnCustomState();
+
   rs.rsJsonApiRequest('/rsConfig/getConfigNetStatus', {}, (data) => {
     if (data && data.status) {
       State.ownProfile.name = data.status.ownName || 'Unknown';
       State.ownProfile.ssl_id = data.status.ownId || '';
 
       if (State.ownProfile.ssl_id) {
-        rs.rsJsonApiRequest('/rsChats/getCustomStateString', { peer_id: State.ownProfile.ssl_id }, (statusData) => {
-          if (statusData) {
-            const customState = typeof statusData.retval === 'string'
-              ? statusData.retval
-              : statusData.customState || statusData.custom_state || statusData.status || '';
-            State.ownProfile.customState = customState;
-            m.redraw();
-          }
-        });
+        fetchOwnCustomState();
 
         rs.rsJsonApiRequest('/rsPeers/getPeerDetails', { sslId: State.ownProfile.ssl_id }, (detData) => {
           if (detData && detData.det) {

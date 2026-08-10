@@ -38,7 +38,8 @@ const OwnProfileCard = () => {
               m(
                 '.profile-custom-status',
                 {
-                  style: 'font-size: 0.8rem; color: #94a3b8; font-style: italic; margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 150px;',
+                  style:
+                    'font-size: 0.825rem; color: #64748b; font-style: italic; margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;',
                   title: State.ownProfile.customState,
                 },
                 State.ownProfile.customState
