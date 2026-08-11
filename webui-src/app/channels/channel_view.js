@@ -363,6 +363,12 @@ const ChannelView = () => {
       if (Data.Posts[v.attrs.id]) {
         plist = Data.Posts[v.attrs.id];
       }
+      // Channel lists load metadata only. Fetch the selected channel's content
+      // here so large channels do not block or overload the list page.
+      util.updatedisplaychannels(v.attrs.id).then(() => {
+        plist = Data.Posts[v.attrs.id] || {};
+        m.redraw();
+      });
     },
     view: (v) => [
       m(

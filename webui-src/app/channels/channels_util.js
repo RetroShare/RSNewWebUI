@@ -34,7 +34,7 @@ const Data = {
 //  getChannelContent takes a set of ids, so a whole channel is fetched in a few
 //  requests instead of one per item. Chunked rather than sent as a single call so
 //  that no request grows unbounded and so the UI can paint as batches land.
-const CONTENT_BATCH_SIZE = 200;
+const CONTENT_BATCH_SIZE = 25;
 
 function storePost(post, channelid) {
   const msgId = post.mMeta && post.mMeta.mMsgId;
@@ -91,7 +91,7 @@ function storeVote(vote) {
 async function updatecontent(contentIds, channelid) {
   const ids = Array.isArray(contentIds) ? contentIds : [contentIds];
   if (ids.length === 0) {
-    return;
+    return true;
   }
   const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelContent', {
     channelId: channelid,
@@ -99,19 +99,39 @@ async function updatecontent(contentIds, channelid) {
   });
   //  rsJsonApiRequest resolves to undefined when the request never made it out
   if (!res || !res.body || !res.body.retval) {
-    return;
+    return false;
   }
   //  A batch mixes the three kinds, so all three lists have to be walked. The
   //  metadata of each item is used rather than the summary it was asked from.
   (res.body.posts || []).forEach((post) => storePost(post, channelid));
   (res.body.comments || []).forEach(storeComment);
   (res.body.votes || []).forEach(storeVote);
+  return true;
 }
 
-async function updatedisplaychannels(keyid, details) {
+// Large posts can contain base64 media. If RetroShare truncates a response,
+// retry it as two smaller requests until the problematic batch is isolated.
+async function updateContentBatch(contentIds, channelid) {
+  const loaded = await updatecontent(contentIds, channelid);
+  if (loaded || contentIds.length <= 1) {
+    if (!loaded) {
+      console.warn('Unable to load channel content item', contentIds[0]);
+    }
+    return;
+  }
+
+  const middle = Math.ceil(contentIds.length / 2);
+  await updateContentBatch(contentIds.slice(0, middle), channelid);
+  await updateContentBatch(contentIds.slice(middle), channelid);
+}
+
+async function updatedisplaychannels(keyid, details, loadContent = true) {
   const res1 = await rs.rsJsonApiRequest('/rsgxschannels/getChannelsInfo', {
     chanIds: [keyid],
   });
+  if (!res1 || !res1.body || !Array.isArray(res1.body.channelsInfo) || !res1.body.channelsInfo[0]) {
+    return;
+  }
   details = res1.body.channelsInfo[0];
   Data.DisplayChannels[keyid] = {
     // struct for a channel
@@ -132,6 +152,11 @@ async function updatedisplaychannels(keyid, details) {
   if (Data.Posts[keyid] === undefined) {
     Data.Posts[keyid] = {};
   }
+  // Channel lists only need metadata. Fetching every post, comment, vote and
+  // embedded image for every listed channel made large lists extremely slow.
+  if (!loadContent) {
+    return;
+  }
   const res2 = await rs.rsJsonApiRequest('/rsgxschannels/getContentSummaries', {
     channelId: keyid,
   });
@@ -144,7 +169,7 @@ async function updatedisplaychannels(keyid, details) {
   //  Sequential on purpose: this runs once per channel of the list, so firing the
   //  batches concurrently would put the browser back where it started.
   for (let i = 0; i < ids.length; i += CONTENT_BATCH_SIZE) {
-    await updatecontent(ids.slice(i, i + CONTENT_BATCH_SIZE), keyid);
+    await updateContentBatch(ids.slice(i, i + CONTENT_BATCH_SIZE), keyid);
     m.redraw();
   }
 }
@@ -177,7 +202,7 @@ const ChannelSummary = () => {
   return {
     oninit: (v) => {
       keyid = v.attrs.details.mGroupId;
-      updatedisplaychannels(keyid);
+      updatedisplaychannels(keyid, undefined, false);
     },
 
     view: (v) => {},
