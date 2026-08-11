@@ -41,12 +41,18 @@ function plainText(value) {
     .trim();
 }
 
+const BOARD_POST_BATCH_SIZE = 25;
+
 async function updateContent(content, boardid) {
-  const msgId = content.mMsgId || content.msgId || content;
+  const requested = Array.isArray(content) ? content : [content];
+  const msgIds = requested
+    .map((item) => item.mMsgId || item.msgId || item)
+    .filter(Boolean);
+  if (msgIds.length === 0) return false;
   try {
     const res = await rs.rsJsonApiRequest('/rsPosted/getBoardContent', {
       boardId: boardid,
-      contentsIds: [msgId],
+      contentsIds: msgIds,
     });
     if (res && res.body && res.body.retval) {
       const posts = res.body.posts || res.body.postList || [];
@@ -55,14 +61,17 @@ async function updateContent(content, boardid) {
 
       if (posts.length > 0) {
         if (!Data.Posts[boardid]) Data.Posts[boardid] = {};
-        Data.Posts[boardid][msgId] = { post: posts[0], isSearched: true };
+        posts.forEach((post) => {
+          const msgId = post.mMeta && post.mMeta.mMsgId;
+          if (msgId) Data.Posts[boardid][msgId] = { post, isSearched: true };
+        });
         m.redraw();
-      } else if (comments.length > 0) {
-        const threadId = content.mThreadId || comments[0].mMeta.mThreadId;
+      } else if (comments.length > 0 && requested.length === 1) {
+        const threadId = requested[0].mThreadId || comments[0].mMeta.mThreadId;
         if (Data.Comments[threadId] === undefined) {
           Data.Comments[threadId] = {};
         }
-        Data.Comments[threadId][msgId] = comments[0];
+        Data.Comments[threadId][msgIds[0]] = comments[0];
         m.redraw();
       } else if (votes.length > 0) {
         const vote = votes[0];
@@ -79,10 +88,12 @@ async function updateContent(content, boardid) {
           m.redraw();
         }
       }
+      return true;
     }
   } catch (err) {
     console.warn('updateContent error:', err);
   }
+  return false;
 }
 
 const inFlightBoards = {};
@@ -132,24 +143,37 @@ async function updateDisplayBoards(keyid, details) {
         Data.Posts[keyid] = {};
       }
 
-      // Fetch all board content via /rsPosted/getBoardAllContent
-      const resAll = await rs.rsJsonApiRequest('/rsPosted/getBoardAllContent', {
+      // Load lightweight post metadata first, then fetch complete posts newest
+      // first in page-sized batches. The first page can render without waiting
+      // for every image and older post in a large board.
+      const summariesRes = await rs.rsJsonApiRequest('/rsPosted/getBoardPostSummaries', {
         boardId: keyid,
-        groupId: keyid,
-        handle: keyid,
       });
+      const summaries = summariesRes && summariesRes.body && summariesRes.body.retval
+        && Array.isArray(summariesRes.body.summaries)
+        ? summariesRes.body.summaries
+        : null;
 
-      if (resAll && resAll.body && resAll.body.retval) {
-        const posts = resAll.body.posts || resAll.body.postList || [];
-        if (posts.length > 0) {
-          posts.forEach((post) => {
-            const msgId = (post.mMeta && post.mMeta.mMsgId) ? post.mMeta.mMsgId : post.mMsgId;
-            if (msgId) {
-              Data.Posts[keyid][msgId] = { post, isSearched: true };
-            }
-          });
-          m.redraw();
+      if (summaries) {
+        summaries.sort((a, b) => Number((b.mPublishTs && b.mPublishTs.xint64) || b.mPublishTs || 0)
+          - Number((a.mPublishTs && a.mPublishTs.xint64) || a.mPublishTs || 0));
+        for (let i = 0; i < summaries.length; i += BOARD_POST_BATCH_SIZE) {
+          await updateContent(summaries.slice(i, i + BOARD_POST_BATCH_SIZE), keyid);
         }
+      } else {
+        // Compatibility fallback for RetroShare cores which do not yet expose
+        // getBoardPostSummaries.
+        const resAll = await rs.rsJsonApiRequest('/rsPosted/getBoardAllContent', {
+          boardId: keyid,
+        });
+        const posts = resAll && resAll.body && resAll.body.retval
+          ? (resAll.body.posts || resAll.body.postList || [])
+          : [];
+        posts.forEach((post) => {
+          const msgId = (post.mMeta && post.mMeta.mMsgId) || post.mMsgId;
+          if (msgId) Data.Posts[keyid][msgId] = { post, isSearched: true };
+        });
+        m.redraw();
       }
     } catch (err) {
       console.warn('updateDisplayBoards network error for board:', keyid, err);
@@ -166,12 +190,6 @@ const BoardSummary = () => {
     view: (vnode) => {
       const details = vnode.attrs.details;
       const bname = details.mGroupName || details.name || '';
-      const bsubscribed =
-        details.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED ||
-        details.mSubscribeFlags === GROUP_MY_BOARD;
-      const bposts = details.mVisibleMsgCount || details.posts || 0;
-      const createDate = details.mPublishTs || details.created;
-      const lastActivity = details.mLastPost || details.activity;
 
       return m(
         'tr',
