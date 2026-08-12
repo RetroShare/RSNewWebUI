@@ -82,7 +82,8 @@
             position: absolute;
             top: 1rem;
             padding: 0;
-            width: 100%;
+            width: min(24rem, calc(100vw - 3rem));
+            max-width: 100%;
             max-height: 15rem;
             flex-direction: column;
             overflow: auto;

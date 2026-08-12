@@ -4,6 +4,7 @@ const util = require('files/files_util');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
 const compose = require('mail/mail_compose');
+const renderIdentityTooltip = require('mail/mail_identity_tooltip');
 
 // rsmail.h
 const RS_MSG_BOXMASK = 0x000f;
@@ -47,43 +48,12 @@ function renderMailUserTooltip() {
   const details = MailGxsDetailsCache[hUser.gxsId];
   if (!details) return null;
 
-  const avatar = details.mAvatar && details.mAvatar.base64 ? details.mAvatar.base64 : null;
-  const firstLetter = (hUser.name || '?').slice(0, 1).toUpperCase();
-  const votes = details.mReputation
-    ? ((details.mReputation.mFriendsPositiveVotes || 0) - (details.mReputation.mFriendsNegativeVotes || 0))
-    : 0;
-
-  const rect = hUser.rect;
-  const top = rect ? Math.max(10, Math.min(rect.bottom + 4, window.innerHeight - 185)) : 100;
-  const left = rect ? Math.min(Math.max(rect.left, 20), window.innerWidth - 300) : 100;
-
-  return m('.user-tooltip', {
-    style: {
-      position: 'fixed',
-      top: `${top}px`,
-      left: `${left}px`,
-      zIndex: 10000,
-    }
-  }, [
-    m('.tooltip-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: hUser.gxsId, size: 64, isSquare: true })),
-    m('.tooltip-details', [
-      m('.tooltip-row', [m('span.tooltip-label', 'Identity name: '), m('span.tooltip-value', hUser.name)]),
-      m('.tooltip-row', [m('span.tooltip-label', 'Identity Id: '), m('span.tooltip-value.tooltip-id', hUser.gxsId)]),
-      details.mPgpId && details.mPgpId !== '0000000000000000' && m('.tooltip-row', [
-        m('span.tooltip-label', 'Node: '),
-        m('span.tooltip-value', `${rs.userList.username(details.mPgpId) || hUser.name} [${details.mPgpId}]`)
-      ]),
-      m('.tooltip-row', [
-        m('span.tooltip-label', 'Votes: '),
-        m('span.tooltip-value', {
-          style: {
-            color: votes >= 0 ? '#008000' : '#cc0000',
-            fontWeight: 'bold'
-          }
-        }, (votes >= 0 ? '+' : '') + votes)
-      ])
-    ])
-  ]);
+  return renderIdentityTooltip({
+    details,
+    gxsId: hUser.gxsId,
+    name: hUser.name,
+    rect: hUser.rect,
+  });
 }
 
 const tagTypesCache = {};
