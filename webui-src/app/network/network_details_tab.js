@@ -5,6 +5,13 @@ const Data = require('network/network_data');
 const peopleUtil = require('people/people_util');
 const { State, startDirectChat, getOnlineSslId } = require('network/network_state');
 
+function formatFingerprint(fingerprint) {
+  return String(fingerprint || '')
+    .replace(/\s/g, '')
+    .match(/.{1,4}/g)
+    ?.join(' ') || '';
+}
+
 const ConfirmRemove = () => {
   return {
     view: (vnode) => [
@@ -38,6 +45,7 @@ const DetailsTab = () => {
 
       const friendGxsId = State.gpgToGxsIdMap[gpgId.toLowerCase()];
       const status = Data.getStatusPresentation(friend.statusValue, friend.isOnline);
+      const fingerprint = formatFingerprint(friend.fingerprint);
 
       return m('.network-detail-view', [
         m('.detail-header', [
@@ -101,6 +109,8 @@ const DetailsTab = () => {
             ] : null,
             m('.info-label', 'Node GPG Key'),
             m('.info-value', gpgId),
+            m('.info-label', 'PGP Fingerprint'),
+            m('.info-value', fingerprint || 'Unavailable'),
           ]),
         ]),
 

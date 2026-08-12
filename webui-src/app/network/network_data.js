@@ -100,6 +100,7 @@ Data.refreshGpgDetails = async function () {
                   if (details[gpgId] === undefined) {
                     details[gpgId] = {
                       name: data.name,
+                      fingerprint: data.fpr || '',
                       isSearched: true,
                       isOnline,
                       locations: [loc],
@@ -110,6 +111,9 @@ Data.refreshGpgDetails = async function () {
                     };
                   } else {
                     details[gpgId].locations.push(loc);
+                    if (!details[gpgId].fingerprint && data.fpr) {
+                      details[gpgId].fingerprint = data.fpr;
+                    }
                     if (avatar) {
                       details[gpgId].avatar = avatar;
                     }
