@@ -98,6 +98,7 @@ async function parsefile(file, type) {
   return ansList;
 }
 const messageGroups = ['Public', 'Restricted Circle', 'Restricted Node Group'];
+const messageGroupLabels = ['🌐  Public', '◉  Restricted Circle', '⬢  Restricted Node Group'];
 const messageGroupsCode = [util.PUBLIC, util.EXTERNAL, util.NODES_GROUP]; // rsgxscirles.h:50
 
 function createchannel() {
@@ -105,6 +106,8 @@ function createchannel() {
   let body;
   let identity;
   let thumbnail;
+  let thumbnailPreview = '';
+  let thumbnailFileName = '';
   let selectedGroup = messageGroups[0];
   let selectedGroupCode = messageGroupsCode[0];
   let selectedCircle;
@@ -118,34 +121,58 @@ function createchannel() {
       const res = await rs.rsJsonApiRequest('/rsgxscircles/getCirclesSummaries');
       if (res.body.retval) {
         circles = res.body.circles;
-        selectedCircle = circles[0].mGroupName;
+        selectedCircle = circles[0];
       }
     },
     view: (vnode) =>
-      m('.widget', [
-        m('h3', 'Create Channel'),
-        m('hr'),
-        m('input[type=text][placeholder=Title]', {
-          style: { float: 'left' },
+      m('.widget.create-channel-form', [
+        m('.create-channel-form__heading', [
+          m('h3', 'Create Channel'),
+          m('p', 'Set up the channel appearance and publishing options.'),
+        ]),
+        m('input.create-channel-form__title[type=text][placeholder=Channel title]', {
           oninput: (e) => (title = e.target.value),
         }),
-        m('div', { style: { float: 'right', marginTop: '10px', marginBottom: '10px' } }, [
-          m('label[for=thumbnail]', 'Thumbnail: '),
-          m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
+        m('.create-channel-form__thumbnail', [
+          m('.channel-thumbnail-preview', [
+            thumbnailPreview
+              ? m('img', { src: thumbnailPreview, alt: 'Channel thumbnail preview' })
+              : m('.channel-thumbnail-preview__placeholder', [
+                m('i.fas.fa-image'),
+                m('span', 'Channel logo'),
+                m('small', 'No image selected'),
+              ]),
+          ]),
+          m('span.create-channel-form__thumbnail-label', 'Thumbnail'),
+          m('input.create-channel-form__file-input[type=file][name=files][id=thumbnail][accept=image/*]', {
             onchange: async (e) => {
+              const file = e.target.files[0];
+              if (!file) {
+                thumbnail = undefined;
+                thumbnailPreview = '';
+                thumbnailFileName = '';
+                return;
+              }
+              thumbnailFileName = file.name;
               const reader = new FileReader();
               reader.onloadend = function () {
-                thumbnail = reader.result.substring(reader.result.indexOf(',') + 1);
+                thumbnailPreview = reader.result;
+                thumbnail = thumbnailPreview.substring(thumbnailPreview.indexOf(',') + 1);
+                m.redraw();
               };
-              reader.readAsDataURL(e.target.files[0]);
+              reader.readAsDataURL(file);
             },
           }),
+          m('label.create-channel-form__file-button[for=thumbnail]', {
+            title: thumbnailFileName || 'Choose a channel thumbnail',
+          }, [m('i.fas.fa-upload'), thumbnailPreview ? ' Change image' : ' Choose image']),
+          m('small', 'Square images work best.'),
         ]),
 
-        m('div', { style: { float: 'right', marginTop: '10px', marginBottom: '10px' } }, [
-          m('label[for=idtags]', 'Select identity: '),
+        m('.create-channel-form__field.create-channel-form__identity', [
+          m('label[for=idtags]', 'Publishing identity'),
           m(
-            'select[id=idtags]',
+            'select.config-style-select[id=idtags]',
             {
               value: identity,
               onchange: (e) => {
@@ -158,49 +185,43 @@ function createchannel() {
                   m(
                     'option',
                     { value: o },
-                    rs.userList.userMap[o]
-                      ? rs.userList.userMap[o].toLocaleString() + ' (' + o.slice(0, 8) + '...)'
-                      : 'No Signature'
+                    Number(o) === 0
+                      ? 'No Signature'
+                      : `${rs.userList.username(o)} (${o.slice(0, 8)}...)`
                   )
                 ),
             ]
           ),
         ]),
-        m('div', { style: { float: 'left', marginTop: '10px', marginBottom: '10px' } }, [
-          m('label[for=mtags]', 'Message Distribution: '),
+        m('.create-channel-form__field.create-channel-form__distribution', [
+          m('label[for=mtags]', 'Message distribution'),
           m(
-            'select[id=mtags]',
+            'select.config-style-select[id=mtags]',
             {
               value: selectedGroup,
               onchange: (e) => {
                 selectedGroup = messageGroups[e.target.selectedIndex];
                 selectedGroupCode = messageGroupsCode[e.target.selectedIndex];
-                widget.popupMessage(m(createchannel, { authorId: vnode.attrs.authorId }));
               },
             },
-            [messageGroups.map((group) => m('option', { value: group }, group))]
+            [messageGroups.map((group, index) => m(
+              'option',
+              { value: group },
+              messageGroupLabels[index]
+            ))]
           ),
         ]),
-        circles &&
+        circles && selectedGroupCode === util.EXTERNAL &&
           m(
-            'div',
-            {
-              style: {
-                float: 'left',
-                marginTop: '10px',
-                marginBottom: '10px',
-                display: selectedGroupCode === util.EXTERNAL ? 'block' : 'none',
-              },
-            },
+            '.create-channel-form__field.create-channel-form__circle',
             [
-              m('label[for=circlestag]', 'Circles: '),
+              m('label[for=circlestag]', 'Circle'),
               m(
-                'select[id=circlestag]',
+                'select.config-style-select[id=circlestag]',
                 {
-                  value: selectedCircle,
+                  value: selectedCircle && selectedCircle.mGroupName,
                   onchange: (e) => {
                     selectedCircle = circles[e.target.selectedIndex];
-                    // selectedGroupCode = messageGroupsCode[e.target.selectedIndex];
                   },
                 },
                 [
@@ -211,13 +232,12 @@ function createchannel() {
               ),
             ]
           ),
-        m('textarea[rows=5][placeholder=Description]', {
-          style: { width: '100%', display: 'block' },
+        m('textarea.create-channel-form__description[rows=5][placeholder=Describe your channel]', {
           oninput: (e) => (body = e.target.value),
           value: body,
         }),
         m(
-          'button',
+          'button.create-channel-form__submit',
           {
             onclick: async () => {
               const res = await rs.rsJsonApiRequest('/rsgxschannels/createChannelV2', {
@@ -230,7 +250,8 @@ function createchannel() {
                   selectedCircle && { circleId: selectedCircle.mGroupId }), // checks if the selectedGroup code is EXTERNAL
               });
               if (res.body.retval) {
-                util.updatedisplaychannels(res.body.channelId);
+                await util.updatedisplaychannels(res.body.channelId, undefined, false);
+                if (vnode.attrs.onCreated) await vnode.attrs.onCreated();
                 m.redraw();
               }
               res.body.retval === false

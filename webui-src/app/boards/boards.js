@@ -72,7 +72,9 @@ const Layout = () => {
                 util.popupmessage(
                   m(viewUtil.createboard, {
                     authorId: ownId,
-                  })
+                    onCreated: getBoards.load,
+                  }),
+                  'create-board-modal'
                 ),
             },
             'Create Board'

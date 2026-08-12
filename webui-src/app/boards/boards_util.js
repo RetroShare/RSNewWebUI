@@ -247,8 +247,8 @@ const SearchBar = () => {
   };
 };
 
-function popupmessage(message) {
-  widget.popupMessage(message);
+function popupmessage(message, modalClass = '') {
+  widget.popupMessage(message, modalClass);
 }
 
 async function voteForPost(postGrpId, postMsgId, voteType, voterId = null) {

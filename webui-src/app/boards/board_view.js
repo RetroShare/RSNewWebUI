@@ -10,73 +10,118 @@ function createboard() {
   let title;
   let body;
   let identity;
-  let circle;
+  let thumbnail;
+  let thumbnailPreview = '';
+  let thumbnailFileName = '';
+  let circle = util.PUBLIC;
+  let circles = [];
+  let selectedCircle;
   return {
-    oninit: (vnode) => {
+    oninit: async (vnode) => {
       if (vnode.attrs.authorId) {
         identity = vnode.attrs.authorId[0];
-        circle = util.PUBLIC;
+      }
+      const res = await rs.rsJsonApiRequest('/rsgxscircles/getCirclesSummaries');
+      if (res.body.retval) {
+        circles = res.body.circles || [];
+        selectedCircle = circles[0];
       }
     },
     view: (vnode) =>
-      m('.widget', [
-        m('h3', 'Create Board'),
-        m('hr'),
-        m('input[type=text][placeholder=Title]', {
+      m('.widget.create-board-form', [
+        m('.create-board-form__heading', [
+          m('h3', 'Create Board'),
+          m('p', 'Set up the board appearance and publishing options.'),
+        ]),
+        m('input.create-board-form__title[type=text][placeholder=Board title]', {
           oninput: (e) => (title = e.target.value),
         }),
-        m('label[for=idtags]', 'Select identity'),
-        m(
-          'select[id=idtags]',
-          {
-            value: identity,
+        m('.create-board-form__visual', [
+          m('.board-thumbnail-preview', [
+            thumbnailPreview
+              ? m('img', { src: thumbnailPreview, alt: 'Board thumbnail preview' })
+              : m('.board-thumbnail-preview__placeholder', [
+                m('i.fas.fa-image'),
+                m('span', 'Board logo'),
+                m('small', 'No image selected'),
+              ]),
+          ]),
+          m('span.create-board-form__visual-label', 'Thumbnail'),
+          m('input.create-board-form__file-input[type=file][id=board-thumbnail][accept=image/*]', {
             onchange: (e) => {
-              identity = vnode.attrs.authorId[e.target.selectedIndex];
+              const file = e.target.files[0];
+              if (!file) {
+                thumbnail = undefined;
+                thumbnailPreview = '';
+                thumbnailFileName = '';
+                return;
+              }
+              thumbnailFileName = file.name;
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                thumbnailPreview = reader.result;
+                thumbnail = thumbnailPreview.substring(thumbnailPreview.indexOf(',') + 1);
+                m.redraw();
+              };
+              reader.readAsDataURL(file);
             },
-          },
-          [
-            vnode.attrs.authorId &&
-              vnode.attrs.authorId.map((o) =>
-                m(
-                  'option',
-                  { value: o },
-                  rs.userList.username(o)
-                    ? rs.userList.username(o) + ' (' + o.slice(0, 8) + '...)'
-                    : 'No Signature'
-                )
-              ),
-          ]
-        ),
-
-        m('textarea[rows=5][placeholder=Description]', {
-          style: { width: '90%', display: 'block' },
+          }),
+          m('label.create-board-form__file-button[for=board-thumbnail]', {
+            title: thumbnailFileName || 'Choose a board thumbnail',
+          }, [m('i.fas.fa-upload'), thumbnailPreview ? ' Change image' : ' Choose image']),
+          m('small', 'Square images work best.'),
+        ]),
+        m('.create-board-form__field.create-board-form__identity', [
+          m('label[for=idtags]', 'Publishing identity'),
+          m('select.config-style-select[id=idtags]', {
+            value: identity,
+            onchange: (e) => (identity = vnode.attrs.authorId[e.target.selectedIndex]),
+          }, vnode.attrs.authorId && vnode.attrs.authorId.map((o) => m(
+            'option',
+            { value: o },
+            Number(o) === 0 ? 'No Signature' : `${rs.userList.username(o)} (${o.slice(0, 8)}...)`
+          ))),
+        ]),
+        m('.create-board-form__field.create-board-form__distribution', [
+          m('label[for=circletags]', 'Message distribution'),
+          m('select.config-style-select[id=circletags]', {
+            value: circle,
+            onchange: (e) => (circle = e.target.value),
+          }, [
+            m('option', { value: util.PUBLIC }, '🌐  Public'),
+            m('option', { value: util.EXTERNAL }, '◉  Restricted to External Circle'),
+          ]),
+        ]),
+        Number(circle) === util.EXTERNAL && m('.create-board-form__field.create-board-form__circle', [
+          m('label[for=board-circle]', 'Circle'),
+          m('select.config-style-select[id=board-circle]', {
+            value: selectedCircle && selectedCircle.mGroupId,
+            onchange: (e) => {
+              selectedCircle = circles.find((item) => item.mGroupId === e.target.value);
+            },
+          }, circles.length
+            ? circles.map((item) => m('option', { value: item.mGroupId }, item.mGroupName))
+            : m('option[disabled]', 'No circles available')),
+        ]),
+        m('textarea.create-board-form__description[rows=5][placeholder=Describe your board]', {
           oninput: (e) => (body = e.target.value),
           value: body,
         }),
-        m('label[for=circletags]', 'Select Distribution'),
         m(
-          'select[id=circletags]',
-          {
-            value: circle,
-            onchange: (e) => {
-              circle = e.target.value;
-            },
-          },
-          [
-            m('option', { value: util.PUBLIC }, 'Public'),
-            m('option', { value: util.EXTERNAL }, 'Restricted to External Circle'),
-          ]
-        ),
-        m(
-          'button',
+          'button.create-board-form__submit',
           {
             onclick: async () => {
-              const res = await rs.rsJsonApiRequest('/rsposted/createBoard', {
-                name: title,
-                description: body,
-                authorId: identity,
+              const res = await rs.rsJsonApiRequest('/rsposted/createBoardV2', {
+                board_name: title,
+                board_description: body,
+                board_image: { mData: { base64: thumbnail } },
+                ...(Number(identity) !== 0 && { authorId: identity }),
                 circleType: Number(circle),
+                ...(Number(circle) === util.EXTERNAL && selectedCircle && {
+                  circleId: selectedCircle.mGroupId,
+                }),
               });
+              if (res.body.retval && vnode.attrs.onCreated) await vnode.attrs.onCreated();
               res.body.retval
                 ? util.popupmessage([
                     m('h3', 'Success'),
@@ -86,7 +131,7 @@ function createboard() {
                 : util.popupmessage([
                     m('h3', 'Error'),
                     m('hr'),
-                    m('p', 'Error in creating Board'),
+                    m('p', res.body.errorMessage || 'Error in creating Board'),
                   ]);
             },
           },

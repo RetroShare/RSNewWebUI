@@ -77,7 +77,9 @@ const Layout = () => {
                 widget.popupMessage(
                   m(viewUtil.createchannel, {
                     authorId: ownId,
-                  })
+                    onCreated: getChannels.load,
+                  }),
+                  'create-channel-modal'
                 ),
             },
             'Create Channel'
