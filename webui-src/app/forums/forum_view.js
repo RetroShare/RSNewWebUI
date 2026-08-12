@@ -180,7 +180,7 @@ const ThreadView = () => {
       const threadStruct = (util.Data.Threads[forumId] && util.Data.Threads[forumId][msgId]) ? util.Data.Threads[forumId][msgId] : null;
 
       if (!threadStruct) {
-        return m('.widget', [
+        return m('.forum-thread-view', [
           m(
             'a[title=Back]',
             {
@@ -198,7 +198,7 @@ const ThreadView = () => {
       const meta = threadStruct.thread.mMeta;
       const unread = meta.mMsgStatus === util.THREAD_UNREAD;
 
-      return m('.widget', { key: msgId }, [
+      return m('.forum-thread-view', { key: msgId }, [
         m(
           'a[title=Back]',
           {
@@ -238,7 +238,7 @@ const ThreadView = () => {
             }
           }, unread ? 'Mark Read' : 'Mark Unread'),
         ]),
-        m('div.content', {
+        m('div.forum-post-content', {
           style: {
             width: '100%',
             backgroundColor: '#f9f9f9',

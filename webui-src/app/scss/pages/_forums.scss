@@ -5,6 +5,37 @@
   animation: fadein 0.5s;
 }
 
+.forum-thread-view {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.forum-post-content {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+
+  img,
+  video,
+  iframe {
+    max-width: 100%;
+    height: auto;
+  }
+
+  pre {
+    max-width: 100%;
+    overflow: auto;
+    white-space: pre-wrap;
+  }
+
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
 /* subject */
 table.forums th:nth-child(1) {
   width: 50%;

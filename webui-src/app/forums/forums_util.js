@@ -1,5 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const widget = require('widgets');
 
 const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this group
 const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in forums are shared with specific friends.
@@ -252,21 +253,7 @@ const SearchBar = () => {
   };
 };
 function popupmessage(message) {
-  const container = document.getElementById('modal-container');
-  container.style.display = 'block';
-  m.render(
-    container,
-    m('.modal-content', [
-      m(
-        'button.red',
-        {
-          onclick: () => (container.style.display = 'none'),
-        },
-        m('i.fas.fa-times')
-      ),
-      message,
-    ])
-  );
+  widget.popupMessage(message);
 }
 
 module.exports = {
