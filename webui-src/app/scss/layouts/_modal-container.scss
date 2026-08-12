@@ -36,3 +36,116 @@
     padding: 0;
   }
 }
+
+.modal-content.location-details-modal {
+  width: min(760px, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.location-details-dialog {
+  min-width: 0;
+  overflow: hidden;
+
+  h3 {
+    margin: 0 2.5rem 0.75rem 0;
+    color: #1e293b;
+  }
+
+  .location-detail-tabs {
+    overflow-x: auto;
+    margin: 0 -1.5rem;
+    padding: 0 1rem;
+
+    .tab-btn {
+      flex: 0 0 auto !important;
+      margin: 0 !important;
+    }
+  }
+
+  .location-detail-content {
+    max-height: calc(100vh - 12rem);
+    padding: 1rem 0.25rem 0.25rem 0;
+    overflow-y: auto;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 0.7rem 1rem;
+  }
+
+  .info-label {
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  .info-value {
+    min-width: 0;
+    color: #1e293b;
+    overflow-wrap: anywhere;
+  }
+
+  .retroshare-id-text {
+    max-height: calc(100vh - 16rem);
+    overflow: auto;
+    padding: 0.75rem;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .known-addresses-list {
+    height: 10rem;
+    max-height: 25vh;
+    margin-bottom: 0;
+    overflow: auto;
+    padding: 0.75rem;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    white-space: pre;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-content.location-details-modal {
+    width: calc(100% - 1rem);
+    max-height: calc(100% - 1rem);
+    padding: 1rem;
+  }
+
+  .location-details-dialog {
+    .location-detail-tabs {
+      margin: 0 -1rem;
+      padding: 0 0.5rem;
+
+      .tab-btn {
+        padding-right: 0.75rem;
+        padding-left: 0.75rem;
+        font-size: 0.85rem;
+      }
+    }
+
+    .location-detail-content {
+      max-height: calc(100vh - 10rem);
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+      gap: 0.2rem;
+    }
+
+    .info-value {
+      margin-bottom: 0.65rem;
+    }
+
+    .known-addresses-list {
+      height: 8rem;
+      max-height: 20vh;
+      font-size: 0.75rem;
+    }
+  }
+}

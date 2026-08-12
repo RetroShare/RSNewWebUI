@@ -12,6 +12,21 @@ function formatFingerprint(fingerprint) {
     ?.join(' ') || '';
 }
 
+function cleanRetroshareId(invite) {
+  const value = String(invite || '').trim();
+  const marker = 'rsInvite=';
+  const markerPosition = value.indexOf(marker);
+  const encodedId = markerPosition >= 0
+    ? value.slice(markerPosition + marker.length)
+    : value;
+
+  try {
+    return decodeURIComponent(encodedId);
+  } catch (_) {
+    return encodedId;
+  }
+}
+
 const ConfirmRemove = () => {
   return {
     view: (vnode) => [
@@ -33,6 +48,97 @@ const ConfirmRemove = () => {
         'Confirm'
       ),
     ],
+  };
+};
+
+const LocationDetails = () => {
+  let activeTab = 'details';
+  let version = 'Loading...';
+  let retroshareId = 'Loading...';
+
+  return {
+    oninit: (vnode) => {
+      rs.rsJsonApiRequest('/rsGossipDiscovery/getPeerVersion', { id: vnode.attrs.loc.id })
+        .then((response) => {
+          version = response.body && response.body.retval
+            ? response.body.version || 'Unknown'
+            : 'Unknown';
+          m.redraw();
+        })
+        .catch(() => {
+          version = 'Unavailable';
+          m.redraw();
+        });
+      rs.rsJsonApiRequest('/rsPeers/getShortInvite', { sslId: vnode.attrs.loc.id })
+        .then((response) => {
+          retroshareId = response.body && response.body.retval
+            ? cleanRetroshareId(response.body.invite) || 'Unavailable'
+            : 'Unavailable';
+          m.redraw();
+        })
+        .catch(() => {
+          retroshareId = 'Unavailable';
+          m.redraw();
+        });
+    },
+    view: (vnode) => {
+      const loc = vnode.attrs.loc;
+      const detail = loc.peerDetails || {};
+      const status = Data.getStatusPresentation(loc.statusValue, loc.isOnline);
+      const knownAddresses = detail.ipAddressList || [];
+      const infoRow = (label, value) => [
+        m('.info-label', label),
+        m('.info-value', value || 'None'),
+      ];
+
+      const detailContent = m('.info-grid', [
+        infoRow('Profile', `${detail.name || 'Unknown'} (${loc.gpg_id})`),
+        infoRow('Node ID', loc.id),
+        infoRow('Node Name', loc.name),
+        infoRow('Status', status.label),
+        infoRow('Connection', detail.connectStateString || status.label),
+        infoRow('Last Contact', new Date(loc.lastSeen * 1000).toLocaleString()),
+        infoRow('RetroShare Version', version),
+        infoRow('Status Message', loc.customState || 'None'),
+      ]);
+      const connectivityContent = [
+        m('.info-grid', detail.isHiddenNode ? [
+          infoRow('Hidden Address', detail.hiddenNodeAddress),
+          infoRow('Port', detail.hiddenNodePort),
+        ] : [
+          infoRow('Local Address', detail.localAddr),
+          infoRow('Local Port', detail.localPort),
+          infoRow('External Address', detail.extAddr),
+          infoRow('External Port', detail.extPort),
+          infoRow('Dynamic DNS', detail.dyndns),
+        ]),
+        m('h4', `Known Addresses (${knownAddresses.length})`),
+        knownAddresses.length
+          ? m('pre.known-addresses-list', knownAddresses.join('\n'))
+          : m('p', 'No address history available.'),
+      ];
+      const tabs = [
+        ['details', 'Details'],
+        ['connectivity', 'Connectivity'],
+        ['retroshare-id', 'RetroShare ID'],
+      ];
+
+      return m('.location-details-dialog', [
+        m('h3', `${detail.name || 'Profile'} (${loc.name || 'Location'})`),
+        m('.network-tabs.location-detail-tabs', tabs.map(([id, label]) => m(
+          `button.tab-btn${activeTab === id ? '.active' : ''}`,
+          { onclick: () => (activeTab = id) },
+          label
+        ))),
+        m('.location-detail-content',
+          activeTab === 'details'
+            ? detailContent
+            : activeTab === 'connectivity'
+              ? connectivityContent
+              : m('pre.retroshare-id-text', retroshareId)
+        ),
+      ]);
+    },
   };
 };
 
@@ -139,6 +245,16 @@ const DetailsTab = () => {
                   m('.loc-val', new Date(loc.lastSeen * 1000).toLocaleString()),
                 ]),
                 m('.loc-footer', [
+                  m(
+                    'button',
+                    {
+                      onclick: () => widget.popupMessage(
+                        m(LocationDetails, { loc }),
+                        'location-details-modal'
+                      ),
+                    },
+                    [m('i.fas.fa-info-circle'), ' View Details']
+                  ),
                   m(
                     'button.red',
                     {

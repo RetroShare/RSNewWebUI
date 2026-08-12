@@ -95,6 +95,7 @@ Data.refreshGpgDetails = async function () {
                     statusValue,
                     statusTimestamp,
                     avatar,
+                    peerDetails: data,
                   };
 
                   if (details[gpgId] === undefined) {
