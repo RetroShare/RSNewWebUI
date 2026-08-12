@@ -252,8 +252,8 @@ const SearchBar = () => {
       }),
   };
 };
-function popupmessage(message) {
-  widget.popupMessage(message);
+function popupmessage(message, modalClass = '') {
+  widget.popupMessage(message, modalClass);
 }
 
 module.exports = {

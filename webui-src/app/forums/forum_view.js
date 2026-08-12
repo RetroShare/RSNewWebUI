@@ -3,62 +3,147 @@ const rs = require('rswebui');
 const util = require('forums/forums_util');
 const peopleUtil = require('people/people_util');
 const { loadPostContent, getTimestampValue, formatTimestamp } = require('./forums_util');
+const CIRCLE_PUBLIC = 1;
+const CIRCLE_EXTERNAL = 2;
 
 function createforum() {
   let title;
   let body;
   let identity;
+  let circle = CIRCLE_PUBLIC;
+  let circles = [];
+  let selectedCircle;
+  let enableModerators = false;
+  let moderatorFilter = 'all';
+  let moderatorSearch = '';
+  const moderators = new Set();
   return {
-    oninit: (vnode) => {
+    oninit: async (vnode) => {
       if (vnode.attrs.authorId) {
         identity = vnode.attrs.authorId[0];
       }
+      const res = await rs.rsJsonApiRequest('/rsgxscircles/getCirclesSummaries');
+      if (res.body.retval) {
+        circles = res.body.circles || [];
+        selectedCircle = circles[0];
+      }
     },
-    view: (vnode) =>
-      m('.widget', [
-        m('h3', 'Create Forum'),
-        m('hr'),
-        m('input[type=text][placeholder=Title]', {
+    view: (vnode) => {
+      const query = moderatorSearch.trim().toLowerCase();
+      const identities = (rs.userList.users || [])
+        .filter((item) => item && item.mGroupId)
+        .filter((item) => moderatorFilter !== 'contacts' ||
+          (rs.userList.userMap[item.mGroupId] && rs.userList.userMap[item.mGroupId].isContact))
+        .filter((item) => !query || `${item.mGroupName} ${item.mGroupId}`.toLowerCase().includes(query))
+        .sort((a, b) => (a.mGroupName || '').localeCompare(b.mGroupName || ''));
+      return m('.widget.create-forum-form', [
+        m('.create-forum-form__heading', [
+          m('h3', 'Create Forum'),
+          m('p', 'Set up the forum and choose its publishing permissions.'),
+        ]),
+        m('input.create-forum-form__title[type=text][placeholder=Forum title]', {
           oninput: (e) => (title = e.target.value),
         }),
-        m('label[for=tags]', 'Select identity'),
-        m(
-          'select[id=idtags]',
-          {
+        m('.create-forum-form__field', [
+          m('label[for=forum-idtags]', 'Owner identity'),
+          m('select.config-style-select[id=forum-idtags]', {
             value: identity,
-            onchange: (e) => {
-              identity = vnode.attrs.authorId[e.target.selectedIndex];
-            },
-          },
-          [
-            vnode.attrs.authorId &&
-            vnode.attrs.authorId.map((o) =>
-              m(
-                'option',
-                { value: o },
-                rs.userList.username(o)
-                  ? rs.userList.username(o) + ' (' + o.slice(0, 8) + '...)'
-                  : 'No Signature'
-              )
-            ),
-          ]
-        ),
-        m('textarea[rows=5][placeholder=Description]', {
-          style: { width: '90%', display: 'block' },
+            onchange: (e) => (identity = vnode.attrs.authorId[e.target.selectedIndex]),
+          }, vnode.attrs.authorId && vnode.attrs.authorId.map((o) => m('option', { value: o },
+            Number(o) === 0 ? 'No Signature' : `${rs.userList.username(o)} (${o.slice(0, 8)}...)`))),
+        ]),
+        m('.create-forum-form__field', [
+          m('label[for=forum-distribution]', 'Message distribution'),
+          m('select.config-style-select[id=forum-distribution]', {
+            value: circle,
+            onchange: (e) => (circle = e.target.value),
+          }, [
+            m('option', { value: CIRCLE_PUBLIC }, '\u{1F310}  Public'),
+            m('option', { value: CIRCLE_EXTERNAL }, '\u25C9  Restricted to External Circle'),
+          ]),
+        ]),
+        Number(circle) === CIRCLE_EXTERNAL && m('.create-forum-form__field', [
+          m('label[for=forum-circle]', 'Circle'),
+          m('select.config-style-select[id=forum-circle]', {
+            value: selectedCircle && selectedCircle.mGroupId,
+            onchange: (e) => (selectedCircle = circles.find((item) => item.mGroupId === e.target.value)),
+          }, circles.length
+            ? circles.map((item) => m('option', { value: item.mGroupId }, item.mGroupName))
+            : m('option[disabled]', 'No circles available')),
+        ]),
+        m('.create-forum-form__moderators', [
+          m('.create-forum-form__moderators-heading', [
+            m('label.create-forum-form__moderators-toggle', [
+              m('input[type=checkbox]', {
+                checked: enableModerators,
+                onchange: (e) => {
+                  enableModerators = e.target.checked;
+                  if (!enableModerators) {
+                    moderators.clear();
+                  }
+                },
+              }),
+              m('span', 'Add moderators'),
+            ]),
+            enableModerators && m('span', `${moderators.size} selected`),
+          ]),
+          enableModerators && m('.create-forum-form__moderator-controls', [
+            m('select.config-style-select[id=forum-moderator-filter]', {
+              value: moderatorFilter,
+              onchange: (e) => {
+                moderatorFilter = e.target.value;
+              },
+            }, [
+              m('option[value=all]', 'All identities'),
+              m('option[value=contacts]', 'My contacts'),
+            ]),
+            m('.create-forum-form__search', [
+              m('i.fas.fa-search'),
+              m('input[id=forum-moderator-search][type=search][placeholder=Search identities]', {
+                value: moderatorSearch,
+                oninput: (e) => (moderatorSearch = e.target.value),
+              }),
+            ]),
+            m('.create-forum-form__moderator-list', identities.length
+              ? identities.map((item) => m('label.create-forum-form__moderator', [
+              m('input[type=checkbox]', {
+                checked: moderators.has(item.mGroupId),
+                onchange: (e) => e.target.checked
+                  ? moderators.add(item.mGroupId)
+                  : moderators.delete(item.mGroupId),
+              }),
+              m(peopleUtil.UserAvatar, {
+                firstLetter: (item.mGroupName || '?').slice(0, 1).toUpperCase(),
+                identityId: item.mGroupId,
+                size: 30,
+                isSquare: true,
+              }),
+              m('span', [
+                m('b', item.mGroupName || 'Unnamed identity'),
+                m('small', item.mGroupId),
+              ]),
+              ]))
+              : m('.create-forum-form__empty', query ? 'No matching identities' : 'No identities available')),
+          ]),
+        ]),
+        m('textarea.create-forum-form__description[rows=5][placeholder=Describe your forum]', {
           oninput: (e) => (body = e.target.value),
           value: body,
         }),
-        m(
-          'button',
+        m('button.create-forum-form__submit',
           {
             onclick: async () => {
               const res = await rs.rsJsonApiRequest('/rsgxsforums/createForumV2', {
                 name: title,
                 description: body,
-                ...(Number(identity) !== 0 && { authorId: identity }), // if id == '0', authorId is left empty
+                ...(Number(identity) !== 0 && { authorId: identity }),
+                moderatorsIds: enableModerators ? Array.from(moderators) : [],
+                circleType: Number(circle),
+                ...(Number(circle) === CIRCLE_EXTERNAL && selectedCircle && { circleId: selectedCircle.mGroupId }),
               });
               if (res.body.retval) {
-                util.updatedisplayforums(res.body.forumId);
+                await util.updatedisplayforums(res.body.forumId);
+                if (vnode.attrs.onCreated) await vnode.attrs.onCreated();
                 m.redraw();
               }
               res.body.retval === false
@@ -72,7 +157,8 @@ function createforum() {
           },
           'Create'
         ),
-      ]),
+      ]);
+    },
   };
 }
 const AddThread = () => {

@@ -63,7 +63,9 @@ const Layout = () => {
                 util.popupmessage(
                   m(viewUtil.createforum, {
                     authorId: ownId,
-                  })
+                    onCreated: getForums.load,
+                  }),
+                  'create-forum-modal'
                 ),
             },
             'Create Forum'
