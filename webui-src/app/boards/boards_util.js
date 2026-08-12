@@ -128,6 +128,7 @@ async function updateDisplayBoards(keyid, details) {
             description: details.mDescription,
             image: details.mGroupImage,
             author: details.mMeta.mAuthorId,
+            subscribeFlags: details.mMeta.mSubscribeFlags,
             isSubscribed:
               details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED ||
               details.mMeta.mSubscribeFlags === GROUP_MY_BOARD,

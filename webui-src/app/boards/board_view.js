@@ -141,6 +141,160 @@ function createboard() {
   };
 }
 
+function CreatePost() {
+  let mode = 'post';
+  let title = '';
+  let notes = '';
+  let link = '';
+  let authorId;
+  let identities = [];
+  let imageBase64;
+  let imagePreview = '';
+  let imageFileName = '';
+  let imageError = '';
+  let submitting = false;
+
+  const readDataUrl = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const loadImage = (source) => new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = source;
+  });
+
+  async function preparePostImage(file) {
+    const original = await readDataUrl(file);
+    const isAnimatedFormat = file.type === 'image/gif' || file.type === 'image/webp';
+    if (isAnimatedFormat && file.size <= 194000) return original;
+
+    const sourceImage = await loadImage(original);
+    const scale = Math.min(1, 640 / sourceImage.naturalWidth, 480 / sourceImage.naturalHeight);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(sourceImage.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(sourceImage.naturalHeight * scale));
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
+
+    let result = '';
+    for (let quality = 0.88; quality >= 0.35; quality -= 0.08) {
+      result = canvas.toDataURL('image/jpeg', quality);
+      const bytes = Math.ceil((result.length - result.indexOf(',') - 1) * 3 / 4);
+      if (bytes <= 190000) return result;
+    }
+    throw new Error('The image is too large to fit in a Board post.');
+  }
+
+  return {
+    oninit: async () => {
+      identities = (await peopleUtil.ownIds()) || [];
+      identities = identities.filter((id) => Number(id) !== 0);
+      authorId = identities[0];
+      m.redraw();
+    },
+    view: (vnode) => m('.widget.create-board-post', [
+      m('.create-board-post__heading', [
+        m('h3', 'Create a Post'),
+        m('p', 'Share an interesting post with a clear, descriptive title.'),
+      ]),
+      m('.create-board-post__modes', [
+        ['post', 'fa-comment-alt', 'Post'],
+        ['image', 'fa-image', 'Image'],
+        ['link', 'fa-link', 'Link'],
+      ].map(([value, icon, label]) => m('button[type=button]', {
+        class: mode === value ? 'active' : '',
+        onclick: () => (mode = value),
+      }, [m(`i.fas.${icon}`), ` ${label}`]))),
+      m('input.create-board-post__title[type=text][placeholder=Post title]', {
+        value: title,
+        oninput: (e) => (title = e.target.value),
+      }),
+      mode === 'link' && m('input.create-board-post__link[type=url][placeholder=https://example.com]', {
+        value: link,
+        oninput: (e) => (link = e.target.value),
+      }),
+      mode === 'image' && m('.create-board-post__image', [
+        m('.create-board-post__preview', [
+          imagePreview
+            ? m('img', { src: imagePreview, alt: 'Post image preview' })
+            : m('.create-board-post__placeholder', [m('i.fas.fa-image'), m('span', 'Post image')]),
+        ]),
+        m('input.create-board-post__file[type=file][id=board-post-image][accept=image/*]', {
+          onchange: async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            imageFileName = file.name;
+            imageError = '';
+            try {
+              imagePreview = await preparePostImage(file);
+              imageBase64 = imagePreview.substring(imagePreview.indexOf(',') + 1);
+            } catch (error) {
+              imagePreview = '';
+              imageBase64 = undefined;
+              imageError = error.message || 'The selected image could not be prepared.';
+            }
+            m.redraw();
+          },
+        }),
+        m('label.create-board-post__file-button[for=board-post-image]', {
+          title: imageFileName || 'Choose a post image',
+        }, [m('i.fas.fa-upload'), imagePreview ? ' Change image' : ' Choose image']),
+        imageError && m('.create-board-post__image-error', imageError),
+      ]),
+      mode === 'post' && m('textarea.create-board-post__notes[rows=8][placeholder=Text (optional)]', {
+        value: notes,
+        oninput: (e) => (notes = e.target.value),
+      }),
+      m('.create-board-post__author', [
+        m('label[for=board-post-author]', 'Post as'),
+        m('select.config-style-select.network-style-select[id=board-post-author]', {
+          value: authorId,
+          onchange: (e) => (authorId = e.target.value),
+          disabled: identities.length === 0,
+        }, identities.length
+          ? identities.map((id) => m('option', { value: id }, `${rs.userList.username(id)} (${id.slice(0, 8)}...)`))
+          : m('option', 'No signed identity available')),
+      ]),
+      m('button.create-board-post__submit[type=button]', {
+        disabled: submitting || !title.trim() || !authorId ||
+          (mode === 'link' && !link.trim()) || (mode === 'image' && !imageBase64),
+        onclick: async () => {
+          submitting = true;
+          m.redraw();
+          try {
+            const res = await rs.rsJsonApiRequest('/rsposted/createPostV2', {
+              boardId: vnode.attrs.boardId,
+              title: title.trim(),
+              link: { urlString: mode === 'link' ? link.trim() : '' },
+              notes: mode === 'link' ? '' : notes,
+              authorId,
+              image: { mData: { base64: mode === 'image' ? imageBase64 : undefined } },
+            });
+            if (res.body.retval) {
+              Data.Posts[vnode.attrs.boardId] = {};
+              await util.updateDisplayBoards(vnode.attrs.boardId);
+              util.popupmessage([m('h3', 'Success'), m('hr'), m('p', 'Post created successfully')]);
+            } else {
+              util.popupmessage([m('h3', 'Error'), m('hr'), m('p',
+                res.body.error_message || res.body.errorMessage || 'The post could not be created')]);
+            }
+          } finally {
+            submitting = false;
+            m.redraw();
+          }
+        },
+      }, submitting ? 'Posting…' : 'Post'),
+    ]),
+  };
+}
+
 function BoardView() {
   let lastLoadedBoardId = null;
   let voterIdentities = [];
@@ -182,6 +336,8 @@ function BoardView() {
         }
       }
       const bsubscribed = boardInfo.isSubscribed;
+      const subscribeFlags = Number(boardInfo.subscribeFlags || 0);
+      const canPublish = (subscribeFlags & (util.GROUP_SUBSCRIBE_ADMIN | util.GROUP_SUBSCRIBE_PUBLISH)) !== 0;
       const bposts = boardInfo.posts || 0;
       const createDate = boardInfo.created;
       const lastActivity = boardInfo.activity;
@@ -310,7 +466,15 @@ function BoardView() {
             {
               style: 'display:' + (bsubscribed ? 'block' : 'none'),
             },
-            m('.posts__heading', m('h3', 'Posts')),
+            m('.posts__heading.board-posts-heading', [
+              m('h3', 'Posts'),
+              canPublish && m('button.board-posts-heading__create[type=button][title=Create Post][aria-label=Create Post]', {
+                onclick: () => util.popupmessage(
+                  m(CreatePost, { boardId: v.attrs.id }),
+                  'create-board-post-modal'
+                ),
+              }, [m('i.fas.fa-plus'), m('span', 'Create Post')]),
+            ]),
             m(boardKanban.BoardView, {
               forumId: v.attrs.id,
               items,

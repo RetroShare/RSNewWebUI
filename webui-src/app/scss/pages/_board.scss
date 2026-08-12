@@ -1163,6 +1163,7 @@ button.board-card__notes-btn,
     padding: .35rem .65rem; border: 1px solid #cbd5e1; border-radius: 4px;
     background: #fff; color: #334155; font-size: .85rem;
   }
+  &__image-error { color: #b91c1c; font-size: .85rem; text-align: center; }
   &__file-button:hover { border-color: #3ba4d7; color: #0879b2; }
   &__visual small { color: #64748b; text-align: center; }
   &__field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
@@ -1191,6 +1192,79 @@ button.board-card__notes-btn,
   overflow-y: auto;
 }
 
+.create-board-post {
+  display: flex !important;
+  flex-direction: column;
+  gap: .9rem !important;
+
+  &__heading h3 { margin: 0; color: #1e293b; }
+  &__heading p { margin: .25rem 0 0; color: #64748b; font-size: .9rem; }
+  &__modes { display: flex; gap: .4rem; border-bottom: 1px solid #cbd5e1; }
+  &__modes button {
+    border: 0; border-bottom: 3px solid transparent; border-radius: 0;
+    background: transparent; color: #475569; box-shadow: none; padding: .55rem .8rem;
+  }
+  &__modes button.active { color: #0788cb; border-bottom-color: #0788cb; }
+  &__title,
+  &__link,
+  &__notes { width: 100%; box-sizing: border-box; }
+  &__notes { resize: vertical; min-height: 10rem; }
+  &__image { display: flex; flex-direction: column; align-items: center; gap: .65rem; }
+  &__preview {
+    width: min(100%, 30rem); height: 16rem; overflow: hidden;
+    border: 1px solid #cbd5e1; border-radius: .5rem; background: #f8fafc;
+  }
+  &__preview img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  &__placeholder {
+    height: 100%; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: .6rem; color: #64748b;
+  }
+  &__placeholder i { color: #3ba4d7; font-size: 2.5rem; }
+  &__file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+  &__file-button {
+    display: inline-flex; align-items: center; gap: .35rem; cursor: pointer;
+    padding: .4rem .7rem; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff;
+  }
+  &__author { display: flex; align-items: center; gap: .65rem; }
+  &__author label { color: #475569; font-weight: 700; }
+  &__author select.network-style-select {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: .375rem .5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: .375rem;
+    background-color: #fff;
+    color: #334155;
+    outline: none;
+    cursor: pointer;
+    font-size: .85rem;
+    font-weight: 600;
+    transition: border-color .2s;
+  }
+  &__author select.network-style-select:focus { border-color: #3ba4d7; }
+  &__submit { align-self: flex-end; min-width: 6rem; }
+}
+
+.posts > .posts__heading.board-posts-heading {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100%;
+  gap: 1rem !important;
+  flex-wrap: wrap;
+  text-align: left;
+}
+.posts > .posts__heading.board-posts-heading h3 { margin: 0; text-align: left; }
+.board-posts-heading__create { display: inline-flex; align-items: center; gap: .3rem; }
+
+.modal-content.create-board-post-modal {
+  width: min(760px, calc(100% - 2rem)); max-height: calc(100% - 2rem);
+  box-sizing: border-box; overflow-x: hidden; overflow-y: auto;
+}
+
 @media (max-width: 600px) {
   .modal-content.create-board-modal {
     width: calc(100% - 1rem);
@@ -1216,4 +1290,11 @@ button.board-card__notes-btn,
     &__submit { width: 100%; }
   }
   .create-board-form .board-thumbnail-preview { width: 8rem; height: 8rem; }
+  .modal-content.create-board-post-modal { width: calc(100% - 1rem); max-height: calc(100% - 1rem); padding: 1rem; }
+  .create-board-post__modes button { flex: 1; padding: .5rem .25rem; }
+  .create-board-post__preview { height: 12rem; }
+  .create-board-post__author { align-items: stretch; flex-direction: column; gap: .35rem; }
+  .create-board-post__submit { width: 100%; }
+  .board-posts-heading__create span { display: none; }
+  .board-posts-heading__create { min-width: 2.25rem; justify-content: center; padding-inline: .55rem; }
 }

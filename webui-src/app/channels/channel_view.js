@@ -272,65 +272,138 @@ function createchannel() {
 const AddPost = () => {
   let content = '';
   let ptitle = '';
-  let pthumbnail = [];
+  let pthumbnail;
+  let thumbnailPreview = '';
+  let thumbnailFileName = '';
+  let attachmentLabel = 'Choose files';
+  let attachmentItems = [];
   let pfiles = [];
   let uploadFiles = true;
   return {
     view: (vnode) =>
-      m('.widget', [
-        m('h3', 'Add Post'),
-        m('hr'),
-        m('label[for=thumbnail]', 'Thumbnail: '),
-        m('input[type=file][name=files][id=thumbnail][accept=image/*]', {
-          onchange: async (e) => {
+      m('.widget.create-channel-post-form', [
+        m('.create-channel-post-form__heading', [
+          m('h3', 'Create Channel Post'),
+          m('p', 'Add a title, thumbnail, message, and optional attachments.'),
+        ]),
+        m('input.create-channel-post-form__title[type=text][placeholder=Post title]', {
+          value: ptitle,
+          oninput: (e) => (ptitle = e.target.value),
+        }),
+        m('.create-channel-post-form__thumbnail', [
+          m('.channel-post-thumbnail-preview', [
+            thumbnailPreview
+              ? m('img', { src: thumbnailPreview, alt: 'Post thumbnail preview' })
+              : m('.channel-post-thumbnail-preview__placeholder', [
+                m('i.fas.fa-image'),
+                m('span', 'Post thumbnail'),
+                m('small', 'No image selected'),
+              ]),
+          ]),
+          m('span.create-channel-post-form__thumbnail-label', 'Thumbnail'),
+          m('input.create-channel-post-form__file-input[type=file][name=files][id=channel-post-thumbnail][accept=image/*]', {
+          onchange: (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            thumbnailFileName = file.name;
             const reader = new FileReader();
             reader.onloadend = function () {
-              pthumbnail = reader.result.substring(reader.result.indexOf(',') + 1);
+              thumbnailPreview = reader.result;
+              pthumbnail = thumbnailPreview.substring(thumbnailPreview.indexOf(',') + 1);
+              m.redraw();
             };
-            reader.readAsDataURL(e.target.files[0]); // converts into base64 string
+            reader.readAsDataURL(file);
           },
-        }),
-        m('label[for=browse]', 'Attachments: '),
-        m('input[type=file][name=files][id=browse][multiple=multiple]', {
+          }),
+          m('label.create-channel-post-form__file-button[for=channel-post-thumbnail]', {
+            title: thumbnailFileName || 'Choose a post thumbnail',
+          }, [m('i.fas.fa-upload'), thumbnailPreview ? ' Change image' : ' Choose image']),
+          m('small', 'Square images work best.'),
+        ]),
+        m('.create-channel-post-form__attachments', [
+          m('label', 'Attachments'),
+          m('input.create-channel-post-form__file-input[type=file][name=files][id=channel-post-files][multiple=multiple]', {
+          disabled: !uploadFiles,
           // attachments option wrong hash, not working
           onchange: async (e) => {
+            const input = e.target;
+            const existingKeys = new Set(attachmentItems.map((file) => file.key));
+            const newFiles = Array.from(input.files).filter((file) => {
+              const key = `${file.name}:${file.size}:${file.lastModified}`;
+              return !existingKeys.has(key);
+            });
+            input.value = '';
+            if (newFiles.length === 0) return;
+
+            attachmentItems.push(...newFiles.map((file) => ({
+              key: `${file.name}:${file.size}:${file.lastModified}`,
+              name: file.name,
+              size: file.size,
+              hash: '',
+            })));
+            attachmentLabel = `${attachmentItems.length} file${attachmentItems.length === 1 ? '' : 's'} selected`;
             uploadFiles = false;
             filesUploadHashes.PostFiles = [];
-            pfiles = [];
-            for (let i = 0; i < e.target.files.length; i++) {
-              await parsefile(e.target.files[i], 'multiple');
+            m.redraw();
+            for (let i = 0; i < newFiles.length; i++) {
+              await parsefile(newFiles[i], 'multiple');
             }
             // console.log(filesUploadHashes.PostFiles, filesUploadHashes.PostFiles.length);
 
-            if (filesUploadHashes.PostFiles.length === e.target.files.length) {
-              for (let i = 0; i < e.target.files.length; i++) {
+            if (filesUploadHashes.PostFiles.length === newFiles.length) {
+              for (let i = 0; i < newFiles.length; i++) {
                 pfiles.push({
-                  name: e.target.files[i].name,
-                  size: e.target.files[i].size,
+                  name: newFiles[i].name,
+                  size: newFiles[i].size,
                   hash: filesUploadHashes.PostFiles[i],
                 });
               }
               uploadFiles = true;
+              attachmentItems.forEach((item, index) => {
+                item.hash = pfiles[index] && pfiles[index].hash;
+              });
+              m.redraw();
             }
           },
-        }),
-        m('input[type=text][placeholder=Title]', {
-          oninput: (e) => (ptitle = e.target.value),
-        }),
-        m('textarea[rows=5]', {
-          style: { width: '90%', display: 'block' },
+          }),
+          m('label.create-channel-post-form__attachment-button[for=channel-post-files]', [
+            m('i.fas.fa-paperclip'), ` ${attachmentLabel}`,
+          ]),
+          !uploadFiles && m('small', 'Preparing attachments...'),
+          attachmentItems.length > 0 && m('.create-channel-post-form__attachment-list',
+            attachmentItems.map((file, index) => m('.create-channel-post-form__attachment-item', [
+              m('i.fas.fa-file'),
+              m('.create-channel-post-form__attachment-info', [
+                m('span', { title: file.name }, file.name),
+                m('small', rs.formatBytes(file.size)),
+              ]),
+              m('button.create-channel-post-form__attachment-remove[type=button][title=Remove attachment]', {
+                disabled: !uploadFiles,
+                onclick: () => {
+                  attachmentItems.splice(index, 1);
+                  pfiles.splice(index, 1);
+                  attachmentLabel = attachmentItems.length
+                    ? `${attachmentItems.length} file${attachmentItems.length === 1 ? '' : 's'} selected`
+                    : 'Choose files';
+                },
+              }, m('i.fas.fa-times')),
+            ]))
+          ),
+        ]),
+        m('textarea.create-channel-post-form__description[rows=7][placeholder=Write your post]', {
           oninput: (e) => (content = e.target.value),
           value: content,
         }),
         m(
-          'button',
+          'button.create-channel-post-form__submit',
           {
+            disabled: !uploadFiles || !ptitle.trim(),
             onclick: async () => {
               if (uploadFiles) {
                 // console.log(vnode.attrs.chanId, ptitle, content, pfiles, pthumbnail);
                 const res = await rs.rsJsonApiRequest('/rsgxschannels/createPostV2', {
                   channelId: vnode.attrs.chanId,
-                  title: ptitle,
+                  title: ptitle.trim(),
                   mBody: content,
                   files: pfiles, // does not work for now
                   thumbnail: { mData: { base64: pthumbnail } },
@@ -347,7 +420,7 @@ const AddPost = () => {
               }
             },
           },
-          'Add'
+          uploadFiles ? 'Create Post' : 'Preparing…'
         ),
       ]),
   };
@@ -461,13 +534,16 @@ const ChannelView = () => {
             style: 'display: ' + (csubscribed ? 'flex' : 'none'),
           },
           [
-            m('.posts__heading', [
+            m('.posts__heading.channel-posts-heading', [
               m('h3', 'Posts'),
               mychannel &&
                 m(
-                  'button',
-                  { onclick: () => widget.popupMessage(m(AddPost, { chanId: v.attrs.id })) },
-                  ['Add Post', m('i.fas.fa-edit')]
+                  'button.channel-posts-heading__create[type=button][title=Add Post][aria-label=Add Post]',
+                  { onclick: () => widget.popupMessage(
+                    m(AddPost, { chanId: v.attrs.id }),
+                    'create-channel-post-modal'
+                  ) },
+                  [m('i.fas.fa-edit'), m('span', 'Add Post')]
                 ),
             ]),
             m(
