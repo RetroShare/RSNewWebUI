@@ -426,6 +426,12 @@ const AddPost = () => {
   };
 };
 
+//  When each channel last had its content pulled, so that stepping in and out
+//  of a channel does not redownload it every time. Module level: the component
+//  is rebuilt at every visit, a field of it would forget instantly.
+const contentLoadedAt = {};
+const CONTENT_CACHE_MS = 60000;
+
 const ChannelView = () => {
   let cname = '';
   let cimage = '';
@@ -459,8 +465,16 @@ const ChannelView = () => {
       if (Data.Posts[v.attrs.id]) {
         plist = Data.Posts[v.attrs.id];
       }
-      // Channel lists load metadata only. Fetch the selected channel's content
-      // here so large channels do not block or overload the list page.
+      //  Channel lists load metadata only, so the content is fetched here, on
+      //  opening. oninit runs again on every visit though, and a 2000 item
+      //  channel would redownload its whole content, images included, each time
+      //  the user steps in and out. Skip it while the copy in memory is fresh,
+      //  and let it age so posts published meanwhile still show up. The callers
+      //  that publish or delete call updatedisplaychannels directly and are not
+      //  affected by this guard.
+      const lastLoad = contentLoadedAt[v.attrs.id] || 0;
+      if (Object.keys(plist).length > 0 && Date.now() - lastLoad < CONTENT_CACHE_MS) return;
+      contentLoadedAt[v.attrs.id] = Date.now();
       util.updatedisplaychannels(v.attrs.id).then(() => {
         plist = Data.Posts[v.attrs.id] || {};
         m.redraw();
