@@ -9,7 +9,11 @@
   right: 0 !important;
   bottom: 0 !important;
   width: 100vw !important;
+  /* Mobile browsers count the collapsible URL bar in 100vh, so a full height
+     overlay is taller than the screen and its bottom is unreachable. dvh
+     follows the bar; the vh line stays as a fallback for older engines. */
   height: 100vh !important;
+  height: 100dvh !important;
   background-color: rgba(15, 23, 42, 0.75) !important;
   backdrop-filter: blur(4px) !important;
   z-index: 999999 !important;
