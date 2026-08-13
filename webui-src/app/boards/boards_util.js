@@ -97,6 +97,25 @@ async function updateContent(content, boardid) {
   return false;
 }
 
+// Same as the channel loader: a post can carry base64 media, and the JSON API
+// cuts a response it cannot flush in time. Retry a failed batch as two smaller
+// ones until the offending post is isolated, instead of dropping the 25 of them
+// on a single console.warn. Do not split when the core stopped answering, or
+// one batch would turn into 2N-1 doomed requests.
+async function updateContentBatch(contentIds, boardid) {
+  const loaded = await updateContent(contentIds, boardid);
+  if (loaded || contentIds.length <= 1 || !rs.connectionState.status) {
+    if (!loaded) {
+      console.warn('Unable to load board content item', contentIds[0]);
+    }
+    return;
+  }
+
+  const middle = Math.ceil(contentIds.length / 2);
+  await updateContentBatch(contentIds.slice(0, middle), boardid);
+  await updateContentBatch(contentIds.slice(middle), boardid);
+}
+
 const inFlightBoards = {};
 
 async function updateDisplayBoards(keyid, details) {
@@ -160,7 +179,7 @@ async function updateDisplayBoards(keyid, details) {
         summaries.sort((a, b) => Number((b.mPublishTs && b.mPublishTs.xint64) || b.mPublishTs || 0)
           - Number((a.mPublishTs && a.mPublishTs.xint64) || a.mPublishTs || 0));
         for (let i = 0; i < summaries.length; i += BOARD_POST_BATCH_SIZE) {
-          await updateContent(summaries.slice(i, i + BOARD_POST_BATCH_SIZE), keyid);
+          await updateContentBatch(summaries.slice(i, i + BOARD_POST_BATCH_SIZE), keyid);
         }
       } else {
         // Compatibility fallback for RetroShare cores which do not yet expose
