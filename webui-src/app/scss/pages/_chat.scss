@@ -1337,7 +1337,10 @@ label.chat-hub-action-btn i,
   top: 0;
   left: 0;
   width: 100vw;
+  /* dvh follows the collapsible URL bar of mobile browsers, which 100vh
+     ignores; the vh line stays as a fallback for older engines. */
   height: 100vh;
+  height: 100dvh;
   background-color: rgba(15, 23, 42, 0.4);
   backdrop-filter: blur(4px);
   display: flex;
@@ -1797,7 +1800,10 @@ label.chat-hub-action-btn i,
   top: 0;
   left: 0;
   width: 100vw;
+  /* dvh follows the collapsible URL bar of mobile browsers, which 100vh
+     ignores; the vh line stays as a fallback for older engines. */
   height: 100vh;
+  height: 100dvh;
   background-color: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(4px);
   display: flex;

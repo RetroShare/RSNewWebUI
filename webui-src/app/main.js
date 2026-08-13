@@ -114,7 +114,7 @@ const navbar = () => {
                       ? 'Connected to RetroShare Core'
                       : 'Connection Lost',
                   }),
-                  m('span.webui-version', { style: { fontSize: '0.7em' } }, 'v136'),
+                  m('span.webui-version', { style: { fontSize: '0.7em' } }, 'v137'),
                   m('i.fas.fa-sync-alt.refresh-icon', {
                     style: { cursor: 'pointer', fontSize: '0.8em' },
                     onclick: () => window.location.reload(true),
