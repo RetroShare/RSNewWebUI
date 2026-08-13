@@ -69,6 +69,113 @@ table.forums tr.hidden {
   position: relative;
   padding: 10px;
 }
+
+.forum-detail-heading {
+  margin-top: .75rem;
+
+  h3 { margin: 0; }
+}
+
+.forum-detail-card {
+  display: grid;
+  grid-template-columns: 6rem minmax(15rem, 2fr) minmax(18rem, 3fr);
+  grid-template-areas: 'icon details description';
+  align-items: center;
+  gap: 1rem 2rem;
+  margin-top: .75rem;
+  padding: 1rem;
+  border: 1px solid #d7dee8;
+  border-radius: 4px;
+  background: #fff;
+
+  &__icon {
+    grid-area: icon;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 6rem;
+    height: 6rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background: linear-gradient(135deg, #eef6fb, #dbeafe);
+    color: #3ba4d7;
+    box-sizing: border-box;
+  }
+
+  &__icon i { font-size: 2.75rem; }
+
+  &__details {
+    grid-area: details;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+  }
+
+  &__description { grid-area: description; }
+
+  &__details > div,
+  &__description {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &__details b,
+  &__description b { margin-right: .25rem; }
+}
+
+.forum-threads {
+  margin-top: 1rem;
+
+  &__heading {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1rem;
+    padding-bottom: .35rem;
+    border-bottom: 1px solid #d7dee8;
+  }
+
+  &__heading h3 { margin: 0; }
+
+  &__create {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .forum-detail-heading { align-items: center; gap: .75rem; }
+
+  .forum-detail-heading h3 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .forum-detail-card {
+    grid-template-columns: 5rem minmax(0, 1fr);
+    grid-template-areas:
+      'icon details'
+      'description description';
+    align-items: start;
+    gap: 1rem;
+  }
+
+  .forum-detail-card__icon {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .forum-detail-card__icon i { font-size: 2.25rem; }
+
+  .forum-threads__create {
+    min-width: 2.25rem;
+    justify-content: center;
+    padding-inline: .55rem;
+  }
+
+  .forum-threads__create span { display: none; }
+}
 .p {
   margin: 0;
 }

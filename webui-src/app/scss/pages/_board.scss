@@ -1116,6 +1116,23 @@ button.board-card__notes-btn,
     width: 100% !important;
   }
 }
+
+.board-detail-default-thumbnail {
+  display: flex;
+  flex: 0 0 6rem;
+  align-items: center;
+  justify-content: center;
+  width: 6rem;
+  height: 6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #eef6fb, #dbeafe);
+  color: #3ba4d7;
+  box-sizing: border-box;
+
+  i { font-size: 2.75rem; }
+}
+
 /* Create Board dialog mirrors the Create Channel form language. */
 .create-board-form {
   display: grid !important;

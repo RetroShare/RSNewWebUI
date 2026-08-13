@@ -395,61 +395,62 @@ const ForumView = () => {
           m('i.fas.fa-arrow-left')
         ),
 
-        m('h3', fname),
-        m(
-          'button',
-          {
-            onclick: async () => {
-              const res = await rs.rsJsonApiRequest('/rsgxsforums/subscribeToForum', {
-                forumId: v.attrs.id,
-                subscribe: !fsubscribed,
-              });
-              if (res.body.retval) {
-                util.Data.DisplayForums[v.attrs.id].isSubscribed = !fsubscribed;
-              }
-            },
-          },
-          fsubscribed ? 'Subscribed' : 'Subscribe'
-        ),
-        m('[id=forumdetails]', [
-          m(
-            'p',
-            m('b', 'Date created: '),
-            formatTimestamp(createDate)
-          ),
-          m('p', m('b', 'Admin: '), fauthor),
-          m(
-            'p',
-            m('b', 'Last activity: '),
-            formatTimestamp(lastActivity)
-          ),
-        ]),
-        m('hr'),
-        m('forumdesc', m('b', 'Description: '), forumDetails.description),
-        m('hr'),
-        m(
-          'threaddetails',
-          {
-            style: 'display:' + (fsubscribed ? 'block' : 'none'),
-          },
-          m('h3', 'Threads'),
+        m('.widget__heading.forum-detail-heading', [
+          m('h3', fname),
           m(
             'button',
             {
-              onclick: () => {
-                util.popupmessage(
-                  m(AddThread, {
-                    parent_thread: '',
-                    forumId: v.attrs.id,
-                    authorId: ownId,
-                    parentId: '',
-                  })
-                );
+              onclick: async () => {
+                const res = await rs.rsJsonApiRequest('/rsgxsforums/subscribeToForum', {
+                  forumId: v.attrs.id,
+                  subscribe: !fsubscribed,
+                });
+                if (res.body.retval) {
+                  util.Data.DisplayForums[v.attrs.id].isSubscribed = !fsubscribed;
+                }
               },
             },
-            ['New Thread', m('i.fas.fa-pencil-alt')]
+            fsubscribed ? 'Subscribed' : 'Subscribe'
           ),
-          m('hr'),
+        ]),
+        m('.forum-detail-card', [
+          m('.forum-detail-card__icon[role=img][aria-label=Forum]',
+            m('i.fas.fa-bullhorn')
+          ),
+          m('.forum-detail-card__details', [
+            m('div', [m('b', 'Date created: '), m('span', formatTimestamp(createDate))]),
+            m('div', [m('b', 'Admin: '), m('span', fauthor)]),
+            m('div', [m('b', 'Last activity: '), m('span', formatTimestamp(lastActivity))]),
+          ]),
+          m('.forum-detail-card__description', [
+            m('b', 'Description: '),
+            m('span', forumDetails.description || 'No Description'),
+          ]),
+        ]),
+        m(
+          'threaddetails.forum-threads',
+          {
+            style: 'display:' + (fsubscribed ? 'block' : 'none'),
+          },
+          m('.forum-threads__heading', [
+            m('h3', 'Threads'),
+            m(
+              'button.forum-threads__create[type=button][title=New Thread][aria-label=New Thread]',
+              {
+                onclick: () => {
+                  util.popupmessage(
+                    m(AddThread, {
+                      parent_thread: '',
+                      forumId: v.attrs.id,
+                      authorId: ownId,
+                      parentId: '',
+                    })
+                  );
+                },
+              },
+              [m('i.fas.fa-pencil-alt'), m('span', 'New Thread')]
+            ),
+          ]),
           m(
             util.ThreadsTable,
             m(

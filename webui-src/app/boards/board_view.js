@@ -431,8 +431,13 @@ function BoardView() {
           m('.media-item', [
             m('.media-item__details', [
               bimage && bimage.mData && bimage.mData.base64
-                ? m('img', { src: `data:image/png;base64,${bimage.mData.base64}` })
-                : null,
+                ? m('img', {
+                  src: `data:image/png;base64,${bimage.mData.base64}`,
+                  alt: `${bname} board thumbnail`,
+                })
+                : m('.board-detail-default-thumbnail[role=img][aria-label=Default board thumbnail]',
+                  m('i.fas.fa-globe')
+                ),
               m('.media-item__details-info', [
                 m('div', [m('b', 'Posts: '), m('span', bposts)]),
                 m('div', [

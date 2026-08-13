@@ -500,8 +500,13 @@ const ChannelView = () => {
         m('.media-item', [
           m('.media-item__details', [
             cimage && cimage.mData && cimage.mData.base64
-              ? m('img', { src: `data:image/png;base64,${cimage.mData.base64}` })
-              : null,
+              ? m('img', {
+                src: `data:image/png;base64,${cimage.mData.base64}`,
+                alt: `${cname} channel thumbnail`,
+              })
+              : m('.channel-detail-default-thumbnail[role=img][aria-label=Default channel thumbnail]',
+                m('i.fas.fa-tv')
+              ),
             m('.media-item__details-info', [
               m('div', [m('b', 'Posts: '), m('span', cposts)]),
               m('div', [
