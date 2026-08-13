@@ -81,10 +81,23 @@ const SidebarQuickView = () => {
 function popupMessage(message, modalClass = '') {
   const container = document.getElementById('modal-container');
   container.style.display = 'block';
+  //  A vnode carries the DOM node it owns, so the same one cannot be rendered
+  //  twice. popupMessage is handed a ready made vnode and mounts it, which
+  //  re-renders it on every global redraw, so it has to hand out a fresh copy
+  //  each time -- and a copy all the way down. Cloning only the root leaves the
+  //  children array shared, and `old === vnodes` makes mithril skip the whole
+  //  subtree: the modal content is then frozen at its first render.
   const freshVnode = (vnode) => {
     if (Array.isArray(vnode)) return vnode.map(freshVnode);
-    if (vnode && vnode.tag) return m(vnode.tag, vnode.attrs, vnode.children);
-    return vnode;
+    if (!vnode || typeof vnode !== 'object' || !vnode.tag) return vnode;
+    //  '<' is m.trust and '[' is m.fragment: neither is a selector m() knows how
+    //  to parse. Rebuilding them with m() would silently turn trusted html into
+    //  an empty div, so they go back through their own factory. '#' is a text
+    //  vnode, whose children is the string itself.
+    if (vnode.tag === '<') return m.trust(vnode.children);
+    if (vnode.tag === '#') return vnode.children;
+    if (vnode.tag === '[') return m.fragment(vnode.attrs, freshVnode(vnode.children));
+    return m(vnode.tag, vnode.attrs, freshVnode(vnode.children));
   };
   const Popup = {
     view: () => m(`.modal-content${modalClass ? `.${modalClass}` : ''}`, [
