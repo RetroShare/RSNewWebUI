@@ -2,6 +2,7 @@ const m = require('mithril');
 const rs = require('rswebui');
 const util = require('forums/forums_util');
 const peopleUtil = require('people/people_util');
+const chatEmoji = require('chat/chat_emoji');
 const { loadPostContent, getTimestampValue, formatTimestamp } = require('./forums_util');
 const CIRCLE_PUBLIC = 1;
 const CIRCLE_EXTERNAL = 2;
@@ -162,9 +163,137 @@ function createforum() {
   };
 }
 const AddThread = () => {
+  const MAX_GXS_MESSAGE_SIZE = 199000;
   let title = '';
   let body = '';
   let identity;
+  let showEmojiPicker = false;
+  let emojiCategory = 'Smileys';
+  let showFilePanel = false;
+  let isFullscreen = false;
+  let filePath = '';
+  let filePathNeedsPrefix = false;
+  let fileHashing = false;
+  let fileError = '';
+  const attachments = [];
+  const inlineImages = [];
+
+  const escapeHtml = (value) => String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+  const formatSize = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const pollFileHash = (localpath, attempt = 0) => {
+    rs.rsJsonApiRequest('/rsFiles/ExtraFileStatus', { localpath }, (data) => {
+      const info = data && data.retval && data.info;
+      if (info && info.hash && info.hash !== '0000000000000000000000000000000000000000') {
+        const size = Number(info.size && (info.size.xint64 || info.size.xstr64 || info.size)) || 0;
+        if (!attachments.some((file) => file.hash === info.hash)) {
+          attachments.push({ name: info.name, size, hash: info.hash });
+        }
+        fileHashing = false;
+        filePath = '';
+        showFilePanel = false;
+        fileError = '';
+        m.redraw();
+      } else if (fileHashing && attempt < 120) {
+        setTimeout(() => pollFileHash(localpath, attempt + 1), 500);
+      } else {
+        fileHashing = false;
+        fileError = 'RetroShare could not hash this file. Check the full local path.';
+        m.redraw();
+      }
+    });
+  };
+
+  const attachFile = () => {
+    const localpath = filePath.trim();
+    if (!localpath || filePathNeedsPrefix || fileHashing) return;
+    fileHashing = true;
+    fileError = '';
+    rs.rsJsonApiRequest('/rsFiles/ExtraFileHash', {
+      localpath,
+      period: 86400 * 7,
+      flags: 0,
+    }, (data, success) => {
+      if (success && data && data.retval) {
+        pollFileHash(localpath);
+      } else {
+        fileHashing = false;
+        fileError = 'Failed to start file hashing. Check the full local path.';
+        m.redraw();
+      }
+    });
+  };
+
+  const addInlineImages = (files) => {
+    Array.from(files || []).forEach((file) => {
+      const image = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      image.onload = () => {
+        let width = image.naturalWidth;
+        let height = image.naturalHeight;
+        const scale = Math.min(1, 640 / width, 480 / height);
+        width = Math.max(1, Math.round(width * scale));
+        height = Math.max(1, Math.round(height * scale));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, width, height);
+        context.drawImage(image, 0, 0, width, height);
+
+        let quality = .84;
+        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+        while (dataUrl.length > 175000 && (quality > .35 || width > 160 || height > 120)) {
+          if (quality > .35) {
+            quality = Math.max(.35, quality - .08);
+          } else {
+            width = Math.max(160, Math.round(width * .82));
+            height = Math.max(120, Math.round(height * .82));
+            canvas.width = width;
+            canvas.height = height;
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, width, height);
+            context.drawImage(image, 0, 0, width, height);
+          }
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+        inlineImages.push({ name: file.name, dataUrl });
+        URL.revokeObjectURL(objectUrl);
+        m.redraw();
+      };
+      image.onerror = () => URL.revokeObjectURL(objectUrl);
+      image.src = objectUrl;
+    });
+  };
+
+  const postBody = () => {
+    const message = escapeHtml(body).replace(/\r?\n/g, '<br>');
+    const images = inlineImages.map((file) =>
+      `<p><img src="${file.dataUrl}" alt="${escapeHtml(file.name)}" style="max-width:100%;height:auto;border-radius:6px;"></p>`
+    ).join('');
+    const embedded = attachments.map((file) =>
+      `<p><a href="retroshare://file?name=${encodeURIComponent(file.name)}&amp;size=${file.size}&amp;hash=${file.hash}">&#128206; ${escapeHtml(file.name)}</a> (${formatSize(file.size)})</p>`
+    ).join('');
+    return `${message}${images}${embedded}`;
+  };
+
+  const insertEmoji = (emoji) => {
+    body += emoji;
+    showEmojiPicker = false;
+  };
+
   return {
     oninit: (vnode) => {
       if (vnode.attrs.authorId) {
@@ -172,56 +301,168 @@ const AddThread = () => {
       }
     },
     view: (vnode) =>
-      m('.widget', [
-        m('h3', 'Add Thread'),
-        m('hr'),
+      m('.widget.forum-thread-composer', [
+        m('.forum-thread-composer__heading', [
+          m('.forum-thread-composer__heading-copy', [
+            m('h3', (vnode.attrs.parent_thread !== '') > 0 ? 'Add Reply' : 'Create New Thread'),
+            m('p', (vnode.attrs.parent_thread !== '') > 0
+              ? 'Write a reply and optionally include images or files.'
+              : 'Start a discussion and optionally include images or files.'),
+          ]),
+          m('button.forum-thread-composer__fullscreen[type=button]', {
+            title: isFullscreen ? 'Restore default size' : 'Fullscreen',
+            'aria-label': isFullscreen ? 'Restore default size' : 'Fullscreen',
+            onclick: (e) => {
+              isFullscreen = !isFullscreen;
+              const modal = e.currentTarget.closest('.modal-content');
+              if (modal) modal.classList.toggle('is-fullscreen', isFullscreen);
+            },
+          }, m(`i.fas.${isFullscreen ? 'fa-compress' : 'fa-expand'}`)),
+        ]),
         (vnode.attrs.parent_thread !== '') > 0
-          ? [m('h5', 'Reply to thread: '), m('p', vnode.attrs.parent_thread)]
+          ? m('.forum-thread-composer__reply', [m('b', 'Replying to: '), vnode.attrs.parent_thread])
           : '',
-        m('input[type=text][placeholder=Title]', {
+        m('input.forum-thread-composer__title[type=text][placeholder=Thread title]', {
+          value: title,
           oninput: (e) => (title = e.target.value),
         }),
-        m('label[for=tags]', 'Select identity'),
-        m(
-          'select[id=idtags]',
-          {
+        m('.forum-thread-composer__field', [
+          m('label[for=forum-thread-identity]', 'Publishing identity'),
+          m('select.config-style-select[id=forum-thread-identity]', {
             value: identity,
             onchange: (e) => {
               identity = vnode.attrs.authorId[e.target.selectedIndex];
             },
-          },
-          [
-            vnode.attrs.authorId &&
-            vnode.attrs.authorId.map((o) =>
-              m(
-                'option',
-                { value: o },
-                rs.userList.username(o) + ' (' + o.slice(0, 8) + '...)'
-              )
-            ),
-          ]
-        ),
-        m('textarea[rows=5]', {
-          style: { width: '90%', display: 'block' },
+          }, vnode.attrs.authorId && vnode.attrs.authorId.map((o) => m(
+            'option',
+            { value: o },
+            Number(o) === 0 ? 'No Signature' : `${rs.userList.username(o)} (${o.slice(0, 8)}...)`
+          ))),
+        ]),
+        m('.forum-thread-composer__editor', [
+          m('textarea[rows=8][placeholder=Write your message...]', {
           oninput: (e) => (body = e.target.value),
           value: body,
-        }),
-        m(
-          'button',
+          }),
+          m('.forum-thread-composer__toolbar', [
+            m('input[type=file][id=forum-thread-files]', {
+              onchange: (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (file) {
+                  const fullPath = file.path;
+                  const hasFullPath = fullPath && (fullPath.includes('/') || fullPath.includes('\\')) && fullPath !== file.name;
+                  filePath = hasFullPath ? fullPath : file.name;
+                  filePathNeedsPrefix = !hasFullPath;
+                  showFilePanel = true;
+                  fileError = '';
+                }
+                e.target.value = '';
+              },
+            }),
+            m('input[type=file][id=forum-thread-images][accept=image/*][multiple]', {
+              onchange: (e) => {
+                addInlineImages(e.target.files);
+                e.target.value = '';
+              },
+            }),
+            m('button.forum-thread-composer__tool[type=button][title=Attach file][aria-label=Attach file]', {
+              class: showFilePanel ? 'active' : '',
+              onclick: () => (showFilePanel = !showFilePanel),
+            }, m('i.fas.fa-paperclip')),
+            m('button.forum-thread-composer__tool[type=button][title=Insert emoji][aria-label=Insert emoji]', {
+              class: showEmojiPicker ? 'active' : '',
+              onclick: () => (showEmojiPicker = !showEmojiPicker),
+            }, m('i.fas.fa-smile')),
+            m('label.forum-thread-composer__tool[for=forum-thread-images][title=Attach images][aria-label=Attach images]',
+              m('i.fas.fa-image')
+            ),
+            showEmojiPicker && m('.forum-thread-composer__emoji-picker', [
+              m('.forum-thread-composer__emoji-categories', chatEmoji.EMOJI_CATEGORIES.map((category) =>
+                m('button[type=button]', {
+                  class: category === emojiCategory ? 'active' : '',
+                  title: category,
+                  onclick: () => (emojiCategory = category),
+                }, chatEmoji.EMOJI_ICONS[category])
+              )),
+              m('.forum-thread-composer__emoji-grid',
+                (chatEmoji.EMOJI_DATA[emojiCategory] || []).map((emoji) =>
+                  m('button[type=button]', { onclick: () => insertEmoji(emoji) }, emoji)
+                )
+              ),
+            ]),
+          ]),
+          showFilePanel && m('.forum-thread-composer__file-panel', [
+            m('div', [
+              m('input[type=text][placeholder=Full local path to file]', {
+                value: filePath,
+                disabled: fileHashing,
+                oninput: (e) => {
+                  filePath = e.target.value;
+                  filePathNeedsPrefix = false;
+                  fileError = '';
+                },
+              }),
+              m('label[for=forum-thread-files][title=Browse for file]', m('i.fas.fa-folder-open')),
+              m('button[type=button]', {
+                disabled: fileHashing || !filePath.trim() || filePathNeedsPrefix,
+                onclick: attachFile,
+              }, fileHashing ? [m('i.fas.fa-spinner.fa-spin'), ' Hashing...'] : 'Attach'),
+            ]),
+            filePathNeedsPrefix && m('small', [
+              'The browser only returned the filename. Add its complete folder path before attaching.',
+            ]),
+            fileError && m('small.error-text', fileError),
+          ]),
+          inlineImages.length > 0 && m('.forum-thread-composer__inline-images',
+            inlineImages.map((file, index) => m('.forum-thread-composer__inline-image', [
+              m('img', { src: file.dataUrl, alt: file.name }),
+              m('button[type=button][title=Remove inline image][aria-label=Remove inline image]', {
+                onclick: () => inlineImages.splice(index, 1),
+              }, m('i.fas.fa-times')),
+            ]))
+          ),
+        ]),
+        attachments.length > 0 && m('.forum-thread-composer__attachments', [
+          m('.forum-thread-composer__attachments-heading', [
+            m('i.fas.fa-paperclip'),
+            m('span', `${attachments.length} attachment${attachments.length === 1 ? '' : 's'}`),
+          ]),
+          m('.forum-thread-composer__attachment-list', attachments.map((file, index) =>
+            m('.forum-thread-composer__attachment', [
+              m('i.fas.fa-file-alt'),
+              m('span', [m('b', file.name), m('small', formatSize(file.size))]),
+              m('button[type=button][title=Remove attachment][aria-label=Remove attachment]', {
+                onclick: () => attachments.splice(index, 1),
+              }, m('i.fas.fa-times')),
+            ])
+          )),
+        ]),
+        m('.forum-thread-composer__capacity', {
+          class: postBody().length > MAX_GXS_MESSAGE_SIZE ? 'is-over-limit' : '',
+        }, postBody().length > MAX_GXS_MESSAGE_SIZE
+          ? `Message is ${postBody().length - MAX_GXS_MESSAGE_SIZE} characters too large.`
+          : `${MAX_GXS_MESSAGE_SIZE - postBody().length} characters remaining after HTML conversion.`
+        ),
+        m('.forum-thread-composer__actions', m(
+          'button[type=button]',
           {
+            disabled: fileHashing || postBody().length > MAX_GXS_MESSAGE_SIZE,
             onclick: async () => {
+              if (!title.trim() || (!body.trim() && attachments.length === 0 && inlineImages.length === 0)) return;
+              const mBody = postBody();
+              if (mBody.length > MAX_GXS_MESSAGE_SIZE) return;
               const res =
                 (vnode.attrs.parent_thread !== '') > 0 // is it a reply or a new thread
                   ? await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
                     forumId: vnode.attrs.forumId,
-                    mBody: body,
+                    mBody,
                     title,
                     authorId: identity,
                     parentId: vnode.attrs.parentId,
                   })
                   : await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
                     forumId: vnode.attrs.forumId,
-                    mBody: body,
+                    mBody,
                     title,
                     authorId: identity,
                   });
@@ -237,8 +478,8 @@ const AddThread = () => {
               m.redraw();
             },
           },
-          'Add'
-        ),
+          (vnode.attrs.parent_thread !== '') > 0 ? 'Add Reply' : 'Create Thread'
+        )),
       ]),
   };
 };
@@ -309,7 +550,7 @@ const ThreadView = () => {
               forumId,
               authorId: ownId,
               parentId: msgId,
-            }))
+            }), 'create-forum-thread-modal')
           }, 'Reply'),
           m('button', {
             onclick: async () => {
@@ -444,7 +685,8 @@ const ForumView = () => {
                       forumId: v.attrs.id,
                       authorId: ownId,
                       parentId: '',
-                    })
+                    }),
+                    'create-forum-thread-modal'
                   );
                 },
               },
