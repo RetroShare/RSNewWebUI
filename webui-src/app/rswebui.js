@@ -186,6 +186,13 @@ function rsJsonApiRequest(
         // console.error('[RS] Error in catch callback for path:', path, cbErr);
       }
       console.error('[RS] Error: While sending request for path:', path, '\ninfo:', e);
+      //  Resolve to the same shape as a real answer, with an empty body. Most
+      //  call sites go straight for res.body.retval, and resolving undefined
+      //  turned every failed request into a TypeError thrown inside an onclick,
+      //  where nothing catches it: the button silently does nothing. Every
+      //  defensive check in the code base tests res.body.retval or res.body, so
+      //  an empty body still reads as a failure to all of them.
+      return { status: connectionState.lastHttpStatus, statusText: 'request failed', body: {} };
     });
 }
 
