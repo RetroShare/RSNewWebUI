@@ -183,7 +183,7 @@ function CreatePost() {
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
 
-    let result = '';
+    let result;
     for (let quality = 0.88; quality >= 0.35; quality -= 0.08) {
       result = canvas.toDataURL('image/jpeg', quality);
       const bytes = Math.ceil((result.length - result.indexOf(',') - 1) * 3 / 4);
