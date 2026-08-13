@@ -315,8 +315,11 @@ table.threadreply tr:hover {
   &__tool.active { background: #e0f2fe; }
   &__emoji-picker { position: absolute; left: 2.75rem; bottom: 3rem; z-index: 10; width: min(22rem, calc(100vw - 4rem)); padding: .5rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; box-shadow: 0 10px 25px rgba(15, 23, 42, .18); }
   &__emoji-categories { display: flex; gap: .15rem; overflow-x: auto; padding-bottom: .35rem; border-bottom: 1px solid #e2e8f0; }
+  //  color too: the global `button` rule paints its text white for a coloured
+  //  background, and this panel is white. Without this the emojis are there and
+  //  clickable, just invisible.
   &__emoji-categories button,
-  &__emoji-grid button { border: 0; background: transparent; box-shadow: none; cursor: pointer; }
+  &__emoji-grid button { border: 0; background: transparent; box-shadow: none; cursor: pointer; color: #0f172a; }
   &__emoji-categories button { flex: 0 0 2rem; padding: .3rem; border-radius: 4px; }
   &__emoji-categories button.active { background: #e0f2fe; }
   &__emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); max-height: 12rem; overflow-y: auto; padding-top: .4rem; }
