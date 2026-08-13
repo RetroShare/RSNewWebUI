@@ -51,6 +51,11 @@ const ConfirmRemove = () => {
   };
 };
 
+//  Version and short invite of a node do not change while the web UI is open,
+//  and the dialog is reopened often. Cached by node id so that reopening it
+//  paints filled in, instead of showing "Loading..." and asking the core again.
+const locationDetailsCache = {};
+
 const LocationDetails = () => {
   let activeTab = 'details';
   let version = 'Loading...';
@@ -58,26 +63,32 @@ const LocationDetails = () => {
 
   return {
     oninit: (vnode) => {
-      rs.rsJsonApiRequest('/rsGossipDiscovery/getPeerVersion', { id: vnode.attrs.loc.id })
+      const nodeId = vnode.attrs.loc.id;
+      const cached = locationDetailsCache[nodeId];
+      if (cached) {
+        version = cached.version;
+        retroshareId = cached.retroshareId;
+        return;
+      }
+      locationDetailsCache[nodeId] = { version, retroshareId };
+
+      //  rsJsonApiRequest never rejects: it resolves undefined when the request
+      //  fails, so the failure has to be read off the resolved value rather than
+      //  waited for in a catch.
+      rs.rsJsonApiRequest('/rsGossipDiscovery/getPeerVersion', { id: nodeId })
         .then((response) => {
-          version = response.body && response.body.retval
+          version = response && response.body && response.body.retval
             ? response.body.version || 'Unknown'
-            : 'Unknown';
-          m.redraw();
-        })
-        .catch(() => {
-          version = 'Unavailable';
+            : 'Unavailable';
+          locationDetailsCache[nodeId].version = version;
           m.redraw();
         });
-      rs.rsJsonApiRequest('/rsPeers/getShortInvite', { sslId: vnode.attrs.loc.id })
+      rs.rsJsonApiRequest('/rsPeers/getShortInvite', { sslId: nodeId })
         .then((response) => {
-          retroshareId = response.body && response.body.retval
+          retroshareId = response && response.body && response.body.retval
             ? cleanRetroshareId(response.body.invite) || 'Unavailable'
             : 'Unavailable';
-          m.redraw();
-        })
-        .catch(() => {
-          retroshareId = 'Unavailable';
+          locationDetailsCache[nodeId].retroshareId = retroshareId;
           m.redraw();
         });
     },

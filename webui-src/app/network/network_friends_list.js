@@ -108,7 +108,7 @@ const FriendsList = () => {
         }
       });
 
-      let displayFriends = [];
+      let displayFriends;
 
       if (State.mainTab === 'network') {
         displayFriends = allGpgEntries.filter(([gpgId, friend]) =>

@@ -53,7 +53,7 @@ function loadOwnProfile() {
   const fetchOwnCustomState = () => {
     rs.rsJsonApiRequest('/rsChats/getOwnCustomStateString', {}, (statusData) => {
       if (statusData) {
-        let customState = '';
+        let customState;
         if (typeof statusData.retval === 'string') {
           customState = statusData.retval;
         } else if (typeof statusData === 'string') {
