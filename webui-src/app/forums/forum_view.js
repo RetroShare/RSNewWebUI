@@ -175,6 +175,7 @@ const AddThread = () => {
   let filePathNeedsPrefix = false;
   let fileHashing = false;
   let fileError = '';
+  let closed = false;
   const attachments = [];
   const inlineImages = [];
 
@@ -192,7 +193,9 @@ const AddThread = () => {
   };
 
   const pollFileHash = (localpath, attempt = 0) => {
+    if (closed) return;
     rs.rsJsonApiRequest('/rsFiles/ExtraFileStatus', { localpath }, (data) => {
+      if (closed) return;
       const info = data && data.retval && data.info;
       if (info && info.hash && info.hash !== '0000000000000000000000000000000000000000') {
         const size = Number(info.size && (info.size.xint64 || info.size.xstr64 || info.size)) || 0;
@@ -278,6 +281,12 @@ const AddThread = () => {
     });
   };
 
+  //  The GXS limit is expressed in bytes, not in JS characters: an accent is two
+  //  bytes and an emoji four, while both count as one or two units of .length.
+  //  With an emoji picker one click away, counting characters lets the composer
+  //  accept a message the core then rejects.
+  const byteLength = (value) => new TextEncoder().encode(value).length;
+
   const postBody = () => {
     const message = escapeHtml(body).replace(/\r?\n/g, '<br>');
     const images = inlineImages.map((file) =>
@@ -300,8 +309,20 @@ const AddThread = () => {
         identity = vnode.attrs.authorId[0];
       }
     },
-    view: (vnode) =>
-      m('.widget.forum-thread-composer', [
+    onremove: () => {
+      //  pollFileHash re-arms itself every 500 ms for up to a minute. Closing
+      //  the composer has to stop it, or it keeps hashing and redrawing against
+      //  a component that is no longer on screen.
+      closed = true;
+    },
+    view: (vnode) => {
+      //  Built once per pass: postBody() re-escapes the message and re-joins
+      //  every base64 image, and it was called five times per render, on every
+      //  global redraw, while the user types.
+      const mBody = postBody();
+      const bodySize = byteLength(mBody);
+
+      return m('.widget.forum-thread-composer', [
         m('.forum-thread-composer__heading', [
           m('.forum-thread-composer__heading-copy', [
             m('h3', (vnode.attrs.parent_thread !== '') > 0 ? 'Add Reply' : 'Create New Thread'),
@@ -438,19 +459,22 @@ const AddThread = () => {
           )),
         ]),
         m('.forum-thread-composer__capacity', {
-          class: postBody().length > MAX_GXS_MESSAGE_SIZE ? 'is-over-limit' : '',
-        }, postBody().length > MAX_GXS_MESSAGE_SIZE
-          ? `Message is ${postBody().length - MAX_GXS_MESSAGE_SIZE} characters too large.`
-          : `${MAX_GXS_MESSAGE_SIZE - postBody().length} characters remaining after HTML conversion.`
+          class: bodySize > MAX_GXS_MESSAGE_SIZE ? 'is-over-limit' : '',
+        }, bodySize > MAX_GXS_MESSAGE_SIZE
+          ? `Message is ${bodySize - MAX_GXS_MESSAGE_SIZE} bytes too large.`
+          : `${MAX_GXS_MESSAGE_SIZE - bodySize} bytes remaining after HTML conversion.`
         ),
         m('.forum-thread-composer__actions', m(
           'button[type=button]',
           {
-            disabled: fileHashing || postBody().length > MAX_GXS_MESSAGE_SIZE,
+            disabled: fileHashing || bodySize > MAX_GXS_MESSAGE_SIZE,
             onclick: async () => {
               if (!title.trim() || (!body.trim() && attachments.length === 0 && inlineImages.length === 0)) return;
+              //  Rebuilt here rather than reused from the render: what is sent
+              //  must be what the fields hold at the click, not what they held
+              //  when the button was last drawn.
               const mBody = postBody();
-              if (mBody.length > MAX_GXS_MESSAGE_SIZE) return;
+              if (byteLength(mBody) > MAX_GXS_MESSAGE_SIZE) return;
               const res =
                 (vnode.attrs.parent_thread !== '') > 0 // is it a reply or a new thread
                   ? await rs.rsJsonApiRequest('/rsgxsforums/createPost', {
@@ -480,7 +504,8 @@ const AddThread = () => {
           },
           (vnode.attrs.parent_thread !== '') > 0 ? 'Add Reply' : 'Create Thread'
         )),
-      ]),
+      ]);
+    },
   };
 };
 
