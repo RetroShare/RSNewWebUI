@@ -98,6 +98,10 @@ function logout() {
 
 const connectionState = {
   status: true,
+  //  Status of the last HTTP response, or 0 when the request never reached the
+  //  core. Recorded in extract() so it stays available when the body fails to
+  //  parse, which is how a truncated response shows up.
+  lastHttpStatus: 0,
 };
 
 function rsJsonApiRequest(
@@ -125,6 +129,7 @@ function rsJsonApiRequest(
       url: loginKey.url + path,
       async,
       extract: (xhr) => {
+        connectionState.lastHttpStatus = xhr.status;
         // Empty string is not valid json and fails on parse
         const response = xhr.responseText || '""';
         return {
@@ -148,7 +153,12 @@ function rsJsonApiRequest(
           console.error('[RS] Error in success callback for path:', path, e);
         }
       } else {
-        connectionState.status = false;
+        //  An answer, whatever its code, proves the core is there. A 404 on an
+        //  endpoint this build does not expose, or a 401 on a stale password,
+        //  is not a lost connection: only status 0, i.e. no HTTP response at
+        //  all, is. Flipping the flag on every error made the status LED blink
+        //  red on each optional endpoint that is probed.
+        connectionState.status = result.status !== 0;
         if (result.status === 401 || result.status === 403) {
           setKeys(loginKey.username, loginKey.passwd, loginKey.url, false);
           m.route.set('/');
@@ -166,7 +176,10 @@ function rsJsonApiRequest(
       return result;
     })
     .catch(function (e) {
-      connectionState.status = false;
+      //  Reaching here after a valid 200 means the body could not be parsed,
+      //  i.e. the response was cut short. The core answered and is still there;
+      //  it is the answer that did not survive the trip.
+      connectionState.status = connectionState.lastHttpStatus === 200;
       try {
         callback(e, false);
       } catch (cbErr) {

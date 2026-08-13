@@ -113,7 +113,11 @@ async function updatecontent(contentIds, channelid) {
 // retry it as two smaller requests until the problematic batch is isolated.
 async function updateContentBatch(contentIds, channelid) {
   const loaded = await updatecontent(contentIds, channelid);
-  if (loaded || contentIds.length <= 1) {
+  //  Splitting only makes sense against a core that answers: when it is gone,
+  //  every half fails too and one batch of 25 turns into 49 doomed requests.
+  //  connectionState stays true when a 200 arrived but its body was cut short,
+  //  which is exactly the case worth retrying smaller.
+  if (loaded || contentIds.length <= 1 || !rs.connectionState.status) {
     if (!loaded) {
       console.warn('Unable to load channel content item', contentIds[0]);
     }
