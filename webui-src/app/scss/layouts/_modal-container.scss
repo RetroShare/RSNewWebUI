@@ -39,6 +39,7 @@
 
 .modal-content.location-details-modal {
   width: min(760px, calc(100% - 2rem));
+  height: min(480px, calc(100% - 2rem));
   max-height: calc(100% - 2rem);
   min-height: 0;
   box-sizing: border-box;
@@ -46,7 +47,11 @@
 }
 
 .location-details-dialog {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
 
   h3 {
@@ -66,7 +71,8 @@
   }
 
   .location-detail-content {
-    max-height: calc(100vh - 12rem);
+    flex: 1 1 auto;
+    min-height: 0;
     padding: 1rem 0.25rem 0.25rem 0;
     overflow-y: auto;
   }
@@ -89,7 +95,8 @@
   }
 
   .retroshare-id-text {
-    max-height: calc(100vh - 16rem);
+    max-height: 100%;
+    box-sizing: border-box;
     overflow: auto;
     padding: 0.75rem;
     border: 1px solid #cbd5e1;
@@ -113,6 +120,7 @@
 @media (max-width: 600px) {
   .modal-content.location-details-modal {
     width: calc(100% - 1rem);
+    height: calc(100% - 1rem);
     max-height: calc(100% - 1rem);
     padding: 1rem;
   }
@@ -127,10 +135,6 @@
         padding-left: 0.75rem;
         font-size: 0.85rem;
       }
-    }
-
-    .location-detail-content {
-      max-height: calc(100vh - 10rem);
     }
 
     .info-grid {
