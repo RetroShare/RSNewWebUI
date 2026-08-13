@@ -373,12 +373,14 @@ const ForumView = () => {
       const fsubscribed = forumDetails.isSubscribed;
       const createDate = forumDetails.created;
       const lastActivity = forumDetails.activity;
+      //  userMap holds {name, isContact} objects, so it must not be read
+      //  directly into the view: username() is what turns an id into a string.
       let fauthor = 'Unknown';
 
-      if (rs.userList.userMap[forumDetails.author]) {
-        fauthor = rs.userList.userMap[forumDetails.author];
-      } else if (Number(forumDetails.author) === 0) {
+      if (Number(forumDetails.author) === 0) {
         fauthor = 'No Contact Author';
+      } else if (forumDetails.author) {
+        fauthor = rs.userList.username(forumDetails.author);
       }
 
       return [

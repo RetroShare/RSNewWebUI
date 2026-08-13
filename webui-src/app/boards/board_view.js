@@ -327,13 +327,13 @@ function BoardView() {
       const boardInfo = Data.DisplayBoards[v.attrs.id] || {};
       const bname = boardInfo.name || '';
       const bimage = boardInfo.image || { mData: { base64: '' } };
+      //  userMap holds {name, isContact} objects: username() is what turns an
+      //  id into a string fit for the view.
       let bauthor = 'Unknown';
       if (boardInfo.author) {
-        if (rs.userList.userMap[boardInfo.author]) {
-          bauthor = rs.userList.userMap[boardInfo.author];
-        } else if (Number(boardInfo.author) === 0) {
-          bauthor = 'No Contact Author';
-        }
+        bauthor = Number(boardInfo.author) === 0
+          ? 'No Contact Author'
+          : rs.userList.username(boardInfo.author);
       }
       const bsubscribed = boardInfo.isSubscribed;
       const subscribeFlags = Number(boardInfo.subscribeFlags || 0);

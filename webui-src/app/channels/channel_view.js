@@ -441,10 +441,12 @@ const ChannelView = () => {
       if (Data.DisplayChannels[v.attrs.id]) {
         cname = Data.DisplayChannels[v.attrs.id].name;
         cimage = Data.DisplayChannels[v.attrs.id].image;
-        if (rs.userList.userMap[Data.DisplayChannels[v.attrs.id].author]) {
-          cauthor = rs.userList.userMap[Data.DisplayChannels[v.attrs.id].author];
-        } else if (Number(Data.DisplayChannels[v.attrs.id].author) === 0) {
+        //  Same as forum_view: userMap stores objects, username() is the only
+        //  accessor that yields a string.
+        if (Number(Data.DisplayChannels[v.attrs.id].author) === 0) {
           cauthor = 'No Contact Author';
+        } else if (Data.DisplayChannels[v.attrs.id].author) {
+          cauthor = rs.userList.username(Data.DisplayChannels[v.attrs.id].author);
         } else {
           cauthor = 'Unknown';
         }
@@ -635,7 +637,7 @@ const AddComment = () => {
                 m(
                   'option',
                   { value: o },
-                  rs.userList.userMap[o].toLocaleString() + ' (' + o.slice(0, 8) + '...)'
+                  rs.userList.username(o) + ' (' + o.slice(0, 8) + '...)'
                 )
               ),
           ]
@@ -776,7 +778,7 @@ function displaycomment() {
             ]
           ),
 
-          m('td', rs.userList.userMap[comment.mMeta.mAuthorId]),
+          m('td', rs.userList.username(comment.mMeta.mAuthorId)),
           m(
             'td',
             typeof comment.mMeta.mPublishTs === 'object'
