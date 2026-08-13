@@ -390,6 +390,92 @@ img.avatar {
 }
 
 /* People Sidebar Right-Click Context Menu */
+.create-identity-form {
+  display: grid !important;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: 1rem 1.5rem !important;
+
+  &__heading,
+  &__name,
+  &__help,
+  &__submit { grid-column: 1 / -1; }
+  &__heading { display: flex; align-items: center; gap: .75rem; }
+  &__heading > i { color: #3ba4d7; font-size: 1.5rem; }
+  &__heading h3 { margin: 0; color: #1e293b; }
+  &__heading p { margin: .2rem 0 0; color: #64748b; font-size: .9rem; }
+  &__name { width: 100%; }
+  &__avatar {
+    grid-row: span 2; display: flex; flex-direction: column; align-items: center;
+    gap: .5rem; padding: .75rem; border: 1px solid #e2e8f0;
+    border-radius: .65rem; background: #f8fafc;
+  }
+  &__avatar-label,
+  &__field label { color: #475569; font-size: .85rem; font-weight: 700; }
+  &__file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+  &__file-button {
+    display: inline-flex; align-items: center; gap: .35rem; padding: .4rem .65rem;
+    border: 1px solid #0284c7; border-radius: .35rem; background: #0284c7;
+    color: #fff; font-size: .8rem; font-weight: 600; cursor: pointer;
+  }
+  &__remove-avatar {
+    padding: .25rem .5rem; border: 0; box-shadow: none;
+    background: transparent; color: #64748b; font-size: .78rem;
+  }
+  &__remove-avatar:hover { color: #dc2626; text-decoration: underline; }
+  &__avatar small { color: #64748b; text-align: center; }
+  &__field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+  &__field .config-style-select {
+    width: 100%; max-width: 320px; min-width: 0; box-sizing: border-box;
+    padding: .375rem .5rem; border: 1px solid #cbd5e1; border-radius: .375rem;
+    background: #fff; color: #334155; outline: none; font-weight: 600;
+  }
+  &__field .config-style-select:focus { border-color: #3ba4d7; }
+  &__help { color: #475569; line-height: 1.5; }
+  &__submit { justify-self: end; }
+}
+
+.create-identity-avatar-preview {
+  width: 8rem; height: 8rem; overflow: hidden;
+  border: 1px solid #cbd5e1; border-radius: .5rem; background: #eef2ff;
+  display: flex; align-items: center; justify-content: center;
+  > img { width: 100%; height: 100%; object-fit: cover; }
+  > .jdenticon-avatar,
+  > .defaultAvatar { margin: 0 !important; }
+}
+
+.modal-content.create-identity-modal {
+  width: min(720px, calc(100% - 2rem)); max-height: calc(100% - 2rem);
+  box-sizing: border-box; overflow-x: hidden; overflow-y: auto;
+}
+
+@media (max-width: 600px) {
+  .modal-content.create-identity-modal {
+    width: calc(100% - 1rem) !important;
+    max-width: none !important;
+    max-height: calc(100% - 1rem);
+    padding: 1rem;
+  }
+  .create-identity-form {
+    width: 100%; min-width: 0; grid-template-columns: minmax(0, 1fr);
+    gap: .75rem !important;
+    &__heading,
+    &__name,
+    &__avatar,
+    &__field,
+    &__help,
+    &__submit { grid-column: 1; }
+    &__avatar { grid-row: auto; }
+    &__field .config-style-select { max-width: none; }
+    &__heading { padding-right: 2.5rem; }
+    &__heading h3 { font-size: 1.35rem; white-space: nowrap; }
+    &__heading p { font-size: .82rem; }
+    &__avatar { padding: .6rem; }
+    &__help { font-size: .85rem; }
+    &__submit { width: 100%; }
+  }
+  .create-identity-avatar-preview { width: 7rem; height: 7rem; }
+}
+
 .people-context-menu {
   position: absolute !important;
   z-index: 9999 !important;

@@ -173,7 +173,7 @@ const PeopleSidebar = () => {
                 m(
                   'button.btn-add-id[title=Create New Identity]',
                   {
-                    onclick: () => widget.popupMessage(m(CreateIdentity)),
+                    onclick: () => widget.popupMessage(m(CreateIdentity), 'create-identity-modal'),
                   },
                   m('i.fas.fa-plus')
                 ),

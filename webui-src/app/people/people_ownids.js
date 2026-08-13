@@ -31,6 +31,7 @@ const SignedIdentiy = () => {
                   {
                     id: owns.ids[0],
                     name: v.attrs.name,
+                    avatar: { mData: { base64: v.attrs.avatar } },
                     pseudonimous: false,
                     pgpPassword: passphase,
                   },
@@ -55,61 +56,90 @@ const SignedIdentiy = () => {
   };
 };
 const CreateIdentity = () => {
-  // TODO: set user avatar
   let name = '',
     pseudonimous = false;
+  let avatar;
+  let avatarPreview = '';
+  let avatarFileName = '';
   return {
-    view: (v) => [
-      m('i.fas.fa-user-plus'),
-      m('h3', 'Create new Identity'),
-      m('hr'),
-      m('input[type=text][placeholder=Name]', {
+    view: () => m('.create-identity-form', [
+      m('.create-identity-form__heading', [
+        m('i.fas.fa-user-plus'),
+        m('div', [
+          m('h3', 'Create new Identity'),
+          m('p', 'Choose a name, identity type, and optional custom avatar.'),
+        ]),
+      ]),
+      m('input.create-identity-form__name[type=text][placeholder=Identity name]', {
         value: name,
         oninput: (e) => (name = e.target.value),
       }),
-      m(
-        'div',
-        {
-          style: 'display:inline; margin-left:5px;',
-        },
-        [
-          'Type:',
-          m(
-            'select',
-            {
-              value: pseudonimous,
-              style: 'border:1px solid black',
-              oninput: (e) => {
-                pseudonimous = e.target.value === 'true';
-              },
-            },
-            [
-              m('option[value=false][selected]', 'Linked to your Profile'),
-              m('option[value=true]', 'Pseudonymous'),
-            ]
-          ),
-        ]
-      ),
-      m('br'),
-
-      m(
-        'p',
+      m('.create-identity-form__avatar', [
+        m('.create-identity-avatar-preview', [
+          avatarPreview
+            ? m('img', { src: avatarPreview, alt: 'Identity avatar preview' })
+            : m(peopleUtil.UserAvatar, {
+              identityId: `new-identity:${name || 'identity'}`,
+              firstLetter: (name || '?').slice(0, 1).toUpperCase(),
+              size: 128,
+              isSquare: true,
+            }),
+        ]),
+        m('span.create-identity-form__avatar-label', 'Avatar'),
+        m('input.create-identity-form__file-input[type=file][id=create-identity-avatar][accept=image/*]', {
+          onchange: (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            avatarFileName = file.name;
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              avatarPreview = reader.result;
+              avatar = avatarPreview.substring(avatarPreview.indexOf(',') + 1);
+              m.redraw();
+            };
+            reader.readAsDataURL(file);
+          },
+        }),
+        m('label.create-identity-form__file-button[for=create-identity-avatar]', {
+          title: avatarFileName || 'Choose a custom avatar',
+        }, [m('i.fas.fa-upload'), avatarPreview ? ' Change avatar' : ' Choose avatar']),
+        avatarPreview && m('button.create-identity-form__remove-avatar[type=button]', {
+          onclick: () => {
+            avatar = undefined;
+            avatarPreview = '';
+            avatarFileName = '';
+          },
+        }, 'Use default'),
+        m('small', avatarPreview ? 'Custom avatar selected.' : 'A unique default avatar is generated automatically.'),
+      ]),
+      m('.create-identity-form__field', [
+        m('label[for=create-identity-type]', 'Identity type'),
+        m('select.config-style-select[id=create-identity-type]', {
+          value: String(pseudonimous),
+          onchange: (e) => (pseudonimous = e.target.value === 'true'),
+        }, [
+          m('option[value=false]', 'Linked to your Profile'),
+          m('option[value=true]', 'Pseudonymous'),
+        ]),
+      ]),
+      m('p.create-identity-form__help',
         'You can have one or more identities. ' +
         'They are used when you chat in lobbies, ' +
         'forums and channel comments. ' +
         'They act as the destination for distant chat and ' +
         'the Retroshare distant mail system.'
       ),
-      m(
-        'button',
+      m('button.create-identity-form__submit',
         {
+          disabled: !name.trim(),
           onclick: () => {
             !pseudonimous
-              ? widget.popupMessage(m(SignedIdentiy, { name }))
+              ? widget.popupMessage(m(SignedIdentiy, { name: name.trim(), avatar }))
               : rs.rsJsonApiRequest(
                 '/rsIdentity/createIdentity',
                 {
-                  name,
+                  name: name.trim(),
+                  avatar: { mData: { base64: avatar } },
                   pseudonimous,
                 },
                 (data) => {
@@ -123,7 +153,7 @@ const CreateIdentity = () => {
         },
         'Create'
       ),
-    ],
+    ]),
   };
 };
 
@@ -351,7 +381,7 @@ const Layout = () => {
           m(
             'button',
             {
-              onclick: () => widget.popupMessage(m(CreateIdentity)),
+              onclick: () => widget.popupMessage(m(CreateIdentity), 'create-identity-modal'),
             },
             'New Identity'
           ),
