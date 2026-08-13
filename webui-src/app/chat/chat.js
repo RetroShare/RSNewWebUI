@@ -7,18 +7,11 @@ const chatEmoji = require('chat/chat_emoji');
 const HistoryBrowserModal = require('people/people_history');
 
 const {
-  get64Num,
-  loadLobbyDetails,
-  loadDistantChatDetails,
   sortLobbies,
-  getNicknameColor,
   getStatusColor,
   getStatusTooltip,
-  renderTextWithEmoji,
   getSafeAvatar,
-  MobileState,
   ChatRoomsModel,
-  Message,
   ChatLobbyModel,
   ChatHubState,
 } = chatState;
@@ -191,73 +184,6 @@ function pollHashStatus(localpath) {
 }
 
 // ************************* views ****************************
-
-const Lobby = () => {
-  return {
-    view: (vnode) => {
-      const { info, tagname, onclick, lobbytagname = 'mainname' } = vnode.attrs;
-      return m(
-        ChatLobbyModel.selected(info, '.selected-lobby', tagname),
-        {
-          key: rs.idToHex(info.lobby_id),
-          onclick,
-        },
-        [
-          m('h5', { class: lobbytagname }, info.lobby_name === '' ? '<unnamed>' : info.lobby_name),
-          m('.topic', info.lobby_topic),
-        ]
-      );
-    },
-  };
-};
-
-const LobbyList = {
-  view(vnode) {
-    const tagname = vnode.attrs.tagname;
-    const lobbytagname = vnode.attrs.lobbytagname;
-    const onclick = vnode.attrs.onclick || (() => null);
-    return [
-      vnode.attrs.rooms.map((info) =>
-        m(Lobby, {
-          info,
-          tagname,
-          lobbytagname,
-          onclick: onclick(info),
-        })
-      ),
-    ];
-  },
-};
-
-const SubscribedLobbies = {
-  view() {
-    return m('.widget', [
-      m('.widget__heading', m('h3', 'Subscribed chat rooms')),
-      m('.widget__body', [
-        m(LobbyList, {
-          rooms: sortLobbies(Object.values(ChatRoomsModel.subscribedRooms)),
-          tagname: '.lobby.subscribed',
-          onclick: ChatLobbyModel.switchToEvent,
-        }),
-      ]),
-    ]);
-  },
-};
-
-const PublicLobbies = {
-  view() {
-    return m('.widget', [
-      m('.widget__heading', m('h3', 'Public chat rooms')),
-      m('.widget__body', [
-        m(LobbyList, {
-          rooms: (ChatRoomsModel.allRooms || []).filter((info) => !ChatRoomsModel.subscribed(info)),
-          tagname: '.lobby.public',
-          onclick: ChatLobbyModel.setupEvent,
-        }),
-      ]),
-    ]);
-  },
-};
 
 // ************************* Chat Hub Sub-Components ****************************
 
@@ -1010,8 +936,6 @@ const ChatRoomDetailView = () => {
       const room = ChatHubState.selectedRoom;
       if (!room) return null;
 
-      let participantCount = 0;
-      let participantNames = [];
       let participants = [];
 
       if (room.gxs_ids) {
@@ -1039,9 +963,8 @@ const ChatRoomDetailView = () => {
         }
       }
 
-      participantCount = participants.length;
-      participantNames = participants.map((p) => p.name);
-      participantNames.sort((a, b) => a.localeCompare(b));
+      const participantCount = participants.length;
+      const participantNames = participants.map((p) => p.name).sort((a, b) => a.localeCompare(b));
 
       const lobbyHexId = rs.idToHex(room.lobby_id);
       const privacy = getLobbyPrivacyInfo(room);
@@ -1630,74 +1553,6 @@ const Layout = {
       ])
     ]);
   },
-};
-
-const LayoutSingle = () => {
-  const onResize = () => {
-    const element = document.querySelector('.messages');
-    if (element) element.scrollTop = element.scrollHeight;
-  };
-  return {
-    oninit: () => {
-      ChatLobbyModel.loadLobby(m.route.param('lobby'));
-      window.addEventListener('resize', onResize);
-    },
-    onremove: () => window.removeEventListener('resize', onResize),
-    view: (vnode) => {
-      const chatType = ChatLobbyModel.currentLobby.chatType;
-      const isPrivate = chatType === 1 || chatType === 2;
-      const isRoom = chatType === 3;
-      return m(
-        '.node-panel.chat-panel.chat-room',
-        {
-          class:
-            (MobileState.showLobbies ? 'show-lobbies ' : '') +
-            (MobileState.showUsers ? 'show-users ' : '') +
-            (isPrivate ? 'no-lobbies' : ''),
-        },
-        [
-          m('.chat-overlay', { onclick: () => MobileState.closeAll() }),
-          m(
-            '.messages' + (isRoom ? '.compact-container' : ''),
-            { onclick: () => MobileState.closeAll() },
-            ChatLobbyModel.messages
-          ),
-          m(
-            '.chatMessage',
-            {},
-            [
-              m('textarea.chatMsg', {
-                placeholder: 'Type a message...',
-                enterkeyhint: 'send',
-                onkeydown: (e) => {
-                  if ((e.key === 'Enter' || e.keyCode === 13) && !e.shiftKey) {
-                    const msg = e.target.value;
-                    if (msg.trim() === '') return false;
-                    e.target.value = ' sending ... ';
-                    ChatLobbyModel.sendMessage(msg, () => (e.target.value = ''));
-                    return false;
-                  }
-                },
-              }),
-              m(
-                'button.chat-send-btn',
-                {
-                  onclick: (e) => {
-                    const textarea = e.target.closest('.chatMessage').querySelector('textarea');
-                    const msg = textarea.value;
-                    if (msg.trim() === '') return;
-                    textarea.value = ' sending ... ';
-                    ChatLobbyModel.sendMessage(msg, () => (textarea.value = ''));
-                  },
-                },
-                m('i.fas.fa-paper-plane')
-              ),
-            ]
-          ),
-        ]
-      );
-    },
-  };
 };
 
 /*
