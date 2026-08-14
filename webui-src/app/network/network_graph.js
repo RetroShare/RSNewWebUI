@@ -105,6 +105,21 @@ const NetworkGraph = () => {
     }
   }
 
+  //  A browser opens about six connections per host: asking for two hundred
+  //  discoveries at once does not make them arrive sooner, it just queues them
+  //  all in the tab and, past a certain point, starts failing them outright --
+  //  the request storm that made the channel list unusable. Six at a time.
+  async function discoverInBatches(ids, size = 6) {
+    const relations = [];
+    for (let i = 0; i < ids.length; i += size) {
+      const slice = ids.slice(i, i + size);
+      relations.push(...await Promise.all(
+        slice.map(async (id) => [id, await discoveredFriends(id)])
+      ));
+    }
+    return relations;
+  }
+
   async function loadGraph() {
     loading = true;
     error = '';
@@ -121,7 +136,7 @@ const NetworkGraph = () => {
     directIds.forEach((id) => levels.set(id, 1));
     const adjacency = new Map([[ownId, directIds]]);
 
-    const directRelations = await Promise.all(directIds.map(async (id) => [id, await discoveredFriends(id)]));
+    const directRelations = await discoverInBatches(directIds);
     directRelations.forEach(([id, friends]) => {
       adjacency.set(id, friends);
       if (friendshipLevel > 1) {
@@ -133,9 +148,7 @@ const NetworkGraph = () => {
 
     if (friendshipLevel > 1) {
       const secondLevelIds = Array.from(levels).filter(([, level]) => level === 2).map(([id]) => id);
-      const secondRelations = await Promise.all(
-        secondLevelIds.map(async (id) => [id, await discoveredFriends(id)])
-      );
+      const secondRelations = await discoverInBatches(secondLevelIds);
       secondRelations.forEach(([id, friends]) => adjacency.set(id, friends));
     }
 
