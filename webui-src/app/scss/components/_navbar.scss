@@ -402,6 +402,7 @@
 
     &__item {
       display: flex;
+      width: 100%;
       align-items: center;
       justify-content: center;
       flex-direction: column;
@@ -424,7 +425,7 @@
       i {
         width: auto;
         height: auto;
-        font-size: 0.9rem;
+        font-size: 1.15rem;
       }
 
       span {

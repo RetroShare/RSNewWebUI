@@ -817,3 +817,33 @@ table.attachment-container {
   .mail-nav-drawer .sidebar a .sidebar-link-text { display: inline !important; }
   .mail-nav-drawer .sidebar a i { margin-right: .75rem !important; font-size: 1.1rem !important; }
 }
+
+/* Keep the compose action above the app-level bottom navigation on phones. */
+@media (max-width: 700px) {
+  .mobile-fab-compose {
+    bottom: calc(50px + env(safe-area-inset-bottom) + 1rem) !important;
+  }
+
+  .composePopupOverlay {
+    z-index: 1050;
+  }
+
+  .composePopupOverlay .composePopup {
+    top: calc(44px + env(safe-area-inset-top) + .5rem) !important;
+    right: 0 !important;
+    bottom: calc(50px + env(safe-area-inset-bottom) + .5rem) !important;
+    left: 0 !important;
+    width: calc(100% - 1rem) !important;
+    height: auto !important;
+    margin: 0 auto !important;
+  }
+
+  .composePopupOverlay .composePopup > .widget {
+    padding: 1rem;
+  }
+
+  .composePopupOverlay .composePopup .close-btn {
+    top: .75rem;
+    right: .75rem;
+  }
+}
