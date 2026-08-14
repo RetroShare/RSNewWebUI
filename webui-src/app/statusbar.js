@@ -61,6 +61,28 @@ function formatBytes(rawBytes) {
   return parseFloat((bytes / Math.pow(k, safeI)).toFixed(1)) + ' ' + sizes[safeI];
 }
 
+function getMobileStatusSummary() {
+  if (!rs.connectionState.status) {
+    return { color: '#ef4444', label: 'Disconnected from RetroShare Core' };
+  }
+  const isHiddenMode = State.hiddenType === RS_HIDDEN_TYPE_TOR ||
+    State.hiddenType === RS_HIDDEN_TYPE_I2P;
+  if (isHiddenMode) {
+    if (State.torChecking) return { color: '#eab308', label: 'Checking hidden service' };
+    if (State.torProxyOk === false) return { color: '#ef4444', label: 'Hidden service unavailable' };
+    return {
+      color: State.torProxyOk ? '#22c55e' : '#eab308',
+      label: `${State.hiddenType === RS_HIDDEN_TYPE_TOR ? 'Tor' : 'I2P'} connection`,
+    };
+  }
+  if (State.natState === 8 || State.natState === 9) {
+    return { color: '#22c55e', label: State.natState === 9 ? 'Forwarded port' : 'Connected' };
+  }
+  if ([3, 4].includes(State.natState)) return { color: '#ef4444', label: 'Network problem' };
+  if (State.natState === 2) return { color: '#94a3b8', label: 'Offline' };
+  return { color: '#eab308', label: State.natState === 6 ? 'Behind firewall' : 'Limited connection' };
+}
+
 /**
  * Fetch the own peer's hidden type and proxy status using /rsTor API.
  * Mirrors Qt's TorStatus::getTorStatus().
@@ -416,3 +438,6 @@ const StatusBar = {
 };
 
 module.exports = StatusBar;
+StatusBar.State = State;
+StatusBar.formatBytes = formatBytes;
+StatusBar.getMobileStatusSummary = getMobileStatusSummary;
