@@ -209,10 +209,15 @@ const NetworkGraph = () => {
           `Edge length ${edgeLength}`,
           m('input[type=range][min=60][max=180][step=5]', {
             value: edgeLength,
+            //  The label follows the slider, the layout waits for the release:
+            //  layoutGraph() is 140 iterations of an O(n^2) force loop, which
+            //  measures 24 ms at 20 nodes, 199 ms at 100 and 729 ms at the 200
+            //  node cap. A range input fires oninput dozens of times per drag,
+            //  each one blocking the main thread for that long.
             oninput: (event) => {
               edgeLength = Number(event.target.value);
-              redrawLayout();
             },
+            onchange: redrawLayout,
           }),
         ]),
         m('.network-graph__zoom-control', [
