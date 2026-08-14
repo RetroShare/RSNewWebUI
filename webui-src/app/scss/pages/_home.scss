@@ -179,3 +179,273 @@
     }
   }
 }
+
+.add-friend-wizard {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+
+  &__heading {
+    @include flex($align: center, $gap: 1rem);
+    margin-bottom: 1.5rem;
+
+    > i {
+      display: grid;
+      place-items: center;
+      width: 3rem;
+      height: 3rem;
+      flex: 0 0 auto;
+      color: white;
+      background: $primary-retro-color;
+      border-radius: 50%;
+      font-size: 1.25rem;
+    }
+
+    h3,
+    p {
+      margin: 0;
+    }
+
+    p {
+      margin-top: 0.25rem;
+      color: color.adjust($dark-color, $alpha: -0.25);
+    }
+  }
+
+  .cert-drop-zone {
+    padding: 1.25rem;
+    border: 2px dashed color.adjust($primary-retro-color, $alpha: -0.55);
+    border-radius: 6px;
+    transition: border-color 120ms ease, background-color 120ms ease;
+
+    &--active {
+      border-color: $primary-retro-color;
+      background: color.adjust($primary-retro-color, $alpha: -0.92);
+    }
+
+    > label:first-child {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    textarea {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.75rem;
+      resize: vertical;
+      font-family: monospace;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1rem 0;
+    color: color.adjust($dark-color, $alpha: -0.4);
+
+    &::before,
+    &::after {
+      content: '';
+      height: 1px;
+      flex: 1;
+      background: color.adjust($dark-color, $alpha: -0.85);
+    }
+  }
+
+  &__file {
+    @include flex($align: center, $gap: 0.75rem);
+    color: color.adjust($dark-color, $alpha: -0.3);
+
+    input {
+      display: none;
+    }
+
+    label {
+      margin: 0;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.25rem;
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+}
+
+.modal-content.add-friend-modal {
+  width: min(42rem, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+@media (max-width: 600px) {
+  .modal-content.add-friend-modal {
+    width: calc(100% - 1rem);
+    max-height: calc(100% - 1rem);
+    padding: 1rem;
+  }
+
+  .add-friend-wizard {
+    &__heading {
+      align-items: flex-start;
+      padding-right: 2.25rem;
+
+      > i {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 1rem;
+      }
+
+      h3 {
+        font-size: 1.5rem;
+      }
+    }
+
+    .cert-drop-zone {
+      padding: 0.75rem;
+
+      textarea {
+        min-height: 8rem;
+      }
+    }
+
+    &__file {
+      align-items: stretch;
+      flex-direction: column;
+
+      label {
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center;
+      }
+
+      span {
+        overflow-wrap: anywhere;
+      }
+    }
+
+    &__actions button {
+      width: 100%;
+    }
+  }
+}
+
+.modal-content.friend-confirmation-modal {
+  width: min(34rem, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.friend-confirmation {
+  min-width: 0;
+
+  &__heading {
+    @include flex($align: center, $gap: 1rem);
+    padding-right: 2.5rem;
+    margin-bottom: 1.25rem;
+
+    > i {
+      display: grid;
+      place-items: center;
+      width: 3rem;
+      height: 3rem;
+      flex: 0 0 auto;
+      color: white;
+      background: $primary-retro-color;
+      border-radius: 50%;
+    }
+
+    h3,
+    p {
+      margin: 0;
+    }
+
+    p {
+      margin-top: 0.25rem;
+      color: color.adjust($dark-color, $alpha: -0.3);
+    }
+  }
+
+  &__details {
+    overflow: hidden;
+    border: 1px solid color.adjust($dark-color, $alpha: -0.85);
+    border-radius: 6px;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+
+    + .friend-confirmation__row {
+      border-top: 1px solid color.adjust($dark-color, $alpha: -0.9);
+    }
+
+    code,
+    span,
+    strong {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__label {
+    color: color.adjust($dark-color, $alpha: -0.35);
+    font-weight: 600;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.25rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-content.friend-confirmation-modal {
+    width: calc(100% - 1rem);
+    max-height: calc(100% - 1rem);
+    padding: 1rem;
+  }
+
+  .friend-confirmation {
+    &__heading {
+      align-items: flex-start;
+
+      > i {
+        width: 2.5rem;
+        height: 2.5rem;
+      }
+
+      h3 {
+        font-size: 1.5rem;
+      }
+    }
+
+    &__row {
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+      padding: 0.65rem 0.75rem;
+    }
+
+    &__actions button {
+      width: 100%;
+    }
+  }
+}
