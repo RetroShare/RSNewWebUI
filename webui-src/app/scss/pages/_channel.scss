@@ -394,9 +394,35 @@ table {
 /* Keep image and generated-thumbnail cards the same size instead of stretching
  * a sparse grid row to the full height of the Posts panel. */
 .posts-container { align-content: start; grid-auto-rows: 240px; }
-.posts-container-card { height: 240px; min-height: 0; overflow: hidden; }
+.posts-container-card { position: relative; height: 240px; min-height: 0; overflow: hidden; }
 .posts-container-card > img,
 .posts-container-card > .channel-post__placeholder { min-height: 0; }
+
+.channel-post-comment-badge {
+  position: absolute;
+  z-index: 2;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.45rem;
+  box-sizing: border-box;
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.22);
+  font-size: 0.75rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.channel-post-comment-badge i {
+  color: #3ba4d7;
+}
 
 @media (max-width: 700px) {
   .posts-container { grid-auto-rows: 210px; gap: 1rem; }

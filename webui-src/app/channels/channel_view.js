@@ -26,6 +26,15 @@ function channelThumbnailSrc(post) {
   return String(base64).startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
 }
 
+function channelPostCommentCount(postId, post) {
+  const loadedComments = Data.Comments[postId];
+  if (loadedComments) return Object.keys(loadedComments).length;
+
+  const meta = (post && post.mMeta) || {};
+  const count = post && (post.mComments ?? post.mCommentCount ?? post.commentCount);
+  return Number(count ?? meta.mComments ?? meta.mCommentCount ?? 0) || 0;
+}
+
 const ChannelFallbackThumbnail = () => ({
   view: (vnode) => m('.channel-post__placeholder', { style: {
     display: vnode.attrs.hidden ? 'none' : 'flex', flex: '1 1 auto', minHeight: '0',
@@ -569,7 +578,9 @@ const ChannelView = () => {
             ]),
             m(
               '.posts-container',
-              Object.keys(plist).map((key, index) => [
+              Object.keys(plist).map((key) => {
+                const commentCount = channelPostCommentCount(key, plist[key].post);
+                return [
                 m(
                   '.posts-container-card',
                   {
@@ -590,6 +601,13 @@ const ChannelView = () => {
                     },
                   },
                   [
+                    commentCount > 0 && m('.channel-post-comment-badge', {
+                      title: `${commentCount} comment${commentCount === 1 ? '' : 's'}`,
+                      'aria-label': `${commentCount} comment${commentCount === 1 ? '' : 's'}`,
+                    }, [
+                      m('i.fas.fa-comment'),
+                      m('span', commentCount),
+                    ]),
                     channelThumbnailSrc(plist[key].post)
                       ? [
                           m('img', {
@@ -606,7 +624,8 @@ const ChannelView = () => {
                     m('p', plist[key].post.mMeta.mMsgName),
                   ]
                 ),
-              ])
+                ];
+              })
             ),
           ]
         ),
