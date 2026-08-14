@@ -19,7 +19,7 @@ const State = {
   selectedOwnGxsDetails: null,
   selectedFriendGpgId: null,
   mainTab: 'network', // 'network' | 'chats'
-  activeTab: 'details', // 'details' | 'chat'
+  activeTab: 'details', // 'details' | 'chat' | 'graph'
   searchString: '',
   gpgToGxsIdMap: {},
   gxsIdToDetailsMap: {},

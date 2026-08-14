@@ -14,6 +14,7 @@ const {
 const { OwnProfileCard, FriendsList } = require('network/network_friends_list');
 const DetailsTab = require('network/network_details_tab');
 const ChatTab = require('network/network_chat_tab');
+const NetworkGraph = require('network/network_graph');
 
 const NetworkLayout = () => {
   return {
@@ -46,9 +47,7 @@ const NetworkLayout = () => {
       return m('.network-container', [
         m('.network-left-pane', [m(OwnProfileCard), m(FriendsList)]),
         m('.network-right-pane', [
-          selectedFriend
-            ? [
-                m('.network-tabs', [
+          m('.network-tabs', [
                   m(
                     'button.tab-btn' + (State.activeTab === 'details' ? '.active' : ''),
                     {
@@ -71,16 +70,23 @@ const NetworkLayout = () => {
                     },
                     'Chat Conversation'
                   ),
-                ]),
-                m('.network-tab-content', [
+                  m(
+                    'button.tab-btn' + (State.activeTab === 'graph' ? '.active' : ''),
+                    { onclick: () => { State.activeTab = 'graph'; } },
+                    [m('i.fas.fa-project-diagram'), ' Network Graph']
+                  ),
+          ]),
+          State.activeTab === 'graph'
+            ? m('.network-tab-content.network-graph-tab', m(NetworkGraph))
+            : selectedFriend
+              ? m('.network-tab-content', [
                   State.activeTab === 'details' ? m(DetailsTab) : m(ChatTab),
-                ]),
-              ]
-            : m('.network-pane-placeholder', [
+                ])
+              : m('.network-pane-placeholder', [
                 m('i.fas.fa-network-wired'),
                 m(
                   'p',
-                  'Select a friend node from the left side panel to view locations details or start a private chat.'
+                  'Select a friend for details or chat, or open the Network Graph tab.'
                 ),
               ]),
         ]),
