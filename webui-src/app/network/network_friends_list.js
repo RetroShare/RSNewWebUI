@@ -1,7 +1,13 @@
 const m = require('mithril');
 const Data = require('network/network_data');
 const peopleUtil = require('people/people_util');
-const { State, startDirectChat, getOnlineSslId, setOwnCustomStateString } = require('network/network_state');
+const {
+  State,
+  startDirectChat,
+  getOnlineSslId,
+  setOwnCustomStateString,
+  setOwnStatus,
+} = require('network/network_state');
 
 function formatRelativeTime(ts) {
   if (!ts) return '';
@@ -15,6 +21,7 @@ function formatRelativeTime(ts) {
 
 const OwnProfileCard = () => {
   let isEditing = false;
+  let isPresenceMenuOpen = false;
   let statusInputText = '';
 
   return {
@@ -30,13 +37,39 @@ const OwnProfileCard = () => {
         m('.profile-header', [
           m('.profile-avatar-wrapper', [
             m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: State.ownProfile.name }),
-            m('.status-dot', {
+            m('button.status-dot.profile-status-button', {
+              'aria-label': `Change status. Current status: ${status.label}`,
+              'aria-expanded': String(isPresenceMenuOpen),
               style: { backgroundColor: status.color },
-              title: status.label,
+              title: `Status: ${status.label}. Click to change.`,
+              onclick: () => {
+                isPresenceMenuOpen = !isPresenceMenuOpen;
+              },
             }),
+            isPresenceMenuOpen && m('.profile-presence-menu', [
+              [
+                { value: 3, label: 'Online' },
+                { value: 1, label: 'Away' },
+                { value: 2, label: 'Busy' },
+              ].map((option) => {
+                const optionStatus = Data.getStatusPresentation(option.value, true);
+                return m('button.profile-presence-option', {
+                  class: status.value === option.value ? 'active' : '',
+                  onclick: () => {
+                    setOwnStatus(option.value);
+                    isPresenceMenuOpen = false;
+                  },
+                }, [
+                  m('span', { style: { backgroundColor: optionStatus.color } }),
+                  option.label,
+                  status.value === option.value && m('i.fas.fa-check'),
+                ]);
+              }),
+            ]),
           ]),
           m('.profile-info', [
             m('.profile-name', { title: displayName }, displayName),
+            m('.profile-presence-label', status.label),
             isEditing
               ? m('.profile-custom-status-edit', {
                   style: 'display: flex; align-items: center; gap: 4px; margin-top: 3px;'

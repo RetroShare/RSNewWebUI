@@ -382,10 +382,28 @@ function setOwnCustomStateString(statusString) {
   });
 }
 
+async function setOwnStatus(statusValue) {
+  const value = Number(statusValue);
+  if (![1, 2, 3].includes(value)) return false;
+
+  try {
+    const response = await rs.rsJsonApiRequest('/rsStatus/sendStatus', { status: value });
+    if (response && response.body && response.body.retval === false) return false;
+
+    State.ownProfile.statusValue = value;
+    State.ownProfile.statusTimestamp = Math.floor(Date.now() / 1000);
+    m.redraw();
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 module.exports = {
   State,
   loadOwnProfile,
   setOwnCustomStateString,
+  setOwnStatus,
   loadSelectedOwnGxsDetails,
   fetchIdDetails,
   loadGxsIdentities,
