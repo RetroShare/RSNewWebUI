@@ -83,16 +83,29 @@ function layoutGraph(nodes, edges, edgeLength) {
   return positions;
 }
 
+//  Module level, not fields of the component: the graph tab is mounted only
+//  while it is the active tab, so leaving it and coming back rebuilds the
+//  component. Kept here, a return to the tab shows the graph that was already
+//  computed -- instead of replaying the discovery requests and a layout that
+//  costs up to 729 ms -- and the zoom, the search and the level are still what
+//  the user left them at.
+let nodes = [];
+let edges = [];
+let positions = {};
+let loading = true;
+let error = '';
+let friendshipLevel = 1;
+let edgeLength = 105;
+let zoom = 1;
+let search = '';
+let loadedAt = 0;
+//  A newer load makes an older one drop its results instead of writing them
+//  over the fresh ones: changing the friendship level while a load is running
+//  starts a second one, and they do not necessarily finish in order.
+let loadToken = 0;
+const GRAPH_CACHE_MS = 60000;
+
 const NetworkGraph = () => {
-  let nodes = [];
-  let edges = [];
-  let positions = {};
-  let loading = true;
-  let error = '';
-  let friendshipLevel = 1;
-  let edgeLength = 105;
-  let zoom = 1;
-  let search = '';
   let draggedId = null;
 
   async function discoveredFriends(id) {
@@ -105,7 +118,23 @@ const NetworkGraph = () => {
     }
   }
 
+  //  A browser opens about six connections per host: asking for two hundred
+  //  discoveries at once does not make them arrive sooner, it just queues them
+  //  all in the tab and, past a certain point, starts failing them outright --
+  //  the request storm that made the channel list unusable. Six at a time.
+  async function discoverInBatches(ids, size = 6) {
+    const relations = [];
+    for (let i = 0; i < ids.length; i += size) {
+      const slice = ids.slice(i, i + size);
+      relations.push(...await Promise.all(
+        slice.map(async (id) => [id, await discoveredFriends(id)])
+      ));
+    }
+    return relations;
+  }
+
   async function loadGraph() {
+    const token = ++loadToken;
     loading = true;
     error = '';
     const ownId = State.ownProfile.gpg_id;
@@ -121,7 +150,8 @@ const NetworkGraph = () => {
     directIds.forEach((id) => levels.set(id, 1));
     const adjacency = new Map([[ownId, directIds]]);
 
-    const directRelations = await Promise.all(directIds.map(async (id) => [id, await discoveredFriends(id)]));
+    const directRelations = await discoverInBatches(directIds);
+    if (token !== loadToken) return;
     directRelations.forEach(([id, friends]) => {
       adjacency.set(id, friends);
       if (friendshipLevel > 1) {
@@ -133,9 +163,8 @@ const NetworkGraph = () => {
 
     if (friendshipLevel > 1) {
       const secondLevelIds = Array.from(levels).filter(([, level]) => level === 2).map(([id]) => id);
-      const secondRelations = await Promise.all(
-        secondLevelIds.map(async (id) => [id, await discoveredFriends(id)])
-      );
+      const secondRelations = await discoverInBatches(secondLevelIds);
+      if (token !== loadToken) return;
       secondRelations.forEach(([id, friends]) => adjacency.set(id, friends));
     }
 
@@ -164,6 +193,7 @@ const NetworkGraph = () => {
     });
 
     positions = layoutGraph(nodes, edges, edgeLength);
+    loadedAt = Date.now();
     loading = false;
     m.redraw();
   }
@@ -188,7 +218,9 @@ const NetworkGraph = () => {
   }
 
   return {
-    oninit: loadGraph,
+    oninit: () => {
+      if (nodes.length === 0 || Date.now() - loadedAt > GRAPH_CACHE_MS) loadGraph();
+    },
     view: () => m('.network-graph', [
       m('.network-graph__toolbar', [
         m('button[type=button]', { onclick: loadGraph, disabled: loading }, [
@@ -209,10 +241,15 @@ const NetworkGraph = () => {
           `Edge length ${edgeLength}`,
           m('input[type=range][min=60][max=180][step=5]', {
             value: edgeLength,
+            //  The label follows the slider, the layout waits for the release:
+            //  layoutGraph() is 140 iterations of an O(n^2) force loop, which
+            //  measures 24 ms at 20 nodes, 199 ms at 100 and 729 ms at the 200
+            //  node cap. A range input fires oninput dozens of times per drag,
+            //  each one blocking the main thread for that long.
             oninput: (event) => {
               edgeLength = Number(event.target.value);
-              redrawLayout();
             },
+            onchange: redrawLayout,
           }),
         ]),
         m('.network-graph__zoom-control', [
