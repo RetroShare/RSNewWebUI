@@ -12,21 +12,6 @@ function formatFingerprint(fingerprint) {
     ?.join(' ') || '';
 }
 
-function cleanRetroshareId(invite) {
-  const value = String(invite || '').trim();
-  const marker = 'rsInvite=';
-  const markerPosition = value.indexOf(marker);
-  const encodedId = markerPosition >= 0
-    ? value.slice(markerPosition + marker.length)
-    : value;
-
-  try {
-    return decodeURIComponent(encodedId);
-  } catch (_) {
-    return encodedId;
-  }
-}
-
 const ConfirmRemove = () => {
   return {
     view: (vnode) => [
@@ -86,7 +71,7 @@ const LocationDetails = () => {
       rs.rsJsonApiRequest('/rsPeers/getShortInvite', { sslId: nodeId })
         .then((response) => {
           retroshareId = response && response.body && response.body.retval
-            ? cleanRetroshareId(response.body.invite) || 'Unavailable'
+            ? rs.cleanRetroshareId(response.body.invite) || 'Unavailable'
             : 'Unavailable';
           locationDetailsCache[nodeId].retroshareId = retroshareId;
           m.redraw();

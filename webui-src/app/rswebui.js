@@ -502,6 +502,24 @@ function hexId(id) {
   return String(id);
 }
 
+//  A RetroShare ID can be pasted bare, or inside a retroshare://... link where
+//  it sits url-encoded behind rsInvite=. Both the Add friend wizard and the
+//  location details dialog had their own copy of this; they now share one, the
+//  variant that trims after decoding, since a pasted link often carries a
+//  trailing newline.
+function cleanRetroshareId(value) {
+  const input = String(value || '').trim();
+  const marker = 'rsInvite=';
+  const markerPosition = input.indexOf(marker);
+  const id = markerPosition >= 0 ? input.slice(markerPosition + marker.length) : input;
+
+  try {
+    return decodeURIComponent(id).trim();
+  } catch (_) {
+    return id.trim();
+  }
+}
+
 module.exports = {
   rsJsonApiRequest,
   idToHex: hexId,
@@ -515,4 +533,5 @@ module.exports = {
   loginKey,
   formatBytes,
   logout,
+  cleanRetroshareId,
 };

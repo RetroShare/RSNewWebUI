@@ -190,21 +190,8 @@ function confirmAddPrompt(details, cert, long) {
   );
 }
 
-function cleanRetroshareId(value) {
-  const input = String(value || '').trim();
-  const marker = 'rsInvite=';
-  const markerPosition = input.indexOf(marker);
-  const id = markerPosition >= 0 ? input.slice(markerPosition + marker.length) : input;
-
-  try {
-    return decodeURIComponent(id).trim();
-  } catch (_) {
-    return id.trim();
-  }
-}
-
 async function addFriendFromCert(cert) {
-  const retroshareId = cleanRetroshareId(cert);
+  const retroshareId = rs.cleanRetroshareId(cert);
   if (!retroshareId) return;
 
   const res = await rs.rsJsonApiRequest('/rsPeers/parseShortInvite', { invite: retroshareId });
