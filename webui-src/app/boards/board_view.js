@@ -522,7 +522,6 @@ function PostView() {
   const parentOf = (comment) => metaOf(comment).mParentId || comment.parentId || '';
   const textOf = (comment) => comment.mComment || comment.comment || comment.mBody || '';
   const nameOf = (id) => !id || Number(id) === 0 ? 'Anonymous' : (rs.userList.username(id) || rs.userList.userMap[id] || `${String(id).slice(0, 10)}…`);
-  const initials = (name) => String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
   const timeOf = (value) => {
     const seconds = value && typeof value === 'object' ? value.xint64 : value;
     const date = Number(seconds) ? new Date(Number(seconds) * 1000) : null;
@@ -715,7 +714,11 @@ function PostView() {
               m('span', [m('i.fas.fa-sort-amount-down'), ' Oldest first']),
             ]),
             m('.board-comment-composer', [
-              m('.board-comment-avatar', initials(nameOf(authorId))),
+              m('.board-comment-avatar', m(peopleUtil.IdentityAvatar, {
+                identityId: authorId,
+                name: nameOf(authorId),
+                size: '100%',
+              })),
               m('.board-comment-composer__body', [
                 replyTo ? m('.board-comment-composer__replying', ['Replying to ', m('b', nameOf(metaOf(replyTo).mAuthorId)), m('button[type=button][aria-label=Cancel reply]', { onclick: () => { replyTo = null; composerText = ''; } }, m('i.fas.fa-times'))]) : null,
                 identities.length ? m('select.board-comment-composer__identity', { value: authorId, onchange: (e) => { authorId = e.target.value; } }, identities.map((id) => m('option', { value: id }, nameOf(id)))) : null,
@@ -749,7 +752,11 @@ function PostView() {
     const repliesCount = node.children.length;
     const repliesExpanded = expandedReplies[key] === true;
     return m('.board-comment', { key: idOf(comment), class: depth ? 'board-comment--reply' : '' }, [
-      m('.board-comment-avatar', initials(name)),
+      m('.board-comment-avatar', m(peopleUtil.IdentityAvatar, {
+        identityId: meta.mAuthorId,
+        name,
+        size: '100%',
+      })),
       m('.board-comment__content', [
         m('.board-comment__header', [
           m('.board-comment__meta', [m('b', name), timeOf(meta.mPublishTs) ? m('span', timeOf(meta.mPublishTs)) : null]),

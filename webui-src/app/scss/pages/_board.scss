@@ -315,6 +315,16 @@
   color: #fff;
   font-size: .78rem;
   font-weight: 700;
+
+  > .avatar,
+  > .jdenticon-avatar,
+  > .defaultAvatar {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 100% !important;
+    min-height: 100% !important;
+    margin-right: 0 !important;
+  }
 }
 
 .board-comment-composer__body,

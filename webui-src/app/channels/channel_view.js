@@ -642,7 +642,6 @@ const ChannelComments = () => {
   const metaOf = (comment) => (comment && comment.mMeta) || {};
   const idOf = (comment) => metaOf(comment).mMsgId || comment.msgId;
   const nameOf = (id) => rs.userList.username(id) || rs.userList.userMap[id] || `${String(id || 'Unknown').slice(0, 10)}…`;
-  const initials = (name) => String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
   const dateOf = (value) => {
     const seconds = value && typeof value === 'object' ? value.xint64 : value;
     return Number(seconds) ? new Date(Number(seconds) * 1000).toLocaleString() : '';
@@ -705,7 +704,11 @@ const ChannelComments = () => {
     const votes = (Data.Votes[meta.mThreadId] && Data.Votes[meta.mThreadId][id]) || { upvotes: 0, downvotes: 0 };
     const repliesExpanded = expandedReplies[id] === true;
     return m('.board-comment', { key: id }, [
-      m('.board-comment-avatar', initials(name)),
+      m('.board-comment-avatar', m(peopleUtil.IdentityAvatar, {
+        identityId: meta.mAuthorId,
+        name,
+        size: '100%',
+      })),
       m('.board-comment__content', [
         m('.board-comment__header', [
           m('.board-comment__meta', [m('b', name), dateOf(meta.mPublishTs) ? m('span', dateOf(meta.mPublishTs)) : null]),
@@ -744,7 +747,11 @@ const ChannelComments = () => {
           ]),
         ]),
         m('.board-comment-composer', [
-          m('.board-comment-avatar', initials(nameOf(identity))),
+          m('.board-comment-avatar', m(peopleUtil.IdentityAvatar, {
+            identityId: identity,
+            name: nameOf(identity),
+            size: '100%',
+          })),
           m('.board-comment-composer__body', [
             replyTo ? m('.board-comment-composer__replying', ['Replying to ', m('b', nameOf(metaOf(replyTo).mAuthorId)), m('button[type=button][aria-label=Cancel reply]', { onclick: () => { replyTo = null; text = ''; } }, m('i.fas.fa-times'))]) : null,
             identities.length ? m('select.board-comment-composer__identity', { value: identity, onchange: (e) => { identity = e.target.value; } }, identities.map((id) => m('option', { value: id }, nameOf(id)))) : null,

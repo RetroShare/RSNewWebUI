@@ -103,6 +103,55 @@ const UserAvatar = () => ({
   },
 });
 
+const identityDetailsCache = new Map();
+
+function loadIdentityDetails(id) {
+  if (!id || id === '0000000000000000') return Promise.resolve(null);
+  const cached = identityDetailsCache.get(id);
+  if (cached && Object.prototype.hasOwnProperty.call(cached, 'details')) {
+    return Promise.resolve(cached.details);
+  }
+  if (cached && cached.promise) return cached.promise;
+
+  const promise = rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id })
+    .then((response) => {
+      const details = response && response.body ? response.body.details : null;
+      identityDetailsCache.set(id, { details });
+      m.redraw();
+      return details;
+    })
+    .catch(() => {
+      identityDetailsCache.set(id, { details: null });
+      return null;
+    });
+
+  identityDetailsCache.set(id, { promise });
+  return promise;
+}
+
+const IdentityAvatar = () => ({
+  oninit: (vnode) => loadIdentityDetails(vnode.attrs.identityId),
+  onbeforeupdate: (vnode, old) => {
+    if (vnode.attrs.identityId !== old.attrs.identityId) {
+      loadIdentityDetails(vnode.attrs.identityId);
+    }
+  },
+  view: (vnode) => {
+    const id = vnode.attrs.identityId;
+    const cached = identityDetailsCache.get(id);
+    const details = cached && cached.details;
+    const name = vnode.attrs.name || (details && details.mNickname) || '';
+
+    return m(UserAvatar, {
+      avatar: details && details.mAvatar,
+      identityId: id,
+      firstLetter: name.slice(0, 1).toUpperCase(),
+      seed: id || name,
+      size: vnode.attrs.size || 38,
+    });
+  },
+});
+
 function contactlist(list) {
   if (list === undefined) return [];
   return list.filter((id) => {
@@ -289,6 +338,7 @@ module.exports = {
   ownIds,
   checksudo,
   UserAvatar,
+  IdentityAvatar,
   contactlist,
   SearchBar,
   regularcontactInfo,
