@@ -69,7 +69,6 @@ const OwnProfileCard = () => {
           ]),
           m('.profile-info', [
             m('.profile-name', { title: displayName }, displayName),
-            m('.profile-presence-label', status.label),
             isEditing
               ? m('.profile-custom-status-edit', {
                   style: 'display: flex; align-items: center; gap: 4px; margin-top: 3px;'
