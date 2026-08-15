@@ -2,6 +2,7 @@ const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
+const chatPreviewText = require('chat/chat_preview');
 const ownIdsLayout = require('people/people_ownids');
 const { CreateIdentity } = ownIdsLayout;
 const {
@@ -208,7 +209,9 @@ const PeopleSidebar = () => {
                   const hist = State.chatHistoryMap[gxsId];
                   const lastTS = hist ? hist.lastTime : (itemDetails ? get64Num(itemDetails.mLastUsageTS) : 0);
                   const relativeTimeStr = formatRelativeTime(lastTS);
-                  const lastMsgText = hist && hist.lastMsg ? hist.lastMsg : (itemIsOwn ? 'My Identity' : itemIsContact ? 'Saved Contact' : 'Distant Chat');
+                  const lastMsgText = hist && hist.lastMsg
+                    ? chatPreviewText(hist.lastMsg)
+                    : (itemIsOwn ? 'My Identity' : itemIsContact ? 'Saved Contact' : 'Distant Chat');
 
                   if (State.mainTab === 'chats') {
                     return m(

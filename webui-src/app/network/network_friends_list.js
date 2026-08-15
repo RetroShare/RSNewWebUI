@@ -1,12 +1,14 @@
 const m = require('mithril');
 const Data = require('network/network_data');
 const peopleUtil = require('people/people_util');
+const chatPreviewText = require('chat/chat_preview');
 const {
   State,
   startDirectChat,
   getOnlineSslId,
   setOwnCustomStateString,
   setOwnStatus,
+  markDirectChatRead,
 } = require('network/network_state');
 
 function formatRelativeTime(ts) {
@@ -132,12 +134,9 @@ const FriendsList = () => {
       const allGpgEntries = Object.entries(Data.gpgDetails || {});
 
       // Compute active chats count
-      let activeChatsCount = 0;
+      let unreadChatsCount = 0;
       allGpgEntries.forEach(([gpgId]) => {
-        const hist = State.chatHistoryMap && State.chatHistoryMap[gpgId];
-        if (hist && hist.lastMsg) {
-          activeChatsCount++;
-        }
+        unreadChatsCount += State.unreadChatCount[gpgId] || 0;
       });
 
       let displayFriends;
@@ -199,7 +198,7 @@ const FriendsList = () => {
               [
                 m('i.fas.fa-comments'),
                 ' Chats',
-                activeChatsCount > 0 && m('span.segment-badge', activeChatsCount),
+                unreadChatsCount > 0 && m('span.segment-badge', unreadChatsCount),
               ]
             ),
             m(
@@ -240,6 +239,7 @@ const FriendsList = () => {
                         State.selectedFriendGpgId = gpgId;
                         State.activeTab = 'chat';
                         State.mobilePane = 'detail';
+                        markDirectChatRead(gpgId);
                         const sslId = getOnlineSslId(gpgId);
                         if (sslId) startDirectChat(sslId);
                       },
@@ -262,10 +262,12 @@ const FriendsList = () => {
                           },
                           friend.name
                         ),
-                        m('.chat-last-msg', hist ? hist.lastMsg : ''),
+                        m('.chat-last-msg', hist ? chatPreviewText(hist.lastMsg) : ''),
                       ]),
                       m('.chat-meta', [
                         hist && hist.lastTime && m('.chat-time', formatRelativeTime(hist.lastTime)),
+                        (State.unreadChatCount[gpgId] || 0) > 0 &&
+                          m('.chat-unread-badge', State.unreadChatCount[gpgId]),
                       ]),
                     ]
                   );

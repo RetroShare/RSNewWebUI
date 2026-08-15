@@ -10,6 +10,8 @@ const {
   startDirectChat,
   getOnlineSslId,
   preloadNetworkChatHistory,
+  loadDirectChatMessages,
+  markDirectChatRead,
 } = require('network/network_state');
 const { OwnProfileCard, FriendsList } = require('network/network_friends_list');
 const DetailsTab = require('network/network_details_tab');
@@ -19,6 +21,8 @@ const NetworkGraph = require('network/network_graph');
 const NetworkLayout = () => {
   return {
     oninit: () => {
+      // Keep the active-chat list current even when no conversation is open.
+      loadDirectChatMessages();
       Data.refreshGpgDetails().then(() => {
         preloadNetworkChatHistory();
         m.redraw();
@@ -71,6 +75,7 @@ const NetworkLayout = () => {
                       onclick: () => {
                         State.activeTab = 'chat';
                         State.mobilePane = 'detail';
+                        markDirectChatRead(State.selectedFriendGpgId);
                         const sslId = getOnlineSslId(State.selectedFriendGpgId);
                         if (sslId && !State.currentChatPeerId) {
                           startDirectChat(sslId);

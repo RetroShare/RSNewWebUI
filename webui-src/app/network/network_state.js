@@ -26,6 +26,7 @@ const State = {
   gxsIdToDetailsMap: {},
   gxsIdentities: [],
   chatHistoryMap: {}, // gpgId -> { lastMsg, lastTime }
+  unreadChatCount: {}, // gpgId -> unread messages received during this session
   currentChatPeerId: null,
   chatMessages: [],
   chatInputMsg: '',
@@ -186,6 +187,13 @@ function loadGxsIdentities() {
 function startDirectChat(sslId) {
   State.currentChatPeerId = sslId;
   State.chatMessages = [];
+  const normalizedSslId = String(sslId || '').toLowerCase();
+  const matchingFriend = Object.entries(Data.gpgDetails || {}).find(([, friend]) =>
+    ((friend && friend.locations) || []).some(
+      (location) => String(location.id || '').toLowerCase() === normalizedSslId
+    )
+  );
+  if (matchingFriend) markDirectChatRead(matchingFriend[0]);
   loadDirectChatMessages();
   loadRecentDirectChatHistory();
 }
@@ -213,36 +221,33 @@ function preloadNetworkChatHistory() {
   gpgIds.forEach((gpgId) => {
     if (!gpgId || gpgId === '0000000000000000') return;
 
-    const privatePeerId = {
-      broadcast_status_peer_id: '00000000000000000000000000000000',
-      type: 1, // PRIVATE
-      peer_id: gpgId,
-      distant_chat_id: '00000000000000000000000000000000',
-      lobby_id: { xstr64: '0' },
-    };
+    const friend = Data.gpgDetails[gpgId];
+    const sslIds = Array.from(new Set(
+      ((friend && friend.locations) || []).map((location) => location.id).filter(Boolean)
+    ));
 
-    rs.rsJsonApiRequest(
-      '/rsHistory/getMessages',
-      {
-        chatPeerId: privatePeerId,
-        loadCount: 20,
-      },
-      (msgData, success) => {
-        if (success && msgData && msgData.msgs) {
-          const userMsgs = msgData.msgs.filter(
-            (m) => !m.isSystem && !isSystemMsg(m.message || m.msg)
-          );
-          if (userMsgs.length > 0) {
-            const last = userMsgs[userMsgs.length - 1];
-            State.chatHistoryMap[gpgId] = {
-              lastMsg: last.message || last.msg || '',
-              lastTime: last.sendTime || last.recvTime || Math.floor(Date.now() / 1000),
-            };
-            m.redraw();
-          }
-        }
-      }
-    );
+    Promise.all(sslIds.map((sslId) => new Promise((resolve) => {
+      rs.rsJsonApiRequest(
+        '/rsHistory/getMessages',
+        { chatPeerId: directChatId(sslId), loadCount: 20 },
+        (msgData, success) => resolve(
+          success && msgData && Array.isArray(msgData.msgs) ? msgData.msgs : []
+        )
+      ).catch(() => resolve([]));
+    }))).then((messageGroups) => {
+      const userMsgs = messageGroups.flat().filter(
+        (message) => !message.isSystem && !isSystemMsg(message.message || message.msg)
+      ).sort(
+        (a, b) => (a.sendTime || a.recvTime || 0) - (b.sendTime || b.recvTime || 0)
+      );
+      if (userMsgs.length === 0) return;
+      const last = userMsgs[userMsgs.length - 1];
+      State.chatHistoryMap[gpgId] = {
+        lastMsg: last.message || last.msg || '',
+        lastTime: last.sendTime || last.recvTime || Math.floor(Date.now() / 1000),
+      };
+      m.redraw();
+    });
   });
 }
 
@@ -251,22 +256,45 @@ function loadDirectChatMessages() {
     const messagePeerId = chatMessage.chat_id && chatMessage.chat_id.peer_id
       ? rs.idToHex(chatMessage.chat_id.peer_id)
       : '';
-    if (
-      chatMessage.chat_id &&
-      chatMessage.chat_id.type === 1 &&
-      messagePeerId === State.currentChatPeerId
-    ) {
-      State.chatMessages.push(chatMessage);
-      if (State.selectedFriendGpgId) {
-        State.chatHistoryMap[State.selectedFriendGpgId] = {
-          lastMsg: chatMessage.msg || chatMessage.message || '',
-          lastTime: chatMessage.sendTime || chatMessage.recvTime || Math.floor(Date.now() / 1000),
-        };
+    if (!chatMessage.chat_id || chatMessage.chat_id.type !== 1 || !messagePeerId) return;
+
+    const normalizedPeerId = messagePeerId.toLowerCase();
+    const matchingFriend = Object.entries(Data.gpgDetails || {}).find(([, friend]) =>
+      ((friend && friend.locations) || []).some(
+        (location) => String(location.id || '').toLowerCase() === normalizedPeerId
+      )
+    );
+    const gpgId = matchingFriend ? matchingFriend[0] : null;
+
+    // Update the Chats list for every private message, not only for the
+    // conversation that happens to be visible.
+    if (gpgId) {
+      State.chatHistoryMap[gpgId] = {
+        lastMsg: chatMessage.msg || chatMessage.message || '',
+        lastTime: chatMessage.sendTime || chatMessage.recvTime || Math.floor(Date.now() / 1000),
+      };
+
+      const isOpenConversation =
+        State.activeTab === 'chat' &&
+        State.selectedFriendGpgId === gpgId &&
+        normalizedPeerId === String(State.currentChatPeerId || '').toLowerCase() &&
+        (window.innerWidth > 700 || State.mobilePane === 'detail');
+      if (chatMessage.incoming === true && !isOpenConversation) {
+        State.unreadChatCount[gpgId] = (State.unreadChatCount[gpgId] || 0) + 1;
       }
-      m.redraw();
+    }
+
+    if (normalizedPeerId === String(State.currentChatPeerId || '').toLowerCase()) {
+      State.chatMessages = mergeDirectChatMessages(State.chatMessages.concat(chatMessage));
       scrollChatToBottom();
     }
+    m.redraw();
   };
+}
+
+function markDirectChatRead(gpgId) {
+  if (!gpgId || !State.unreadChatCount[gpgId]) return;
+  State.unreadChatCount[gpgId] = 0;
 }
 
 function directChatId(peerId) {
@@ -412,6 +440,7 @@ module.exports = {
   getOnlineSslId,
   preloadNetworkChatHistory,
   loadDirectChatMessages,
+  markDirectChatRead,
   loadRecentDirectChatHistory,
   loadAllDirectChatHistory,
   sendDirectChatMessage,

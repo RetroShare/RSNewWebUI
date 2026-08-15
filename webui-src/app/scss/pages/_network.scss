@@ -335,6 +335,22 @@
   }
 }
 
+.chat-unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-top: .2rem;
+  padding: 0 .35rem;
+  border-radius: 999px;
+  background: #0284c7;
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 /* Shared phone master/detail header. It is intentionally absent on desktop. */
 .mobile-pane-header,
 .mobile-graph-shortcut {
