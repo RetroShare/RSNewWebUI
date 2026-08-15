@@ -66,7 +66,7 @@ const ConfirmCopied = () => {
         'p[style="margin: 4px 0 12px"]',
         'Now, you can paste and send it to your friend via email or some other way.'
       ),
-      m('button', {}, 'Ok'),
+      m('button', { onclick: widget.closePopupMessage }, 'Ok'),
     ],
   };
 };
@@ -97,7 +97,7 @@ const retroshareId = () => {
           onclick: () => {
             document.getElementById('retroId').select();
             document.execCommand('copy');
-            widget.popupMessage(m(ConfirmCopied));
+            widget.popupMessage(m(ConfirmCopied), 'copy-confirmation-modal');
           },
         }),
         m('i.fas.fa-share-alt'),

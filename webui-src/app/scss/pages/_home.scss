@@ -180,6 +180,37 @@
   }
 }
 
+.modal-content.copy-confirmation-modal {
+  width: min(28rem, calc(100% - 2rem));
+  min-height: 0;
+  box-sizing: border-box;
+
+  h3 {
+    margin: 0 3rem 0.75rem 0;
+    font-size: 1.5rem;
+  }
+
+  p {
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-content.copy-confirmation-modal {
+    width: calc(100% - 1rem);
+    max-height: calc(100% - 1rem);
+    padding: 1rem;
+
+    h3 {
+      font-size: 1.25rem;
+    }
+
+    button:last-child {
+      width: 100%;
+    }
+  }
+}
+
 .add-friend-wizard {
   width: 100%;
   min-width: 0;

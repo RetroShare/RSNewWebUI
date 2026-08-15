@@ -78,6 +78,13 @@ const SidebarQuickView = () => {
 // There are ways of doing this inside m.route but it is probably
 // cleaner and faster when kept outside of the main auto
 // rendering system
+function closePopupMessage() {
+  const container = document.getElementById('modal-container');
+  if (!container) return;
+  m.mount(container, null);
+  container.style.display = 'none';
+}
+
 function popupMessage(message, modalClass = '') {
   const container = document.getElementById('modal-container');
   container.style.display = 'block';
@@ -105,8 +112,7 @@ function popupMessage(message, modalClass = '') {
         'button.red.close-btn',
         {
           onclick: () => {
-            m.mount(container, null);
-            container.style.display = 'none';
+            closePopupMessage();
           },
         },
         m('i.fas.fa-times')
@@ -122,4 +128,5 @@ module.exports = {
   Sidebar,
   SidebarQuickView,
   popupMessage,
+  closePopupMessage,
 };
