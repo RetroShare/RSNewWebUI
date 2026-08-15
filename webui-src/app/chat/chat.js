@@ -964,7 +964,7 @@ const ChatRoomDetailView = () => {
       }
 
       const participantCount = participants.length;
-      const participantNames = participants.map((p) => p.name).sort((a, b) => a.localeCompare(b));
+      const sortedParticipants = participants.sort((a, b) => a.name.localeCompare(b.name));
 
       const lobbyHexId = rs.idToHex(room.lobby_id);
       const privacy = getLobbyPrivacyInfo(room);
@@ -993,12 +993,34 @@ const ChatRoomDetailView = () => {
 
         m('.detail-section', [
           m('h3', 'Participants (' + participantCount + ')'),
-          participantNames.length > 0
+          sortedParticipants.length > 0
             ? m(
                 '.participants-grid',
-                participantNames.map((name) =>
-                  m('.participant-card', m('.participant-name', name))
-                )
+                sortedParticipants.map((participant) => {
+                  if (participant.key && ChatHubState.gxsDetails[participant.key] === undefined) {
+                    ChatHubState.gxsDetails[participant.key] = null;
+                    rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: participant.key }, (data) => {
+                      if (data && data.details) {
+                        ChatHubState.gxsDetails[participant.key] = data.details;
+                        m.redraw();
+                      }
+                    });
+                  }
+
+                  const details = ChatHubState.gxsDetails[participant.key];
+                  const avatar = getSafeAvatar(details);
+                  const firstLetter = (participant.name || '?').slice(0, 1).toUpperCase();
+
+                  return m('.participant-card', [
+                    m(peopleUtil.UserAvatar, {
+                      avatar,
+                      firstLetter,
+                      identityId: participant.key,
+                      size: 32,
+                    }),
+                    m('.participant-name', participant.name),
+                  ]);
+                })
               )
             : m('p.no-participants', 'No participant information available'),
         ]),
@@ -1496,14 +1518,14 @@ const Layout = {
                         ),
                       ]),
                     ]),
-                    m('.chat-hub-tab-content', { style: { padding: ChatHubState.activeTab === 'chat' ? '0' : '1.5rem' } }, [
+                    m('.chat-hub-tab-content' + (ChatHubState.activeTab === 'details' ? '.details-content' : ''), { style: { padding: ChatHubState.activeTab === 'chat' ? '0' : '1.5rem' } }, [
                       ChatHubState.activeTab === 'chat'
                         ? m(ChatConversationView)
                         : m(ChatRoomDetailView),
                     ]),
                   ]
                 : [
-                    m('.chat-hub-tab-content', m(ChatRoomJoinView)),
+                    m('.chat-hub-tab-content.details-content', m(ChatRoomJoinView)),
                   ],
             ]
           : m('.chat-pane-placeholder', [

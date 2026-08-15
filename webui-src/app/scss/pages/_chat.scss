@@ -735,12 +735,35 @@ textarea.chatMsg {
   border: 1px solid #e2e8f0;
   border-radius: 0.375rem;
 
+  > .jdenticon-avatar,
+  > .defaultAvatar,
+  > img.avatar {
+    margin-right: 0 !important;
+  }
+
   .participant-name {
     font-size: 0.875rem;
     color: #334155;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 700px) {
+  .chat-hub-tab-content.details-content {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chat-hub-tab-content.details-content .participants-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chat-hub-tab-content.details-content .participant-card {
+    min-height: 3rem;
   }
 }
 
