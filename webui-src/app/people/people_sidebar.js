@@ -221,6 +221,7 @@ const PeopleSidebar = () => {
                           State.activeMenu = null;
                           State.selectedId = gxsId;
                           State.activeTab = 'chat';
+                          State.mobilePane = 'detail';
                           initializeDistantChat();
                           m.redraw();
                         },
@@ -275,6 +276,7 @@ const PeopleSidebar = () => {
 
                         const idChanged = State.selectedId !== gxsId;
                         State.selectedId = gxsId;
+                        State.mobilePane = 'detail';
                         if (idChanged) {
                           State.chatPid = null;
                           State.chatMessages = [];

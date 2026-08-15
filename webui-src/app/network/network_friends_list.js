@@ -202,6 +202,16 @@ const FriendsList = () => {
                 activeChatsCount > 0 && m('span.segment-badge', activeChatsCount),
               ]
             ),
+            m(
+              'button.segment-tab.mobile-graph-shortcut',
+              {
+                onclick: () => {
+                  State.activeTab = 'graph';
+                  State.mobilePane = 'detail';
+                },
+              },
+              [m('i.fas.fa-project-diagram'), ' Graph']
+            ),
           ]),
         ]),
         m('.friends-scroll', [
@@ -229,6 +239,7 @@ const FriendsList = () => {
                       onclick: () => {
                         State.selectedFriendGpgId = gpgId;
                         State.activeTab = 'chat';
+                        State.mobilePane = 'detail';
                         const sslId = getOnlineSslId(gpgId);
                         if (sslId) startDirectChat(sslId);
                       },
@@ -267,6 +278,8 @@ const FriendsList = () => {
                     key: gpgId,
                     onclick: () => {
                       State.selectedFriendGpgId = gpgId;
+                      State.activeTab = 'details';
+                      State.mobilePane = 'detail';
                       State.currentChatPeerId = null;
                       State.chatMessages = [];
                       if (State.activeTab === 'chat') {

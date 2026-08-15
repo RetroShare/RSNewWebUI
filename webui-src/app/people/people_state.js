@@ -14,6 +14,7 @@ const State = {
   chatHistoryMap: {}, // gxsId -> { lastMsg, lastTime }
   showMailCompose: false,
   activeTab: 'details',
+  mobilePane: 'list', // Phone master/detail navigation: 'list' | 'detail'
   selectedOwnGxsIdForChat: '',
   chatPid: null,
   chatMessages: [],

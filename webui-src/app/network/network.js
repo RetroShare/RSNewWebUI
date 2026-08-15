@@ -44,15 +44,23 @@ const NetworkLayout = () => {
         State.gxsIdentities.forEach((gxsId) => fetchIdDetails(gxsId));
       }
 
-      return m('.network-container', [
+      return m('.network-container' + (State.mobilePane === 'detail' ? '.mobile-detail-open' : ''), [
         m('.network-left-pane', [m(OwnProfileCard), m(FriendsList)]),
         m('.network-right-pane', [
+          m('.mobile-pane-header', [
+            m('button.mobile-back-button', {
+              type: 'button',
+              onclick: () => { State.mobilePane = 'list'; },
+            }, [m('i.fas.fa-chevron-left'), ' Network']),
+            m('strong', State.activeTab === 'graph' ? 'Network Graph' : (selectedFriend ? selectedFriend.name : 'Friend')),
+          ]),
           m('.network-tabs', [
                   m(
                     'button.tab-btn' + (State.activeTab === 'details' ? '.active' : ''),
                     {
                       onclick: () => {
                         State.activeTab = 'details';
+                        State.mobilePane = 'detail';
                       },
                     },
                     'Details View'
@@ -62,6 +70,7 @@ const NetworkLayout = () => {
                     {
                       onclick: () => {
                         State.activeTab = 'chat';
+                        State.mobilePane = 'detail';
                         const sslId = getOnlineSslId(State.selectedFriendGpgId);
                         if (sslId && !State.currentChatPeerId) {
                           startDirectChat(sslId);
@@ -72,7 +81,7 @@ const NetworkLayout = () => {
                   ),
                   m(
                     'button.tab-btn' + (State.activeTab === 'graph' ? '.active' : ''),
-                    { onclick: () => { State.activeTab = 'graph'; } },
+                    { onclick: () => { State.activeTab = 'graph'; State.mobilePane = 'detail'; } },
                     [m('i.fas.fa-project-diagram'), ' Network Graph']
                   ),
           ]),

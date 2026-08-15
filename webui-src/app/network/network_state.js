@@ -20,6 +20,7 @@ const State = {
   selectedFriendGpgId: null,
   mainTab: 'network', // 'network' | 'chats'
   activeTab: 'details', // 'details' | 'chat' | 'graph'
+  mobilePane: 'list', // Phone master/detail navigation: 'list' | 'detail'
   searchString: '',
   gpgToGxsIdMap: {},
   gxsIdToDetailsMap: {},

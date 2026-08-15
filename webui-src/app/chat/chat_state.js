@@ -859,6 +859,7 @@ const ChatLobbyModel = {
 // ************************* Chat Hub State ****************************
 
 const ChatHubState = {
+  mobilePane: 'list',
   selectedRoomId: null,
   selectedRoom: null,
   selectedRoomType: null,

@@ -1075,6 +1075,7 @@ const Layout = {
   oninit: () => {
     ChatHubState.activeTab = 'chat';
     const lobbyId = m.route.param('lobby');
+    ChatHubState.mobilePane = lobbyId ? 'detail' : 'list';
     if (lobbyId) {
       ChatHubState.selectedRoomId = lobbyId;
       ChatLobbyModel.loadLobby(lobbyId);
@@ -1102,8 +1103,11 @@ const Layout = {
   onupdate: () => {
     const lobbyId = m.route.param('lobby');
     if (lobbyId && ChatHubState.selectedRoomId !== lobbyId) {
+      ChatHubState.mobilePane = 'detail';
       ChatHubState.selectedRoomId = lobbyId;
       ChatLobbyModel.loadLobby(lobbyId);
+    } else if (!lobbyId) {
+      ChatHubState.mobilePane = 'list';
     }
   },
   onremove: () => {
@@ -1157,7 +1161,7 @@ const Layout = {
       ChatHubState.selectedRoomType = null;
     }
 
-    return m('.chat-hub-container', [
+    return m('.chat-hub-container' + (ChatHubState.mobilePane === 'detail' ? '.mobile-detail-open' : ''), [
       m('.chat-hub-left-pane', [
         m('.chat-own-profile-card', [
           m('.profile-header', [
@@ -1215,6 +1219,7 @@ const Layout = {
                   {
                     key: hexId,
                     onclick: () => {
+                      ChatHubState.mobilePane = 'detail';
                       m.route.set('/chat/:lobby', { lobby: hexId });
                     },
                   },
@@ -1244,6 +1249,7 @@ const Layout = {
                   {
                     key: hexId,
                     onclick: () => {
+                      ChatHubState.mobilePane = 'detail';
                       m.route.set('/chat/:lobby', { lobby: hexId });
                     },
                   },
@@ -1443,6 +1449,16 @@ const Layout = {
       ]),
 
       m('.chat-hub-right-pane', [
+        m('.mobile-pane-header', [
+          m('button.mobile-back-button', {
+            type: 'button',
+            onclick: () => {
+              ChatHubState.mobilePane = 'list';
+              m.route.set('/chat');
+            },
+          }, [m('i.fas.fa-chevron-left'), ' Chats']),
+          m('strong', ChatHubState.selectedRoom ? (ChatHubState.selectedRoom.lobby_name || 'Conversation') : 'Conversation'),
+        ]),
         ChatHubState.selectedRoom
           ? [
               ChatHubState.selectedRoomType === 'subscribed'

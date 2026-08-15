@@ -109,12 +109,19 @@ const PeopleLayout = () => {
       const details = State.selectedId ? State.gxsIdToDetailsMap[State.selectedId] : null;
       const name = details ? details.mNickname || details.mGroupName || 'Unknown' : '';
 
-      return m('.people-container', [
+      return m('.people-container' + (State.mobilePane === 'detail' ? '.mobile-detail-open' : ''), [
         // Left Side Panel
         m(PeopleSidebar),
 
         // Right Side Details / Actions Pane
         m('.people-right-pane', [
+          m('.mobile-pane-header', [
+            m('button.mobile-back-button', {
+              type: 'button',
+              onclick: () => { State.mobilePane = 'list'; },
+            }, [m('i.fas.fa-chevron-left'), State.mainTab === 'chats' ? ' Chats' : ' People']),
+            m('strong', name || 'Profile'),
+          ]),
           State.selectedId && details
             ? [
                 m('.network-tabs', [
@@ -123,6 +130,7 @@ const PeopleLayout = () => {
                     {
                       onclick: () => {
                         State.activeTab = 'details';
+                        State.mobilePane = 'detail';
                         stopStatusPolling();
                       },
                     },
@@ -133,6 +141,7 @@ const PeopleLayout = () => {
                     {
                       onclick: () => {
                         State.activeTab = 'chat';
+                        State.mobilePane = 'detail';
                         initializeDistantChat();
                       },
                     },
@@ -200,6 +209,7 @@ PeopleLayout.setSelectedId = (id, activeTab = 'details', showCompose = false) =>
   State.activeFilter = filter;
   State.selectedId = id;
   State.activeTab = activeTab;
+  State.mobilePane = 'detail';
   if (showCompose) {
     State.showMailCompose = true;
   }

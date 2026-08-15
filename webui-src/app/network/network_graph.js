@@ -137,6 +137,13 @@ const NetworkGraph = () => {
     const token = ++loadToken;
     loading = true;
     error = '';
+
+    // The mobile Graph shortcut can be opened before NetworkLayout's initial
+    // friend refresh finishes. Wait for fresh peer data so we do not cache a
+    // graph containing only the local node.
+    await Data.refreshGpgDetails();
+    if (token !== loadToken) return;
+
     const ownId = State.ownProfile.gpg_id;
     if (!ownId) {
       loading = false;
@@ -223,9 +230,9 @@ const NetworkGraph = () => {
     },
     view: () => m('.network-graph', [
       m('.network-graph__toolbar', [
-        m('button[type=button]', { onclick: loadGraph, disabled: loading }, [
+        m('button.network-graph__redraw[type=button][title=Redraw graph][aria-label=Redraw graph]', { onclick: loadGraph, disabled: loading }, [
           m('i.fas.fa-sync-alt', { class: loading ? 'fa-spin' : '' }),
-          ' Redraw',
+          m('span', 'Redraw'),
         ]),
         m('label', [
           'Friendship level',

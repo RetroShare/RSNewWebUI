@@ -335,6 +335,12 @@
   }
 }
 
+/* Shared phone master/detail header. It is intentionally absent on desktop. */
+.mobile-pane-header,
+.mobile-graph-shortcut {
+  display: none !important;
+}
+
 .network-tab-content.network-graph-tab {
   min-height: 0;
   padding: 0;
@@ -502,27 +508,32 @@
   .network-graph {
     padding: 0.5rem;
 
+    &__redraw {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.25rem;
+      min-width: 2.25rem;
+      height: 2.25rem;
+      padding: 0;
+
+      span {
+        display: none;
+      }
+    }
+
     &__toolbar {
       align-items: stretch;
     }
 
-    &__edge-control,
-    &__zoom-control,
     &__search {
       width: 100%;
       box-sizing: border-box;
     }
 
+    &__toolbar &__edge-control,
     &__zoom-control {
-      justify-content: center;
-
-      label {
-        flex: 1;
-      }
-
-      input {
-        width: 100%;
-      }
+      display: none;
     }
 
     &__search {
@@ -925,5 +936,79 @@
   .network-chat-view .chat-input-area .send-btn i {
     margin: 0 !important;
     font-size: 1rem !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .network-container {
+    display: block !important;
+  }
+
+  .network-container .network-left-pane {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    max-width: none !important;
+    border: 0 !important;
+  }
+
+  .network-container .network-right-pane {
+    display: none !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .network-container.mobile-detail-open .network-left-pane {
+    display: none !important;
+  }
+
+  .network-container.mobile-detail-open .network-right-pane {
+    display: flex !important;
+  }
+
+  .mobile-pane-header {
+    display: grid !important;
+    grid-template-columns: minmax(5rem, auto) minmax(0, 1fr) minmax(5rem, auto);
+    align-items: center;
+    min-height: 46px;
+    padding: .35rem .65rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #fff;
+    flex: 0 0 auto;
+  }
+
+  .mobile-pane-header strong {
+    grid-column: 2;
+    overflow: hidden;
+    color: #1e293b;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-back-button {
+    grid-column: 1;
+    justify-self: start;
+    display: inline-flex !important;
+    align-items: center;
+    gap: .4rem;
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: .4rem .25rem !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    color: #0284c7 !important;
+    font-weight: 700;
+  }
+
+  .mobile-graph-shortcut {
+    display: inline-flex !important;
+  }
+
+  .network-container .network-tabs {
+    flex: 0 0 auto;
+    overflow-x: auto;
   }
 }

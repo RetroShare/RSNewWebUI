@@ -434,6 +434,42 @@ img.avatar {
   &__submit { justify-self: end; }
 }
 
+@media (max-width: 700px) {
+  .people-container {
+    display: block !important;
+  }
+
+  .people-container .people-left-pane {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    max-width: none !important;
+    border: 0 !important;
+  }
+
+  .people-container .people-right-pane {
+    display: none !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .people-container.mobile-detail-open .people-left-pane {
+    display: none !important;
+  }
+
+  .people-container.mobile-detail-open .people-right-pane {
+    display: flex !important;
+  }
+
+  .people-container .network-tabs {
+    flex: 0 0 auto;
+  }
+
+  .people-container .network-tab-content {
+    min-height: 0;
+  }
+}
+
 .create-identity-avatar-preview {
   width: 8rem; height: 8rem; overflow: hidden;
   border: 1px solid #cbd5e1; border-radius: .5rem; background: #eef2ff;
