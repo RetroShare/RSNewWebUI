@@ -45,18 +45,27 @@ function getDistantChatSession(gxsId) {
 }
 
 
-function fetchIdDetails(gxsId) {
-  if (!gxsId) return;
+function fetchIdDetails(gxsId, attempt = 0) {
+  if (!peopleUtil.isUsableIdentityId(gxsId)) return;
   if (State.gxsIdToDetailsMap[gxsId] === undefined) {
     State.gxsIdToDetailsMap[gxsId] = null; // Mark as loading
     rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: gxsId }, (detData) => {
-      if (detData && detData.details) {
+      const details = detData && detData.details;
+      const detailsId = details && String(details.mId || '');
+      if (details && peopleUtil.isUsableIdentityId(detailsId)) {
         State.gxsIdToDetailsMap[gxsId] = detData.details;
         const pgpId = detData.details.mPgpId;
         if (pgpId && pgpId !== '0000000000000000') {
           State.gpgToGxsIdMap[pgpId.toLowerCase()] = gxsId;
         }
         m.redraw();
+      } else if (attempt < 5) {
+        setTimeout(() => {
+          State.gxsIdToDetailsMap[gxsId] = undefined;
+          fetchIdDetails(gxsId, attempt + 1);
+        }, 250 * (attempt + 1));
+      } else {
+        State.gxsIdToDetailsMap[gxsId] = undefined;
       }
     });
   }

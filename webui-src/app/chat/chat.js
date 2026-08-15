@@ -1009,8 +1009,15 @@ const ChatRoomDetailView = () => {
 
 const ChatRoomJoinView = () => {
   let ownIds = [];
+  let stopWatching;
   return {
-    oninit: () => peopleUtil.ownIds((data) => (ownIds = data)),
+    oninit: () => {
+      stopWatching = peopleUtil.watchOwnIds((data) => {
+        ownIds = data;
+        m.redraw();
+      });
+    },
+    onremove: () => stopWatching && stopWatching(),
     view: () => {
       const room = ChatHubState.selectedRoom;
       if (!room) return null;
@@ -1581,8 +1588,15 @@ const Layout = {
 */
 const LayoutCreateDistant = () => {
   let ownIds = [];
+  let stopWatching;
   return {
-    oninit: () => peopleUtil.ownIds((data) => (ownIds = data)),
+    oninit: () => {
+      stopWatching = peopleUtil.watchOwnIds((data) => {
+        ownIds = data;
+        m.redraw();
+      });
+    },
+    onremove: () => stopWatching && stopWatching(),
     view: (vnode) =>
       m('.node-panel.chat-panel.chat-room', [
         m('.createDistantChat', [

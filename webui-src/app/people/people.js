@@ -2,6 +2,7 @@ const m = require('mithril');
 const rs = require('rswebui');
 const Data = require('network/network_data');
 const compose = require('mail/mail_compose');
+const peopleUtil = require('people/people_util');
 const {
   State,
   fetchIdDetails,
@@ -19,6 +20,7 @@ const DetailsTab = require('people/people_details_tab');
 const ChatTab = require('people/people_chat_tab');
 
 const PeopleLayout = () => {
+  let stopWatchingOwnIds;
   const dismissMenu = () => {
     if (State.activeMenu) {
       State.activeMenu = null;
@@ -32,6 +34,17 @@ const PeopleLayout = () => {
       Data.refreshGpgDetails().then(() => m.redraw());
       loadGxsIdentities();
       loadOwnGxsIds().then(() => preloadAllChatHistory());
+      stopWatchingOwnIds = peopleUtil.watchOwnIds((ids) => {
+        State.ownGxsIds = ids || [];
+        if (!peopleUtil.isUsableIdentityId(State.selectedId)) {
+          State.selectedId = State.ownGxsIds[0] || null;
+          State.mobilePane = State.selectedId ? State.mobilePane : 'list';
+        }
+        if (!State.selectedOwnGxsIdForChat && State.ownGxsIds.length) {
+          State.selectedOwnGxsIdForChat = State.ownGxsIds[0];
+        }
+        m.redraw();
+      });
       preloadAllChatHistory();
       window.addEventListener('click', dismissMenu);
 
@@ -98,6 +111,7 @@ const PeopleLayout = () => {
         rs.events[15].notify = () => {};
       }
       stopStatusPolling();
+      if (stopWatchingOwnIds) stopWatchingOwnIds();
       window.removeEventListener('click', dismissMenu);
     },
 

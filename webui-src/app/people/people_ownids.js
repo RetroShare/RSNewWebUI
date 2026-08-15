@@ -3,56 +3,62 @@ const rs = require('rswebui');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
 
-const SignedIdentiy = () => {
-  let passphase = '';
+const SignedIdentity = () => {
+  let passphrase = '';
+  let submitting = false;
+
+  const submit = async (v) => {
+    if (submitting || !passphrase) return;
+    submitting = true;
+    const previousIds = await peopleUtil.ownIds();
+    rs.rsJsonApiRequest(
+      '/rsIdentity/createIdentity',
+      {
+        name: v.attrs.name,
+        avatar: { mData: { base64: v.attrs.avatar } },
+        pseudonimous: false,
+        pgpPassword: passphrase,
+      },
+      async (data) => {
+        if (data.retval) await peopleUtil.refreshOwnIds(previousIds);
+        const message = data.retval
+          ? 'Successfully created identity.'
+          : 'Could not create the identity. Check your profile password and try again.';
+        widget.popupMessage(
+          m('.signed-identity-result', [m('h3', 'Create new identity'), m('p', message)]),
+          'signed-identity-modal'
+        );
+      }
+    ).catch(() => {
+      submitting = false;
+      m.redraw();
+    });
+  };
 
   return {
-    view: (v) => [
-      m('i.fas.fa-user-edit'),
-      m('h3', 'Enter your passpharse'),
-      m('hr'),
-
-      m('input[type=password][placeholder=Passpharse]', {
-        style: 'margin-top:50px;width:80%',
-        oninput: (e) => {
-          passphase = e.target.value;
-        },
+    view: (v) => m('form.signed-identity-form', {
+      onsubmit: (event) => {
+        event.preventDefault();
+        submit(v);
+      },
+    }, [
+      m('.signed-identity-form__heading', [
+        m('i.fas.fa-user-edit'),
+        m('div', [
+          m('h3', 'Create signed identity'),
+          m('p', 'Enter your RetroShare profile password to link this identity.'),
+        ]),
+      ]),
+      m('label[for=signed-identity-password]', 'Profile password'),
+      m('input#signed-identity-password[type=password][placeholder=Password][autocomplete=current-password]', {
+        value: passphrase,
+        autofocus: true,
+        oninput: (e) => (passphrase = e.target.value),
       }),
-      m(
-        'button',
-        {
-          style: 'margin-top:160px;',
-          onclick: () => {
-            rs.rsJsonApiRequest('/rsIdentity/getOwnSignedIds', {}, (owns) => {
-
-              owns.ids.length > 0
-                ? rs.rsJsonApiRequest(
-                  '/rsIdentity/createIdentity',
-                  {
-                    id: owns.ids[0],
-                    name: v.attrs.name,
-                    avatar: { mData: { base64: v.attrs.avatar } },
-                    pseudonimous: false,
-                    pgpPassword: passphase,
-                  },
-                  (data) => {
-                    const message = data.retval
-                      ? 'Successfully created identity.'
-                      : 'An error occured while creating identity.';
-                    widget.popupMessage([m('h3', 'Create new Identity'), m('hr'), message]);
-                  }
-                )
-                : widget.popupMessage([
-                  m('h3', 'Create new Identity'),
-                  m('hr'),
-                  'An error occured while creating identity.',
-                ]);
-            });
-          },
-        },
-        'Enter'
-      ),
-    ],
+      m('button.signed-identity-form__submit[type=submit]', {
+        disabled: !passphrase || submitting,
+      }, submitting ? 'Creating…' : 'Create identity'),
+    ]),
   };
 };
 const CreateIdentity = () => {
@@ -134,7 +140,10 @@ const CreateIdentity = () => {
           disabled: !name.trim(),
           onclick: () => {
             !pseudonimous
-              ? widget.popupMessage(m(SignedIdentiy, { name: name.trim(), avatar }))
+              ? widget.popupMessage(
+                m(SignedIdentity, { name: name.trim(), avatar }),
+                'signed-identity-modal'
+              )
               : rs.rsJsonApiRequest(
                 '/rsIdentity/createIdentity',
                 {
@@ -142,7 +151,8 @@ const CreateIdentity = () => {
                   avatar: { mData: { base64: avatar } },
                   pseudonimous,
                 },
-                (data) => {
+                async (data) => {
+                  if (data.retval) await peopleUtil.refreshOwnIds();
                   const message = data.retval
                     ? 'Successfully created identity.'
                     : 'An error occured while creating identity.';
@@ -372,8 +382,15 @@ const Identity = () => {
 
 const Layout = () => {
   let ownIds = [];
+  let stopWatching;
   return {
-    oninit: () => peopleUtil.ownIds((data) => (ownIds = data)),
+    oninit: () => {
+      stopWatching = peopleUtil.watchOwnIds((data) => {
+        ownIds = data;
+        m.redraw();
+      });
+    },
+    onremove: () => stopWatching && stopWatching(),
     view: () =>
       m('.widget', [
         m('.widget__heading', [

@@ -194,6 +194,54 @@ const ownIdsCache = {
   all: { ids: null, loadedAt: 0, promise: null },
   signed: { ids: null, loadedAt: 0, promise: null },
 };
+const OWN_IDS_CHANGED_EVENT = 'rs-own-identities-changed';
+const OWN_ID_REFRESH_DELAYS = [0, 200, 500, 1000, 2000, 4000];
+
+function isUsableIdentityId(id) {
+  const value = String(id || '');
+  return value !== '' && !/^0+$/.test(value);
+}
+
+function normalizeOwnIds(ids) {
+  return sortIds(Array.from(new Set((ids || []).filter(isUsableIdentityId))));
+}
+
+function invalidateOwnIds() {
+  Object.values(ownIdsCache).forEach((cache) => {
+    cache.ids = null;
+    cache.loadedAt = 0;
+  });
+}
+
+async function refreshOwnIds(previousIds = null) {
+  const previous = new Set(normalizeOwnIds(previousIds || []));
+  const waitForNewIdentity = previousIds !== null;
+  let ids = [];
+
+  for (const delay of OWN_ID_REFRESH_DELAYS) {
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+    ids = normalizeOwnIds(await loadOwnIds(false));
+    if (!waitForNewIdentity || ids.some((id) => !previous.has(id))) break;
+  }
+
+  ownIdsCache.all.ids = ids;
+  ownIdsCache.all.loadedAt = Date.now();
+  ownIdsCache.signed.ids = null;
+  ownIdsCache.signed.loadedAt = 0;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(OWN_IDS_CHANGED_EVENT, { detail: { ids } }));
+  }
+  return ids;
+}
+
+function watchOwnIds(consumer) {
+  const listener = (event) => consumer([...(event.detail.ids || [])]);
+  if (typeof window !== 'undefined') window.addEventListener(OWN_IDS_CHANGED_EVENT, listener);
+  ownIds(consumer);
+  return () => {
+    if (typeof window !== 'undefined') window.removeEventListener(OWN_IDS_CHANGED_EVENT, listener);
+  };
+}
 
 async function loadOwnIds(onlySigned) {
   if (onlySigned) {
@@ -225,7 +273,7 @@ async function ownIds(consumer = () => { }, onlySigned = false) {
     if (!cache.promise) {
       cache.promise = loadOwnIds(onlySigned)
         .then((ids) => {
-          cache.ids = sortIds(Array.from(new Set(ids || [])));
+          cache.ids = normalizeOwnIds(ids);
           cache.loadedAt = Date.now();
           return cache.ids;
         })
@@ -336,10 +384,14 @@ module.exports = {
   sortUsers,
   sortIds,
   ownIds,
+  invalidateOwnIds,
+  refreshOwnIds,
+  watchOwnIds,
   checksudo,
   UserAvatar,
   IdentityAvatar,
   contactlist,
   SearchBar,
   regularcontactInfo,
+  isUsableIdentityId,
 };

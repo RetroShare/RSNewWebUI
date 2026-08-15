@@ -484,6 +484,42 @@ img.avatar {
   box-sizing: border-box; overflow-x: hidden; overflow-y: auto;
 }
 
+.modal-content.signed-identity-modal {
+  width: min(440px, calc(100% - 2rem));
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.signed-identity-form {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  width: 100%;
+
+  &__heading {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    padding-right: 2.5rem;
+  }
+  &__heading > i { color: #3ba4d7; font-size: 1.5rem; margin-top: .15rem; }
+  &__heading h3 { margin: 0; color: #1e293b; }
+  &__heading p { margin: .25rem 0 0; color: #64748b; line-height: 1.4; }
+  label { color: #475569; font-size: .85rem; font-weight: 700; }
+  input {
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+  &__submit { align-self: flex-end; margin-top: .5rem !important; }
+}
+
+.signed-identity-result {
+  padding-right: 2.5rem;
+  h3 { margin: 0; color: #1e293b; }
+  p { margin: .75rem 0 0; color: #475569; line-height: 1.5; }
+}
+
 @media (max-width: 600px) {
   .modal-content.create-identity-modal {
     width: calc(100% - 1rem) !important;
@@ -510,6 +546,12 @@ img.avatar {
     &__submit { width: 100%; }
   }
   .create-identity-avatar-preview { width: 7rem; height: 7rem; }
+  .modal-content.signed-identity-modal {
+    width: calc(100% - 1rem) !important;
+    max-width: none !important;
+    padding: 1rem;
+  }
+  .signed-identity-form__submit { width: 100%; }
 }
 
 .people-context-menu {

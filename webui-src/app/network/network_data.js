@@ -37,18 +37,26 @@ function savePendingFriends() {
   }
 }
 
+function hasValidatedFingerprint(value) {
+  const fingerprint = String(value || '').replace(/\s/g, '');
+  return /[1-9a-f]/i.test(fingerprint);
+}
+
 Data.rememberPendingFriend = function (peerDetails) {
   const data = peerDetails || {};
   const gpgId = String(data.gpg_id || data.pgpId || '').toLowerCase();
   const sslId = String(data.id || data.sslId || '');
   if (!gpgId || !sslId) return;
+  const pendingValidation = !hasValidatedFingerprint(data.fpr || data.fingerprint);
 
   pendingFriends[gpgId] = {
-    name: data.name || `Profile ID ${gpgId.toUpperCase()} (Not yet validated)`,
+    name: data.name || (pendingValidation
+      ? `Profile ID ${gpgId.toUpperCase()} (Not yet validated)`
+      : `Profile ID ${gpgId.toUpperCase()}`),
     fingerprint: data.fpr || '',
     isSearched: false,
     isOnline: false,
-    pendingValidation: true,
+    pendingValidation,
     locations: [{
       name: data.location || 'Unknown location',
       id: sslId,
@@ -185,8 +193,7 @@ Data.refreshGpgDetails = async function () {
   Object.entries(pendingFriends).forEach(([gpgId, pending]) => {
     if (details[gpgId]) {
       const nativeFriend = details[gpgId];
-      const fingerprint = String(nativeFriend.fingerprint || '').replace(/\s/g, '');
-      const isValidated = /[1-9a-f]/i.test(fingerprint);
+      const isValidated = hasValidatedFingerprint(nativeFriend.fingerprint || pending.fingerprint);
 
       // Unvalidated short-invite peers are returned with an empty profile
       // name and an all-zero fingerprint. Keep the name parsed from the

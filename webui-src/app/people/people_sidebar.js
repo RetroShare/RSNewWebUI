@@ -187,17 +187,20 @@ const PeopleSidebar = () => {
             displayItems.length === 0
               ? m('.network-pane-placeholder', { style: 'padding: 2rem 0;' }, State.mainTab === 'chats' ? 'No active chats' : 'No identities found')
               : displayItems.map((item) => {
-                  let gxsId, displayName;
+                  let gxsId;
                   if (State.mainTab === 'people' && State.activeFilter === 'own') {
                     gxsId = item;
-                    displayName = rs.userList.username(gxsId) || 'Unknown';
                   } else {
                     gxsId = item.mGroupId;
-                    displayName = item.mGroupName || 'Unknown';
                   }
 
                   fetchIdDetails(gxsId);
                   const itemDetails = State.gxsIdToDetailsMap[gxsId];
+                  const displayName = (itemDetails && (itemDetails.mNickname || itemDetails.mGroupName))
+                    || (State.mainTab === 'people' && State.activeFilter === 'own'
+                      ? rs.userList.username(gxsId)
+                      : item.mGroupName)
+                    || 'Loading…';
                   const itemAvatar = getSafeAvatar(itemDetails);
                   const itemFirstLetter = (displayName || '?').slice(0, 1).toUpperCase();
                   const isSelected = State.selectedId === gxsId;
