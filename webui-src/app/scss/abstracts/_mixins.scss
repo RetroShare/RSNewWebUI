@@ -3,6 +3,29 @@
 // -----------------------------------------------------------------------------
 @use 'sass:color';
 @use './colors' as *;
+@use './variables' as *;
+
+/// Responsive helpers
+/// Always go through these instead of hardcoding a pixel value, so the
+/// breakpoints stay defined in a single place (abstracts/_variables.scss).
+
+/// The phone layer: portrait, plus landscape, which is wide enough to escape a
+/// width-only breakpoint but far too short for a two-pane layout. Between the
+/// two lies the small screen layout of the page stylesheets, which this file
+/// deliberately leaves alone.
+@mixin mobile {
+  @media (max-width: $bp-mobile), (max-width: $bp-narrow) and (max-height: $bp-short) {
+    @content;
+  }
+}
+
+/// Devices without a real pointer: :hover never fires reliably, so anything
+/// that is only reachable on hover has to be made permanently visible here.
+@mixin touch {
+  @media (hover: none), (pointer: coarse) {
+    @content;
+  }
+}
 
 /// Button Mixin
 @mixin button($bg-color) {

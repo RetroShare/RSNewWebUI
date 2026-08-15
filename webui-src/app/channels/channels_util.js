@@ -218,7 +218,9 @@ const CommentsTable = () => {
     oninit: (v) => {},
     view: (v) =>
       m('table.comments', [
-        m('tr', [
+        // See table.mails: the header row is tagged so the small screen
+        // stylesheet can card-ify the data rows only.
+        m('tr.comments-head', [
           m('th', ''),
           m('th', 'Comment'),
           m('th', 'Author'),
