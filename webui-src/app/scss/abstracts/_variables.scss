@@ -4,3 +4,20 @@
 $FontPath: './webfonts' !default;
 $FontName: 'Roboto' !default;
 $FontVersion: '3.008' !default;
+
+// Responsive breakpoints.
+//
+// The page stylesheets already carry a small screen layout of their own: they
+// stack the two panes of network and people below 768px, the chat below 899px,
+// and turn the mail sidebar into a drawer. _responsive.scss does not redo that
+// work and does not edit those files; it adds the phone layer underneath, and
+// overrides them only where a tablet compromise does not survive a phone.
+//
+// $bp-mobile therefore means "a phone", not "a small window".
+$bp-mobile: 700px !default; // phone, portrait
+$bp-narrow: 899px !default; // widest small screen rule of the page stylesheets
+$bp-short: 500px !default; // a phone held sideways is wide, but never tall
+
+// Minimum comfortable size for a touch target (Material/HIG recommend ~44px)
+$touch-target: 2.75rem !default;
+

@@ -663,7 +663,11 @@ const Table = () => {
 
       return m('.table-pagination-container', [
         m('table.mails', [
-          m('tr', [
+          // .mails-head tags the header row explicitly: the small screen
+          // stylesheet turns the data rows into cards and must be able to tell
+          // them apart from the header without relying on a <tbody> that
+          // mithril does not create.
+          m('tr.mails-head', [
             renderHeader('starred', m('i.fas.fa-star'), true),
             renderHeader('attachments', m('i.fas.fa-paperclip'), true),
             renderHeader('subject', 'Subject'),

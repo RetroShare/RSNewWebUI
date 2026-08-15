@@ -1,0 +1,509 @@
+// -----------------------------------------------------------------------------
+// Phone adaptations, inside the pages.
+//
+// Loaded LAST from main.scss so these rules win over the page stylesheets
+// without needing !important. Everything here is scoped inside the `mobile`
+// (phone, portrait or landscape) or `touch` (no hover) mixins from
+// abstracts/_mixins.scss, so the desktop rendering is untouched.
+//
+// The navigation is NOT this file's business: main.js renders a bottom tab bar
+// and a status sheet of its own on a phone, and components/_navbar.scss hides
+// the desktop rail below 700px. This file starts where that stops -- at the
+// content of the pages, which is still laid out for a wide screen:
+//   * every two-pane page (network / people / chat) becomes master-detail:
+//     the list, then the detail with a back button, never both at once,
+//   * multi column grids and wide tables collapse to a single column,
+//   * anything only reachable on :hover gets a touch fallback.
+//
+// The page stylesheets carry a small screen layout of their own, with their own
+// breakpoints (768px for network and people, 899px for the chat, 700px for
+// files and config). This file neither repeats nor edits them: it takes over
+// below the phone breakpoint, and the few places where a tablet compromise does
+// not survive on a phone are overridden with !important and carry a comment
+// saying which rule they beat; there should be no other !important here.
+// -----------------------------------------------------------------------------
+@use 'abstracts' as *;
+
+/* =========================================================================
+   1. Two-pane pages become master/detail
+   ========================================================================= */
+
+/* Back button injected by network.js / people.js / chat.js. Desktop shows the
+   two panes side by side, so it stays hidden there. */
+.mobile-back {
+  display: none;
+}
+
+@include mobile {
+  .network-container,
+  .chat-hub-container {
+    flex-direction: column;
+  }
+
+  .network-left-pane,
+  .chat-hub-left-pane {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    max-height: none;
+    /* The list is alone on screen: it takes the height rather than sitting on
+       top of an empty half. */
+    flex: 1;
+    min-height: 0;
+    border-right: none;
+    border-bottom: 1px solid #cbd5e1;
+    box-shadow: none;
+  }
+
+  /* Same rules for people, but pages/_people.scss states its desktop layout
+     with !important on the base rules (a 320px sidebar in a row container), so
+     nothing can override it without doing the same. */
+  .people-container {
+    flex-direction: column !important;
+  }
+
+  .people-left-pane {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    flex: 1;
+    min-height: 0;
+    border-right: none !important;
+    border-bottom: 1px solid #cbd5e1;
+    box-shadow: none !important;
+  }
+
+  .network-right-pane,
+  .people-right-pane,
+  .chat-hub-right-pane {
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* pages/_network.scss and pages/_people.scss split the stacked panes 45% /
+     55% of the height. That is the tablet compromise: two panes at once, each
+     half usable. Here only one pane is on screen at a time, so it has to take
+     the whole height instead of 45% of it followed by a gap. Their rules are
+     !important, hence these. */
+  .network-left-pane,
+  .people-left-pane,
+  .network-right-pane,
+  .people-right-pane {
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  /* Nothing selected: only the list. Something selected: only the detail. */
+  .network-container:not(.has-selection) .network-right-pane,
+  .people-container:not(.has-selection) .people-right-pane,
+  .chat-hub-container:not(.has-selection) .chat-hub-right-pane {
+    display: none;
+  }
+
+  .network-container.has-selection .network-left-pane,
+  .people-container.has-selection .people-left-pane,
+  .chat-hub-container.has-selection .chat-hub-left-pane {
+    display: none;
+  }
+
+  .mobile-back {
+    @include flex($justify: center, $align: center);
+    flex: 0 0 auto;
+    min-width: $touch-target;
+    min-height: $touch-target;
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: #334155;
+    font-size: 1rem;
+  }
+
+  /* The chat header is a space-between row: keep the back button first */
+  .chat-hub-header-bar {
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem;
+
+    .chat-header-info {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  /* Tab strip of network/people has to stay on one line next to the button */
+  .network-tabs {
+    padding: 0.25rem 0.5rem 0;
+    gap: 0.25rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab-btn {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      white-space: nowrap;
+    }
+  }
+
+  .network-tab-content {
+    padding: 0.75rem;
+  }
+}
+
+/* =========================================================================
+   2. Multi column grids collapse
+   ========================================================================= */
+
+@include mobile {
+  /* Network friend details, identity details, location cards */
+  .network-detail-view {
+    gap: 1rem;
+
+    .detail-header {
+      flex-direction: column;
+      align-items: flex-start;
+      /* gap comes from pages/_network.scss, which sets it !important */
+      padding-bottom: 1rem;
+
+      .detail-title h2 {
+        font-size: 1.35rem;
+      }
+
+      .detail-actions {
+        flex-wrap: wrap;
+        width: 100%;
+      }
+    }
+
+    .detail-section {
+      padding: 0.875rem;
+
+      .info-grid {
+        grid-template-columns: 1fr;
+        row-gap: 0.25rem;
+
+        .info-label {
+          margin-top: 0.5rem;
+        }
+      }
+    }
+
+    .locations-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .location-card .loc-body {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Config: proxy rows are 160+220+220px wide, i.e. 620px minimum */
+  .proxy-row {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  /* Generic two column form grid used across the config pages */
+  .grid-2col {
+    grid-template-columns: 1fr;
+
+    & input[type='checkbox'] {
+      margin-top: 0;
+    }
+  }
+
+  /* People: identity detail card */
+  .identity {
+    margin: 0.5rem;
+    padding: 0.75rem;
+
+    & .details {
+      grid-template-columns: 1fr;
+      grid-row-gap: 0.125rem;
+    }
+  }
+
+  /* Mail composer popup: pages/_mail.scss already grows it to 95% of the
+     viewport on a small screen, which on a phone leaves a useless 5% frame
+     around a form that needs every pixel. Its rule is !important, hence these. */
+  .composePopupOverlay .composePopup {
+    width: 100% !important;
+    height: 100% !important;
+    inset: 0;
+
+    & > .widget {
+      padding: 0.75rem;
+      border-radius: 0;
+    }
+
+    & .close-btn {
+      top: 0.5rem;
+      right: 0.5rem;
+    }
+  }
+
+  .widget {
+    padding: 0.5rem;
+  }
+
+  .widget-half {
+    max-width: 100%;
+  }
+}
+
+/* =========================================================================
+   3. Tables
+   ========================================================================= */
+
+@include mobile {
+  /* The global `table-layout: fixed` plus percentage column widths squeeze
+     every column below readability. Let the content drive the width instead. */
+  table {
+    table-layout: auto;
+    font-size: 1rem;
+  }
+
+  table td,
+  table th {
+    word-break: break-word;
+  }
+
+  /* Files tables: drop the hardcoded 50% name column */
+  table.myfiles th:nth-child(2),
+  table.friendsfiles th:nth-child(2) {
+    width: auto;
+  }
+
+  /* --- Mail list: one row becomes a card -------------------------------
+     The header row carries .mails-head (set in mail_util.js) because mithril
+     builds the DOM through the DOM API and therefore does not get the implicit
+     <tbody> the HTML parser would insert: neither tr:first-child nor a
+     `> tbody >` path is reliable here. */
+  table.mails {
+    /* The table box has to go: a <tr> switched to flex/grid inside a table box
+       is wrapped back into an anonymous table cell and re-sized by the column
+       algorithm, which shreds the header row. */
+    display: block;
+
+    & tbody {
+      display: block;
+    }
+
+    /* Header row is kept: it is also the sort control */
+    & tr.mails-head {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0;
+      border-bottom: 2px solid #eee;
+
+      & th {
+        width: auto !important;
+        flex: 0 0 auto;
+        padding: 0.25rem 0.35rem;
+        font-size: 0.8rem;
+        border-bottom: none;
+      }
+    }
+
+    & tr:not(.mails-head) {
+      display: grid;
+      grid-template-columns: 1.5rem 1.5rem 1fr auto;
+      grid-template-areas:
+        'star attach subject subject'
+        'star attach from    date';
+      align-items: center;
+      column-gap: 0.35rem;
+      padding: 0.5rem 0.25rem;
+
+      & > td {
+        padding: 0;
+        font-size: 0.9rem;
+      }
+
+      & > td:nth-child(1) {
+        grid-area: star;
+      }
+
+      & > td:nth-child(2) {
+        grid-area: attach;
+      }
+
+      & > td:nth-child(3) {
+        grid-area: subject;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      & > td:nth-child(4) {
+        grid-area: from;
+        font-size: 0.8rem;
+        color: #64748b;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      & > td:nth-child(5) {
+        grid-area: date;
+        font-size: 0.75rem;
+        color: #94a3b8;
+        text-align: right;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  /* --- Channel comments: 8 columns, unusable as a table ----------------- */
+  table.comments {
+    display: block;
+
+    & tbody {
+      display: block;
+    }
+
+    /* Header row, tagged in channels_util.js (see table.mails above) */
+    & tr.comments-head {
+      display: none;
+    }
+
+    & tr:not(.comments-head) {
+      display: block;
+      padding: 0.5rem 0;
+
+      & > td {
+        display: block;
+        text-align: start;
+        padding: 0.125rem 0;
+      }
+
+      /* author / date / score / votes fold into one small meta line */
+      & > td:nth-child(n + 3) {
+        display: inline-block;
+        margin-right: 0.75rem;
+        font-size: 0.8rem;
+        color: #64748b;
+      }
+
+      & > td:nth-child(5)::before {
+        content: 'Score: ';
+      }
+
+      & > td:nth-child(6)::before {
+        content: '\002B06 ';
+      }
+
+      & > td:nth-child(7)::before {
+        content: '\002B07 ';
+      }
+    }
+  }
+}
+
+/* =========================================================================
+   4. Statusbar
+   ========================================================================= */
+
+@include mobile {
+  .statusbar {
+    /* padding and font-size are already shrunk by components/_statusbar.scss */
+    gap: 0.5rem;
+    /* Keep every counter reachable rather than dropping data */
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    &-left,
+    &-right {
+      flex-shrink: 0;
+      gap: 0.5rem !important;
+    }
+
+    &-divider {
+      display: none;
+    }
+  }
+}
+
+/* =========================================================================
+   5. Forms and inputs
+   ========================================================================= */
+
+@include mobile {
+  /* iOS zooms the whole page in when a focused field is under 16px */
+  input[type='text'],
+  input[type='password'],
+  input[type='number'],
+  input[type='search'],
+  input[type='email'],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  input {
+    &.stretched,
+    &.searchbar {
+      width: 100%;
+    }
+
+    &.small {
+      max-width: 100%;
+    }
+  }
+
+  /* Page level sidebars turned into a horizontal tab strip by _navbar.scss:
+     make the targets tall enough for a finger. */
+  .sidebar a {
+    min-height: $touch-target;
+    display: inline-flex !important;
+    align-items: center;
+  }
+
+  /* Tooltips are anchored with a fixed -120px offset, which pushes them off
+     screen on a narrow viewport */
+  .tooltiptext {
+    left: 0;
+    margin-left: 0;
+    min-width: 0;
+    width: max-content;
+    max-width: 80vw;
+  }
+}
+
+/* =========================================================================
+   6. Touch fallbacks (independent of the viewport width)
+   ========================================================================= */
+
+@include touch {
+  /* Hover-revealed helpers are unreachable without a pointer */
+  .tooltip .tooltiptext {
+    /* still hidden by default, but reachable by tapping the element */
+    &:focus,
+    &:focus-within {
+      visibility: visible;
+    }
+  }
+
+  .tooltip:focus-within .tooltiptext {
+    visibility: visible;
+  }
+
+  /* Recipient autocomplete stays open while the field has focus; the list is
+     only kept alive by :hover on desktop. */
+  .compose-mail__recipients .recipients__input:focus-within .recipients__input-list {
+    display: flex;
+  }
+}
