@@ -21,6 +21,55 @@ const Data = {
   gpgDetails: {},
 };
 
+const PENDING_FRIENDS_KEY = 'rs-webui-pending-friends';
+let pendingFriends = {};
+try {
+  pendingFriends = JSON.parse(localStorage.getItem(PENDING_FRIENDS_KEY) || '{}');
+} catch (_) {
+  pendingFriends = {};
+}
+
+function savePendingFriends() {
+  try {
+    localStorage.setItem(PENDING_FRIENDS_KEY, JSON.stringify(pendingFriends));
+  } catch (_) {
+    // The in-memory entry still works when private browsing blocks storage.
+  }
+}
+
+Data.rememberPendingFriend = function (peerDetails) {
+  const data = peerDetails || {};
+  const gpgId = String(data.gpg_id || data.pgpId || '').toLowerCase();
+  const sslId = String(data.id || data.sslId || '');
+  if (!gpgId || !sslId) return;
+
+  pendingFriends[gpgId] = {
+    name: data.name || `Profile ID ${gpgId.toUpperCase()} (Not yet validated)`,
+    fingerprint: data.fpr || '',
+    isSearched: false,
+    isOnline: false,
+    pendingValidation: true,
+    locations: [{
+      name: data.location || 'Unknown location',
+      id: sslId,
+      lastSeen: data.lastConnect || 0,
+      isOnline: false,
+      gpg_id: gpgId,
+      customState: '',
+      statusValue: 0,
+      statusTimestamp: 0,
+      avatar: '',
+      peerDetails: data,
+    }],
+    customState: '',
+    statusValue: 0,
+    statusTimestamp: 0,
+    avatar: '',
+  };
+  Data.gpgDetails[gpgId] = pendingFriends[gpgId];
+  savePendingFriends();
+};
+
 function normalizeStatusValue(value, fallback) {
   if (value && typeof value === 'object') value = value.value ?? value.status ?? value.xint32;
   if (typeof value === 'number') return value;
@@ -133,6 +182,26 @@ Data.refreshGpgDetails = async function () {
     })
   );
 
+  Object.entries(pendingFriends).forEach(([gpgId, pending]) => {
+    if (details[gpgId]) {
+      const nativeFriend = details[gpgId];
+      const fingerprint = String(nativeFriend.fingerprint || '').replace(/\s/g, '');
+      const isValidated = /[1-9a-f]/i.test(fingerprint);
+
+      // Unvalidated short-invite peers are returned with an empty profile
+      // name and an all-zero fingerprint. Keep the name parsed from the
+      // RetroShare ID until the core has validated the PGP profile.
+      if (!nativeFriend.name) nativeFriend.name = pending.name;
+      if (isValidated) {
+        delete pendingFriends[gpgId];
+        savePendingFriends();
+      } else {
+        nativeFriend.pendingValidation = true;
+      }
+    } else {
+      details[gpgId] = pending;
+    }
+  });
   Data.gpgDetails = details;
 };
 module.exports = Data;

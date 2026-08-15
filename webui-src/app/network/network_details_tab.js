@@ -146,7 +146,9 @@ const DetailsTab = () => {
       if (!friend) return null;
 
       const friendGxsId = State.gpgToGxsIdMap[gpgId.toLowerCase()];
-      const status = Data.getStatusPresentation(friend.statusValue, friend.isOnline);
+      const status = friend.pendingValidation
+        ? { label: 'Pending validation', color: '#b45309' }
+        : Data.getStatusPresentation(friend.statusValue, friend.isOnline);
       const fingerprint = formatFingerprint(friend.fingerprint);
 
       return m('.network-detail-view', [

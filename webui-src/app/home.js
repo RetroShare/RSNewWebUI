@@ -1,6 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
+const NetworkData = require('network/network_data');
 
 const logo = () => {
   return {
@@ -77,6 +78,35 @@ const retroshareId = () => {
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
   }
+
+  async function copyId(value) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(value);
+    } else {
+      const field = document.getElementById('retroId');
+      field.select();
+      document.execCommand('copy');
+    }
+    widget.popupMessage(m(ConfirmCopied), 'copy-confirmation-modal');
+  }
+
+  async function shareId(value) {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'My RetroShare ID',
+          text: value,
+        });
+        return;
+      } catch (error) {
+        // Closing the native share sheet is intentional and needs no fallback.
+        if (error && error.name === 'AbortError') return;
+      }
+    }
+
+    await copyId(value);
+  }
+
   return {
     view(v) {
       return m('.retroshareID', [
@@ -100,7 +130,19 @@ const retroshareId = () => {
             widget.popupMessage(m(ConfirmCopied), 'copy-confirmation-modal');
           },
         }),
-        m('i.fas.fa-share-alt'),
+        m('i.fas.fa-share-alt', {
+          role: 'button',
+          tabindex: 0,
+          title: 'Share RetroShare ID',
+          'aria-label': 'Share RetroShare ID',
+          onclick: () => shareId(v.attrs.ownCert),
+          onkeydown: (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              shareId(v.attrs.ownCert);
+            }
+          },
+        }),
       ]);
     },
   };
@@ -108,6 +150,24 @@ const retroshareId = () => {
 
 function invalidCertPrompt() {
   widget.popupMessage([m('h3', 'Invalid RetroShare ID'), m('hr'), m('p', 'Check the ID and try again.')]);
+}
+
+async function refreshFriendLists(expectedGpgId) {
+  const expected = String(expectedGpgId || '').toLowerCase();
+  const retryDelays = [0, 300, 1000];
+
+  for (const delay of retryDelays) {
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+    try {
+      await NetworkData.refreshGpgDetails();
+      if (!expected || NetworkData.gpgDetails[expected]) break;
+    } catch (_) {
+      // RetroShare may still be storing the imported certificate/location.
+    }
+  }
+
+  rs.userList.loadUsers();
+  m.redraw();
 }
 
 function confirmAddPrompt(details, cert, long) {
@@ -118,6 +178,8 @@ function confirmAddPrompt(details, cert, long) {
           onclick: async () => {
             const res = await rs.rsJsonApiRequest('/rsPeers/loadCertificateFromString', { cert });
             if (res.body.retval) {
+              NetworkData.rememberPendingFriend(details);
+              await refreshFriendLists(details.gpg_id || details.pgpId);
               widget.popupMessage([
                 m('h3', 'Successful'),
                 m('hr'),
@@ -143,6 +205,8 @@ function confirmAddPrompt(details, cert, long) {
               pgpId: details.gpg_id,
             });
             if (res.body.retval) {
+              NetworkData.rememberPendingFriend(details);
+              await refreshFriendLists(details.gpg_id || details.pgpId);
               widget.popupMessage([
                 m('h3', 'Successful'),
                 m('hr'),

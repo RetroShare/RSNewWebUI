@@ -225,7 +225,9 @@ const FriendsList = () => {
                 const firstLetter = (friend.name || '?').slice(0, 1).toUpperCase();
                 const isSelected = State.selectedFriendGpgId === gpgId;
                 const hist = State.chatHistoryMap && State.chatHistoryMap[gpgId];
-                const status = Data.getStatusPresentation(friend.statusValue, friend.isOnline);
+                const status = friend.pendingValidation
+                  ? { value: 0, label: 'Pending validation', color: '#f59e0b' }
+                  : Data.getStatusPresentation(friend.statusValue, friend.isOnline);
 
                 const isOnlineOrActive = friend.isOnline || (status && status.value > 0);
 
@@ -316,6 +318,10 @@ const FriendsList = () => {
                           },
                           friend.customState
                         ),
+                      friend.pendingValidation &&
+                        m('.friend-custom-status', {
+                          style: 'font-size: 0.8rem; color: #b45309; margin-top: 2px;',
+                        }, 'Pending validation'),
                     ]),
                   ]
                 );
