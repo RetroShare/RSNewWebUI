@@ -6,12 +6,13 @@
 // (phone, portrait or landscape) or `touch` (no hover) mixins from
 // abstracts/_mixins.scss, so the desktop rendering is untouched.
 //
-// The navigation is NOT this file's business: main.js renders a bottom tab bar
-// and a status sheet of its own on a phone, and components/_navbar.scss hides
-// the desktop rail below 700px. This file starts where that stops -- at the
-// content of the pages, which is still laid out for a wide screen:
-//   * every two-pane page (network / people / chat) becomes master-detail:
-//     the list, then the detail with a back button, never both at once,
+// Neither the navigation, nor the two-pane pages, nor the mail list are this
+// file's business: main.js renders a bottom tab bar and a status sheet of its
+// own on a phone, components/_navbar.scss hides the desktop rail below 700px,
+// the network, people and chat pages switch to master-detail on their own
+// through a .mobile-detail-open class driven from their own state, and
+// pages/_mail.scss turns table.mails into a card list. This file starts where
+// all of that stops -- inside the pages, still laid out for a wide screen:
 //   * multi column grids and wide tables collapse to a single column,
 //   * anything only reachable on :hover gets a touch fallback.
 //
@@ -25,137 +26,7 @@
 @use 'abstracts' as *;
 
 /* =========================================================================
-   1. Two-pane pages become master/detail
-   ========================================================================= */
-
-/* Back button injected by network.js / people.js / chat.js. Desktop shows the
-   two panes side by side, so it stays hidden there. */
-.mobile-back {
-  display: none;
-}
-
-@include mobile {
-  .network-container,
-  .chat-hub-container {
-    flex-direction: column;
-  }
-
-  .network-left-pane,
-  .chat-hub-left-pane {
-    width: 100%;
-    min-width: 0;
-    max-width: none;
-    max-height: none;
-    /* The list is alone on screen: it takes the height rather than sitting on
-       top of an empty half. */
-    flex: 1;
-    min-height: 0;
-    border-right: none;
-    border-bottom: 1px solid #cbd5e1;
-    box-shadow: none;
-  }
-
-  /* Same rules for people, but pages/_people.scss states its desktop layout
-     with !important on the base rules (a 320px sidebar in a row container), so
-     nothing can override it without doing the same. */
-  .people-container {
-    flex-direction: column !important;
-  }
-
-  .people-left-pane {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    max-height: none !important;
-    flex: 1;
-    min-height: 0;
-    border-right: none !important;
-    border-bottom: 1px solid #cbd5e1;
-    box-shadow: none !important;
-  }
-
-  .network-right-pane,
-  .people-right-pane,
-  .chat-hub-right-pane {
-    flex: 1;
-    min-height: 0;
-  }
-
-  /* pages/_network.scss and pages/_people.scss split the stacked panes 45% /
-     55% of the height. That is the tablet compromise: two panes at once, each
-     half usable. Here only one pane is on screen at a time, so it has to take
-     the whole height instead of 45% of it followed by a gap. Their rules are
-     !important, hence these. */
-  .network-left-pane,
-  .people-left-pane,
-  .network-right-pane,
-  .people-right-pane {
-    height: auto !important;
-    max-height: none !important;
-  }
-
-  /* Nothing selected: only the list. Something selected: only the detail. */
-  .network-container:not(.has-selection) .network-right-pane,
-  .people-container:not(.has-selection) .people-right-pane,
-  .chat-hub-container:not(.has-selection) .chat-hub-right-pane {
-    display: none;
-  }
-
-  .network-container.has-selection .network-left-pane,
-  .people-container.has-selection .people-left-pane,
-  .chat-hub-container.has-selection .chat-hub-left-pane {
-    display: none;
-  }
-
-  .mobile-back {
-    @include flex($justify: center, $align: center);
-    flex: 0 0 auto;
-    min-width: $touch-target;
-    min-height: $touch-target;
-    padding: 0.5rem 0.75rem;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    color: #334155;
-    font-size: 1rem;
-  }
-
-  /* The chat header is a space-between row: keep the back button first */
-  .chat-hub-header-bar {
-    padding: 0.5rem 0.75rem;
-    gap: 0.5rem;
-
-    .chat-header-info {
-      flex: 1;
-      min-width: 0;
-    }
-  }
-
-  /* Tab strip of network/people has to stay on one line next to the button */
-  .network-tabs {
-    padding: 0.25rem 0.5rem 0;
-    gap: 0.25rem;
-    overflow-x: auto;
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-
-    .tab-btn {
-      padding: 0.5rem 0.75rem;
-      font-size: 0.875rem;
-      white-space: nowrap;
-    }
-  }
-
-  .network-tab-content {
-    padding: 0.75rem;
-  }
-}
-
-/* =========================================================================
-   2. Multi column grids collapse
+   1. Multi column grids collapse
    ========================================================================= */
 
 @include mobile {
@@ -258,7 +129,7 @@
 }
 
 /* =========================================================================
-   3. Tables
+   2. Tables
    ========================================================================= */
 
 @include mobile {
@@ -280,97 +151,21 @@
     width: auto;
   }
 
-  /* --- Mail list: one row becomes a card -------------------------------
-     The header row carries .mails-head (set in mail_util.js) because mithril
-     builds the DOM through the DOM API and therefore does not get the implicit
-     <tbody> the HTML parser would insert: neither tr:first-child nor a
+  /* --- Channel comments: 8 columns, unusable as a table -----------------
+     The header row carries .comments-head (set in channels_util.js) because
+     mithril builds the DOM through the DOM API and therefore does not get the
+     implicit <tbody> the HTML parser would insert: neither tr:first-child nor a
      `> tbody >` path is reliable here. */
-  table.mails {
-    /* The table box has to go: a <tr> switched to flex/grid inside a table box
-       is wrapped back into an anonymous table cell and re-sized by the column
-       algorithm, which shreds the header row. */
-    display: block;
-
-    & tbody {
-      display: block;
-    }
-
-    /* Header row is kept: it is also the sort control */
-    & tr.mails-head {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.25rem 0;
-      border-bottom: 2px solid #eee;
-
-      & th {
-        width: auto !important;
-        flex: 0 0 auto;
-        padding: 0.25rem 0.35rem;
-        font-size: 0.8rem;
-        border-bottom: none;
-      }
-    }
-
-    & tr:not(.mails-head) {
-      display: grid;
-      grid-template-columns: 1.5rem 1.5rem 1fr auto;
-      grid-template-areas:
-        'star attach subject subject'
-        'star attach from    date';
-      align-items: center;
-      column-gap: 0.35rem;
-      padding: 0.5rem 0.25rem;
-
-      & > td {
-        padding: 0;
-        font-size: 0.9rem;
-      }
-
-      & > td:nth-child(1) {
-        grid-area: star;
-      }
-
-      & > td:nth-child(2) {
-        grid-area: attach;
-      }
-
-      & > td:nth-child(3) {
-        grid-area: subject;
-        font-weight: 600;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      & > td:nth-child(4) {
-        grid-area: from;
-        font-size: 0.8rem;
-        color: #64748b;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      & > td:nth-child(5) {
-        grid-area: date;
-        font-size: 0.75rem;
-        color: #94a3b8;
-        text-align: right;
-        white-space: nowrap;
-      }
-    }
-  }
-
-  /* --- Channel comments: 8 columns, unusable as a table ----------------- */
   table.comments {
+    /* The table box has to go: a <tr> switched to block/flex inside a table box
+       is wrapped back into an anonymous table cell and re-sized by the column
+       algorithm, which shreds the row. */
     display: block;
 
     & tbody {
       display: block;
     }
 
-    /* Header row, tagged in channels_util.js (see table.mails above) */
     & tr.comments-head {
       display: none;
     }
@@ -409,7 +204,7 @@
 }
 
 /* =========================================================================
-   4. Statusbar
+   3. Statusbar
    ========================================================================= */
 
 @include mobile {
@@ -438,7 +233,7 @@
 }
 
 /* =========================================================================
-   5. Forms and inputs
+   4. Forms and inputs
    ========================================================================= */
 
 @include mobile {
@@ -484,7 +279,7 @@
 }
 
 /* =========================================================================
-   6. Touch fallbacks (independent of the viewport width)
+   5. Touch fallbacks (independent of the viewport width)
    ========================================================================= */
 
 @include touch {
