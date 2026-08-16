@@ -118,6 +118,15 @@
 }
 
 @media (max-width: 600px) {
+  //  Every modal that gets a phone layout drops its padding from 1.5rem to 1rem
+  //  -- copy confirmation, add friend, create identity, create forum, location
+  //  details -- but the close button is positioned against the box, not the
+  //  content, so it stayed 1.5rem from the edge and no longer lined up with
+  //  anything. Corrected once here rather than in each of them.
+  .modal-content .close-btn {
+    right: 1rem;
+  }
+
   .modal-content.location-details-modal {
     width: calc(100% - 1rem);
     height: max-content;

@@ -33,6 +33,9 @@ const webhelpConfirm = () => {
         {
           onclick: () => {
             window.open('https://retrosharedocs.readthedocs.io/en/latest/');
+            //  The documentation opens in another tab; leaving this one behind
+            //  it means coming back to a dialog that has nothing left to ask.
+            widget.closePopupMessage();
           },
         },
         'Ok'
