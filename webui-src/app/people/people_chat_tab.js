@@ -62,7 +62,37 @@ function formatChatImage(file, callback) {
 }
 
 const ChatTab = () => {
+  let showAttachmentMenu = false;
+
+  function onDocClick(e) {
+    if (showAttachmentMenu && !e.target.closest('.mobile-chat-attachment')) {
+      showAttachmentMenu = false;
+      m.redraw();
+    }
+  }
+
+  function attachFileLink() {
+    const path = prompt('Enter file path to attach as Retroshare link:');
+    if (path && path.trim()) {
+      const val = State.chatInputMsg || '';
+      State.chatInputMsg = val ? val + '\n' + path.trim() : path.trim();
+      m.redraw();
+    }
+  }
+
+  function attachImage(file) {
+    if (!file) return;
+    formatChatImage(file, (imgTag) => {
+      if (imgTag) {
+        State.chatInputMsg = (State.chatInputMsg || '') + imgTag;
+        m.redraw();
+      }
+    });
+  }
+
   return {
+    oncreate: () => document.addEventListener('click', onDocClick, true),
+    onremove: () => document.removeEventListener('click', onDocClick, true),
     view: () => {
       fetchIdDetails(State.selectedId);
       const details = State.selectedId ? State.gxsIdToDetailsMap[State.selectedId] : null;
@@ -225,19 +255,47 @@ const ChatTab = () => {
         ]),
 
         m('.chat-input-area', { style: 'display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; background: #ffffff; border-top: 1px solid #cbd5e1;' }, [
-          m('button.chat-hub-action-btn', {
+          m('button.chat-hub-action-btn.desktop-chat-attachment', {
             disabled: !canTalk,
             style: !canTalk ? 'opacity: 0.5; cursor: not-allowed;' : '',
             title: 'Attach file link',
-            onclick: () => {
-              const path = prompt('Enter file path to attach as Retroshare link:');
-              if (path && path.trim()) {
-                const val = State.chatInputMsg || '';
-                State.chatInputMsg = val ? val + '\n' + path.trim() : path.trim();
-                m.redraw();
-              }
-            }
+            onclick: attachFileLink,
           }, m('i.fas.fa-paperclip')),
+
+          m('.mobile-chat-attachment', [
+            m('button.chat-hub-action-btn', {
+              disabled: !canTalk,
+              style: !canTalk ? 'opacity: 0.5; cursor: not-allowed;' : '',
+              title: 'Add attachment',
+              onclick: (e) => {
+                e.stopPropagation();
+                showAttachmentMenu = !showAttachmentMenu;
+                State.showEmojiPicker = false;
+              },
+            }, m('i.fas.fa-paperclip')),
+            showAttachmentMenu && m('.mobile-chat-attachment__menu', [
+              m('button.mobile-chat-attachment__option', {
+                type: 'button',
+                onclick: () => {
+                  showAttachmentMenu = false;
+                  attachFileLink();
+                },
+              }, [m('i.fas.fa-file'), ' File']),
+              m('label.mobile-chat-attachment__option', [
+                m('i.fas.fa-image'),
+                ' Picture',
+                m('input[type=file][accept=image/*]', {
+                  style: 'display: none;',
+                  disabled: !canTalk,
+                  onchange: (e) => {
+                    attachImage(e.target.files && e.target.files[0]);
+                    showAttachmentMenu = false;
+                    e.target.value = '';
+                  },
+                }),
+              ]),
+            ]),
+          ]),
 
           m('.emoji-picker-wrapper', { style: 'position: relative;' }, [
             m('button.chat-hub-action-btn', {
@@ -258,7 +316,7 @@ const ChatTab = () => {
             }),
           ]),
 
-          m('label.chat-hub-action-btn', {
+          m('label.chat-hub-action-btn.desktop-chat-attachment', {
             title: 'Send image',
             style: `cursor: ${canTalk ? 'pointer' : 'not-allowed'}; opacity: ${canTalk ? 1 : 0.5};`,
           }, [
@@ -268,13 +326,7 @@ const ChatTab = () => {
               disabled: !canTalk,
               onchange: (e) => {
                 if (!e.target.files || !e.target.files[0]) return;
-                const file = e.target.files[0];
-                formatChatImage(file, (imgTag) => {
-                  if (imgTag) {
-                    State.chatInputMsg = (State.chatInputMsg || '') + imgTag;
-                    m.redraw();
-                  }
-                });
+                attachImage(e.target.files[0]);
                 e.target.value = '';
               }
             })
