@@ -158,8 +158,20 @@ function renderUserTooltip(gxsId, name) {
   ]);
 }
 
-function pollHashStatus(localpath) {
+//  Hashing a large file takes minutes, so there is no deadline to enforce here.
+//  What the poll must not do is keep asking at full speed: it backs off from one
+//  second towards ten, which is still prompt for a small file and costs a
+//  request every ten seconds for a big one -- each of them a fresh connection,
+//  the JSON API answers `Connection: close`.
+const HASH_POLL_START_MS = 1000;
+const HASH_POLL_MAX_MS = 10000;
+
+function pollHashStatus(localpath, delay = HASH_POLL_START_MS) {
   rs.rsJsonApiRequest('/rsFiles/ExtraFileStatus', { localpath }, (data) => {
+    //  Give up quietly if the user cancelled or left in the meantime: this
+    //  chain lives in a setTimeout, not in the component.
+    if (!ChatHubState.isHashing || ChatHubState.attachPath !== localpath) return;
+
     if (data && data.retval && data.info && data.info.hash && data.info.hash !== '0000000000000000000000000000000000000000') {
       const info = data.info;
       const sizeNum = info.size.xint64 || parseInt(info.size.xstr64) || info.size;
@@ -176,11 +188,23 @@ function pollHashStatus(localpath) {
       ChatHubState.attachPath = '';
       m.redraw();
     } else {
-      if (ChatHubState.isHashing) {
-        setTimeout(() => pollHashStatus(localpath), 1000);
-      }
+      setTimeout(
+        () => pollHashStatus(localpath, Math.min(delay * 2, HASH_POLL_MAX_MS)),
+        delay
+      );
     }
   });
+}
+
+//  The core has no way of telling us that hashing failed -- ftExtraList drops
+//  the file silently -- so a file that exists but cannot be read leaves this
+//  poll running for ever. Hence: stopping must always be possible from the
+//  dialog, and this is the single place that does it.
+function stopHashing() {
+  ChatHubState.isHashing = false;
+  ChatHubState.attachPath = '';
+  ChatHubState.attachBrowseHint = false;
+  ChatHubState.hashingError = '';
 }
 
 // ************************* views ****************************
@@ -317,6 +341,13 @@ const ChatConversationView = () => {
     },
     onremove: () => {
       document.removeEventListener('click', onDocClick, true);
+      //  The poll writes its file link into the textarea of this very view, so
+      //  once the view is gone the answer has nowhere to land: leaving it
+      //  running would only keep asking for a result nobody can use.
+      if (ChatHubState.isHashing) {
+        ChatHubState.showAttachModal = false;
+        stopHashing();
+      }
     },
     view: () => {
       const chatType = ChatLobbyModel.currentLobby && ChatLobbyModel.currentLobby.chatType;
@@ -497,11 +528,9 @@ const ChatConversationView = () => {
           ),
           ChatHubState.showAttachModal && m('.attach-modal-overlay', {
             onclick: (e) => {
-              if (e.target === e.currentTarget && !ChatHubState.isHashing) {
+              if (e.target === e.currentTarget) {
                 ChatHubState.showAttachModal = false;
-                ChatHubState.attachPath = '';
-                ChatHubState.attachBrowseHint = false;
-                ChatHubState.hashingError = '';
+                stopHashing();
               }
             }
           }, [
@@ -575,6 +604,9 @@ const ChatConversationView = () => {
                   disabled: ChatHubState.isHashing || !ChatHubState.attachPath.trim() || ChatHubState.attachBrowseHint,
                   onclick: () => {
                     const path = ChatHubState.attachPath.trim();
+                    //  Normalised, because the poll below identifies its own run
+                    //  by comparing this against the path it was started with.
+                    ChatHubState.attachPath = path;
                     ChatHubState.isHashing = true;
                     ChatHubState.hashingError = '';
                     m.redraw();
@@ -595,14 +627,11 @@ const ChatConversationView = () => {
                   }
                 }, [m('i.fas.fa-link'), m('span', ' Attach')]),
                 m('button.btn.red', {
-                  disabled: ChatHubState.isHashing,
                   onclick: () => {
                     ChatHubState.showAttachModal = false;
-                    ChatHubState.attachPath = '';
-                    ChatHubState.attachBrowseHint = false;
-                    ChatHubState.hashingError = '';
+                    stopHashing();
                   }
-                }, 'Cancel')
+                }, ChatHubState.isHashing ? 'Stop' : 'Cancel')
               ])
             ])
           ]),
