@@ -40,6 +40,9 @@ const getChannels = {
   },
 };
 
+//  Group lists change on the scale of a conversation, not of a frame.
+const CHANNEL_LIST_REFRESH_MS = 30000;
+
 const sections = {
   MyChannels: require('channels/my_channels'),
   Subscribed: require('channels/subscribed_channels'),
@@ -52,9 +55,14 @@ const Layout = () => {
 
   return {
     oninit: () => {
-      rs.setBackgroundTask(getChannels.load, 5000, () => {
-        // return m.route.get() === '/files/files';
-      });
+      //  The scope predicate used to be commented out, so it returned undefined
+      //  and setBackgroundTask stopped after the first interval: the channel list
+      //  was loaded once and never refreshed while the page stayed open. Same
+      //  period as the boards list, which asks the same kind of question -- a
+      //  five second poll of a whole summaries list is a lot to pay on a phone.
+      rs.setBackgroundTask(getChannels.load, CHANNEL_LIST_REFRESH_MS, () =>
+        m.route.get().startsWith('/channels')
+      );
       peopleUtil.ownIds((data) => {
         ownId = data;
         for (let i = 0; i < ownId.length; i++) {

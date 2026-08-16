@@ -26,6 +26,9 @@ const getForums = {
     }
   },
 };
+//  Group lists change on the scale of a conversation, not of a frame.
+const FORUM_LIST_REFRESH_MS = 30000;
+
 const sections = {
   MyForums: require('forums/my_forums'),
   Subscribed: require('forums/subscribed_forums'),
@@ -38,7 +41,10 @@ const Layout = () => {
 
   return {
     oninit: () => {
-      rs.setBackgroundTask(getForums.load, 5000, () => {
+      //  Was every 5 s. getForumsSummaries returns the whole list every time,
+      //  and on a phone each poll is a fresh TCP handshake on a server that
+      //  answers one request at a time; the boards list already settled on 30 s.
+      rs.setBackgroundTask(getForums.load, FORUM_LIST_REFRESH_MS, () => {
         return m.route.get().includes('/forums');
       });
       peopleUtil.ownIds((data) => {
