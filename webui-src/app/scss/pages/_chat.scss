@@ -1225,6 +1225,61 @@ label.chat-hub-action-btn i,
   color: inherit !important;
 }
 
+.mobile-chat-attachment {
+  display: none;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.mobile-chat-attachment__menu {
+  position: absolute;
+  z-index: 20;
+  bottom: calc(100% + .5rem);
+  left: 0;
+  display: flex;
+  min-width: 9rem;
+  flex-direction: column;
+  padding: .25rem;
+  border: 1px solid #cbd5e1;
+  border-radius: .5rem;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .18);
+}
+
+button.mobile-chat-attachment__option,
+label.mobile-chat-attachment__option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: .6rem;
+  padding: .55rem .7rem;
+  border: 0;
+  border-radius: .35rem;
+  background: transparent;
+  box-shadow: none;
+  color: #334155;
+  cursor: pointer;
+  font-size: .9rem;
+  text-align: left;
+}
+
+button.mobile-chat-attachment__option:hover,
+label.mobile-chat-attachment__option:hover {
+  background: #f1f5f9;
+}
+
+@media (max-width: 700px) {
+  .chat-hub-input-area .desktop-chat-attachment,
+  .network-chat-view .chat-input-area .desktop-chat-attachment {
+    display: none !important;
+  }
+
+  .chat-hub-input-area .mobile-chat-attachment,
+  .network-chat-view .chat-input-area .mobile-chat-attachment {
+    display: block;
+  }
+}
+
 /* Compact Room Chat Style (No bubbles, unique nickname colors, IRC-style) */
 .chat-hub-messages.compact-container,
 .messages.compact-container {

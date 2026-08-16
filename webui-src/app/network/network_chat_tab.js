@@ -73,7 +73,18 @@ function pollHashStatusForDirectChat(localpath) {
 }
 
 const ChatTab = () => {
+  let showAttachmentMenu = false;
+
+  function onDocClick(e) {
+    if (showAttachmentMenu && !e.target.closest('.mobile-chat-attachment')) {
+      showAttachmentMenu = false;
+      m.redraw();
+    }
+  }
+
   return {
+    oncreate: () => document.addEventListener('click', onDocClick, true),
+    onremove: () => document.removeEventListener('click', onDocClick, true),
     view: () => {
       const gpgId = State.selectedFriendGpgId;
       const friend = Data.gpgDetails[gpgId];
@@ -178,7 +189,7 @@ const ChatTab = () => {
           ownName: State.ownProfile.name || 'You',
         }),
         m('.chat-input-area', { style: 'display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; background: #ffffff; border-top: 1px solid #cbd5e1;' }, [
-          m('button.chat-hub-action-btn', {
+          m('button.chat-hub-action-btn.desktop-chat-attachment', {
             title: 'Attach file link',
             onclick: () => {
               State.showAttachModal = true;
@@ -188,6 +199,48 @@ const ChatTab = () => {
               m.redraw();
             }
           }, m('i.fas.fa-paperclip')),
+
+          m('.mobile-chat-attachment', [
+            m('button.chat-hub-action-btn', {
+              title: 'Add attachment',
+              onclick: (e) => {
+                e.stopPropagation();
+                showAttachmentMenu = !showAttachmentMenu;
+                State.showEmojiPicker = false;
+              },
+            }, m('i.fas.fa-paperclip')),
+            showAttachmentMenu && m('.mobile-chat-attachment__menu', [
+              m('button.mobile-chat-attachment__option', {
+                type: 'button',
+                onclick: () => {
+                  showAttachmentMenu = false;
+                  State.showAttachModal = true;
+                  State.attachPath = '';
+                  State.attachBrowseHint = false;
+                  State.hashingError = '';
+                },
+              }, [m('i.fas.fa-file'), ' File']),
+              m('label.mobile-chat-attachment__option', [
+                m('i.fas.fa-image'),
+                ' Picture',
+                m('input[type=file][accept=image/*]', {
+                  style: 'display: none;',
+                  onchange: (e) => {
+                    if (!e.target.files || !e.target.files[0]) return;
+                    const file = e.target.files[0];
+                    formatDirectChatImage(file, (imgTag) => {
+                      if (imgTag) {
+                        State.chatInputMsg = (State.chatInputMsg || '') + imgTag;
+                        m.redraw();
+                      }
+                    });
+                    showAttachmentMenu = false;
+                    e.target.value = '';
+                  },
+                }),
+              ]),
+            ]),
+          ]),
 
           m('.emoji-picker-wrapper', { style: 'position: relative;' }, [
             m('button.chat-hub-action-btn', {
@@ -206,7 +259,7 @@ const ChatTab = () => {
             }),
           ]),
 
-          m('label.chat-hub-action-btn', {
+          m('label.chat-hub-action-btn.desktop-chat-attachment', {
             title: 'Send image',
             style: 'cursor: pointer;',
           }, [

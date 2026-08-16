@@ -296,9 +296,15 @@ const ChatRoomHeader = () => {
 };
 
 const ChatConversationView = () => {
+  let showAttachmentMenu = false;
+
   function onDocClick(e) {
     if (ChatHubState.showEmojiPicker && !e.target.closest('.emoji-picker-wrapper')) {
       ChatHubState.showEmojiPicker = false;
+      m.redraw();
+    }
+    if (showAttachmentMenu && !e.target.closest('.mobile-chat-attachment')) {
+      showAttachmentMenu = false;
       m.redraw();
     }
   }
@@ -331,7 +337,7 @@ const ChatConversationView = () => {
             '.chat-hub-input-area',
             [
               m(
-                'button.chat-hub-action-btn',
+                'button.chat-hub-action-btn.desktop-chat-attachment',
                 {
                   disabled: !canTalk,
                   style: !canTalk ? 'opacity: 0.5; cursor: not-allowed;' : '',
@@ -343,6 +349,50 @@ const ChatConversationView = () => {
                 },
                 m('i.fas.fa-paperclip')
               ),
+              m('.mobile-chat-attachment', [
+                m('button.chat-hub-action-btn', {
+                  disabled: !canTalk,
+                  style: !canTalk ? 'opacity: 0.5; cursor: not-allowed;' : '',
+                  title: 'Add attachment',
+                  onclick: (e) => {
+                    e.stopPropagation();
+                    showAttachmentMenu = !showAttachmentMenu;
+                    ChatHubState.showEmojiPicker = false;
+                  },
+                }, m('i.fas.fa-paperclip')),
+                showAttachmentMenu && m('.mobile-chat-attachment__menu', [
+                  m('button.mobile-chat-attachment__option', {
+                    type: 'button',
+                    onclick: () => {
+                      showAttachmentMenu = false;
+                      ChatHubState.showAttachModal = true;
+                    },
+                  }, [m('i.fas.fa-file'), ' File']),
+                  m('label.mobile-chat-attachment__option', [
+                    m('i.fas.fa-image'),
+                    ' Picture',
+                    m('input[type=file][accept=image/*]', {
+                      style: 'display: none;',
+                      onchange: (e) => {
+                        if (!e.target.files || !e.target.files[0]) return;
+                        const file = e.target.files[0];
+                        const textarea = e.target.closest('.chat-hub-input-area').querySelector('textarea');
+                        formatChatImage(file, (imgTag) => {
+                          if (imgTag && textarea) {
+                            const start = textarea.selectionStart || 0;
+                            const end = textarea.selectionEnd || 0;
+                            const val = textarea.value;
+                            textarea.value = val.substring(0, start) + imgTag + val.substring(end);
+                            m.redraw();
+                          }
+                        });
+                        showAttachmentMenu = false;
+                        e.target.value = '';
+                      },
+                    }),
+                  ]),
+                ]),
+              ]),
               m('.emoji-picker-wrapper', [
                 m(
                   'button.chat-hub-action-btn',
@@ -359,7 +409,7 @@ const ChatConversationView = () => {
                 ),
                 ChatHubState.showEmojiPicker && m(chatEmoji.EmojiPicker),
               ]),
-              m('label.chat-hub-action-btn', {
+              m('label.chat-hub-action-btn.desktop-chat-attachment', {
                 title: 'Send image',
                 style: `cursor: ${canTalk ? 'pointer' : 'not-allowed'}; opacity: ${canTalk ? 1 : 0.5};`,
               }, [
