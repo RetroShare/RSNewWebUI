@@ -1126,7 +1126,14 @@ const ChatRoomJoinView = () => {
                 '.identity-card',
                 { onclick: () => ChatLobbyModel.enterPublicLobby(lobbyHexId, nick) },
                 [
-                  m('.identity-name', rs.userList.username(nick) || nick),
+                  m('.identity-card__identity', [
+                    m(peopleUtil.IdentityAvatar, {
+                      identityId: nick,
+                      name: rs.userList.username(nick) || nick,
+                      size: 36,
+                    }),
+                    m('.identity-name', rs.userList.username(nick) || nick),
+                  ]),
                   m('i.fas.fa-sign-in-alt'),
                 ]
               )

@@ -814,10 +814,26 @@ textarea.chatMsg {
     border-color: #3ba4d7;
   }
 
+  &__identity {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 0.65rem;
+
+    > .avatar,
+    > .jdenticon-avatar,
+    > .defaultAvatar {
+      margin-right: 0 !important;
+    }
+  }
+
   .identity-name {
+    overflow: hidden;
     font-size: 0.95rem;
     font-weight: 600;
     color: #334155;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   i {
