@@ -21,12 +21,19 @@ const ConfirmRemove = () => {
       m(
         'button',
         {
-          onclick: () => {
-            rs.rsJsonApiRequest('/rsPeers/removeFriend', {
+          onclick: async () => {
+            //  Drop the placeholder first: refreshGpgDetails() re-injects any
+            //  remembered friend the core does not return, so removing one added
+            //  by short ID would otherwise put it straight back in the list.
+            Data.forgetPendingFriend(vnode.attrs.gpg_id);
+            //  And wait for the removal before asking for the list again, or the
+            //  refresh races the core and shows the friend as still there.
+            await rs.rsJsonApiRequest('/rsPeers/removeFriend', {
               pgpId: vnode.attrs.gpg_id,
             });
             State.selectedFriendGpgId = null;
-            Data.refreshGpgDetails().then(() => m.redraw());
+            await Data.refreshGpgDetails();
+            m.redraw();
             widget.popupMessage(m('p', 'Friend removed successfully.'));
           },
         },
