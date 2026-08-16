@@ -348,6 +348,15 @@ const ChatRoomsModel = {
             return;
           }
 
+          //  One getChatLobbyInfo per subscribed room, and each one is a whole
+          //  round trip: the JSON API answers `Connection: close`, so nothing is
+          //  pipelined and the browser only keeps six sockets open. Waiting for
+          //  the last answer before painting anything means the list appears
+          //  after N round trips -- invisible over loopback, seconds on a phone.
+          //  Paint each room as it lands instead, and ask for the public ones
+          //  right away rather than queueing them behind the whole batch.
+          ChatRoomsModel.loadPublicRooms();
+
           let count = 0;
           ids.forEach((id) =>
             loadLobbyDetails(id, (info) => {
@@ -355,12 +364,9 @@ const ChatRoomsModel = {
                 ChatRoomsModel.subscribedRooms[id] = info;
               }
               count++;
-              if (count === ids.length) {
-                ChatRoomsModel.loadPublicRooms();
-                if (after != null) {
-                  after();
-                }
-                m.redraw();
+              m.redraw();
+              if (count === ids.length && after != null) {
+                after();
               }
             })
           );

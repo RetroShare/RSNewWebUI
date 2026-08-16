@@ -36,6 +36,9 @@ const getBoards = {
   },
 };
 
+//  Group lists change on the scale of a conversation, not of a frame.
+const BOARD_LIST_REFRESH_MS = 30000;
+
 const sections = {
   MyBoards: require('boards/my_boards'),
   Subscribed: require('boards/subscribed_boards'),
@@ -48,7 +51,7 @@ const Layout = () => {
 
   return {
     oninit: () => {
-      rs.setBackgroundTask(getBoards.load, 30000, () => {
+      rs.setBackgroundTask(getBoards.load, BOARD_LIST_REFRESH_MS, () => {
         return m.route.get().startsWith('/boards');
       });
       peopleUtil.ownIds((data) => {

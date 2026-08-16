@@ -453,87 +453,99 @@ function sendDistantChatMessage() {
   );
 }
 
+//  Two /rsHistory/getMessages per known identity, and a node knows hundreds of
+//  them. Fired all at once they fill the browser's six sockets and the JSON
+//  API's single service thread, so everything the user is actually waiting for
+//  -- the chat room list, an avatar, a forum -- queues behind the preload. Run
+//  them a few at a time: the same work gets done, but interactive requests keep
+//  getting a slot.
+const HISTORY_PRELOAD_CONCURRENCY = 4;
+
+function runQueued(tasks, concurrency) {
+  let next = 0;
+  const startNext = () => {
+    if (next >= tasks.length) return;
+    tasks[next++](startNext);
+  };
+  for (let i = 0; i < concurrency && i < tasks.length; i++) startNext();
+}
+
+//  `newerOnly` keeps the previous behaviour of the two callers: the distant
+//  history is the first answer and simply wins, the private one only replaces
+//  it when it carries a more recent message.
+function rememberLastHistoryMessage(gxsId, msgData, success, newerOnly) {
+  if (!success || !msgData || !msgData.msgs) return;
+  const userMsgs = msgData.msgs.filter(
+    (m) => !m.isSystem && !isSystemMsg(m.message || m.msg)
+  );
+  if (userMsgs.length === 0) return;
+
+  const last = userMsgs[userMsgs.length - 1];
+  const lastTime = last.sendTime || last.recvTime || Math.floor(Date.now() / 1000);
+  const existing = State.chatHistoryMap[gxsId];
+  if (newerOnly && existing && lastTime <= existing.lastTime) return;
+
+  State.chatHistoryMap[gxsId] = {
+    lastMsg: last.message || last.msg || '',
+    lastTime,
+  };
+  m.redraw();
+}
+
+function historyPreloadTask(gxsId, chatPeerId, newerOnly) {
+  return (done) => rs.rsJsonApiRequest(
+    '/rsHistory/getMessages',
+    {
+      chatPeerId,
+      loadCount: 20,
+    },
+    (msgData, success) => {
+      //  done() must run whatever happens: rswebui swallows exceptions thrown
+      //  by callbacks, and a lost slot would stall the queue for good.
+      try {
+        rememberLastHistoryMessage(gxsId, msgData, success, newerOnly);
+      } finally {
+        done();
+      }
+    }
+  );
+}
+
 function preloadAllChatHistory() {
   rs.rsJsonApiRequest('/rsIdentity/getIdentitiesSummaries', {}, (data) => {
     const ids = (data && data.ids) ? data.ids : (rs.userList.users || []);
     if (!ids || ids.length === 0) return;
+
+    const tasks = [];
 
     ids.forEach((u) => {
       const gxsId = typeof u === 'object' ? u.mGroupId : u;
       if (!gxsId) return;
 
       // Check Distant Chat History (type: 2 - TYPE_PRIVATE_DISTANT)
-      const distantPeerId = {
+      tasks.push(historyPreloadTask(gxsId, {
         broadcast_status_peer_id: '00000000000000000000000000000000',
         type: 2, // TYPE_PRIVATE_DISTANT
         peer_id: '00000000000000000000000000000000',
         distant_chat_id: gxsId,
         lobby_id: { xstr64: '0' },
-      };
-
-      rs.rsJsonApiRequest(
-        '/rsHistory/getMessages',
-        {
-          chatPeerId: distantPeerId,
-          loadCount: 20,
-        },
-        (msgData, success) => {
-          if (success && msgData && msgData.msgs) {
-            const userMsgs = msgData.msgs.filter(
-              (m) => !m.isSystem && !isSystemMsg(m.message || m.msg)
-            );
-            if (userMsgs.length > 0) {
-              const last = userMsgs[userMsgs.length - 1];
-              State.chatHistoryMap[gxsId] = {
-                lastMsg: last.message || last.msg || '',
-                lastTime: last.sendTime || last.recvTime || Math.floor(Date.now() / 1000),
-              };
-              m.redraw();
-            }
-          }
-        }
-      );
+      }, false));
 
       // Also check Private Chat History (type: 1) if PGP ID is known
       const details = State.gxsIdToDetailsMap[gxsId];
       const pgpId = details ? details.mPgpId : (typeof u === 'object' ? u.mPgpId : null);
       if (pgpId && pgpId !== '0000000000000000') {
-        const privatePeerId = {
+        tasks.push(historyPreloadTask(gxsId, {
           broadcast_status_peer_id: '00000000000000000000000000000000',
           type: 1, // PRIVATE
           peer_id: pgpId,
           distant_chat_id: '00000000000000000000000000000000',
           lobby_id: { xstr64: '0' },
-        };
-
-        rs.rsJsonApiRequest(
-          '/rsHistory/getMessages',
-          {
-            chatPeerId: privatePeerId,
-            loadCount: 20,
-          },
-          (msgData, success) => {
-            if (success && msgData && msgData.msgs) {
-              const userMsgs = msgData.msgs.filter(
-                (m) => !m.isSystem && !isSystemMsg(m.message || m.msg)
-              );
-              if (userMsgs.length > 0) {
-                const last = userMsgs[userMsgs.length - 1];
-                const existing = State.chatHistoryMap[gxsId];
-                const lastTime = last.sendTime || last.recvTime || Math.floor(Date.now() / 1000);
-                if (!existing || lastTime > existing.lastTime) {
-                  State.chatHistoryMap[gxsId] = {
-                    lastMsg: last.message || last.msg || '',
-                    lastTime,
-                  };
-                  m.redraw();
-                }
-              }
-            }
-          }
-        );
+        }, true));
       }
     });
+
+    runQueued(tasks, HISTORY_PRELOAD_CONCURRENCY);
   });
 }
 
