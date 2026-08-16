@@ -120,8 +120,8 @@
 @media (max-width: 600px) {
   .modal-content.location-details-modal {
     width: calc(100% - 1rem);
-    height: calc(100% - 1rem);
-    max-height: calc(100% - 1rem);
+    height: max-content;
+    max-height: calc(100dvh - 5rem);
     padding: 1rem;
   }
 

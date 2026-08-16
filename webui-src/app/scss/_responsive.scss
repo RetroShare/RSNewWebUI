@@ -100,25 +100,6 @@
     }
   }
 
-  /* Mail composer popup: pages/_mail.scss already grows it to 95% of the
-     viewport on a small screen, which on a phone leaves a useless 5% frame
-     around a form that needs every pixel. Its rule is !important, hence these. */
-  .composePopupOverlay .composePopup {
-    width: 100% !important;
-    height: 100% !important;
-    inset: 0;
-
-    & > .widget {
-      padding: 0.75rem;
-      border-radius: 0;
-    }
-
-    & .close-btn {
-      top: 0.5rem;
-      right: 0.5rem;
-    }
-  }
-
   .widget {
     padding: 0.5rem;
   }
