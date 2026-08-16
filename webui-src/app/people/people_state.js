@@ -65,7 +65,12 @@ function fetchIdDetails(gxsId, attempt = 0) {
           fetchIdDetails(gxsId, attempt + 1);
         }, 250 * (attempt + 1));
       } else {
-        State.gxsIdToDetailsMap[gxsId] = undefined;
+        //  Give up on this id, but do NOT restore `undefined`: that is the
+        //  value which makes this function fire a request, and two of the
+        //  callers sit inside a view (people_sidebar). Every redraw would then
+        //  start the whole six request chain again, forever, for any id the
+        //  core never resolves. `null` keeps the entry marked as attempted.
+        State.gxsIdToDetailsMap[gxsId] = null;
       }
     });
   }

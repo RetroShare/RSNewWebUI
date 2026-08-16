@@ -79,15 +79,39 @@ const retroshareId = () => {
     el.style.height = el.scrollHeight + 'px';
   }
 
+  function copyIdFallback() {
+    const field = document.getElementById('retroId');
+    if (!field) return false;
+    field.select();
+    //  Deprecated, but the Clipboard API is only exposed in a secure context
+    //  and the web UI is normally served over plain http on the LAN.
+    return document.execCommand('copy');
+  }
+
   async function copyId(value) {
+    let copied;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(value);
+      try {
+        await navigator.clipboard.writeText(value);
+        copied = true;
+      } catch (_) {
+        //  Denied permission or an unfocused document: fall back rather than
+        //  leaving the promise rejected and no feedback at all.
+        copied = copyIdFallback();
+      }
     } else {
-      const field = document.getElementById('retroId');
-      field.select();
-      document.execCommand('copy');
+      copied = copyIdFallback();
     }
-    widget.popupMessage(m(ConfirmCopied), 'copy-confirmation-modal');
+    widget.popupMessage(
+      copied
+        ? m(ConfirmCopied)
+        : [
+            m('h3', 'Copy failed'),
+            m('hr'),
+            m('p', 'Your browser refused the copy. Select the ID above and copy it by hand.'),
+          ],
+      'copy-confirmation-modal'
+    );
   }
 
   async function shareId(value) {
@@ -124,10 +148,16 @@ const retroshareId = () => {
           v.attrs.ownCert
         ),
         m('i.fas.fa-copy', {
-          onclick: () => {
-            document.getElementById('retroId').select();
-            document.execCommand('copy');
-            widget.popupMessage(m(ConfirmCopied), 'copy-confirmation-modal');
+          role: 'button',
+          tabindex: 0,
+          title: 'Copy RetroShare ID',
+          'aria-label': 'Copy RetroShare ID',
+          onclick: () => copyId(v.attrs.ownCert),
+          onkeydown: (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              copyId(v.attrs.ownCert);
+            }
           },
         }),
         m('i.fas.fa-share-alt', {
