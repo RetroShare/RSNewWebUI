@@ -125,16 +125,29 @@ function addFile(url) {
 const NewFileDialog = () => {
   let url = '';
   return {
-    view: () => [
-      m('i.fas.fa-file-medical'),
-      m('h3', 'Add new file'),
-      m('hr'),
-      m('p', 'Enter the file link:'),
-      m('input[type=text][name=fileurl]', {
-        onchange: (e) => (url = e.target.value),
-      }),
-      m('button', { onclick: () => addFile(url) }, 'Add'),
-    ],
+    view: () =>
+      m(
+        'form.add-file-dialog',
+        {
+          onsubmit: (event) => {
+            event.preventDefault();
+            addFile(url);
+          },
+        },
+        [
+          m('.add-file-dialog__heading', [
+            m('i.fas.fa-file-medical'),
+            m('h3', 'Add new file'),
+          ]),
+          m('hr'),
+          m('label[for=new-file-url]', 'Enter the file link:'),
+          m('input#new-file-url[type=text][name=fileurl]', {
+            value: url,
+            oninput: (e) => (url = e.target.value),
+          }),
+          m('button[type=submit]', 'Add'),
+        ]
+      ),
   };
 };
 
@@ -151,7 +164,11 @@ const Component = () => {
     view: () => [
       m('.widget__body-heading', { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start' } }, [
         m('.action', { style: { marginBottom: '10px' } }, [
-          m('button', { onclick: () => widget.popupMessage(m(NewFileDialog)) }, 'Add new file'),
+          m(
+            'button',
+            { onclick: () => widget.popupMessage(m(NewFileDialog), 'add-file-modal') },
+            'Add new file'
+          ),
           m('button', { onclick: clearFileCompleted }, 'Clear completed'),
         ]),
         m('h3', `Downloads (${Downloads.hashes ? Downloads.hashes.length : 0} files)`),
