@@ -6,6 +6,68 @@ function checksudo(id) {
   return id === '0000000000000000';
 }
 
+//  Distant chat history is not stored under the peer's GXS id but under the
+//  *tunnel* id, and the core builds that one as
+//  RsGxsTunnelId(sha1(sorted(own_id || peer_id))) truncated to 16 bytes
+//  (p3GxsTunnelService::makeGxsTunnelId). Asking `/rsHistory/getMessages` for a
+//  GXS id therefore always answers an empty list. There is no API to derive it
+//  remotely and no crypto.subtle outside a secure context -- the web UI is
+//  served over plain HTTP on the LAN -- so the digest is computed here.
+function sha1Hex(bytes) {
+  const ml = bytes.length;
+  const withPad = bytes.slice();
+  withPad.push(0x80);
+  while (withPad.length % 64 !== 56) withPad.push(0);
+  const bits = ml * 8;
+  //  Ids are 32 bytes at most, so the high word of the length is always zero.
+  withPad.push(0, 0, 0, 0);
+  withPad.push((bits >>> 24) & 0xff, (bits >>> 16) & 0xff, (bits >>> 8) & 0xff, bits & 0xff);
+
+  let h0 = 0x67452301, h1 = 0xEFCDAB89, h2 = 0x98BADCFE, h3 = 0x10325476, h4 = 0xC3D2E1F0;
+  const w = new Array(80);
+  const rotl = (v, n) => ((v << n) | (v >>> (32 - n))) >>> 0;
+
+  for (let i = 0; i < withPad.length; i += 64) {
+    for (let j = 0; j < 16; j++) {
+      w[j] = ((withPad[i + 4 * j] << 24) | (withPad[i + 4 * j + 1] << 16)
+        | (withPad[i + 4 * j + 2] << 8) | withPad[i + 4 * j + 3]) >>> 0;
+    }
+    for (let j = 16; j < 80; j++) w[j] = rotl(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
+
+    let a = h0, b = h1, c = h2, d = h3, e = h4;
+    for (let j = 0; j < 80; j++) {
+      let f, k;
+      if (j < 20) { f = (b & c) | (~b & d); k = 0x5A827999; }
+      else if (j < 40) { f = b ^ c ^ d; k = 0x6ED9EBA1; }
+      else if (j < 60) { f = (b & c) | (b & d) | (c & d); k = 0x8F1BBCDC; }
+      else { f = b ^ c ^ d; k = 0xCA62C1D6; }
+      const t = (rotl(a, 5) + f + e + k + w[j]) >>> 0;
+      e = d; d = c; c = rotl(b, 30); b = a; a = t;
+    }
+    h0 = (h0 + a) >>> 0; h1 = (h1 + b) >>> 0; h2 = (h2 + c) >>> 0;
+    h3 = (h3 + d) >>> 0; h4 = (h4 + e) >>> 0;
+  }
+
+  return [h0, h1, h2, h3, h4].map((v) => ('0000000' + v.toString(16)).slice(-8)).join('');
+}
+
+function hexToBytes(hex) {
+  const out = [];
+  for (let i = 0; i + 1 < hex.length; i += 2) out.push(parseInt(hex.substr(i, 2), 16));
+  return out;
+}
+
+//  Both ids are sorted first, so the two ends of a conversation compute the
+//  same tunnel. The core sorts the raw bytes; on equal length lowercase hex,
+//  a plain string comparison gives the same order.
+function distantChatPid(ownGxsId, peerGxsId) {
+  const own = String(ownGxsId || '').toLowerCase();
+  const peer = String(peerGxsId || '').toLowerCase();
+  if (own.length !== 32 || peer.length !== 32) return null;
+  const joined = own < peer ? own + peer : peer + own;
+  return sha1Hex(hexToBytes(joined)).slice(0, 32);
+}
+
 function getAvatarColor(seed) {
   let hash = 0;
   if (seed) {
@@ -394,4 +456,5 @@ module.exports = {
   SearchBar,
   regularcontactInfo,
   isUsableIdentityId,
+  distantChatPid,
 };

@@ -34,7 +34,12 @@ const PeopleLayout = () => {
   return {
     oninit: (vnode) => {
       syncFilter(vnode.attrs.tab);
-      Data.refreshGpgDetails().then(() => m.redraw());
+      //  The friend list carries the locations the direct chat history is keyed
+      //  by, so the preload only has its full candidate set once it landed.
+      Data.refreshGpgDetails().then(() => {
+        preloadAllChatHistory();
+        m.redraw();
+      });
       loadGxsIdentities();
       loadOwnGxsIds().then(() => preloadAllChatHistory());
       stopWatchingOwnIds = peopleUtil.watchOwnIds((ids) => {
@@ -48,7 +53,6 @@ const PeopleLayout = () => {
         }
         m.redraw();
       });
-      preloadAllChatHistory();
       window.addEventListener('click', dismissMenu);
 
       // Register for chatEvents to receive live incoming messages

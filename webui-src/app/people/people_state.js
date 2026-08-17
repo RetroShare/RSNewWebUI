@@ -575,11 +575,20 @@ function receiveDistantChatMessage(chatMessage) {
 //  getting a slot.
 const HISTORY_PRELOAD_CONCURRENCY = 4;
 
-function runQueued(tasks, concurrency) {
+function runQueued(tasks, concurrency, onDone) {
   let next = 0;
+  let finished = 0;
   const startNext = () => {
+    if (finished >= tasks.length) return;
     if (next >= tasks.length) return;
-    tasks[next++](startNext);
+    tasks[next++](() => {
+      finished++;
+      if (finished >= tasks.length) {
+        if (onDone) onDone();
+        return;
+      }
+      startNext();
+    });
   };
   for (let i = 0; i < concurrency && i < tasks.length; i++) startNext();
 }
@@ -625,41 +634,102 @@ function historyPreloadTask(gxsId, chatPeerId, newerOnly) {
   );
 }
 
-function preloadAllChatHistory() {
-  rs.rsJsonApiRequest('/rsIdentity/getIdentitiesSummaries', {}, (data) => {
-    const ids = (data && data.ids) ? data.ids : (rs.userList.users || []);
-    if (!ids || ids.length === 0) return;
+function distantChatIdFor(pid) {
+  return {
+    broadcast_status_peer_id: '00000000000000000000000000000000',
+    type: 2, // TYPE_PRIVATE_DISTANT
+    peer_id: '00000000000000000000000000000000',
+    distant_chat_id: pid,
+    lobby_id: { xstr64: '0' },
+  };
+}
 
+function privateChatIdFor(sslId) {
+  return {
+    broadcast_status_peer_id: '00000000000000000000000000000000',
+    type: 1, // TYPE_PRIVATE
+    peer_id: sslId,
+    distant_chat_id: '00000000000000000000000000000000',
+    lobby_id: { xstr64: '0' },
+  };
+}
+
+//  Private chat history is keyed by the *location* (SSL) id of the friend, not
+//  by their PGP id. A PGP id is half the length of an RsPeerId, so the core
+//  cannot parse it: it builds a null id -- which happens to be the key of the
+//  public/broadcast history -- and prints a stack trace for every single
+//  request. One identity per known PGP key means hundreds of those per visit.
+function locationIdsOf(gxsId) {
+  const details = State.gxsIdToDetailsMap[gxsId];
+  const pgpId = details ? details.mPgpId : null;
+  if (!pgpId || pgpId === '0000000000000000') return [];
+  const friend = Data.gpgDetails[pgpId.toLowerCase()];
+  if (!friend || !friend.locations) return [];
+  return friend.locations.map((loc) => loc && loc.id).filter(Boolean);
+}
+
+//  Only peers we can actually have a conversation with are probed. Sweeping
+//  every identity the node ever saw -- tens of thousands on an old profile --
+//  is what made the Chats badge climb for minutes at every visit, one tick per
+//  answer, and start over at every click on the tab.
+function chatPeerCandidates() {
+  const ids = new Set();
+
+  peopleUtil.contactlist(rs.userList.users || []).forEach((u) => {
+    if (u && u.mGroupId) ids.add(u.mGroupId);
+  });
+  Object.keys(State.chatHistoryMap || {}).forEach((id) => ids.add(id));
+  Object.keys(State.activeDistantChats || {}).forEach((id) => ids.add(id));
+
+  //  Identities that belong to one of our own friends: their direct chat
+  //  history is part of the same conversation as far as the user is concerned.
+  (rs.userList.users || []).forEach((u) => {
+    const gxsId = u && u.mGroupId;
+    if (gxsId && !ids.has(gxsId) && locationIdsOf(gxsId).length > 0) ids.add(gxsId);
+  });
+
+  return Array.from(ids).filter(peopleUtil.isUsableIdentityId);
+}
+
+//  Repeated calls are the norm here: the layout, the sidebar and the Chats tab
+//  all ask for a preload, and the tab asks again at every click.
+const HISTORY_PRELOAD_MIN_INTERVAL_MS = 30 * 1000;
+let historyPreloadRunning = false;
+let historyPreloadedAt = 0;
+
+function preloadAllChatHistory() {
+  if (historyPreloadRunning) return;
+  const now = Date.now();
+  if (historyPreloadedAt && now - historyPreloadedAt < HISTORY_PRELOAD_MIN_INTERVAL_MS) return;
+
+  historyPreloadRunning = true;
+  historyPreloadedAt = now;
+
+  peopleUtil.ownIds((ownIds) => {
+    //  The candidates come from the friend list and the contact flags, which
+    //  are loaded in parallel with this: nothing to probe yet only means the
+    //  answers have not landed, so the interval must not lock the next try out.
     const tasks = [];
 
-    ids.forEach((u) => {
-      const gxsId = typeof u === 'object' ? u.mGroupId : u;
-      if (!gxsId) return;
+    chatPeerCandidates().forEach((gxsId) => {
+      (ownIds || []).forEach((ownId) => {
+        const pid = peopleUtil.distantChatPid(ownId, gxsId);
+        if (pid) tasks.push(historyPreloadTask(gxsId, distantChatIdFor(pid), false));
+      });
 
-      // Check Distant Chat History (type: 2 - TYPE_PRIVATE_DISTANT)
-      tasks.push(historyPreloadTask(gxsId, {
-        broadcast_status_peer_id: '00000000000000000000000000000000',
-        type: 2, // TYPE_PRIVATE_DISTANT
-        peer_id: '00000000000000000000000000000000',
-        distant_chat_id: gxsId,
-        lobby_id: { xstr64: '0' },
-      }, false));
-
-      // Also check Private Chat History (type: 1) if PGP ID is known
-      const details = State.gxsIdToDetailsMap[gxsId];
-      const pgpId = details ? details.mPgpId : (typeof u === 'object' ? u.mPgpId : null);
-      if (pgpId && pgpId !== '0000000000000000') {
-        tasks.push(historyPreloadTask(gxsId, {
-          broadcast_status_peer_id: '00000000000000000000000000000000',
-          type: 1, // PRIVATE
-          peer_id: pgpId,
-          distant_chat_id: '00000000000000000000000000000000',
-          lobby_id: { xstr64: '0' },
-        }, true));
-      }
+      locationIdsOf(gxsId).forEach((sslId) => {
+        tasks.push(historyPreloadTask(gxsId, privateChatIdFor(sslId), true));
+      });
     });
 
-    runQueued(tasks, HISTORY_PRELOAD_CONCURRENCY);
+    if (tasks.length === 0) {
+      historyPreloadRunning = false;
+      historyPreloadedAt = 0;
+      return;
+    }
+    runQueued(tasks, HISTORY_PRELOAD_CONCURRENCY, () => {
+      historyPreloadRunning = false;
+    });
   });
 }
 
@@ -670,41 +740,31 @@ function loadAllHistoryForSelectedPeer(callback) {
   State.fullHistoryMessages = [];
   m.redraw();
 
-  const queries = [];
+  const pids = new Set();
 
-  // Query 1: Distant Chat History by active chatPid (type: 2 - TYPE_PRIVATE_DISTANT)
-  if (State.chatPid) {
-    queries.push({
-      broadcast_status_peer_id: '00000000000000000000000000000000',
-      type: 2, // TYPE_PRIVATE_DISTANT
-      peer_id: '00000000000000000000000000000000',
-      distant_chat_id: State.chatPid,
-      lobby_id: { xstr64: '0' },
-    });
-  }
+  // Distant chat history of the conversation currently open
+  if (State.chatPid) pids.add(State.chatPid);
 
-  // Query 2: Distant Chat History by selectedId if different (type: 2 - TYPE_PRIVATE_DISTANT)
-  if (State.selectedId && State.selectedId !== State.chatPid) {
-    queries.push({
-      broadcast_status_peer_id: '00000000000000000000000000000000',
-      type: 2, // TYPE_PRIVATE_DISTANT
-      peer_id: '00000000000000000000000000000000',
-      distant_chat_id: State.selectedId,
-      lobby_id: { xstr64: '0' },
-    });
-  }
+  //  Distant chat history of the earlier conversations with this peer: one
+  //  tunnel per own identity, and the tunnel id is the key -- the peer's GXS id
+  //  never is, so asking for it could only ever answer an empty list.
+  (State.ownGxsIds || []).forEach((ownId) => {
+    const pid = peopleUtil.distantChatPid(ownId, State.selectedId);
+    if (pid) pids.add(pid);
+  });
 
-  // Query 3: Private Chat History by PGP ID if available (type: 1 - TYPE_PRIVATE)
-  const details = State.gxsIdToDetailsMap[State.selectedId];
-  const pgpId = details ? details.mPgpId : null;
-  if (pgpId && pgpId !== '0000000000000000') {
-    queries.push({
-      broadcast_status_peer_id: '00000000000000000000000000000000',
-      type: 1, // TYPE_PRIVATE
-      peer_id: pgpId,
-      distant_chat_id: '00000000000000000000000000000000',
-      lobby_id: { xstr64: '0' },
-    });
+  const queries = Array.from(pids).map(distantChatIdFor);
+
+  // Direct chat history, one query per location of the friend behind this identity
+  locationIdsOf(State.selectedId).forEach((sslId) => {
+    queries.push(privateChatIdFor(sslId));
+  });
+
+  if (queries.length === 0) {
+    State.isHistoryLoading = false;
+    m.redraw();
+    if (callback) callback();
+    return;
   }
 
   let accumulatedMsgs = [];

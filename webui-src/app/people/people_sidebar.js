@@ -36,16 +36,16 @@ const PeopleSidebar = () => {
       // 1. Determine list based on mainTab ('people' vs 'chats')
       let displayItems;
 
-      // 0. Compute active chats count (conversations with real message history)
-      const allUserGroupIds = new Set((rs.userList.users || []).map((u) => u.mGroupId));
-      Object.keys(State.chatHistoryMap || {}).forEach((id) => allUserGroupIds.add(id));
-      let activeChatsCount = 0;
-      allUserGroupIds.forEach((gxsId) => {
-        const hist = State.chatHistoryMap && State.chatHistoryMap[gxsId];
-        if (hist && hist.lastMsg && !isSystemMsg(hist.lastMsg)) {
-          activeChatsCount++;
-        }
+      //  0. The conversations we know of. Only peers with a real message ever
+      //  get an entry in chatHistoryMap, so reading it directly answers both
+      //  the badge and the list. Sweeping the whole identity list instead --
+      //  tens of thousands of them on an old node -- costs that sweep on every
+      //  redraw, and it counts nothing the map does not already hold.
+      const chatPeerIds = Object.keys(State.chatHistoryMap || {}).filter((gxsId) => {
+        const hist = State.chatHistoryMap[gxsId];
+        return Boolean(hist && hist.lastMsg && !isSystemMsg(hist.lastMsg));
       });
+      const activeChatsCount = chatPeerIds.length;
 
       if (State.mainTab === 'people') {
         let baseList;
@@ -68,25 +68,19 @@ const PeopleSidebar = () => {
           return nameA.localeCompare(nameB);
         });
       } else {
-        // Chats Tab: ONLY contacts and identities that have real chat history (ignoring system tunnel status logs)
-        displayItems = Array.from(allUserGroupIds)
+        // Chats Tab: ONLY identities that have real chat history (ignoring system tunnel status logs)
+        displayItems = chatPeerIds
           .map((gxsId) => {
+            //  Details are fetched for the handful of peers actually listed,
+            //  not for every identity the node has ever seen.
+            fetchIdDetails(gxsId);
             const entry = rs.userList.userMap[gxsId];
             const name = entry && entry.name ? entry.name : (rs.userList.username(gxsId) || 'Unknown');
             return { mGroupId: gxsId, mGroupName: name };
           })
-          .filter((item) => {
-            const gxsId = item.mGroupId;
-            fetchIdDetails(gxsId);
-            const hist = State.chatHistoryMap && State.chatHistoryMap[gxsId];
-
-            const hasRealHistory = Boolean(hist && hist.lastMsg && !isSystemMsg(hist.lastMsg));
-
-            if (!hasRealHistory) return false;
-
-            const name = item.mGroupName || 'Unknown';
-            return name.toLowerCase().includes(State.searchString.toLowerCase());
-          });
+          .filter((item) => (item.mGroupName || 'Unknown')
+            .toLowerCase()
+            .includes(State.searchString.toLowerCase()));
 
         // Sort by chat timestamp descending
         displayItems.sort((a, b) => {
