@@ -20,10 +20,14 @@ const SignedIdentity = () => {
         pgpPassword: passphrase,
       },
       async (data) => {
-        if (data.retval) await peopleUtil.refreshOwnIds(previousIds);
-        const message = data.retval
+        //  Only .catch() used to clear this, and a refused passphrase is a
+        //  perfectly valid answer: the button stayed on "Creating…" for good.
+        submitting = false;
+        if (data && data.retval) await peopleUtil.refreshOwnIds(previousIds);
+        const message = data && data.retval
           ? 'Successfully created identity.'
           : 'Could not create the identity. Check your profile password and try again.';
+        m.redraw();
         widget.popupMessage(
           m('.signed-identity-result', [m('h3', 'Create new identity'), m('p', message)]),
           'signed-identity-modal'
@@ -167,38 +171,54 @@ const CreateIdentity = () => {
   };
 };
 
+//  updateIdentity(id, name, avatar, pseudonimous, pgpPassword) takes the avatar
+//  as a mandatory parameter and p3IdService assigns it unconditionally
+//  (`group.mImage = avatar`). Leaving it out of the request does not mean "keep
+//  the one you have", it means "replace it with nothing": every edit used to
+//  erase the picture. So the current one is always sent back, unless the user
+//  picked another.
+function avatarPayload(details, replacement) {
+  if (replacement !== undefined) return { mData: { base64: replacement } };
+  const current = details && details.mAvatar && details.mAvatar.mData
+    ? details.mAvatar.mData.base64 || ''
+    : '';
+  return { mData: { base64: current } };
+}
+
 const SignedEditIdentity = () => {
-  let passphase = '';
+  let passphrase = '';
   return {
     view: (v) => [
       m('i.fas.fa-user-edit'),
-      m('h3', 'Enter your passpharse'),
+      m('h3', 'Enter your profile passphrase'),
       m('hr'),
 
-      m('input[type=password][placeholder=Passpharse]', {
+      m('input[type=password][placeholder=Passphrase]', {
         style: 'margin-top:50px;width:80%',
         oninput: (e) => {
-          passphase = e.target.value;
+          passphrase = e.target.value;
         },
       }),
       m(
         'button',
         {
           style: 'margin-top:160px;',
+          disabled: !passphrase,
           onclick: () =>
             rs.rsJsonApiRequest(
               '/rsIdentity/updateIdentity',
               {
                 id: v.attrs.details.mId,
                 name: v.attrs.name,
+                avatar: avatarPayload(v.attrs.details, v.attrs.avatar),
                 pseudonimous: false,
-                pgpPassword: passphase,
+                pgpPassword: passphrase,
               },
               (data) => {
-                const message = data.retval
-                  ? 'Successfully created identity.'
-                  : 'An error occured while creating identity.';
-                widget.popupMessage([m('h3', 'Create new Identity'), m('hr'), message]);
+                const message = data && data.retval
+                  ? 'Identity updated.'
+                  : 'Could not update the identity. Check your profile password and try again.';
+                widget.popupMessage([m('h3', 'Update Identity'), m('hr'), message]);
               }
             ),
         },
@@ -209,52 +229,99 @@ const SignedEditIdentity = () => {
 };
 
 const EditIdentity = () => {
-  let name = '';
+  //  The field used to open empty and Save sent it as it stood, so an edit
+  //  meant for the avatar alone renamed the identity to nothing.
+  let name;
+  let avatar;
+  let avatarPreview = '';
+
   return {
-    view: (v) => [
-      m('i.fas.fa-user-edit'),
-      m('h3', 'Edit Identity'),
-      m('hr'),
-      m('input[type=text][placeholder=Name]', {
-        value: name,
-        oninput: (e) => {
-          name = e.target.value;
-        },
-      }),
-      m('canvas'),
-      m(
-        'button',
-        {
-          onclick: () => {
-            !peopleUtil.checksudo(v.attrs.details.mPgpId)
-              ? widget.popupMessage([
-                m(SignedEditIdentity, {
-                  name,
-                  details: v.attrs.details,
-                }),
-              ])
-              : rs.rsJsonApiRequest(
-                '/rsIdentity/updateIdentity',
-                {
-                  id: v.attrs.details.mId,
+    view: (v) => {
+      const details = v.attrs.details || {};
+      if (name === undefined) name = details.mNickname || details.mGroupName || '';
+      const hasAvatar = Boolean(details.mAvatar && details.mAvatar.mData
+        && details.mAvatar.mData.base64);
 
-                  name,
-
-                  // avatar: v.attrs.details.mAvatar.mData.base64,
-                  pseudonimous: true,
-                },
-                (data) => {
-                  const message = data.retval
-                    ? 'Successfully Updated identity.'
-                    : 'An error occured while updating  identity.';
-                  widget.popupMessage([m('h3', 'Update Identity'), m('hr'), message]);
-                }
-              );
+      return [
+        m('i.fas.fa-user-edit'),
+        m('h3', 'Edit Identity'),
+        m('hr'),
+        m('input[type=text][placeholder=Name]', {
+          value: name,
+          oninput: (e) => {
+            name = e.target.value;
           },
-        },
-        'Save'
-      ),
-    ],
+        }),
+        m('.edit-identity-avatar', { style: 'display:flex;align-items:center;gap:0.75rem;margin:0.75rem 0;' }, [
+          m(peopleUtil.UserAvatar, {
+            avatar: avatarPreview
+              ? { mData: { base64: avatarPreview.substring(avatarPreview.indexOf(',') + 1) } }
+              : (hasAvatar ? details.mAvatar : null),
+            identityId: details.mId,
+            firstLetter: (name || '?').slice(0, 1).toUpperCase(),
+            size: 64,
+            isSquare: true,
+          }),
+          m('input[type=file][accept=image/*][id=edit-identity-avatar]', {
+            style: 'display:none;',
+            onchange: (e) => {
+              const file = e.target.files && e.target.files[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                avatarPreview = reader.result;
+                avatar = avatarPreview.substring(avatarPreview.indexOf(',') + 1);
+                m.redraw();
+              };
+              reader.readAsDataURL(file);
+            },
+          }),
+          m('label.btn[for=edit-identity-avatar]', { style: 'cursor:pointer;' },
+            [m('i.fas.fa-upload'), ' Change avatar']),
+          avatarPreview && m('button.btn[type=button]', {
+            onclick: () => {
+              avatar = undefined;
+              avatarPreview = '';
+            },
+          }, 'Keep current'),
+        ]),
+        m(
+          'button',
+          {
+            disabled: !String(name).trim(),
+            onclick: () => {
+              const trimmed = String(name).trim();
+              if (!trimmed) return;
+
+              !peopleUtil.checksudo(details.mPgpId)
+                ? widget.popupMessage([
+                  m(SignedEditIdentity, {
+                    name: trimmed,
+                    avatar,
+                    details,
+                  }),
+                ])
+                : rs.rsJsonApiRequest(
+                  '/rsIdentity/updateIdentity',
+                  {
+                    id: details.mId,
+                    name: trimmed,
+                    avatar: avatarPayload(details, avatar),
+                    pseudonimous: true,
+                  },
+                  (data) => {
+                    const message = data && data.retval
+                      ? 'Identity updated.'
+                      : 'Could not update the identity.';
+                    widget.popupMessage([m('h3', 'Update Identity'), m('hr'), message]);
+                  }
+                );
+            },
+          },
+          'Save'
+        ),
+      ];
+    },
   };
 };
 
@@ -274,13 +341,25 @@ const DeleteIdentity = () => {
               {
                 id: v.attrs.id,
               },
-              () => {
+              async (data) => {
+                //  Nothing used to refresh the own identities after this, and
+                //  watchOwnIds only listens for the event refreshOwnIds emits:
+                //  the deleted identity stayed in the list. The answer was not
+                //  read either -- a refused delete still announced success.
+                const done = Boolean(data && data.retval);
+                if (done) {
+                  peopleUtil.invalidateOwnIds();
+                  await peopleUtil.refreshOwnIds();
+                }
                 widget.popupMessage([
-                  m('i.fas.fa-user-edit'),
+                  m('i.fas.fa-user-times'),
                   m('h3', 'Delete Identity: ' + v.attrs.name),
                   m('hr'),
-                  m('p', 'Identity Deleted successfuly.'),
+                  m('p', done
+                    ? 'Identity deleted.'
+                    : 'The core refused to delete this identity.'),
                 ]);
+                m.redraw();
               }
             ),
         },
@@ -290,126 +369,7 @@ const DeleteIdentity = () => {
   };
 };
 
-const Identity = () => {
-  let details = {};
-
-  return {
-    oninit: (v) =>
-      rs.rsJsonApiRequest(
-        '/rsIdentity/getIdDetails',
-        {
-          id: v.attrs.id,
-        },
-        (data) => {
-          details = data.details;
-        }
-      ),
-    view: (v) =>
-      m(
-        '.identity',
-        {
-          key: details.mId,
-        },
-        [
-          m('h4', details.mNickname),
-          details.mNickname &&
-          m(peopleUtil.UserAvatar, {
-            avatar: details.mAvatar,
-            firstLetter: details.mNickname.slice(0, 1).toUpperCase(),
-            identityId: details.mId,
-          }),
-          m('.details', [
-            m('p', 'ID:'),
-            m('p', details.mId),
-            m('p', 'Type:'),
-            m('p', details.mFlags === 14 ? 'Signed ID' : 'Anonymous ID'),
-            m('p', 'Owner node ID:'),
-            m('p', details.mPgpId),
-            m('p', 'Created on:'),
-            m(
-              'p',
-              typeof details.mPublishTS === 'object'
-                ? new Date(details.mPublishTS.xint64 * 1000).toLocaleString()
-                : 'undefiend'
-            ),
-            m('p', 'Last used:'),
-            m(
-              'p',
-              typeof details.mLastUsageTS === 'object'
-                ? new Date(details.mLastUsageTS.xint64 * 1000).toLocaleDateString()
-                : 'undefiend'
-            ),
-          ]),
-          m(
-            'button',
-            {
-              onclick: () =>
-                m.route.set('/chat/:userid/createdistantchat', {
-                  userid: details.mId,
-                }),
-            },
-            'Chat'
-          ),
-          m(
-            'button',
-            {
-              onclick: () =>
-                widget.popupMessage(
-                  m(EditIdentity, {
-                    details,
-                  })
-                ),
-            },
-            'Edit'
-          ),
-          m(
-            'button.red',
-            {
-              onclick: () =>
-                widget.popupMessage(
-                  m(DeleteIdentity, {
-                    id: details.mId,
-                    name: details.mNickname,
-                  })
-                ),
-            },
-            'Delete'
-          ),
-        ]
-      ),
-  };
-};
-
-const Layout = () => {
-  let ownIds = [];
-  let stopWatching;
-  return {
-    oninit: () => {
-      stopWatching = peopleUtil.watchOwnIds((data) => {
-        ownIds = data;
-        m.redraw();
-      });
-    },
-    onremove: () => stopWatching && stopWatching(),
-    view: () =>
-      m('.widget', [
-        m('.widget__heading', [
-          m('h3', 'Own Identities', m('span.counter', ownIds.length)),
-          m(
-            'button',
-            {
-              onclick: () => widget.popupMessage(m(CreateIdentity), 'create-identity-modal'),
-            },
-            'New Identity'
-          ),
-        ]),
-        m('.widget__body', [ownIds.map((id) => m(Identity, { id }))]),
-      ]),
-  };
-};
-
-Layout.CreateIdentity = CreateIdentity;
-Layout.EditIdentity = EditIdentity;
-Layout.DeleteIdentity = DeleteIdentity;
-
-module.exports = Layout;
+//  Only these three are reachable: the details pane and the sidebar open them
+//  as modals. The "Own Identities" widget that used to be exported here, and
+//  the Identity card it rendered, were routed nowhere.
+module.exports = { CreateIdentity, EditIdentity, DeleteIdentity };
