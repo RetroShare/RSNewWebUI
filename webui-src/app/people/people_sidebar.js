@@ -17,6 +17,8 @@ const {
   initializeDistantChat,
 } = require('people/people_state');
 
+const LIST_RENDER_CAP = 200;
+
 function formatRelativeTime(ts) {
   if (!ts) return '';
   const now = Math.floor(Date.now() / 1000);
@@ -94,6 +96,13 @@ const PeopleSidebar = () => {
           return timeB - timeA;
         });
       }
+
+      //  "All Users" is every identity the node has ever seen -- tens of
+      //  thousands on an old profile. Rendering them all builds that many DOM
+      //  rows and fires one getIdDetails per row from inside this view. The
+      //  list is capped instead, and the search narrows it.
+      const shownItems = displayItems.slice(0, LIST_RENDER_CAP);
+      const hiddenCount = displayItems.length - shownItems.length;
 
       return m('.people-left-pane', [
         // Sidebar Header Container
@@ -180,7 +189,7 @@ const PeopleSidebar = () => {
           m('.friends-scroll', [
             displayItems.length === 0
               ? m('.network-pane-placeholder', { style: 'padding: 2rem 0;' }, State.mainTab === 'chats' ? 'No active chats' : 'No identities found')
-              : displayItems.map((item) => {
+              : shownItems.map((item) => {
                   let gxsId;
                   if (State.mainTab === 'people' && State.activeFilter === 'own') {
                     gxsId = item;
@@ -327,6 +336,9 @@ const PeopleSidebar = () => {
                     ]
                   );
                 }),
+            hiddenCount > 0 && m('.friends-list-more', {
+              style: 'padding: 0.75rem 1rem; color: #64748b; font-size: 0.85rem; font-style: italic;',
+            }, `${hiddenCount} more identities — search to narrow the list`),
           ]),
 
           // Context Menu
@@ -399,6 +411,10 @@ const PeopleSidebar = () => {
                       { id: menu.gxsId, isContact: !menu.isContact },
                       (data, success) => {
                         if (success) {
+                          //  isContact is read from rs.userList.userMap, which
+                          //  only loadUsers() refreshes: reloading the identity
+                          //  summaries alone left the list showing the old state.
+                          rs.userList.loadUsers();
                           loadGxsIdentities();
                         }
                       }

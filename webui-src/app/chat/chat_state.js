@@ -110,6 +110,13 @@ function htmlToText(text) {
   );
 }
 
+//  data: covers what the web UI itself sends (a compressed JPEG data URI) and
+//  what any other client embeds the same way. Everything else -- http, https,
+//  file, anything exotic -- is a fetch to a third party.
+function isEmbeddedImageSrc(src) {
+  return /^data:image\//i.test(String(src).trim());
+}
+
 function renderChatMessage(rawText) {
   if (!rawText) return '';
 
@@ -131,7 +138,14 @@ function renderChatMessage(rawText) {
       }
 
       const src = match[1];
-      if (src) {
+      //  A message is written by whoever is at the other end of the tunnel, and
+      //  an <img> pointing at a host of their choosing makes this browser fetch
+      //  it: the reader's address handed over, and a read receipt with it, on a
+      //  conversation whose whole point is that neither is knowable. Embedded
+      //  pictures travel as data: URIs; anything else is shown as the text it is.
+      if (src && !isEmbeddedImageSrc(src)) {
+        parts.push(renderTextWithEmoji(`[remote image not loaded: ${src}]`));
+      } else if (src) {
         parts.push(
           m('img.chat-embedded-image', {
             src,
@@ -170,7 +184,7 @@ function renderChatMessage(rawText) {
   }
 
   // 2. Check for raw data:image/... base64 URLs
-  if (rawText.trim().startsWith('data:image/')) {
+  if (isEmbeddedImageSrc(rawText)) {
     const src = rawText.trim();
     return m('img.chat-embedded-image', {
       src,
