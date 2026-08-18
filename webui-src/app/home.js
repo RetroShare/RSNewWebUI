@@ -22,11 +22,11 @@ const logo = () => {
 
 const webhelpConfirm = () => {
   return {
-    view: () => [
+    view: () => m('.web-help-confirmation', [
       m('h3', 'Confirmation'),
       m('hr'),
       m('p', 'Do you want this link to be handled by your system?'),
-      m('p', 'https://retrosharedocs.readthedocs.io/en/latest/'),
+      m('.web-help-confirmation__url', 'https://retrosharedocs.readthedocs.io/en/latest/'),
       m('p', 'Make sure this link has not been forged to drag you to a malicious website.'),
       m(
         'button',
@@ -40,7 +40,7 @@ const webhelpConfirm = () => {
         },
         'Ok'
       ),
-    ],
+    ]),
   };
 };
 
@@ -51,7 +51,7 @@ const webhelp = () => {
         '.webhelp',
         {
           onclick: () => {
-            widget.popupMessage(m(webhelpConfirm));
+            widget.popupMessage(m(webhelpConfirm), 'web-help-modal');
           },
         },
         [m('i.fas.fa-globe-europe'), m('p', 'Open Web Help')]

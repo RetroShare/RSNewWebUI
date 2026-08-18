@@ -180,6 +180,55 @@
   }
 }
 
+.modal-content.web-help-modal {
+  width: min(30rem, calc(100% - 2rem));
+  min-height: 0;
+  max-height: calc(100dvh - 2rem);
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.web-help-confirmation {
+  min-width: 0;
+
+  h3 {
+    margin: 0 3rem 0.75rem 0;
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: 0.75rem 0;
+    line-height: 1.5;
+  }
+
+  &__url {
+    padding: 0.65rem 0.75rem;
+    color: color.adjust($dark-color, $alpha: -0.2);
+    background: color.adjust($primary-retro-color, $alpha: -0.92);
+    border-radius: 4px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-content.web-help-modal {
+    width: calc(100% - 1rem);
+    max-height: calc(100dvh - 1rem);
+    padding: 1rem;
+  }
+
+  .web-help-confirmation {
+    h3 {
+      font-size: 1.25rem;
+    }
+
+    button:last-child {
+      width: 100%;
+    }
+  }
+}
+
 .modal-content.copy-confirmation-modal {
   width: min(28rem, calc(100% - 2rem));
   min-height: 0;
