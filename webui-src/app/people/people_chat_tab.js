@@ -7,7 +7,7 @@ const {
   getStatusTooltip,
   initializeDistantChat,
   sendDistantChatMessage,
-  stopStatusPolling,
+  leaveDistantChat,
   loadAllHistoryForSelectedPeer,
 } = require('people/people_state');
 const { renderChatMessage } = require('chat/chat_state');
@@ -112,7 +112,9 @@ const ChatTab = () => {
         return m('.chat-warning', [
           m('i.fas.fa-unlink', { style: 'font-size: 2rem; color: #ef4444; margin-bottom: 1rem;' }),
           m('h4', 'Conversation Ended'),
-          m('p', 'You have closed the distant chat tunnel. Click below to reconnect.'),
+          m('p', State.chatCloseFoundNothing
+            ? 'The tunnel was already gone: the core had no connection left to close. Click below to open a new one.'
+            : 'You have closed the distant chat tunnel. Click below to reconnect.'),
           m('button.blue', {
             style: 'margin-top: 1rem; padding: 0.5rem 1.5rem; border-radius: 0.375rem; border: none; font-weight: 600; cursor: pointer;',
             onclick: () => initializeDistantChat(),
@@ -191,17 +193,11 @@ const ChatTab = () => {
                       pid: State.chatPid,
                     },
                     (data, success) => {
-                      if (success) {
-                        if (State.selectedId && State.activeDistantChats[State.selectedId]) {
-                          delete State.activeDistantChats[State.selectedId];
-                        }
-                        State.chatPid = null;
-                        State.chatMessages = [];
-                        State.distantChatStatus = null;
-                        State.chatDisconnected = true;
-                        stopStatusPolling();
-                        m.redraw();
-                      }
+                      //  `success` is the HTTP status, not the answer: the core
+                      //  says in retval whether it had anything to close. Taking
+                      //  200 for a closed tunnel is how this button could report
+                      //  a conversation as ended while the tunnel lived on.
+                      leaveDistantChat(Boolean(success && data && data.retval));
                     }
                   );
                 }

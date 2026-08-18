@@ -29,6 +29,8 @@ const State = {
   fullHistoryMessages: [],
   isHistoryLoading: false,
   pendingChatOpen: null, // gxsId a chat was explicitly asked for from another page
+  chatCloseFoundNothing: false, // the core had no connection left to close
+  statusPollFailures: 0, // consecutive getDistantChatStatus answers of false
 };
 
 function getDistantChatSession(gxsId) {
@@ -315,22 +317,42 @@ function pollDistantChatStatus() {
       pid: State.chatPid,
     },
     (detail, success) => {
-      if (success && detail.retval) {
-        State.distantChatStatus = detail.info;
-        if (session) session.status = detail.info;
-
-        if (session) {
-          if (detail.info.status === 2) {
-            addSessionSystemMessage(session, 'Tunnel is secured. You can talk!');
-            //  The tunnel just went up: anything the peer sent while it was
-            //  still pending is waiting in the event buffer.
-            drainBufferedChatMessages(session);
-          } else if (detail.info.status === 3) {
-            addSessionSystemMessage(session, 'Your partner closed the conversation.');
+      //  getDistantChatStatus answers false once the tunnel is gone from the
+      //  core -- died of inaction, closed by the peer, closed by us. Ignoring
+      //  that answer left the last known status on screen for good: a dead
+      //  conversation kept its green dot and its "You can talk", and the Leave
+      //  button then had nothing left to close.
+      if (!success || !detail || !detail.retval) {
+        State.statusPollFailures += 1;
+        if (State.statusPollFailures >= 2) {
+          if (session) {
+            addSessionSystemMessage(session, 'The distant chat tunnel is gone.');
+            session.disconnected = true;
           }
+          State.distantChatStatus = null;
+          State.chatDisconnected = true;
+          State.chatCloseFoundNothing = false;
+          stopStatusPolling();
+          m.redraw();
         }
-        m.redraw();
+        return;
       }
+
+      State.statusPollFailures = 0;
+      State.distantChatStatus = detail.info;
+      if (session) {
+        session.status = detail.info;
+
+        if (detail.info.status === 2) {
+          addSessionSystemMessage(session, 'Tunnel is secured. You can talk!');
+          //  The tunnel just went up: anything the peer sent while it was still
+          //  pending is waiting in the event buffer.
+          drainBufferedChatMessages(session);
+        } else if (detail.info.status === 3) {
+          addSessionSystemMessage(session, 'Your partner closed the conversation.');
+        }
+      }
+      m.redraw();
     }
   );
 }
@@ -396,6 +418,8 @@ function initializeDistantChat(force = false) {
   State.chatMessages = session.messages;
   State.distantChatStatus = null;
   State.chatDisconnected = false;
+  State.chatCloseFoundNothing = false;
+  State.statusPollFailures = 0;
   m.redraw();
 
   rs.rsJsonApiRequest(
@@ -522,6 +546,23 @@ function sendDistantChatMessage() {
       }
     }
   );
+}
+
+//  Ending the conversation on our side. `closed` is what the core answered:
+//  false means it had no connection left for that tunnel id, which the card
+//  then says rather than claiming the user just closed something.
+function leaveDistantChat(closed) {
+  if (State.selectedId && State.activeDistantChats[State.selectedId]) {
+    delete State.activeDistantChats[State.selectedId];
+  }
+  State.chatPid = null;
+  State.chatMessages = [];
+  State.distantChatStatus = null;
+  State.chatDisconnected = true;
+  State.chatCloseFoundNothing = !closed;
+  State.statusPollFailures = 0;
+  stopStatusPolling();
+  m.redraw();
 }
 
 //  Live incoming distant chat message, coming from the rsEvents stream.
@@ -830,5 +871,6 @@ module.exports = {
   initializeDistantChat,
   loadChatMessages,
   sendDistantChatMessage,
+  leaveDistantChat,
 };
 
