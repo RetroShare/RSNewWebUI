@@ -31,6 +31,10 @@ const State = {
   pendingChatOpen: null, // gxsId a chat was explicitly asked for from another page
   chatCloseFoundNothing: false, // the core had no connection left to close
   statusPollFailures: 0, // consecutive getDistantChatStatus answers of false
+  showEmojiPicker: false,
+  attachPath: '', // file being hashed for a retroshare:// link
+  isHashing: false,
+  attachError: '',
 };
 
 function getDistantChatSession(gxsId) {
@@ -67,6 +71,16 @@ function chatMessageKey(msg) {
   if (msg.isSystem) return 'sys_' + text;
   const time = msg.sendTime || msg.recvTime || 0;
   return (msg.incoming ? 'in_' : 'out_') + time + '_' + text;
+}
+
+//  The text being typed belongs to the conversation it is being typed in. It
+//  used to live in State.chatInputMsg alone, which nothing cleared when the
+//  selected peer changed: a message written to one contact stayed in the box
+//  when the next conversation opened, one Enter away from the wrong recipient.
+function setChatDraft(text) {
+  State.chatInputMsg = text;
+  const session = State.selectedId ? getDistantChatSession(State.selectedId) : null;
+  if (session) session.inputMsg = text;
 }
 
 function scrollChatToBottom() {
@@ -125,9 +139,36 @@ function drainBufferedChatMessages(session) {
 }
 
 
+//  Details are fetched once and kept for good, which is what makes the lists
+//  cheap. The identity being *looked at* is another matter: its reputation,
+//  its usage record and its avatar move while the pane is open, so that one is
+//  allowed to go stale and be asked again.
+const SELECTED_DETAILS_TTL_MS = 60 * 1000;
+const detailsFetchedAt = {};
+
+function refreshSelectedIdDetails() {
+  const gxsId = State.selectedId;
+  if (!peopleUtil.isUsableIdentityId(gxsId)) return;
+  const at = detailsFetchedAt[gxsId] || 0;
+  if (Date.now() - at < SELECTED_DETAILS_TTL_MS) return;
+
+  //  Asked again over what is already displayed, never by clearing it first:
+  //  the entry is what the pane renders, and emptying it would blank the whole
+  //  profile for the length of a round trip.
+  detailsFetchedAt[gxsId] = Date.now();
+  rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: gxsId }, (detData) => {
+    const details = detData && detData.details;
+    if (details && peopleUtil.isUsableIdentityId(String(details.mId || ''))) {
+      State.gxsIdToDetailsMap[gxsId] = details;
+      m.redraw();
+    }
+  });
+}
+
 function fetchIdDetails(gxsId, attempt = 0) {
   if (!peopleUtil.isUsableIdentityId(gxsId)) return;
   if (State.gxsIdToDetailsMap[gxsId] === undefined) {
+    detailsFetchedAt[gxsId] = Date.now();
     State.gxsIdToDetailsMap[gxsId] = null; // Mark as loading
     rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: gxsId }, (detData) => {
       const details = detData && detData.details;
@@ -407,6 +448,7 @@ function initializeDistantChat(force = false) {
     State.chatMessages = session.messages;
     State.distantChatStatus = session.status;
     State.chatDisconnected = session.disconnected;
+    State.chatInputMsg = session.inputMsg || '';
 
     drainBufferedChatMessages(session);
     loadChatMessages();
@@ -434,6 +476,7 @@ function initializeDistantChat(force = false) {
   State.chatDisconnected = false;
   State.chatCloseFoundNothing = false;
   State.statusPollFailures = 0;
+  State.chatInputMsg = session.inputMsg || '';
   m.redraw();
 
   rs.rsJsonApiRequest(
@@ -521,7 +564,7 @@ function sendDistantChatMessage() {
   };
 
   const text = State.chatInputMsg;
-  State.chatInputMsg = '';
+  setChatDraft('');
 
   rs.rsJsonApiRequest(
     '/rsChats/sendChat',
@@ -554,11 +597,34 @@ function sendDistantChatMessage() {
         scrollChatToBottom();
       } else {
         console.error('[RS] Failed to send distant chat message:', data);
-        alert('Failed to send distant chat message. The image/payload exceeds RetroShare max chat packet size.');
-        State.chatInputMsg = text;
+        //  No size limit is involved: getMaxMessageSecuritySize() answers 0,
+        //  unlimited, for distant chat, and the core slices anything longer
+        //  than 15000 characters and reassembles it on the other side. Blaming
+        //  the payload was a guess, and a wrong one.
+        alert('Failed to send the message. The tunnel may have closed -- check the connection state above.');
+        setChatDraft(text);
         m.redraw();
       }
     }
+  );
+}
+
+//  Changing the identity we talk as means another tunnel: its id is
+//  sha1(sorted(own || peer)), so the one built for the previous identity is a
+//  different tunnel, and nothing but this closes it -- it used to be left open
+//  and digging.
+function switchChatIdentity(ownGxsId) {
+  const previousPid = State.chatPid;
+  State.selectedOwnGxsIdForChat = ownGxsId;
+
+  if (!previousPid) {
+    initializeDistantChat(true);
+    return;
+  }
+  rs.rsJsonApiRequest(
+    '/rsChats/closeDistantChatConnexion',
+    { pid: previousPid },
+    () => initializeDistantChat(true)
   );
 }
 
@@ -886,5 +952,8 @@ module.exports = {
   loadChatMessages,
   sendDistantChatMessage,
   leaveDistantChat,
+  setChatDraft,
+  switchChatIdentity,
+  refreshSelectedIdDetails,
 };
 

@@ -8,14 +8,22 @@ const {
   initializeDistantChat,
   sendDistantChatMessage,
   leaveDistantChat,
-  loadAllHistoryForSelectedPeer,
+  setChatDraft,
+  switchChatIdentity,
 } = require('people/people_state');
+const { startAttachHash, stopAttachHash } = require('people/people_attach');
 const { renderChatMessage } = require('chat/chat_state');
 const chatEmoji = require('chat/chat_emoji');
 const peopleUtil = require('people/people_util');
 const HistoryBrowserModal = require('people/people_history');
 
-// Mirroring C++ Distant Chat packet size limit (200KB)
+//  Distant chat has no size limit of its own -- getMaxMessageSecuritySize()
+//  answers 0 for it and the core slices anything past 15000 characters -- but a
+//  photo straight from a phone is several megabytes of base64 crawling through a
+//  turtle tunnel. So the picture is scaled into a 800x600 box and its quality
+//  stepped down until it fits in a couple of hundred kilobytes.
+const MAX_IMAGE_CHARS = 200000;
+
 function formatChatImage(file, callback) {
   if (!file) return;
   const reader = new FileReader();
@@ -43,15 +51,15 @@ function formatChatImage(file, callback) {
       // Dynamically step down JPEG quality until base64 string is under 190,000 characters (190KB)
       let quality = 0.85;
       let dataUrl = canvas.toDataURL('image/jpeg', quality);
-      while (dataUrl.length > 190000 && quality > 0.20) {
+      while (dataUrl.length > MAX_IMAGE_CHARS * 0.95 && quality > 0.20) {
         quality -= 0.10;
         dataUrl = canvas.toDataURL('image/jpeg', quality);
       }
 
-      if (dataUrl.length <= 200000) {
+      if (dataUrl.length <= MAX_IMAGE_CHARS) {
         callback(`<img src="${dataUrl}" />`);
       } else {
-        alert('Image file is too large to send over Distant Chat 200KB packet size limit.');
+        alert('That picture stays too heavy once compressed to be worth sending over a distant chat tunnel.');
         callback(null);
       }
     };
@@ -72,19 +80,18 @@ const ChatTab = () => {
   }
 
   function attachFileLink() {
-    const path = prompt('Enter file path to attach as Retroshare link:');
-    if (path && path.trim()) {
-      const val = State.chatInputMsg || '';
-      State.chatInputMsg = val ? val + '\n' + path.trim() : path.trim();
-      m.redraw();
-    }
+    if (State.isHashing) return;
+    //  The path is read by the RetroShare node, not by the browser, so a file
+    //  picker would name something the core cannot open.
+    const path = prompt('Path of the file to share, as seen by the RetroShare node:');
+    if (path && path.trim()) startAttachHash(path);
   }
 
   function attachImage(file) {
     if (!file) return;
     formatChatImage(file, (imgTag) => {
       if (imgTag) {
-        State.chatInputMsg = (State.chatInputMsg || '') + imgTag;
+        setChatDraft((State.chatInputMsg || '') + imgTag);
         m.redraw();
       }
     });
@@ -163,10 +170,7 @@ const ChatTab = () => {
                   m('select', {
                     style: 'padding: 0.25rem 0.5rem; border-radius: 0.25rem; border: 1px solid #cbd5e1; outline: none; background: #f8fafc; font-weight: 600;',
                     value: ownId,
-                    onchange: (e) => {
-                      State.selectedOwnGxsIdForChat = e.target.value;
-                      initializeDistantChat(true);
-                    },
+                    onchange: (e) => switchChatIdentity(e.target.value),
                   }, State.ownGxsIds.map((id) => m('option', { value: id }, rs.userList.username(id)))),
                 ]);
               })(),
@@ -174,10 +178,10 @@ const ChatTab = () => {
             m('button.blue.history-btn', {
               style: 'padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem; border: none; cursor: pointer; background-color: #3b82f6; color: #ffffff; font-weight: 600;',
               title: 'View all past chat history with this contact',
+              //  The modal loads the history when it opens; asking here too
+              //  ran the whole "every message ever" query twice.
               onclick: () => {
                 State.showHistoryModal = true;
-                State.historySearchQuery = '';
-                loadAllHistoryForSelectedPeer();
               },
             }, [
               m('i.fas.fa-history', { style: 'color: #ffffff;' }),
@@ -250,6 +254,28 @@ const ChatTab = () => {
               }),
         ]),
 
+        //  Hashing has no deadline and the core never reports a failure, so
+        //  the wait must be visible and must always have a way out.
+        (State.isHashing || State.attachError) && m('.chat-attach-status', {
+          style: 'display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border-top: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.85rem; color: #475569;',
+        }, State.isHashing
+          ? [
+              m('i.fas.fa-spinner.fa-spin', { style: 'color: #3b82f6;' }),
+              m('span', { style: 'flex: 1; word-break: break-all;' }, `Hashing ${State.attachPath}…`),
+              m('button.btn.red', {
+                style: 'padding: 0.2rem 0.6rem; border-radius: 0.25rem; border: none; cursor: pointer; background-color: #ef4444; color: #ffffff;',
+                onclick: () => stopAttachHash(),
+              }, 'Stop'),
+            ]
+          : [
+              m('i.fas.fa-exclamation-triangle', { style: 'color: #ef4444;' }),
+              m('span', { style: 'flex: 1;' }, State.attachError),
+              m('button.btn', {
+                style: 'padding: 0.2rem 0.6rem; border-radius: 0.25rem; border: 1px solid #cbd5e1; cursor: pointer; background: #ffffff;',
+                onclick: () => { State.attachError = ''; },
+              }, 'Dismiss'),
+            ]),
+
         m('.chat-input-area', { style: 'display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; background: #ffffff; border-top: 1px solid #cbd5e1;' }, [
           m('button.chat-hub-action-btn.desktop-chat-attachment', {
             disabled: !canTalk,
@@ -305,7 +331,7 @@ const ChatTab = () => {
             }, m('i.fas.fa-smile')),
             State.showEmojiPicker && m(chatEmoji.EmojiPicker, {
               onSelect: (emoji) => {
-                State.chatInputMsg = (State.chatInputMsg || '') + emoji;
+                setChatDraft((State.chatInputMsg || '') + emoji);
                 State.showEmojiPicker = false;
                 m.redraw();
               }
@@ -334,7 +360,7 @@ const ChatTab = () => {
             value: State.chatInputMsg,
             style: 'flex: 1; resize: none; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.5rem; font-family: inherit; font-size: 0.9rem; outline: none; min-height: 40px; max-height: 120px;',
             oninput: (e) => {
-              State.chatInputMsg = e.target.value;
+              setChatDraft(e.target.value);
             },
             onpaste: (e) => {
               if (!canTalk) return;
@@ -346,7 +372,7 @@ const ChatTab = () => {
                   const blob = items[i].getAsFile();
                   formatChatImage(blob, (imgTag) => {
                     if (imgTag) {
-                      State.chatInputMsg = (State.chatInputMsg || '') + imgTag;
+                      setChatDraft((State.chatInputMsg || '') + imgTag);
                       m.redraw();
                     }
                   });
