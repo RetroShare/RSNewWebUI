@@ -185,18 +185,32 @@ function get64Num(val) {
   return Number(val) || 0;
 }
 
+//  RsIdentityUsage::mServiceId is an RsServiceType (rsserviceids.h), a 16 bit
+//  service number -- 0x0215 for the forums, 0x0217 for the channels. Matching it
+//  against 1..8 could never succeed, so every line of the usage panel used to
+//  read "Unknown (533)".
+const SERVICE_NAMES = {
+  0x0012: 'Chat',
+  0x0022: 'Mail',
+  0x0023: 'Direct mail',
+  0x0024: 'Distant mail',
+  0x0027: 'Distant chat',
+  0x0028: 'GXS tunnels',
+  0x0211: 'Identities',
+  0x0213: 'Wiki',
+  0x0214: 'Wire',
+  0x0215: 'Forums',
+  0x0216: 'Boards',
+  0x0217: 'Channels',
+  0x0218: 'Circles',
+  0x0219: 'Reputation',
+  0x0221: 'Calendar',
+  0x0230: 'Distant messages',
+};
+
 function getServiceName(serviceId) {
-  switch (serviceId) {
-    case 1: return 'Channels';
-    case 2: return 'Forums';
-    case 3: return 'Boards';
-    case 4: return 'Chat';
-    case 5: return 'GxsCircles';
-    case 6: return 'GxsMail';
-    case 7: return 'GxsCircles';
-    case 8: return 'Wire';
-    default: return 'Unknown (' + serviceId + ')';
-  }
+  const id = Number(serviceId);
+  return SERVICE_NAMES[id] || ('Unknown (0x' + id.toString(16) + ')');
 }
 
 function createUsageString(u) {
