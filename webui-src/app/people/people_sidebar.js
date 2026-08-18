@@ -281,9 +281,14 @@ const PeopleSidebar = () => {
                           State.chatPid = null;
                           State.chatMessages = [];
                           stopStatusPolling();
-                          if (State.activeTab === 'chat') {
-                            initializeDistantChat();
-                          }
+                          //  Selecting somebody is not asking to talk to them.
+                          //  The chat tab is sticky, so inheriting it here meant
+                          //  that once a conversation had been opened, every
+                          //  later click in the list silently requested a GXS
+                          //  tunnel toward the contact -- an action the peer
+                          //  sees. Show the profile; the tunnel waits for the
+                          //  Chat Conversation tab.
+                          State.activeTab = 'details';
                         }
                         m.redraw();
                       },

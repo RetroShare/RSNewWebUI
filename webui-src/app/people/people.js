@@ -41,7 +41,19 @@ const PeopleLayout = () => {
         m.redraw();
       });
       loadGxsIdentities();
-      loadOwnGxsIds().then(() => preloadAllChatHistory());
+      loadOwnGxsIds().then(() => {
+        preloadAllChatHistory();
+        //  "Start private chat" from a chat room routes here with the chat tab
+        //  preselected, but nothing ever opened the tunnel: the pane sat on its
+        //  Connecting spinner for good. That intent is explicit, so it is
+        //  honoured -- once the own identities needed to open a tunnel are in.
+        if (State.pendingChatOpen && State.pendingChatOpen === State.selectedId) {
+          State.pendingChatOpen = null;
+          initializeDistantChat();
+        } else {
+          State.pendingChatOpen = null;
+        }
+      });
       stopWatchingOwnIds = peopleUtil.watchOwnIds((ids) => {
         State.ownGxsIds = ids || [];
         if (!peopleUtil.isUsableIdentityId(State.selectedId)) {
@@ -184,6 +196,7 @@ PeopleLayout.setSelectedId = (id, activeTab = 'details', showCompose = false) =>
   State.activeFilter = filter;
   State.selectedId = id;
   State.activeTab = activeTab;
+  State.pendingChatOpen = activeTab === 'chat' ? id : null;
   State.mobilePane = 'detail';
   if (showCompose) {
     State.showMailCompose = true;

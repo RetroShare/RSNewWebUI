@@ -28,6 +28,7 @@ const State = {
   historySearchQuery: '',
   fullHistoryMessages: [],
   isHistoryLoading: false,
+  pendingChatOpen: null, // gxsId a chat was explicitly asked for from another page
 };
 
 function getDistantChatSession(gxsId) {
