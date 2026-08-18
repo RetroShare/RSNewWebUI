@@ -17,6 +17,8 @@ const {
   initializeDistantChat,
 } = require('people/people_state');
 
+const LIST_RENDER_CAP = 200;
+
 function formatRelativeTime(ts) {
   if (!ts) return '';
   const now = Math.floor(Date.now() / 1000);
@@ -36,16 +38,16 @@ const PeopleSidebar = () => {
       // 1. Determine list based on mainTab ('people' vs 'chats')
       let displayItems;
 
-      // 0. Compute active chats count (conversations with real message history)
-      const allUserGroupIds = new Set((rs.userList.users || []).map((u) => u.mGroupId));
-      Object.keys(State.chatHistoryMap || {}).forEach((id) => allUserGroupIds.add(id));
-      let activeChatsCount = 0;
-      allUserGroupIds.forEach((gxsId) => {
-        const hist = State.chatHistoryMap && State.chatHistoryMap[gxsId];
-        if (hist && hist.lastMsg && !isSystemMsg(hist.lastMsg)) {
-          activeChatsCount++;
-        }
+      //  0. The conversations we know of. Only peers with a real message ever
+      //  get an entry in chatHistoryMap, so reading it directly answers both
+      //  the badge and the list. Sweeping the whole identity list instead --
+      //  tens of thousands of them on an old node -- costs that sweep on every
+      //  redraw, and it counts nothing the map does not already hold.
+      const chatPeerIds = Object.keys(State.chatHistoryMap || {}).filter((gxsId) => {
+        const hist = State.chatHistoryMap[gxsId];
+        return Boolean(hist && hist.lastMsg && !isSystemMsg(hist.lastMsg));
       });
+      const activeChatsCount = chatPeerIds.length;
 
       if (State.mainTab === 'people') {
         let baseList;
@@ -68,25 +70,19 @@ const PeopleSidebar = () => {
           return nameA.localeCompare(nameB);
         });
       } else {
-        // Chats Tab: ONLY contacts and identities that have real chat history (ignoring system tunnel status logs)
-        displayItems = Array.from(allUserGroupIds)
+        // Chats Tab: ONLY identities that have real chat history (ignoring system tunnel status logs)
+        displayItems = chatPeerIds
           .map((gxsId) => {
+            //  Details are fetched for the handful of peers actually listed,
+            //  not for every identity the node has ever seen.
+            fetchIdDetails(gxsId);
             const entry = rs.userList.userMap[gxsId];
             const name = entry && entry.name ? entry.name : (rs.userList.username(gxsId) || 'Unknown');
             return { mGroupId: gxsId, mGroupName: name };
           })
-          .filter((item) => {
-            const gxsId = item.mGroupId;
-            fetchIdDetails(gxsId);
-            const hist = State.chatHistoryMap && State.chatHistoryMap[gxsId];
-
-            const hasRealHistory = Boolean(hist && hist.lastMsg && !isSystemMsg(hist.lastMsg));
-
-            if (!hasRealHistory) return false;
-
-            const name = item.mGroupName || 'Unknown';
-            return name.toLowerCase().includes(State.searchString.toLowerCase());
-          });
+          .filter((item) => (item.mGroupName || 'Unknown')
+            .toLowerCase()
+            .includes(State.searchString.toLowerCase()));
 
         // Sort by chat timestamp descending
         displayItems.sort((a, b) => {
@@ -100,6 +96,13 @@ const PeopleSidebar = () => {
           return timeB - timeA;
         });
       }
+
+      //  "All Users" is every identity the node has ever seen -- tens of
+      //  thousands on an old profile. Rendering them all builds that many DOM
+      //  rows and fires one getIdDetails per row from inside this view. The
+      //  list is capped instead, and the search narrows it.
+      const shownItems = displayItems.slice(0, LIST_RENDER_CAP);
+      const hiddenCount = displayItems.length - shownItems.length;
 
       return m('.people-left-pane', [
         // Sidebar Header Container
@@ -186,7 +189,7 @@ const PeopleSidebar = () => {
           m('.friends-scroll', [
             displayItems.length === 0
               ? m('.network-pane-placeholder', { style: 'padding: 2rem 0;' }, State.mainTab === 'chats' ? 'No active chats' : 'No identities found')
-              : displayItems.map((item) => {
+              : shownItems.map((item) => {
                   let gxsId;
                   if (State.mainTab === 'people' && State.activeFilter === 'own') {
                     gxsId = item;
@@ -287,9 +290,14 @@ const PeopleSidebar = () => {
                           State.chatPid = null;
                           State.chatMessages = [];
                           stopStatusPolling();
-                          if (State.activeTab === 'chat') {
-                            initializeDistantChat();
-                          }
+                          //  Selecting somebody is not asking to talk to them.
+                          //  The chat tab is sticky, so inheriting it here meant
+                          //  that once a conversation had been opened, every
+                          //  later click in the list silently requested a GXS
+                          //  tunnel toward the contact -- an action the peer
+                          //  sees. Show the profile; the tunnel waits for the
+                          //  Chat Conversation tab.
+                          State.activeTab = 'details';
                         }
                         m.redraw();
                       },
@@ -328,6 +336,9 @@ const PeopleSidebar = () => {
                     ]
                   );
                 }),
+            hiddenCount > 0 && m('.friends-list-more', {
+              style: 'padding: 0.75rem 1rem; color: #64748b; font-size: 0.85rem; font-style: italic;',
+            }, `${hiddenCount} more identities — search to narrow the list`),
           ]),
 
           // Context Menu
@@ -400,6 +411,10 @@ const PeopleSidebar = () => {
                       { id: menu.gxsId, isContact: !menu.isContact },
                       (data, success) => {
                         if (success) {
+                          //  isContact is read from rs.userList.userMap, which
+                          //  only loadUsers() refreshes: reloading the identity
+                          //  summaries alone left the list showing the old state.
+                          rs.userList.loadUsers();
                           loadGxsIdentities();
                         }
                       }
