@@ -12,6 +12,7 @@ const channels = require('channels/channels');
 const forums = require('forums/forums');
 const boards = require('boards/boards');
 const config = require('config/config_resolver');
+const statistics = require('statistics/statistics');
 const statusbar = require('statusbar');
 
 const navIcon = {
@@ -25,6 +26,7 @@ const navIcon = {
   forums: 'i.fas.fa-bullhorn.sidenav-icon',
   boards: 'i.fas.fa-globe.sidenav-icon',
   config: 'i.fas.fa-cogs.sidenav-icon',
+  statistics: 'i.fas.fa-chart-pie.sidenav-icon',
 };
 
 const navbar = () => {
@@ -174,6 +176,7 @@ const mobileMoreLinks = {
   forums: '/forums/MyForums',
   boards: '/boards/MyBoards',
   config: '/config/network',
+  statistics: '/statistics',
 };
 
 const MobileStatus = () => {
@@ -300,6 +303,7 @@ const Layout = () => {
             channels: '/channels/MyChannels',
             forums: '/forums/MyForums',
             boards: '/boards/MyBoards',
+            statistics: '/statistics',
             config: '/config/network',
           },
         }),
@@ -390,6 +394,9 @@ m.route(document.getElementById('main'), '/', {
   },
   '/config/:tab': {
     render: (v) => m(Layout, m(config, v.attrs)),
+  },
+  '/statistics': {
+    render: () => m(Layout, m(statistics)),
   },
 });
 

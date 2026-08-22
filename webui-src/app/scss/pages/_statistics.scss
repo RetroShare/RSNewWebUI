@@ -1,0 +1,40 @@
+.statistics-page { max-width: 1500px; margin: 0 auto; padding: 1.5rem; color: #1e293b; }
+.statistics-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+.statistics-header h1 { display: flex; align-items: center; gap: .65rem; margin: 0 0 .25rem; font-size: 1.7rem; }
+.statistics-header h1 i { color: #0788cb; }
+.statistics-header p, .traffic-panel__heading p { margin: 0; color: #64748b; }
+.statistics-header button { display: inline-flex; align-items: center; gap: .45rem; white-space: nowrap; }
+.statistics-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; align-items: start; }
+.traffic-panel { min-width: 0; padding: 1.25rem; border: 1px solid #dbe4ec; border-radius: .75rem; background: #fff; box-shadow: 0 3px 14px rgba(15, 23, 42, .06); }
+.traffic-panel__heading h2 { margin: 0 0 .2rem; font-size: 1.2rem; }
+.traffic-pie { display: grid; grid-template-columns: minmax(13rem, 45%) 1fr; align-items: center; gap: 1.25rem; margin: 1.25rem 0; }
+.traffic-pie svg { width: 100%; max-height: 18rem; transform: rotate(-90deg); }
+.traffic-pie__track, .traffic-pie__segment { fill: none; stroke-width: 18; }
+.traffic-pie__track { stroke: #e8eef3; }
+.traffic-pie__segment { transition: stroke-dasharray .25s ease; }
+.traffic-pie__value, .traffic-pie__caption { transform: rotate(90deg); transform-origin: 60px 60px; fill: #1e293b; }
+.traffic-pie__value { font-size: 9px; font-weight: 700; }
+.traffic-pie__caption { font-size: 5px; fill: #64748b; }
+.traffic-legend { min-width: 0; max-height: 16rem; overflow-y: auto; }
+.traffic-legend__item { display: grid; grid-template-columns: .7rem minmax(0, 1fr) auto; align-items: center; gap: .5rem; padding: .35rem 0; font-size: .84rem; }
+.traffic-legend__swatch { width: .7rem; height: .7rem; border-radius: 50%; }
+.traffic-legend__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.traffic-table-wrap { overflow-x: auto; }
+.traffic-table { width: 100%; font-size: .85rem; }
+.traffic-table th, .traffic-table td { padding: .55rem .45rem; text-align: right; border-bottom: 1px solid #e8eef3; white-space: nowrap; }
+.traffic-table th:first-child, .traffic-table td:first-child { text-align: left; white-space: normal; }
+.traffic-empty { display: grid; place-items: center; gap: .5rem; min-height: 18rem; color: #94a3b8; text-align: center; }
+.traffic-empty i { font-size: 3rem; }
+.statistics-error { display: flex; gap: .5rem; align-items: center; margin-bottom: 1rem; padding: .8rem 1rem; color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; border-radius: .5rem; }
+.statistics-note { margin: 1rem 0 0; color: #64748b; font-size: .8rem; text-align: right; }
+@media (max-width: 1050px) { .statistics-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+  .statistics-page { padding: .75rem; }
+  .statistics-header { align-items: flex-start; }
+  .statistics-header h1 { font-size: 1.35rem; }
+  .statistics-header button { padding: .5rem; font-size: 0; }
+  .statistics-header button i { font-size: 1rem; }
+  .traffic-panel { padding: .8rem; }
+  .traffic-pie { grid-template-columns: 1fr; }
+  .traffic-pie svg { max-height: 14rem; }
+}
