@@ -12,6 +12,41 @@ function formatFingerprint(fingerprint) {
     ?.join(' ') || '';
 }
 
+function isUsableAddress(address) {
+  const value = String(address || '').trim();
+  return value !== '' && !value.toUpperCase().includes('INVALID') && value !== '0.0.0.0';
+}
+
+function parseIpv4Locator(value) {
+  const match = String(value || '').match(/ipv4:\/\/([^:\s]+):(\d+)/i);
+  if (!match) return null;
+  return { address: match[1], port: Number(match[2]) };
+}
+
+function isPrivateIpv4(address) {
+  const octets = address.split('.').map(Number);
+  if (octets.length !== 4 || octets.some((value) => !Number.isInteger(value) || value < 0 || value > 255)) {
+    return false;
+  }
+  return octets[0] === 10 ||
+    (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
+    (octets[0] === 192 && octets[1] === 168) ||
+    (octets[0] === 169 && octets[1] === 254);
+}
+
+function displayedAddresses(detail, knownAddresses) {
+  const locators = knownAddresses.map(parseIpv4Locator).filter(Boolean);
+  const localLocator = locators.find((locator) => isPrivateIpv4(locator.address));
+  const externalLocator = locators.find((locator) => !isPrivateIpv4(locator.address));
+
+  return {
+    localAddress: isUsableAddress(detail.localAddr) ? detail.localAddr : localLocator && localLocator.address,
+    localPort: Number(detail.localPort) > 0 ? detail.localPort : localLocator && localLocator.port,
+    externalAddress: isUsableAddress(detail.extAddr) ? detail.extAddr : externalLocator && externalLocator.address,
+    externalPort: Number(detail.extPort) > 0 ? detail.extPort : externalLocator && externalLocator.port,
+  };
+}
+
 const ConfirmRemove = () => {
   return {
     view: (vnode) => [
@@ -89,6 +124,7 @@ const LocationDetails = () => {
       const detail = loc.peerDetails || {};
       const status = Data.getStatusPresentation(loc.statusValue, loc.isOnline);
       const knownAddresses = detail.ipAddressList || [];
+      const addresses = displayedAddresses(detail, knownAddresses);
       const infoRow = (label, value) => [
         m('.info-label', label),
         m('.info-value', value || 'None'),
@@ -109,10 +145,10 @@ const LocationDetails = () => {
           infoRow('Hidden Address', detail.hiddenNodeAddress),
           infoRow('Port', detail.hiddenNodePort),
         ] : [
-          infoRow('Local Address', detail.localAddr),
-          infoRow('Local Port', detail.localPort),
-          infoRow('External Address', detail.extAddr),
-          infoRow('External Port', detail.extPort),
+          infoRow('Local Address', addresses.localAddress),
+          infoRow('Local Port', addresses.localPort),
+          infoRow('External Address', addresses.externalAddress),
+          infoRow('External Port', addresses.externalPort),
           infoRow('Dynamic DNS', detail.dyndns),
         ]),
         m('h4', `Known Addresses (${knownAddresses.length})`),
