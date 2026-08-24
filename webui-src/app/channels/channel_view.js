@@ -586,11 +586,6 @@ const ChannelView = () => {
                   {
                     style: {
                       display: plist[key].isSearched ? 'flex' : 'none', // for search
-                      height: '240px',
-                      minHeight: '0',
-                      overflow: 'hidden',
-                      flexDirection: 'column',
-                      alignSelf: 'start',
                     },
                     onclick: () => {
                       m.route.set('/channels/:tab/:mGroupId/:mMsgId', {

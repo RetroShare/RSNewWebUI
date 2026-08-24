@@ -394,7 +394,14 @@ table {
 /* Keep image and generated-thumbnail cards the same size instead of stretching
  * a sparse grid row to the full height of the Posts panel. */
 .posts-container { align-content: start; grid-auto-rows: 240px; }
-.posts-container-card { position: relative; height: 240px; min-height: 0; overflow: hidden; }
+.posts-container-card {
+  position: relative;
+  display: flex;
+  align-self: start;
+  height: 240px;
+  min-height: 0;
+  overflow: hidden;
+}
 .posts-container-card > img,
 .posts-container-card > .channel-post__placeholder { min-height: 0; }
 
