@@ -12,8 +12,8 @@ function numberValue(value) {
 /**
  * Fallback SVG Thumbnail when no image is available
  */
-const FallbackImage = () =>
-  m('.board-card__placeholder-content', {
+const FallbackImage = {
+  view: () => m('.board-card__placeholder-content', {
     style: {
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       gap: '.3rem', color: '#64748b', fontSize: '.72rem', fontWeight: '600', textAlign: 'center',
@@ -21,7 +21,8 @@ const FallbackImage = () =>
   }, [
     m('i.fas.fa-image[aria-hidden=true]', { style: { fontSize: '1.35rem' } }),
     m('span', 'No image'),
-  ]);
+  ]),
+};
 
 /**
  * Check if notes string contains non-whitespace text
