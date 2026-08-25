@@ -117,6 +117,69 @@ function isEmbeddedImageSrc(src) {
   return /^data:image\//i.test(String(src).trim());
 }
 
+// Keep chat pictures inside the current page. A blank window opened here can
+// strand embedded browsers such as Android WebView without a usable Back entry.
+let chatImageViewer = null;
+let chatImageViewerPreviousOverflow = '';
+const CHAT_IMAGE_VIEWER_HISTORY_KEY = 'chatImageViewer';
+
+function removeChatImageViewer() {
+  if (!chatImageViewer) return;
+  chatImageViewer.remove();
+  chatImageViewer = null;
+  document.body.style.overflow = chatImageViewerPreviousOverflow;
+}
+
+function closeChatImageViewer() {
+  if (history.state && history.state[CHAT_IMAGE_VIEWER_HISTORY_KEY]) {
+    history.back();
+  } else {
+    removeChatImageViewer();
+  }
+}
+
+window.addEventListener('popstate', () => removeChatImageViewer());
+
+function openChatImageViewer(src) {
+  removeChatImageViewer();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'chat-image-viewer';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Image preview');
+
+  const image = document.createElement('img');
+  image.className = 'chat-image-viewer__image';
+  image.src = src;
+  image.alt = 'Chat image';
+
+  const closeButton = document.createElement('button');
+  closeButton.className = 'chat-image-viewer__close';
+  closeButton.type = 'button';
+  closeButton.setAttribute('aria-label', 'Close image preview');
+  closeButton.innerHTML = '&times;';
+  closeButton.onclick = (event) => {
+    event.stopPropagation();
+    closeChatImageViewer();
+  };
+
+  overlay.append(image, closeButton);
+  overlay.onclick = (event) => {
+    if (event.target === overlay) closeChatImageViewer();
+  };
+  overlay.onkeydown = (event) => {
+    if (event.key === 'Escape') closeChatImageViewer();
+  };
+
+  chatImageViewerPreviousOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+  document.body.appendChild(overlay);
+  chatImageViewer = overlay;
+  history.pushState({ ...(history.state || {}), [CHAT_IMAGE_VIEWER_HISTORY_KEY]: true }, '');
+  closeButton.focus();
+}
+
 function renderChatMessage(rawText) {
   if (!rawText) return '';
 
@@ -159,12 +222,7 @@ function renderChatMessage(rawText) {
               cursor: 'pointer',
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
             },
-            onclick: () => {
-              const w = window.open('');
-              if (w) {
-                w.document.write(`<body style="margin:0;background:#0f172a;display:flex;justify-content:center;align-items:center;min-height:100vh;"><img src="${src}" style="max-width:100%;max-height:100vh;object-fit:contain;"/></body>`);
-              }
-            }
+            onclick: () => openChatImageViewer(src),
           })
         );
       }
@@ -198,12 +256,7 @@ function renderChatMessage(rawText) {
         cursor: 'pointer',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
       },
-      onclick: () => {
-        const w = window.open('');
-        if (w) {
-          w.document.write(`<body style="margin:0;background:#0f172a;display:flex;justify-content:center;align-items:center;min-height:100vh;"><img src="${src}" style="max-width:100%;max-height:100vh;object-fit:contain;"/></body>`);
-        }
-      }
+      onclick: () => openChatImageViewer(src),
     });
   }
 
