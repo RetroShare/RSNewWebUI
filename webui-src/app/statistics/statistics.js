@@ -1,5 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const NetworkData = require('network/network_data');
 
 const COLORS = ['#0788cb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#ec4899', '#84cc16', '#64748b', '#f97316'];
 const SERVICE_NAMES = {
@@ -20,13 +21,29 @@ function idString(value) {
   return rs.idToHex(value);
 }
 
-function formatBytes(bytes) {
-  const value = Number(bytes) || 0;
-  if (!value) return '0 B';
-  const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
-  const unit = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
-  return `${(value / (1024 ** unit)).toFixed(unit ? 1 : 0)} ${units[unit]}`;
+//  rs.formatBytes is the one every other page uses -- the statusbar, the chat,
+//  the file lists. A second formatter here would print 1.5 MiB where the rest of
+//  the interface prints 1.5 MB for the same number.
+const formatBytes = rs.formatBytes;
+
+//  network_data already fetches the friend list and each peer's details, and
+//  keeps the result in NetworkData.gpgDetails for the whole session. Reading
+//  that costs nothing, where a second collection of its own would mean one
+//  getPeerDetails per friend, all at once, next to the traffic poll.
+function friendNamesFromCache() {
+  const names = {};
+  Object.values(NetworkData.gpgDetails || {}).forEach((profile) => {
+    (profile.locations || []).forEach((location) => {
+      const id = idString(location.id);
+      if (id) names[id] = profile.name || location.name || id;
+    });
+  });
+  return names;
 }
+
+//  Friends do not appear every five seconds: the traffic figures are refreshed
+//  on their own beat, the friend list on a much slower one.
+const FRIENDS_REFRESH_MS = 60000;
 
 // RetroShare wraps uint64_t values as { xint64, xstr64 } because JSON numbers
 // cannot safely represent every 64-bit integer. Prefer the decimal string so a
@@ -80,7 +97,10 @@ function PieChart() {
       return m('.traffic-pie', [
         m('svg[viewBox="0 0 120 120"][role=img]', { 'aria-label': vnode.attrs.label }, [
           m('circle[cx=60][cy=60][r=44].traffic-pie__track'),
-          rows.map((row, index) => {
+          //  A dash offset of zero starts at three o'clock; the group turns the
+          //  segments back to twelve, where a pie chart is read from. Only the
+          //  segments: the totals in the middle stay upright.
+          m('g[transform="rotate(-90 60 60)"]', rows.map((row, index) => {
             const length = total ? (row.total / total) * 276.46 : 0;
             const segment = m('circle[cx=60][cy=60][r=44].traffic-pie__segment', {
               stroke: COLORS[index % COLORS.length],
@@ -89,7 +109,7 @@ function PieChart() {
             }, m('title', `${row.label}: ${formatBytes(row.total)}`));
             offset += length;
             return segment;
-          }),
+          })),
           m('text[x=60][y=57][text-anchor=middle].traffic-pie__value', formatBytes(total)),
           m('text[x=60][y=70][text-anchor=middle].traffic-pie__caption', 'total traffic'),
         ]),
@@ -130,48 +150,57 @@ module.exports = {
   oninit(vnode) {
     vnode.state.incoming = [];
     vnode.state.outgoing = [];
-    vnode.state.friendNames = {};
-    vnode.state.loading = true;
     vnode.state.error = '';
     vnode.state.cumulativeServices = null;
     vnode.state.cumulativePeers = null;
     vnode.state.load = async () => {
-      const [serviceResponse, peerResponse] = await Promise.all([
-        rs.rsJsonApiRequest('/rsConfig/getCumulativeTrafficByService'),
-        rs.rsJsonApiRequest('/rsConfig/getCumulativeTrafficByPeer'),
-      ]);
-      const serviceBody = serviceResponse.body || {};
-      const peerBody = peerResponse.body || {};
-      if (serviceResponse.status === 200 && peerResponse.status === 200 && serviceBody.retval && peerBody.retval) {
-        vnode.state.cumulativeServices = serviceBody.stats || [];
-        vnode.state.cumulativePeers = peerBody.stats || [];
-        vnode.state.error = '';
-      } else {
-        // Older cores do not expose the cumulative API. Retain the live-window
-        // view as a compatibility fallback instead of leaving the page empty.
-        const response = await rs.rsJsonApiRequest('/rsConfig/getTrafficInfo');
-        const body = response.body || {};
-        if (response.status === 200 && body.retval) {
-          vnode.state.incoming = Array.isArray(body.in_lst) ? body.in_lst : [];
-          vnode.state.outgoing = Array.isArray(body.out_lst) ? body.out_lst : [];
-          vnode.state.error = 'This Core only provides the current traffic window; cumulative totals require the newer traffic statistics API.';
-        } else {
-          vnode.state.error = 'Traffic statistics are not available from this RetroShare Core.';
+      //  Two requests per run, every five seconds, plus whatever the Refresh
+      //  button adds. Without this the runs stack up as soon as one of them is
+      //  slower than the interval -- and on a phone they are, each answer
+      //  closing its connection.
+      if (vnode.state.loading) return;
+      vnode.state.loading = true;
+      try {
+        if (Date.now() - vnode.state.friendsRefreshedAt > FRIENDS_REFRESH_MS) {
+          vnode.state.refreshFriends();
         }
+        const [serviceResponse, peerResponse] = await Promise.all([
+          rs.rsJsonApiRequest('/rsConfig/getCumulativeTrafficByService'),
+          rs.rsJsonApiRequest('/rsConfig/getCumulativeTrafficByPeer'),
+        ]);
+        const serviceBody = serviceResponse.body || {};
+        const peerBody = peerResponse.body || {};
+        if (serviceResponse.status === 200 && peerResponse.status === 200 && serviceBody.retval && peerBody.retval) {
+          vnode.state.cumulativeServices = serviceBody.stats || [];
+          vnode.state.cumulativePeers = peerBody.stats || [];
+          vnode.state.error = '';
+        } else {
+          // Older cores do not expose the cumulative API. Retain the live-window
+          // view as a compatibility fallback instead of leaving the page empty.
+          const response = await rs.rsJsonApiRequest('/rsConfig/getTrafficInfo');
+          const body = response.body || {};
+          if (response.status === 200 && body.retval) {
+            vnode.state.incoming = Array.isArray(body.in_lst) ? body.in_lst : [];
+            vnode.state.outgoing = Array.isArray(body.out_lst) ? body.out_lst : [];
+            vnode.state.error = 'This Core only provides the current traffic window; cumulative totals require the newer traffic statistics API.';
+          } else {
+            vnode.state.error = 'Traffic statistics are not available from this RetroShare Core.';
+          }
+        }
+      } finally {
+        //  Whatever happened, the page must not stay locked on "loading": the
+        //  guard above would then never let another run through.
+        vnode.state.loading = false;
+        m.redraw();
       }
-      vnode.state.loading = false;
     };
-    vnode.state.loadFriends = async () => {
-      const listResponse = await rs.rsJsonApiRequest('/rsPeers/getFriendList');
-      const ids = (listResponse.body && listResponse.body.sslIds) || [];
-      await Promise.all(ids.map(async (sslId) => {
-        const detailResponse = await rs.rsJsonApiRequest('/rsPeers/getPeerDetails', { sslId });
-        const detail = detailResponse.body && detailResponse.body.det;
-        if (detail) vnode.state.friendNames[idString(detail.id || sslId)] = detail.name || detail.location || idString(sslId);
-      }));
+    vnode.state.refreshFriends = () => {
+      vnode.state.friendsRefreshedAt = Date.now();
+      NetworkData.refreshGpgDetails().then(() => m.redraw()).catch(() => {});
     };
+    vnode.state.friendsRefreshedAt = 0;
+    vnode.state.loading = false;
     vnode.state.load();
-    vnode.state.loadFriends();
     vnode.state.timer = setInterval(vnode.state.load, 5000);
   },
   onremove(vnode) { clearInterval(vnode.state.timer); },
@@ -180,9 +209,10 @@ module.exports = {
       const id = Number(value) || 0;
       return SERVICE_NAMES[id] || `Service 0x${id.toString(16).padStart(4, '0')}`;
     };
+    const friendNames = friendNamesFromCache();
     const friendLabel = (value) => {
       const id = idString(value) || 'unknown';
-      return vnode.state.friendNames[id] || (id === 'unknown' ? 'Unknown peer' : `Peer ${id.slice(0, 8)}…`);
+      return friendNames[id] || (id === 'unknown' ? 'Unknown peer' : `Peer ${id.slice(0, 8)}…`);
     };
     const serviceRows = vnode.state.cumulativeServices
       ? cumulativeRows(vnode.state.cumulativeServices, serviceLabel)
