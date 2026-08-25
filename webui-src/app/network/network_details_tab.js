@@ -17,27 +17,38 @@ function isUsableAddress(address) {
   return value !== '' && !value.toUpperCase().includes('INVALID') && value !== '0.0.0.0';
 }
 
-function parseIpv4Locator(value) {
-  const match = String(value || '').match(/ipv4:\/\/([^:\s]+):(\d+)/i);
+//  An entry of RsPeerDetails::ipAddressList is what sockaddr_storage_tostring()
+//  produced -- ipv4://1.2.3.4:1234, or ipv6://[fe80::1]:1234 since RsUrl wraps
+//  IPv6 hosts in brackets -- followed by the core's own marker, "    123 sec
+//  loc" or "    123 sec ext" (p3peers.cc, getPeerDetails).
+//
+//  That marker is the answer to "local or external", and it is worth more than
+//  deducing it from the address range: a peer behind CGNAT (100.64/10) or a
+//  double NAT has a private looking external address, and a loopback entry is
+//  not external at all.
+//
+//  One entry carries no marker: GetRetroshareInvite() clears extAddr and pushes
+//  the address here with a trailing space when it is IPv6, because the
+//  certificate format only carries IPv4 numbers. It is external by construction
+//  -- and it is exactly the one a peer added by short invite arrives with.
+function parseLocator(entry) {
+  const text = String(entry || '');
+  const match = text.match(/^\s*(?:ipv4|ipv6):\/\/(\[[^\]]+\]|[^:/\s]+):(\d+)/i);
   if (!match) return null;
-  return { address: match[1], port: Number(match[2]) };
-}
-
-function isPrivateIpv4(address) {
-  const octets = address.split('.').map(Number);
-  if (octets.length !== 4 || octets.some((value) => !Number.isInteger(value) || value < 0 || value > 255)) {
-    return false;
-  }
-  return octets[0] === 10 ||
-    (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
-    (octets[0] === 192 && octets[1] === 168) ||
-    (octets[0] === 169 && octets[1] === 254);
+  //  RsUrl escapes the % of a link-local scope id as %25, as the RFC asks; put
+  //  it back rather than showing fe80::1%25eth0 to a human.
+  const host = (match[1].startsWith('[') ? match[1].slice(1, -1) : match[1]).replace(/%25/gi, '%');
+  return {
+    address: host,
+    port: Number(match[2]),
+    scope: /\bsec\s+loc\b/i.test(text) ? 'local' : 'external',
+  };
 }
 
 function displayedAddresses(detail, knownAddresses) {
-  const locators = knownAddresses.map(parseIpv4Locator).filter(Boolean);
-  const localLocator = locators.find((locator) => isPrivateIpv4(locator.address));
-  const externalLocator = locators.find((locator) => !isPrivateIpv4(locator.address));
+  const locators = knownAddresses.map(parseLocator).filter(Boolean);
+  const localLocator = locators.find((locator) => locator.scope === 'local');
+  const externalLocator = locators.find((locator) => locator.scope === 'external');
 
   return {
     localAddress: isUsableAddress(detail.localAddr) ? detail.localAddr : localLocator && localLocator.address,
