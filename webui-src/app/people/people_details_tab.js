@@ -99,7 +99,8 @@ const DetailsTab = () => {
                           widget.popupMessage(
                             m(EditIdentity, {
                               details,
-                            })
+                            }),
+                            'edit-identity-modal'
                           ),
                       },
                       [m('i.fas.fa-edit'), m('span.btn-text', ' Edit')]

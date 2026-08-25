@@ -490,6 +490,60 @@ img.avatar {
   box-sizing: border-box;
 }
 
+.modal-content.edit-identity-modal {
+  width: min(440px, calc(100% - 2rem));
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.edit-identity-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  gap: .65rem;
+
+  &__heading {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding-right: 2.5rem;
+  }
+  &__heading > i { color: #3ba4d7; font-size: 1.35rem; }
+  &__heading h3 { margin: 0; color: #1e293b; }
+  &__name-label { color: #475569; font-size: .85rem; font-weight: 700; }
+  &__name { width: 100%; min-width: 0; }
+  &__avatar {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: .75rem;
+    padding: .75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: .65rem;
+    background: #f8fafc;
+  }
+  &__avatar > .avatar,
+  &__avatar > .jdenticon-avatar,
+  &__avatar > .defaultAvatar { flex: 0 0 auto; margin: 0 !important; }
+  &__avatar-button {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    min-width: 0;
+    padding: .45rem .7rem;
+    border-radius: .35rem;
+    background: #0284c7;
+    color: #fff;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  &__keep { padding: .35rem .55rem; font-size: .8rem; }
+  &__save { align-self: flex-end; margin-top: .25rem !important; }
+}
+
 .signed-identity-form {
   display: flex;
   flex-direction: column;
@@ -550,6 +604,20 @@ img.avatar {
     width: calc(100% - 1rem) !important;
     max-width: none !important;
     padding: 1rem;
+  }
+  .modal-content.edit-identity-modal {
+    width: calc(100% - 1rem) !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 1rem);
+    padding: 1rem;
+    overflow-y: auto;
+  }
+  .edit-identity-form {
+    &__heading h3 { font-size: 1.35rem; white-space: nowrap; }
+    &__avatar { flex-direction: column; padding: .85rem; }
+    &__avatar-button { justify-content: center; width: 100%; box-sizing: border-box; }
+    &__keep,
+    &__save { width: 100%; }
   }
   .signed-identity-form__submit { width: 100%; }
 }

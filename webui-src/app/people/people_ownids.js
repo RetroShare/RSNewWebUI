@@ -242,17 +242,19 @@ const EditIdentity = () => {
       const hasAvatar = Boolean(details.mAvatar && details.mAvatar.mData
         && details.mAvatar.mData.base64);
 
-      return [
-        m('i.fas.fa-user-edit'),
-        m('h3', 'Edit Identity'),
-        m('hr'),
-        m('input[type=text][placeholder=Name]', {
+      return m('.edit-identity-form', [
+        m('.edit-identity-form__heading', [
+          m('i.fas.fa-user-edit'),
+          m('h3', 'Edit Identity'),
+        ]),
+        m('label.edit-identity-form__name-label[for=edit-identity-name]', 'Identity name'),
+        m('input.edit-identity-form__name[type=text][placeholder=Name][id=edit-identity-name]', {
           value: name,
           oninput: (e) => {
             name = e.target.value;
           },
         }),
-        m('.edit-identity-avatar', { style: 'display:flex;align-items:center;gap:0.75rem;margin:0.75rem 0;' }, [
+        m('.edit-identity-form__avatar', [
           m(peopleUtil.UserAvatar, {
             avatar: avatarPreview
               ? { mData: { base64: avatarPreview.substring(avatarPreview.indexOf(',') + 1) } }
@@ -276,9 +278,9 @@ const EditIdentity = () => {
               reader.readAsDataURL(file);
             },
           }),
-          m('label.btn[for=edit-identity-avatar]', { style: 'cursor:pointer;' },
+          m('label.edit-identity-form__avatar-button[for=edit-identity-avatar]',
             [m('i.fas.fa-upload'), ' Change avatar']),
-          avatarPreview && m('button.btn[type=button]', {
+          avatarPreview && m('button.edit-identity-form__keep[type=button]', {
             onclick: () => {
               avatar = undefined;
               avatarPreview = '';
@@ -288,6 +290,7 @@ const EditIdentity = () => {
         m(
           'button',
           {
+            class: 'edit-identity-form__save',
             disabled: !String(name).trim(),
             onclick: () => {
               const trimmed = String(name).trim();
@@ -320,7 +323,7 @@ const EditIdentity = () => {
           },
           'Save'
         ),
-      ];
+      ]);
     },
   };
 };
