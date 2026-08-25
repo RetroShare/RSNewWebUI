@@ -740,8 +740,25 @@ const ChatLobbyModel = {
         lobby_id: { xstr64: lobbyId },
         own_id: nick,
       },
-      () => {
+      (data, success) => {
+        if (!success || !data || !data.retval) return;
+
+        // Keep the subscription in the RetroShare profile so the core joins
+        // this room again after a restart. Recent cores also enable this from
+        // joinVisibleChatLobby, but doing it explicitly preserves the expected
+        // behaviour with cores where joining only lasts for the current run.
+        rs.rsJsonApiRequest(
+          '/rsChats/setLobbyAutoSubscribe',
+          {
+            lobby_id: { xstr64: lobbyId },
+            autoSubscribe: true,
+          },
+          () => { },
+          true
+        );
+
         loadLobbyDetails(lobbyId, (info) => {
+          if (!info) return;
           ChatRoomsModel.subscribedRooms[lobbyId] = info;
           ChatRoomsModel.loadSubscribedRooms(() => {
             m.route.set('/chat/:lobby', { lobby: rs.idToHex(info.lobby_id) });
