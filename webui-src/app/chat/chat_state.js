@@ -121,13 +121,25 @@ function isEmbeddedImageSrc(src) {
 // strand embedded browsers such as Android WebView without a usable Back entry.
 let chatImageViewer = null;
 let chatImageViewerPreviousOverflow = '';
+let chatImageViewerOpener = null;
+let chatImageViewerKeyHandler = null;
 const CHAT_IMAGE_VIEWER_HISTORY_KEY = 'chatImageViewer';
 
 function removeChatImageViewer() {
   if (!chatImageViewer) return;
+  if (chatImageViewerKeyHandler) {
+    document.removeEventListener('keydown', chatImageViewerKeyHandler, true);
+    chatImageViewerKeyHandler = null;
+  }
   chatImageViewer.remove();
   chatImageViewer = null;
   document.body.style.overflow = chatImageViewerPreviousOverflow;
+  //  Put the focus back where it was taken from, so closing the preview does
+  //  not leave the caret on <body> with the message list scrolled away.
+  if (chatImageViewerOpener && document.contains(chatImageViewerOpener)) {
+    chatImageViewerOpener.focus();
+  }
+  chatImageViewerOpener = null;
 }
 
 function closeChatImageViewer() {
@@ -168,12 +180,30 @@ function openChatImageViewer(src) {
   overlay.onclick = (event) => {
     if (event.target === overlay) closeChatImageViewer();
   };
-  overlay.onkeydown = (event) => {
-    if (event.key === 'Escape') closeChatImageViewer();
+
+  //  The overlay says role=dialog and aria-modal=true, so it has to behave like
+  //  one. Listening on the overlay only caught what bubbled through it: tapping
+  //  the picture moves the focus to <body> and Escape went dead from then on.
+  //  Listening on the document, in the capture phase, means Escape closes the
+  //  preview wherever the focus has drifted, and Tab cannot walk out of it into
+  //  the page underneath -- the close button is the only thing to land on.
+  chatImageViewerKeyHandler = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeChatImageViewer();
+    } else if (event.key === 'Tab') {
+      event.preventDefault();
+      closeButton.focus();
+    }
   };
+  document.addEventListener('keydown', chatImageViewerKeyHandler, true);
 
   chatImageViewerPreviousOverflow = document.body.style.overflow;
   document.body.style.overflow = 'hidden';
+  //  Captured before the overlay steals the focus, and restored on close.
+  chatImageViewerOpener = document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : null;
   document.body.appendChild(overlay);
   chatImageViewer = overlay;
   history.pushState({ ...(history.state || {}), [CHAT_IMAGE_VIEWER_HISTORY_KEY]: true }, '');
