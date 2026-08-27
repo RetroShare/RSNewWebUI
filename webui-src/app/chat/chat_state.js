@@ -734,7 +734,12 @@ const ChatLobbyModel = {
     }
   },
 
-  loadHistory(id, type) {
+  //  How much of a conversation is on screen when it opens. Small on purpose:
+  //  every room opening pays for it, and on a phone each request is a fresh
+  //  connection on a core that answers one at a time.
+  HISTORY_PAGE: 20,
+
+  historyChatPeerId(id, type) {
     const chatPeerId = {
       broadcast_status_peer_id: '00000000000000000000000000000000',
       type,
@@ -746,19 +751,65 @@ const ChatLobbyModel = {
     if (type === 3) chatPeerId.lobby_id.xstr64 = id;
     else if (type === 2) chatPeerId.distant_chat_id = id;
     else if (type === 1) chatPeerId.peer_id = id;
+    return chatPeerId;
+  },
+
+  loadHistory(id, type) {
+    this.historyLoaded = this.HISTORY_PAGE;
+    this.historyExhausted = false;
+    this.historyLoading = false;
 
     rs.rsJsonApiRequest(
       '/rsHistory/getMessages',
       {
-        chatPeerId,
-        loadCount: 20,
+        chatPeerId: this.historyChatPeerId(id, type),
+        loadCount: this.HISTORY_PAGE,
       },
       (data, success) => {
         if (success && data.msgs) {
+          if (data.msgs.length < this.HISTORY_PAGE) this.historyExhausted = true;
           this.addMessages(data.msgs);
         }
       }
     );
+  },
+
+  //  Reading further back. p3HistoryMgr::getMessages takes a count and nothing
+  //  else -- no cursor, no "before this message" -- and always answers with the
+  //  newest ones, so the only way to see older text is to ask for a bigger slice
+  //  and let addMessages() drop what is already here. It re-sends what we hold,
+  //  which is the price of that API; a page is small and the core keeps ten days
+  //  at most anyway (mMaxStorageDurationSeconds).
+  loadOlderHistory(done) {
+    const detail = this.currentLobby;
+    if (!detail || this.historyLoading || this.historyExhausted) return false;
+
+    const id = this.lastLobbyId;
+    if (!id) return false;
+
+    this.historyLoading = true;
+    const wanted = (this.historyLoaded || this.HISTORY_PAGE) + this.HISTORY_PAGE * 2;
+
+    rs.rsJsonApiRequest(
+      '/rsHistory/getMessages',
+      {
+        chatPeerId: this.historyChatPeerId(id, detail.chatType),
+        loadCount: wanted,
+      },
+      (data, success) => {
+        this.historyLoading = false;
+        if (!success || !data.msgs) {
+          if (done) done();
+          return;
+        }
+        //  Fewer than asked for means the core has nothing older left.
+        if (data.msgs.length < wanted) this.historyExhausted = true;
+        this.historyLoaded = wanted;
+        this.addMessages(data.msgs);
+        if (done) done();
+      }
+    );
+    return true;
   },
   loadAllHistoryForRoom(lobbyId, callback) {
     ChatHubState.isHistoryLoading = true;

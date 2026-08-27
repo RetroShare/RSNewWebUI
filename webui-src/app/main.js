@@ -135,7 +135,7 @@ const navbar = () => {
                       ? 'Connected to RetroShare Core'
                       : 'Connection Lost',
                   }),
-                  m('span.webui-version', { style: { fontSize: '0.7em' } }, 'v156'),
+                  m('span.webui-version', { style: { fontSize: '0.7em' } }, 'v157'),
                   m('i.fas.fa-sync-alt.refresh-icon', {
                     style: { cursor: 'pointer', fontSize: '0.8em' },
                     onclick: () => window.location.reload(true),
@@ -258,7 +258,7 @@ const MobileStatus = () => {
               m('small', statusbar.formatBytes(state.totalOut)),
             ]),
           ]),
-          m('.mobile-status-sheet__version', 'WebUI v156'),
+          m('.mobile-status-sheet__version', 'WebUI v157'),
         ])),
       ];
     },

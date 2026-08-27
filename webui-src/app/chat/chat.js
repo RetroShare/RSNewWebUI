@@ -128,6 +128,29 @@ function updateChatStickToBottom(element) {
     element.scrollHeight - element.scrollTop - element.clientHeight <= CHAT_STICK_SLACK_PX;
 }
 
+//  Far enough from the top to have the next slice ready before the reader gets
+//  there, close enough not to fire on the first flick of a long conversation.
+const CHAT_LOAD_OLDER_AT_PX = 120;
+
+function loadOlderWhenAtTop(element) {
+  if (!element || element.scrollTop > CHAT_LOAD_OLDER_AT_PX) return;
+
+  //  Older messages are inserted above the ones on screen, which pushes
+  //  everything down by exactly the height they add. Put that height back into
+  //  scrollTop and the reader does not move at all -- without it the pane jumps
+  //  to a different part of the conversation each time a slice lands.
+  const previousHeight = element.scrollHeight;
+  const previousTop = element.scrollTop;
+
+  ChatLobbyModel.loadOlderHistory(() => {
+    requestAnimationFrame(() => {
+      const pane = document.querySelector('.chat-hub-messages');
+      if (!pane) return;
+      pane.scrollTop = previousTop + (pane.scrollHeight - previousHeight);
+    });
+  });
+}
+
 function renderUserTooltip(gxsId, name) {
   const details = ChatHubState.gxsDetails[gxsId];
   if (!details) return null;
@@ -390,6 +413,7 @@ const ChatConversationView = () => {
                 //  while the reader drags the pane.
                 event.redraw = false;
                 updateChatStickToBottom(event.target);
+                loadOlderWhenAtTop(event.target);
               },
             },
             ChatLobbyModel.messages
