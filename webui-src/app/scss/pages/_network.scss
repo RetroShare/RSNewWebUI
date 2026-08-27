@@ -863,6 +863,12 @@
 
 /* Responsive Layout for Mobile/Small Screens */
 @media (max-width: 768px) {
+  .network-tab-content.network-chat-tab-content {
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
   .network-container {
     flex-direction: column !important;
   }
@@ -917,36 +923,58 @@
 
   /* Direct-chat composer: preserve room for typing on a narrow screen. */
   .network-chat-view .chat-input-area {
-    padding: .4rem !important;
+    align-items: center !important;
+    padding: .35rem .45rem !important;
     gap: .2rem !important;
     min-width: 0;
   }
 
+  .network-chat-view .chat-input-area .mobile-chat-attachment {
+    order: 1;
+  }
+
   .network-chat-view .chat-input-area .chat-hub-action-btn,
   .network-chat-view .chat-input-area label.chat-hub-action-btn {
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-    padding: 0 !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    padding: .25rem !important;
     font-size: .95rem !important;
   }
 
   .network-chat-view .chat-input-area .emoji-picker-wrapper {
-    flex: 0 0 28px;
+    order: 3;
+    flex: 0 0 32px;
+  }
+
+  .network-chat-view .chat-input-area .emoji-picker-wrapper .emoji-picker {
+    right: -2.7rem;
+    left: auto;
+    width: min(320px, calc(100vw - 1rem));
+    max-height: min(420px, calc(100dvh - 8rem));
   }
 
   .network-chat-view .chat-input-area textarea.chat-textarea {
+    order: 2;
     min-width: 0 !important;
-    padding: .4rem !important;
+    min-height: 40px !important;
+    height: 40px !important;
+    max-height: 120px !important;
+    padding: .55rem .7rem !important;
+    border-color: #dbe2ea !important;
+    border-radius: 1.25rem !important;
+    background: #fff !important;
   }
 
   .network-chat-view .chat-input-area .send-btn {
-    width: 34px !important;
-    min-width: 34px !important;
-    height: 32px !important;
+    order: 4;
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
     padding: 0 !important;
     font-size: 0 !important;
     justify-content: center;
+    border-radius: 50% !important;
   }
 
   .network-chat-view .chat-input-area .send-btn i {

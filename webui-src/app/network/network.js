@@ -87,7 +87,7 @@ const NetworkLayout = () => {
           State.activeTab === 'graph'
             ? m('.network-tab-content.network-graph-tab', m(NetworkGraph))
             : selectedFriend
-              ? m('.network-tab-content', [
+              ? m('.network-tab-content' + (State.activeTab === 'chat' ? '.network-chat-tab-content' : ''), [
                   State.activeTab === 'details' ? m(DetailsTab) : m(ChatTab),
                 ])
               : m('.network-pane-placeholder', [
