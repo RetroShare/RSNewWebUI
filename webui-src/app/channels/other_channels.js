@@ -12,13 +12,13 @@ const Layout = () => {
             v.attrs.list.map((channel) =>
               m(util.ChannelSummary, {
                 details: channel,
-                category: 'OtherChannels',
+                category: 'Other',
               })
             ),
             v.attrs.list.map((channel) =>
               m(util.DisplayChannelsFromList, {
                 id: channel.mGroupId,
-                category: 'OtherChannels',
+                category: 'Other',
               })
             ),
           ])

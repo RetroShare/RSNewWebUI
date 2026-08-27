@@ -98,6 +98,10 @@ function logout() {
 
 const connectionState = {
   status: true,
+  //  Status of the last HTTP response, or 0 when the request never reached the
+  //  core. Recorded in extract() so it stays available when the body fails to
+  //  parse, which is how a truncated response shows up.
+  lastHttpStatus: 0,
 };
 
 function rsJsonApiRequest(
@@ -125,6 +129,7 @@ function rsJsonApiRequest(
       url: loginKey.url + path,
       async,
       extract: (xhr) => {
+        connectionState.lastHttpStatus = xhr.status;
         // Empty string is not valid json and fails on parse
         const response = xhr.responseText || '""';
         return {
@@ -148,7 +153,12 @@ function rsJsonApiRequest(
           console.error('[RS] Error in success callback for path:', path, e);
         }
       } else {
-        connectionState.status = false;
+        //  An answer, whatever its code, proves the core is there. A 404 on an
+        //  endpoint this build does not expose, or a 401 on a stale password,
+        //  is not a lost connection: only status 0, i.e. no HTTP response at
+        //  all, is. Flipping the flag on every error made the status LED blink
+        //  red on each optional endpoint that is probed.
+        connectionState.status = result.status !== 0;
         if (result.status === 401 || result.status === 403) {
           setKeys(loginKey.username, loginKey.passwd, loginKey.url, false);
           m.route.set('/');
@@ -166,13 +176,23 @@ function rsJsonApiRequest(
       return result;
     })
     .catch(function (e) {
-      connectionState.status = false;
+      //  Reaching here after a valid 200 means the body could not be parsed,
+      //  i.e. the response was cut short. The core answered and is still there;
+      //  it is the answer that did not survive the trip.
+      connectionState.status = connectionState.lastHttpStatus === 200;
       try {
         callback(e, false);
       } catch (cbErr) {
         // console.error('[RS] Error in catch callback for path:', path, cbErr);
       }
       console.error('[RS] Error: While sending request for path:', path, '\ninfo:', e);
+      //  Resolve to the same shape as a real answer, with an empty body. Most
+      //  call sites go straight for res.body.retval, and resolving undefined
+      //  turned every failed request into a TypeError thrown inside an onclick,
+      //  where nothing catches it: the button silently does nothing. Every
+      //  defensive check in the code base tests res.body.retval or res.body, so
+      //  an empty body still reads as a failure to all of them.
+      return { status: connectionState.lastHttpStatus, statusText: 'request failed', body: {} };
     });
 }
 
@@ -245,9 +265,9 @@ const eventQueue = {
             r.push(event.mChatMessage);
             owner.notify(event.mChatMessage);
           });
-        } else if (event && event.mCid) {
+        } else if (event && (event.mCid || event.mEventCode !== undefined)) {
           // Administrative chat event (e.g. lobby info change, peer join/leave)
-          // Silent for now to avoid console spam, as actual messages use mChatMessage
+          owner.notify(event);
         }
       },
       notify: () => { },
@@ -482,6 +502,24 @@ function hexId(id) {
   return String(id);
 }
 
+//  A RetroShare ID can be pasted bare, or inside a retroshare://... link where
+//  it sits url-encoded behind rsInvite=. Both the Add friend wizard and the
+//  location details dialog had their own copy of this; they now share one, the
+//  variant that trims after decoding, since a pasted link often carries a
+//  trailing newline.
+function cleanRetroshareId(value) {
+  const input = String(value || '').trim();
+  const marker = 'rsInvite=';
+  const markerPosition = input.indexOf(marker);
+  const id = markerPosition >= 0 ? input.slice(markerPosition + marker.length) : input;
+
+  try {
+    return decodeURIComponent(id).trim();
+  } catch (_) {
+    return id.trim();
+  }
+}
+
 module.exports = {
   rsJsonApiRequest,
   idToHex: hexId,
@@ -495,4 +533,5 @@ module.exports = {
   loginKey,
   formatBytes,
   logout,
+  cleanRetroshareId,
 };

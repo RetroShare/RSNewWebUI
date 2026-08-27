@@ -110,8 +110,109 @@ function scrollChatToBottom() {
   }, 50);
 }
 
-function pollHashStatus(localpath) {
+//  Whether the conversation is still pinned to its last message. It starts
+//  pinned, follows the user's own scrolling, and decides whether a redraw is
+//  allowed to jump back down -- without it, reading anything older is
+//  impossible: the pane redraws on every event and every poll answer, and each
+//  one dragged the reader back to the bottom a few tens of milliseconds later.
+let chatStickToBottom = true;
+
+//  A little slack, because a reader who stops one line short of the end still
+//  means "keep following", and because scrollTop is fractional on zoomed or
+//  high-density displays.
+const CHAT_STICK_SLACK_PX = 80;
+
+function updateChatStickToBottom(element) {
+  if (!element) return;
+  chatStickToBottom =
+    element.scrollHeight - element.scrollTop - element.clientHeight <= CHAT_STICK_SLACK_PX;
+}
+
+//  Far enough from the top to have the next slice ready before the reader gets
+//  there, close enough not to fire on the first flick of a long conversation.
+const CHAT_LOAD_OLDER_AT_PX = 120;
+
+function loadOlderWhenAtTop(element) {
+  if (!element || element.scrollTop > CHAT_LOAD_OLDER_AT_PX) return;
+
+  //  Older messages are inserted above the ones on screen, which pushes
+  //  everything down by exactly the height they add. Put that height back into
+  //  scrollTop and the reader does not move at all -- without it the pane jumps
+  //  to a different part of the conversation each time a slice lands.
+  const previousHeight = element.scrollHeight;
+  const previousTop = element.scrollTop;
+
+  ChatLobbyModel.loadOlderHistory(() => {
+    requestAnimationFrame(() => {
+      const pane = document.querySelector('.chat-hub-messages');
+      if (!pane) return;
+      pane.scrollTop = previousTop + (pane.scrollHeight - previousHeight);
+    });
+  });
+}
+
+function renderUserTooltip(gxsId, name) {
+  const details = ChatHubState.gxsDetails[gxsId];
+  if (!details) return null;
+
+  const avatar = getSafeAvatar(details);
+  const firstLetter = (name || '?').slice(0, 1).toUpperCase();
+  const votes = details.mReputation
+    ? (details.mReputation.mFriendsPositiveVotes - details.mReputation.mFriendsNegativeVotes)
+    : 0;
+
+  const rect = ChatHubState.hoveredUser ? ChatHubState.hoveredUser.rect : null;
+  const tooltipWidth = 280;
+  const tooltipGap = 10;
+  let left = rect ? rect.left - tooltipWidth - tooltipGap : window.innerWidth - tooltipWidth - tooltipGap;
+  if (left < tooltipGap && rect) left = rect.right + tooltipGap;
+  let top = rect ? rect.top : 100;
+  if (top + 160 > window.innerHeight) top = window.innerHeight - 170;
+  if (top < 10) top = 10;
+
+  return m('.user-tooltip', {
+    style: {
+      position: 'fixed',
+      top: `${top}px`,
+      left: `${left}px`,
+      zIndex: 10000,
+    }
+  }, [
+    m('.tooltip-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: gxsId, size: 56, isSquare: true })),
+    m('.tooltip-details', [
+      m('.tooltip-row', [m('span.tooltip-label', 'Identity name: '), m('span.tooltip-value', name)]),
+      m('.tooltip-row', [m('span.tooltip-label', 'Identity Id: '), m('span.tooltip-value.tooltip-id', gxsId)]),
+      details.mPgpId && details.mPgpId !== '0000000000000000' && m('.tooltip-row', [
+        m('span.tooltip-label', 'Node: '),
+        m('span.tooltip-value', `${rs.userList.username(details.mPgpId) || name} [${details.mPgpId}]`)
+      ]),
+      m('.tooltip-row', [
+        m('span.tooltip-label', 'Votes: '),
+        m('span.tooltip-value', {
+          style: {
+            color: votes >= 0 ? '#008000' : '#cc0000',
+            fontWeight: 'bold'
+          }
+        }, (votes >= 0 ? '+' : '') + votes)
+      ])
+    ])
+  ]);
+}
+
+//  Hashing a large file takes minutes, so there is no deadline to enforce here.
+//  What the poll must not do is keep asking at full speed: it backs off from one
+//  second towards ten, which is still prompt for a small file and costs a
+//  request every ten seconds for a big one -- each of them a fresh connection,
+//  the JSON API answers `Connection: close`.
+const HASH_POLL_START_MS = 1000;
+const HASH_POLL_MAX_MS = 10000;
+
+function pollHashStatus(localpath, delay = HASH_POLL_START_MS) {
   rs.rsJsonApiRequest('/rsFiles/ExtraFileStatus', { localpath }, (data) => {
+    //  Give up quietly if the user cancelled or left in the meantime: this
+    //  chain lives in a setTimeout, not in the component.
+    if (!ChatHubState.isHashing || ChatHubState.attachPath !== localpath) return;
+
     if (data && data.retval && data.info && data.info.hash && data.info.hash !== '0000000000000000000000000000000000000000') {
       const info = data.info;
       const sizeNum = info.size.xint64 || parseInt(info.size.xstr64) || info.size;
@@ -128,14 +229,28 @@ function pollHashStatus(localpath) {
       ChatHubState.attachPath = '';
       m.redraw();
     } else {
-      if (ChatHubState.isHashing) {
-        setTimeout(() => pollHashStatus(localpath), 1000);
-      }
+      setTimeout(
+        () => pollHashStatus(localpath, Math.min(delay * 2, HASH_POLL_MAX_MS)),
+        delay
+      );
     }
   });
 }
 
+//  The core has no way of telling us that hashing failed -- ftExtraList drops
+//  the file silently -- so a file that exists but cannot be read leaves this
+//  poll running for ever. Hence: stopping must always be possible from the
+//  dialog, and this is the single place that does it.
+function stopHashing() {
+  ChatHubState.isHashing = false;
+  ChatHubState.attachPath = '';
+  ChatHubState.attachBrowseHint = false;
+  ChatHubState.hashingError = '';
+}
+
 // ************************* views ****************************
+
+// ************************* Chat Hub Sub-Components ****************************
 
 const ChatRoomHeader = () => {
   return {
@@ -246,9 +361,15 @@ const ChatRoomHeader = () => {
 };
 
 const ChatConversationView = () => {
+  let showAttachmentMenu = false;
+
   function onDocClick(e) {
     if (ChatHubState.showEmojiPicker && !e.target.closest('.emoji-picker-wrapper')) {
       ChatHubState.showEmojiPicker = false;
+      m.redraw();
+    }
+    if (showAttachmentMenu && !e.target.closest('.mobile-chat-attachment')) {
+      showAttachmentMenu = false;
       m.redraw();
     }
   }
@@ -261,6 +382,13 @@ const ChatConversationView = () => {
     },
     onremove: () => {
       document.removeEventListener('click', onDocClick, true);
+      //  The poll writes its file link into the textarea of this very view, so
+      //  once the view is gone the answer has nowhere to land: leaving it
+      //  running would only keep asking for a result nobody can use.
+      if (ChatHubState.isHashing) {
+        ChatHubState.showAttachModal = false;
+        stopHashing();
+      }
     },
     view: () => {
       const chatType = ChatLobbyModel.currentLobby && ChatLobbyModel.currentLobby.chatType;
@@ -272,8 +400,21 @@ const ChatConversationView = () => {
           m(
             '.chat-hub-messages' + (isRoom ? '.compact-container' : ''),
             {
-              oncreate: () => scrollChatToBottom(),
-              onupdate: () => scrollChatToBottom(),
+              oncreate: () => {
+                chatStickToBottom = true;
+                scrollChatToBottom();
+              },
+              onupdate: () => {
+                if (chatStickToBottom) scrollChatToBottom();
+              },
+              onscroll: (event) => {
+                //  A scroll must not trigger a redraw: mithril redraws after
+                //  every handler by default, and this one fires continuously
+                //  while the reader drags the pane.
+                event.redraw = false;
+                updateChatStickToBottom(event.target);
+                loadOlderWhenAtTop(event.target);
+              },
             },
             ChatLobbyModel.messages
           ),
@@ -281,7 +422,7 @@ const ChatConversationView = () => {
             '.chat-hub-input-area',
             [
               m(
-                'button.chat-hub-action-btn',
+                'button.chat-hub-action-btn.desktop-chat-attachment',
                 {
                   disabled: !canTalk,
                   style: !canTalk ? 'opacity: 0.5; cursor: not-allowed;' : '',
@@ -293,6 +434,50 @@ const ChatConversationView = () => {
                 },
                 m('i.fas.fa-paperclip')
               ),
+              m('.mobile-chat-attachment', [
+                m('button.chat-hub-action-btn', {
+                  disabled: !canTalk,
+                  style: !canTalk ? 'opacity: 0.5; cursor: not-allowed;' : '',
+                  title: 'Add attachment',
+                  onclick: (e) => {
+                    e.stopPropagation();
+                    showAttachmentMenu = !showAttachmentMenu;
+                    ChatHubState.showEmojiPicker = false;
+                  },
+                }, m('i.fas.fa-paperclip')),
+                showAttachmentMenu && m('.mobile-chat-attachment__menu', [
+                  m('button.mobile-chat-attachment__option', {
+                    type: 'button',
+                    onclick: () => {
+                      showAttachmentMenu = false;
+                      ChatHubState.showAttachModal = true;
+                    },
+                  }, [m('i.fas.fa-file'), ' File']),
+                  m('label.mobile-chat-attachment__option', [
+                    m('i.fas.fa-image'),
+                    ' Picture',
+                    m('input[type=file][accept=image/*]', {
+                      style: 'display: none;',
+                      onchange: (e) => {
+                        if (!e.target.files || !e.target.files[0]) return;
+                        const file = e.target.files[0];
+                        const textarea = e.target.closest('.chat-hub-input-area').querySelector('textarea');
+                        formatChatImage(file, (imgTag) => {
+                          if (imgTag && textarea) {
+                            const start = textarea.selectionStart || 0;
+                            const end = textarea.selectionEnd || 0;
+                            const val = textarea.value;
+                            textarea.value = val.substring(0, start) + imgTag + val.substring(end);
+                            m.redraw();
+                          }
+                        });
+                        showAttachmentMenu = false;
+                        e.target.value = '';
+                      },
+                    }),
+                  ]),
+                ]),
+              ]),
               m('.emoji-picker-wrapper', [
                 m(
                   'button.chat-hub-action-btn',
@@ -309,7 +494,7 @@ const ChatConversationView = () => {
                 ),
                 ChatHubState.showEmojiPicker && m(chatEmoji.EmojiPicker),
               ]),
-              m('label.chat-hub-action-btn', {
+              m('label.chat-hub-action-btn.desktop-chat-attachment', {
                 title: 'Send image',
                 style: `cursor: ${canTalk ? 'pointer' : 'not-allowed'}; opacity: ${canTalk ? 1 : 0.5};`,
               }, [
@@ -335,7 +520,7 @@ const ChatConversationView = () => {
                 })
               ]),
               m('textarea.chat-hub-textarea', {
-                placeholder: canTalk ? 'Type a message... Press Enter to send (or paste image)' : 'Waiting for tunnel to be secured...',
+                placeholder: 'Type a message...',
                 disabled: !canTalk,
                 enterkeyhint: 'send',
                 onpaste: (e) => {
@@ -397,11 +582,9 @@ const ChatConversationView = () => {
           ),
           ChatHubState.showAttachModal && m('.attach-modal-overlay', {
             onclick: (e) => {
-              if (e.target === e.currentTarget && !ChatHubState.isHashing) {
+              if (e.target === e.currentTarget) {
                 ChatHubState.showAttachModal = false;
-                ChatHubState.attachPath = '';
-                ChatHubState.attachBrowseHint = false;
-                ChatHubState.hashingError = '';
+                stopHashing();
               }
             }
           }, [
@@ -475,6 +658,9 @@ const ChatConversationView = () => {
                   disabled: ChatHubState.isHashing || !ChatHubState.attachPath.trim() || ChatHubState.attachBrowseHint,
                   onclick: () => {
                     const path = ChatHubState.attachPath.trim();
+                    //  Normalised, because the poll below identifies its own run
+                    //  by comparing this against the path it was started with.
+                    ChatHubState.attachPath = path;
                     ChatHubState.isHashing = true;
                     ChatHubState.hashingError = '';
                     m.redraw();
@@ -495,14 +681,11 @@ const ChatConversationView = () => {
                   }
                 }, [m('i.fas.fa-link'), m('span', ' Attach')]),
                 m('button.btn.red', {
-                  disabled: ChatHubState.isHashing,
                   onclick: () => {
                     ChatHubState.showAttachModal = false;
-                    ChatHubState.attachPath = '';
-                    ChatHubState.attachBrowseHint = false;
-                    ChatHubState.hashingError = '';
+                    stopHashing();
                   }
-                }, 'Cancel')
+                }, ChatHubState.isHashing ? 'Stop' : 'Cancel')
               ])
             ])
           ]),
@@ -565,12 +748,7 @@ const ChatConversationView = () => {
                 onmouseenter: (e) => {
                   if (ChatHubState.activeMenu) return;
                   const rect = e.currentTarget.getBoundingClientRect();
-                  const rightbar = document.querySelector('.chat-hub-rightbar');
-                  if (rightbar) {
-                    const parentRect = rightbar.getBoundingClientRect();
-                    const top = rect.top - parentRect.top + rect.height / 2;
-                    ChatHubState.hoveredUser = { gxsId, name, top };
-                  }
+                  ChatHubState.hoveredUser = { gxsId, name, rect };
                 },
                 onmouseleave: () => {
                   ChatHubState.hoveredUser = null;
@@ -641,59 +819,44 @@ const ChatConversationView = () => {
                     });
                   }
                   return null;
-                })()
+                })(),
               ]);
             });
           })()),
-          ChatHubState.hoveredUser && (() => {
-            const hUser = ChatHubState.hoveredUser;
-            const details = ChatHubState.gxsDetails[hUser.gxsId];
-            if (!details) return null;
-
-            const avatar = getSafeAvatar(details);
-            const firstLetter = (hUser.name || '?').slice(0, 1).toUpperCase();
-            const votes = details.mReputation
-              ? (details.mReputation.mFriendsPositiveVotes - details.mReputation.mFriendsNegativeVotes)
-              : 0;
-
-            return m('.user-tooltip', {
-              style: {
-                top: `${hUser.top}px`,
-              }
-            }, [
-              m('.tooltip-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: hUser.gxsId, size: 64 })),
-              m('.tooltip-details', [
-                m('.tooltip-row', [m('span.tooltip-label', 'Identity name: '), m('span.tooltip-value', hUser.name)]),
-                m('.tooltip-row', [m('span.tooltip-label', 'Identity Id: '), m('span.tooltip-value.tooltip-id', hUser.gxsId)]),
-                details.mPgpId && details.mPgpId !== '0000000000000000' && m('.tooltip-row', [
-                  m('span.tooltip-label', 'Node: '),
-                  m('span.tooltip-value', `${rs.userList.username(details.mPgpId) || hUser.name} [${details.mPgpId}]`)
-                ]),
-                m('.tooltip-row', [
-                  m('span.tooltip-label', 'Votes: '),
-                  m('span.tooltip-value', {
-                    style: {
-                      color: votes >= 0 ? '#22c55e' : '#ef4444',
-                      fontWeight: 'bold'
-                    }
-                  }, (votes >= 0 ? '+' : '') + votes)
-                ])
-              ])
-            ]);
-          })(),
+          ChatHubState.hoveredUser && renderUserTooltip(ChatHubState.hoveredUser.gxsId, ChatHubState.hoveredUser.name),
           ChatHubState.activeMenu && (() => {
             const menu = ChatHubState.activeMenu;
             const isOwn = menu.gxsId === rs.idToHex(ChatLobbyModel.currentLobby.gxs_id || '');
             const isMuted = ChatHubState.mutedUsers && ChatHubState.mutedUsers.has(menu.gxsId);
 
-            return m('.rightbar-context-menu', {
-              style: {
-                top: `${menu.top}px`,
-              },
-              onclick: (e) => {
-                e.stopPropagation();
-              }
-            }, [
+            return [
+              m('.menu-backdrop', {
+                style: {
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 9998,
+                },
+                onclick: (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  ChatHubState.activeMenu = null;
+                  m.redraw();
+                },
+                oncontextmenu: (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  ChatHubState.activeMenu = null;
+                  m.redraw();
+                },
+              }),
+              m('.rightbar-context-menu', {
+                style: {
+                  top: `${menu.top}px`,
+                },
+                onclick: (e) => {
+                  e.stopPropagation();
+                }
+              }, [
               m('.menu-item', {
                 onclick: () => {
                   ChatHubState.userSortMethod = 'activity';
@@ -850,7 +1013,7 @@ const ChatConversationView = () => {
                 m('i.fas.fa-user', { style: 'color: #8b5cf6; margin-right: 0.5rem; width: 18px; text-align: center;' }),
                 'Show author in people tab'
               ])
-            ]);
+            ])];
           })()
         ])
       ]);
@@ -934,8 +1097,7 @@ const ChatRoomDetailView = () => {
       }
 
       const participantCount = participants.length;
-      const participantNames = participants.map((p) => p.name);
-      participantNames.sort((a, b) => a.localeCompare(b));
+      const sortedParticipants = participants.sort((a, b) => a.name.localeCompare(b.name));
 
       const lobbyHexId = rs.idToHex(room.lobby_id);
       const privacy = getLobbyPrivacyInfo(room);
@@ -964,12 +1126,34 @@ const ChatRoomDetailView = () => {
 
         m('.detail-section', [
           m('h3', 'Participants (' + participantCount + ')'),
-          participantNames.length > 0
+          sortedParticipants.length > 0
             ? m(
                 '.participants-grid',
-                participantNames.map((name) =>
-                  m('.participant-card', m('.participant-name', name))
-                )
+                sortedParticipants.map((participant) => {
+                  if (participant.key && ChatHubState.gxsDetails[participant.key] === undefined) {
+                    ChatHubState.gxsDetails[participant.key] = null;
+                    rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: participant.key }, (data) => {
+                      if (data && data.details) {
+                        ChatHubState.gxsDetails[participant.key] = data.details;
+                        m.redraw();
+                      }
+                    });
+                  }
+
+                  const details = ChatHubState.gxsDetails[participant.key];
+                  const avatar = getSafeAvatar(details);
+                  const firstLetter = (participant.name || '?').slice(0, 1).toUpperCase();
+
+                  return m('.participant-card', [
+                    m(peopleUtil.UserAvatar, {
+                      avatar,
+                      firstLetter,
+                      identityId: participant.key,
+                      size: 32,
+                    }),
+                    m('.participant-name', participant.name),
+                  ]);
+                })
               )
             : m('p.no-participants', 'No participant information available'),
         ]),
@@ -980,8 +1164,15 @@ const ChatRoomDetailView = () => {
 
 const ChatRoomJoinView = () => {
   let ownIds = [];
+  let stopWatching;
   return {
-    oninit: () => peopleUtil.ownIds((data) => (ownIds = data)),
+    oninit: () => {
+      stopWatching = peopleUtil.watchOwnIds((data) => {
+        ownIds = data;
+        m.redraw();
+      });
+    },
+    onremove: () => stopWatching && stopWatching(),
     view: () => {
       const room = ChatHubState.selectedRoom;
       if (!room) return null;
@@ -1011,14 +1202,29 @@ const ChatRoomJoinView = () => {
         m('.detail-section', [
           m('h3', 'Join Room'),
           m('p.join-description', 'Select an identity to join this chat room:'),
+          ChatRoomsModel.joiningLobbyId === lobbyHexId &&
+            m('p.join-description', [m('i.fas.fa-spinner.fa-spin'), ' Joining…']),
+          ChatRoomsModel.joinError && m('p.error', ChatRoomsModel.joinError),
           m(
             '.identities-grid',
             ownIds.map((nick) =>
               m(
                 '.identity-card',
-                { onclick: () => ChatLobbyModel.enterPublicLobby(lobbyHexId, nick) },
+                {
+                  class: ChatRoomsModel.joiningLobbyId === lobbyHexId ? 'disabled' : '',
+                  onclick: () => ChatRoomsModel.invitationIds.has(lobbyHexId)
+                    ? ChatRoomsModel.acceptInvitation(lobbyHexId, nick)
+                    : ChatLobbyModel.enterPublicLobby(lobbyHexId, nick),
+                },
                 [
-                  m('.identity-name', rs.userList.username(nick) || nick),
+                  m('.identity-card__identity', [
+                    m(peopleUtil.IdentityAvatar, {
+                      identityId: nick,
+                      name: rs.userList.username(nick) || nick,
+                      size: 36,
+                    }),
+                    m('.identity-name', rs.userList.username(nick) || nick),
+                  ]),
                   m('i.fas.fa-sign-in-alt'),
                 ]
               )
@@ -1046,6 +1252,7 @@ const Layout = {
   oninit: () => {
     ChatHubState.activeTab = 'chat';
     const lobbyId = m.route.param('lobby');
+    ChatHubState.mobilePane = lobbyId ? 'detail' : 'list';
     if (lobbyId) {
       ChatHubState.selectedRoomId = lobbyId;
       ChatLobbyModel.loadLobby(lobbyId);
@@ -1073,12 +1280,20 @@ const Layout = {
   onupdate: () => {
     const lobbyId = m.route.param('lobby');
     if (lobbyId && ChatHubState.selectedRoomId !== lobbyId) {
+      ChatHubState.mobilePane = 'detail';
       ChatHubState.selectedRoomId = lobbyId;
+      //  Another room, another conversation: it opens on its last message,
+      //  whatever the reader had scrolled to in the previous one. The pane
+      //  itself is reused rather than recreated, so its oncreate does not run.
+      chatStickToBottom = true;
       ChatLobbyModel.loadLobby(lobbyId);
+    } else if (!lobbyId) {
+      ChatHubState.mobilePane = 'list';
     }
   },
   onremove: () => {
     ChatLobbyModel.stopStatusPolling();
+    ChatLobbyModel.stopParticipantPolling();
     window.removeEventListener('click', Layout.dismissMenu);
   },
   view: () => {
@@ -1091,6 +1306,13 @@ const Layout = {
     const publicRooms = (ChatRoomsModel.allRooms || [])
       .filter((info) => !ChatRoomsModel.subscribed(info))
       .filter((info) => (info.lobby_name || '').toLowerCase().includes(search));
+
+    const invitedRooms = publicRooms.filter((info) =>
+      ChatRoomsModel.invitationIds.has(rs.idToHex(info.lobby_id))
+    );
+    const discoverableRooms = publicRooms.filter((info) =>
+      !ChatRoomsModel.invitationIds.has(rs.idToHex(info.lobby_id))
+    );
 
     const isSelected = (info, type) =>
       ChatHubState.selectedRoomId === rs.idToHex(info.lobby_id);
@@ -1128,7 +1350,7 @@ const Layout = {
       ChatHubState.selectedRoomType = null;
     }
 
-    return m('.chat-hub-container', [
+    return m('.chat-hub-container' + (ChatHubState.mobilePane === 'detail' ? '.mobile-detail-open' : ''), [
       m('.chat-hub-left-pane', [
         m('.chat-own-profile-card', [
           m('.profile-header', [
@@ -1166,26 +1388,13 @@ const Layout = {
               ]),
               subscribedRooms.map((info) => {
                 const hexId = rs.idToHex(info.lobby_id);
-                let count = 0;
-                let hasOwn = false;
-                if (info.gxs_ids) {
-                  if (Array.isArray(info.gxs_ids)) {
-                    count = info.gxs_ids.length;
-                    hasOwn = info.gxs_ids.some((u) => u.key === info.gxs_id);
-                  } else if (typeof info.gxs_ids === 'object') {
-                    count = Object.keys(info.gxs_ids).length;
-                    hasOwn = info.gxs_ids[info.gxs_id] !== undefined;
-                  }
-                }
-                if (!hasOwn && info.gxs_id && info.gxs_id !== '00000000000000000000000000000000') {
-                  count++;
-                }
                 return m(
                   '.chat-room-list-item' +
                     (isSelected(info, 'subscribed') ? '.selected' : ''),
                   {
                     key: hexId,
                     onclick: () => {
+                      ChatHubState.mobilePane = 'detail';
                       m.route.set('/chat/:lobby', { lobby: hexId });
                     },
                   },
@@ -1195,26 +1404,57 @@ const Layout = {
                       m('.room-name', info.lobby_name || '<unnamed>'),
                       m('.room-topic', info.lobby_topic || 'No topic'),
                     ]),
-                    count > 0 && m('.room-badge', count),
+                    (ChatRoomsModel.unreadCount[hexId] || 0) > 0
+                      && m('.room-badge', ChatRoomsModel.unreadCount[hexId]),
                   ]
                 );
               }),
             ],
 
-            publicRooms.length > 0 && [
+            invitedRooms.length > 0 && [
+              m('.rooms-section-title.invited-rooms-title', [
+                m('i.fas.fa-envelope'),
+                m('span', 'Invitations (' + invitedRooms.length + ')'),
+              ]),
+              invitedRooms.map((info) => {
+                const hexId = rs.idToHex(info.lobby_id);
+                return m(
+                  '.chat-room-list-item.public-room.invited-room' +
+                    (isSelected(info, 'public') ? '.selected' : ''),
+                  {
+                    key: hexId,
+                    onclick: () => {
+                      ChatHubState.mobilePane = 'detail';
+                      m.route.set('/chat/:lobby', { lobby: hexId });
+                    },
+                  },
+                  [
+                    m('.room-icon', m('i.fas.fa-envelope-open-text')),
+                    m('.room-meta', [
+                      m('.room-name', info.lobby_name || '<unnamed>'),
+                      m('.room-topic', info.lobby_topic || 'You were invited to join'),
+                    ]),
+                    m('.room-badge', { title: 'Chat room invitation' }, '!'),
+                  ]
+                );
+              }),
+            ],
+
+            discoverableRooms.length > 0 && [
               m('.rooms-section-title', [
                 m('i.fas.fa-globe'),
-                m('span', 'Public (' + publicRooms.length + ')'),
+                m('span', 'Public (' + discoverableRooms.length + ')'),
               ]),
-              publicRooms.map((info) => {
+              discoverableRooms.map((info) => {
                 const hexId = rs.idToHex(info.lobby_id);
-                const count = info.total_number_of_peers || 0;
+                const participantCount = info.total_number_of_peers || 0;
                 return m(
                   '.chat-room-list-item.public-room' +
                     (isSelected(info, 'public') ? '.selected' : ''),
                   {
                     key: hexId,
                     onclick: () => {
+                      ChatHubState.mobilePane = 'detail';
                       m.route.set('/chat/:lobby', { lobby: hexId });
                     },
                   },
@@ -1224,196 +1464,209 @@ const Layout = {
                       m('.room-name', info.lobby_name || '<unnamed>'),
                       m('.room-topic', info.lobby_topic || 'No topic'),
                     ]),
-                    count > 0 && m('.room-badge', count),
+                    participantCount > 0 && m('.room-badge', {
+                      title: `${participantCount} participant${participantCount === 1 ? '' : 's'}`,
+                    }, participantCount),
                   ]
                 );
               }),
             ],
 
             subscribedRooms.length === 0 &&
-              publicRooms.length === 0 &&
+              invitedRooms.length === 0 &&
+              discoverableRooms.length === 0 &&
               m('p.no-rooms', 'No chat rooms found'),
           ]),
         ]),
-        ChatHubState.showCreateRoomModal && m('.attach-modal-overlay', [
-          m('.attach-modal', [
-            m('h4', 'Create New Chat Room'),
+      ]),
+      ChatHubState.showCreateRoomModal && m('.attach-modal-overlay', [
+        m('.attach-modal', [
+          m('h4', 'Create New Chat Room'),
 
-            m('.form-field', { style: 'display: flex; flex-direction: column; gap: 0.25rem;' }, [
-              m('label', { style: 'font-weight: bold; font-size: 0.9rem; color: #475569;' }, 'Room Name:'),
-              m('input[type=text]', {
-                value: ChatHubState.newRoomName,
-                oninput: (e) => { ChatHubState.newRoomName = e.target.value; },
-                placeholder: 'Enter room name',
-                style: 'padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; font-size: 0.9rem;'
+          m('.form-field', { style: 'display: flex; flex-direction: column; gap: 0.25rem;' }, [
+            m('label', { style: 'font-weight: bold; font-size: 0.9rem; color: #475569;' }, 'Room Name:'),
+            m('input[type=text]', {
+              value: ChatHubState.newRoomName,
+              oninput: (e) => { ChatHubState.newRoomName = e.target.value; },
+              placeholder: 'Enter room name',
+              style: 'padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; font-size: 0.9rem;'
+            })
+          ]),
+
+          m('.form-field', { style: 'display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.5rem;' }, [
+            m('label', { style: 'font-weight: bold; font-size: 0.9rem; color: #475569;' }, 'Topic:'),
+            m('input[type=text]', {
+              value: ChatHubState.newRoomTopic,
+              oninput: (e) => { ChatHubState.newRoomTopic = e.target.value; },
+              placeholder: 'Enter room topic',
+              style: 'padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; font-size: 0.9rem;'
+            })
+          ]),
+
+          m('.form-field', { style: 'display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.5rem;' }, [
+            m('label', { style: 'font-weight: bold; font-size: 0.9rem; color: #475569;' }, 'Admin Identity:'),
+            m('select', {
+              value: ChatHubState.newRoomIdentity,
+              onchange: (e) => { ChatHubState.newRoomIdentity = e.target.value; },
+              style: 'padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; font-size: 0.9rem; background-color: #ffffff;'
+            }, [
+              ChatHubState.ownGxsIdentities && ChatHubState.ownGxsIdentities.map((id) => {
+                const details = ChatHubState.gxsDetails[id];
+                const name = details ? (details.mNickname || details.mGroupName) : id;
+                return m('option', { value: id }, name);
               })
-            ]),
-
-            m('.form-field', { style: 'display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.5rem;' }, [
-              m('label', { style: 'font-weight: bold; font-size: 0.9rem; color: #475569;' }, 'Topic:'),
-              m('input[type=text]', {
-                value: ChatHubState.newRoomTopic,
-                oninput: (e) => { ChatHubState.newRoomTopic = e.target.value; },
-                placeholder: 'Enter room topic',
-                style: 'padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; font-size: 0.9rem;'
-              })
-            ]),
-
-            m('.form-field', { style: 'display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.5rem;' }, [
-              m('label', { style: 'font-weight: bold; font-size: 0.9rem; color: #475569;' }, 'Admin Identity:'),
-              m('select', {
-                value: ChatHubState.newRoomIdentity,
-                onchange: (e) => { ChatHubState.newRoomIdentity = e.target.value; },
-                style: 'padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.25rem; font-size: 0.9rem; background-color: #ffffff;'
-              }, [
-                ChatHubState.ownGxsIdentities && ChatHubState.ownGxsIdentities.map((id) => {
-                  const details = ChatHubState.gxsDetails[id];
-                  const name = details ? (details.mNickname || details.mGroupName) : id;
-                  return m('option', { value: id }, name);
-                })
-              ])
-            ]),
-
-            m('.form-field', { style: 'display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem;' }, [
-              m('label', { style: 'display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #475569; cursor: pointer; user-select: none;' }, [
-                m('input[type=checkbox]', {
-                  checked: ChatHubState.newRoomPublic,
-                  onclick: (e) => { ChatHubState.newRoomPublic = e.target.checked; }
-                }),
-                'Public Room'
-              ])
-            ]),
-
-            m('.form-field', { style: 'display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;' }, [
-              m('label', { style: 'display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #475569; cursor: pointer; user-select: none;' }, [
-                m('input[type=checkbox]', {
-                  checked: ChatHubState.newRoomSigned,
-                  onclick: (e) => { ChatHubState.newRoomSigned = e.target.checked; }
-                }),
-                'PGP signed identities'
-              ])
-            ]),
-
-            ChatHubState.createRoomError && m('p.error-text', { style: 'color: #ef4444; font-size: 0.85rem; margin: 0.5rem 0 0 0;' }, ChatHubState.createRoomError),
-
-            m('.modal-buttons', { style: 'display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;' }, [
-              m('button', {
-                disabled: !ChatHubState.newRoomName.trim() || !ChatHubState.newRoomIdentity,
-                onclick: () => {
-                  const name = ChatHubState.newRoomName.trim();
-                  const topic = ChatHubState.newRoomTopic.trim();
-                  const identity = ChatHubState.newRoomIdentity;
-                  const isPublic = ChatHubState.newRoomPublic;
-                  const isSigned = ChatHubState.newRoomSigned;
-                  let flags = 0;
-                  if (isPublic) flags |= 4;
-                  if (isSigned) flags |= 8;
-
-                  rs.rsJsonApiRequest('/rsChats/createChatLobby', {
-                    lobby_name: name,
-                    lobby_identity: identity,
-                    lobby_topic: topic,
-                    invited_friends: [],
-                    lobby_privacy_type: flags
-                  }, (data, success) => {
-                    if (success) {
-                      ChatHubState.showCreateRoomModal = false;
-                      ChatHubState.newRoomName = '';
-                      ChatHubState.newRoomTopic = '';
-                      ChatHubState.newRoomSigned = false;
-                      ChatHubState.createRoomError = '';
-                      ChatRoomsModel.loadSubscribedRooms();
-                      m.redraw();
-                    } else {
-                      ChatHubState.createRoomError = 'Failed to create room. Check parameters.';
-                      m.redraw();
-                    }
-                  });
-                }
-              }, 'Create'),
-              m('button.red', {
-                onclick: () => {
-                  ChatHubState.showCreateRoomModal = false;
-                  ChatHubState.newRoomName = '';
-                  ChatHubState.newRoomTopic = '';
-                  ChatHubState.newRoomSigned = false;
-                  ChatHubState.createRoomError = '';
-                }
-              }, 'Cancel')
             ])
+          ]),
+
+          m('.form-field', { style: 'display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem;' }, [
+            m('label', { style: 'display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #475569; cursor: pointer; user-select: none;' }, [
+              m('input[type=checkbox]', {
+                checked: ChatHubState.newRoomPublic,
+                onclick: (e) => { ChatHubState.newRoomPublic = e.target.checked; }
+              }),
+              'Public Room'
+            ])
+          ]),
+
+          m('.form-field', { style: 'display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;' }, [
+            m('label', { style: 'display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #475569; cursor: pointer; user-select: none;' }, [
+              m('input[type=checkbox]', {
+                checked: ChatHubState.newRoomSigned,
+                onclick: (e) => { ChatHubState.newRoomSigned = e.target.checked; }
+              }),
+              'PGP signed identities'
+            ])
+          ]),
+
+          ChatHubState.createRoomError && m('p.error-text', { style: 'color: #ef4444; font-size: 0.85rem; margin: 0.5rem 0 0 0;' }, ChatHubState.createRoomError),
+
+          m('.modal-buttons', { style: 'display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;' }, [
+            m('button', {
+              disabled: !ChatHubState.newRoomName.trim() || !ChatHubState.newRoomIdentity,
+              onclick: () => {
+                const name = ChatHubState.newRoomName.trim();
+                const topic = ChatHubState.newRoomTopic.trim();
+                const identity = ChatHubState.newRoomIdentity;
+                const isPublic = ChatHubState.newRoomPublic;
+                const isSigned = ChatHubState.newRoomSigned;
+                let flags = 0;
+                if (isPublic) flags |= 4;
+                if (isSigned) flags |= 8;
+
+                rs.rsJsonApiRequest('/rsChats/createChatLobby', {
+                  lobby_name: name,
+                  lobby_identity: identity,
+                  lobby_topic: topic,
+                  invited_friends: [],
+                  lobby_privacy_type: flags
+                }, (data, success) => {
+                  if (success) {
+                    ChatHubState.showCreateRoomModal = false;
+                    ChatHubState.newRoomName = '';
+                    ChatHubState.newRoomTopic = '';
+                    ChatHubState.newRoomSigned = false;
+                    ChatHubState.createRoomError = '';
+                    ChatRoomsModel.loadSubscribedRooms();
+                    m.redraw();
+                  } else {
+                    ChatHubState.createRoomError = 'Failed to create room. Check parameters.';
+                    m.redraw();
+                  }
+                });
+              }
+            }, 'Create'),
+            m('button.red', {
+              onclick: () => {
+                ChatHubState.showCreateRoomModal = false;
+                ChatHubState.newRoomName = '';
+                ChatHubState.newRoomTopic = '';
+                ChatHubState.newRoomSigned = false;
+                ChatHubState.createRoomError = '';
+              }
+            }, 'Cancel')
           ])
-        ]),
-        ChatHubState.showInviteModal && m('.attach-modal-overlay', [
-          m('.attach-modal', { style: 'max-width: 450px;' }, [
-            m('h4', 'Invite Friends to ' + (ChatHubState.selectedRoom ? ChatHubState.selectedRoom.lobby_name : '')),
-            m('.friends-invite-list', { style: 'max-height: 250px; overflow-y: auto; margin-top: 1rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.5rem;' }, [
-              ChatHubState.friendsList.length === 0
-                ? m('p', { style: 'text-align: center; color: #64748b; font-style: italic; margin: 1rem 0;' }, 'No friends available')
-                : ChatHubState.friendsList.map((friend) => {
-                    const isChecked = ChatHubState.selectedFriendsToInvite.has(friend.id);
-                    return m('.friend-invite-item', {
-                      style: 'display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid #f1f5f9; cursor: pointer;',
-                      onclick: () => {
-                        if (isChecked) {
-                          ChatHubState.selectedFriendsToInvite.delete(friend.id);
-                        } else {
+        ])
+      ]),
+      ChatHubState.showInviteModal && m('.attach-modal-overlay', [
+        m('.attach-modal', { style: 'max-width: 450px;' }, [
+          m('h4', 'Invite Friends to ' + (ChatHubState.selectedRoom ? ChatHubState.selectedRoom.lobby_name : '')),
+          m('.friends-invite-list', { style: 'max-height: 250px; overflow-y: auto; margin-top: 1rem; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.5rem;' }, [
+            ChatHubState.friendsList.length === 0
+              ? m('p', { style: 'text-align: center; color: #64748b; font-style: italic; margin: 1rem 0;' }, 'No friends available')
+              : ChatHubState.friendsList.map((friend) => {
+                  const isChecked = ChatHubState.selectedFriendsToInvite.has(friend.id);
+                  return m('.friend-invite-item', {
+                    style: 'display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid #f1f5f9; cursor: pointer;',
+                    onclick: () => {
+                      if (isChecked) {
+                        ChatHubState.selectedFriendsToInvite.delete(friend.id);
+                      } else {
+                        ChatHubState.selectedFriendsToInvite.add(friend.id);
+                      }
+                    }
+                  }, [
+                    m('div', { style: 'display: flex; align-items: center; gap: 0.5rem;' }, [
+                      m('.status-bullet', { style: { backgroundColor: friend.online ? '#22c55e' : '#94a3b8', width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block' } }),
+                      m('span', { style: 'font-weight: 500;' }, friend.name)
+                    ]),
+                    m('input[type=checkbox]', {
+                      checked: isChecked,
+                      onclick: (e) => {
+                        e.stopPropagation();
+                        if (e.target.checked) {
                           ChatHubState.selectedFriendsToInvite.add(friend.id);
+                        } else {
+                          ChatHubState.selectedFriendsToInvite.delete(friend.id);
                         }
                       }
-                    }, [
-                      m('div', { style: 'display: flex; align-items: center; gap: 0.5rem;' }, [
-                        m('.status-bullet', { style: { backgroundColor: friend.online ? '#22c55e' : '#94a3b8', width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block' } }),
-                        m('span', { style: 'font-weight: 500;' }, friend.name)
-                      ]),
-                      m('input[type=checkbox]', {
-                        checked: isChecked,
-                        onclick: (e) => {
-                          e.stopPropagation();
-                          if (e.target.checked) {
-                            ChatHubState.selectedFriendsToInvite.add(friend.id);
-                          } else {
-                            ChatHubState.selectedFriendsToInvite.delete(friend.id);
-                          }
-                        }
-                      })
-                    ]);
-                  })
-            ]),
-            m('.modal-buttons', { style: 'display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;' }, [
-              m('button', {
-                disabled: ChatHubState.selectedFriendsToInvite.size === 0,
-                onclick: () => {
-                  const lobbyHexId = rs.idToHex(ChatHubState.selectedRoom.lobby_id);
-                  const invitePromises = [];
-                  ChatHubState.selectedFriendsToInvite.forEach((friendId) => {
-                    invitePromises.push(
-                      new Promise((resolve) => {
-                        rs.rsJsonApiRequest('/rsChats/invitePeerToLobby', {
-                          lobby_id: lobbyHexId,
-                          peer_id: friendId
-                        }, () => resolve());
-                      })
-                    );
-                  });
-                  Promise.all(invitePromises).then(() => {
-                    ChatHubState.showInviteModal = false;
-                    ChatHubState.selectedFriendsToInvite.clear();
-                    m.redraw();
-                  });
-                }
-              }, 'Invite'),
-              m('button.red', {
-                onclick: () => {
+                    })
+                  ]);
+                })
+          ]),
+          m('.modal-buttons', { style: 'display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;' }, [
+            m('button.blue', {
+              disabled: ChatHubState.selectedFriendsToInvite.size === 0,
+              onclick: () => {
+                const lobbyHexId = rs.idToHex(ChatHubState.selectedRoom.lobby_id);
+                const invitePromises = [];
+                ChatHubState.selectedFriendsToInvite.forEach((friendId) => {
+                  invitePromises.push(
+                    new Promise((resolve) => {
+                      rs.rsJsonApiRequest('/rsChats/invitePeerToLobby', {
+                        lobby_id: lobbyHexId,
+                        peer_id: friendId
+                      }, () => resolve());
+                    })
+                  );
+                });
+                Promise.all(invitePromises).then(() => {
                   ChatHubState.showInviteModal = false;
                   ChatHubState.selectedFriendsToInvite.clear();
-                }
-              }, 'Cancel')
-            ])
+                  m.redraw();
+                });
+              }
+            }, 'Invite'),
+            m('button.red', {
+              onclick: () => {
+                ChatHubState.showInviteModal = false;
+                ChatHubState.selectedFriendsToInvite.clear();
+              }
+            }, 'Cancel')
           ])
-        ]),
+        ])
       ]),
 
       m('.chat-hub-right-pane', [
+        m('.mobile-pane-header', [
+          m('button.mobile-back-button', {
+            type: 'button',
+            onclick: () => {
+              ChatHubState.mobilePane = 'list';
+              m.route.set('/chat');
+            },
+          }, [m('i.fas.fa-chevron-left'), ' Chats']),
+          m('strong', ChatHubState.selectedRoom ? (ChatHubState.selectedRoom.lobby_name || 'Conversation') : 'Conversation'),
+        ]),
         ChatHubState.selectedRoom
           ? [
               ChatHubState.selectedRoomType === 'subscribed'
@@ -1444,14 +1697,14 @@ const Layout = {
                         ),
                       ]),
                     ]),
-                    m('.chat-hub-tab-content', { style: { padding: ChatHubState.activeTab === 'chat' ? '0' : '1.5rem' } }, [
+                    m('.chat-hub-tab-content' + (ChatHubState.activeTab === 'details' ? '.details-content' : ''), { style: { padding: ChatHubState.activeTab === 'chat' ? '0' : '1.5rem' } }, [
                       ChatHubState.activeTab === 'chat'
                         ? m(ChatConversationView)
                         : m(ChatRoomDetailView),
                     ]),
                   ]
                 : [
-                    m('.chat-hub-tab-content', m(ChatRoomJoinView)),
+                    m('.chat-hub-tab-content.details-content', m(ChatRoomJoinView)),
                   ],
             ]
           : m('.chat-pane-placeholder', [
@@ -1463,7 +1716,10 @@ const Layout = {
             ]),
         ]),
       ChatHubState.messageContextMenu.show && m('.chat-msg-context-menu', {
-        style: `position: fixed; top: ${ChatHubState.messageContextMenu.y}px; left: ${ChatHubState.messageContextMenu.x}px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 0.35rem 0; z-index: 3000; min-width: 160px;`,
+        style: {
+          top: `${Math.max(8, Math.min(ChatHubState.messageContextMenu.y, window.innerHeight - 132))}px`,
+          left: `${Math.max(8, Math.min(ChatHubState.messageContextMenu.x, window.innerWidth - 228))}px`,
+        },
         onclick: (e) => e.stopPropagation(),
       }, [
         m('.context-menu-item', {
@@ -1533,8 +1789,15 @@ const Layout = {
 */
 const LayoutCreateDistant = () => {
   let ownIds = [];
+  let stopWatching;
   return {
-    oninit: () => peopleUtil.ownIds((data) => (ownIds = data)),
+    oninit: () => {
+      stopWatching = peopleUtil.watchOwnIds((data) => {
+        ownIds = data;
+        m.redraw();
+      });
+    },
+    onremove: () => stopWatching && stopWatching(),
     view: (vnode) =>
       m('.node-panel.chat-panel.chat-room', [
         m('.createDistantChat', [

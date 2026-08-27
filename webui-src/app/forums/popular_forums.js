@@ -12,13 +12,13 @@ const Layout = () => {
             v.attrs.list.map((forum) =>
               m(util.ForumSummary, {
                 details: forum,
-                category: 'PopularForums',
+                category: 'Popular',
               })
             ),
             v.attrs.list.map((forum) =>
               m(util.DisplayForumsFromList, {
                 id: forum.mGroupId,
-                category: 'PopularForums',
+                category: 'Popular',
               })
             ),
           ])

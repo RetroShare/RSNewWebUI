@@ -5,6 +5,37 @@
   animation: fadein 0.5s;
 }
 
+.forum-thread-view {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.forum-post-content {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+
+  img,
+  video,
+  iframe {
+    max-width: 100%;
+    height: auto;
+  }
+
+  pre {
+    max-width: 100%;
+    overflow: auto;
+    white-space: pre-wrap;
+  }
+
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
 /* subject */
 table.forums th:nth-child(1) {
   width: 50%;
@@ -38,6 +69,113 @@ table.forums tr.hidden {
   position: relative;
   padding: 10px;
 }
+
+.forum-detail-heading {
+  margin-top: .75rem;
+
+  h3 { margin: 0; }
+}
+
+.forum-detail-card {
+  display: grid;
+  grid-template-columns: 6rem minmax(15rem, 2fr) minmax(18rem, 3fr);
+  grid-template-areas: 'icon details description';
+  align-items: center;
+  gap: 1rem 2rem;
+  margin-top: .75rem;
+  padding: 1rem;
+  border: 1px solid #d7dee8;
+  border-radius: 4px;
+  background: #fff;
+
+  &__icon {
+    grid-area: icon;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 6rem;
+    height: 6rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background: linear-gradient(135deg, #eef6fb, #dbeafe);
+    color: #3ba4d7;
+    box-sizing: border-box;
+  }
+
+  &__icon i { font-size: 2.75rem; }
+
+  &__details {
+    grid-area: details;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+  }
+
+  &__description { grid-area: description; }
+
+  &__details > div,
+  &__description {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &__details b,
+  &__description b { margin-right: .25rem; }
+}
+
+.forum-threads {
+  margin-top: 1rem;
+
+  &__heading {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1rem;
+    padding-bottom: .35rem;
+    border-bottom: 1px solid #d7dee8;
+  }
+
+  &__heading h3 { margin: 0; }
+
+  &__create {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .forum-detail-heading { align-items: center; gap: .75rem; }
+
+  .forum-detail-heading h3 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .forum-detail-card {
+    grid-template-columns: 5rem minmax(0, 1fr);
+    grid-template-areas:
+      'icon details'
+      'description description';
+    align-items: start;
+    gap: 1rem;
+  }
+
+  .forum-detail-card__icon {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .forum-detail-card__icon i { font-size: 2.25rem; }
+
+  .forum-threads__create {
+    min-width: 2.25rem;
+    justify-content: center;
+    padding-inline: .55rem;
+  }
+
+  .forum-threads__create span { display: none; }
+}
 .p {
   margin: 0;
 }
@@ -69,4 +207,238 @@ table.threadreply td {
 table.threadreply tr:hover {
   background-color: #eef3f6;
   cursor: pointer;
+}
+
+/* Create Forum uses the same compact form language as Create Channel. */
+.create-forum-form {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.5rem !important;
+
+  &__heading,
+  &__title,
+  &__moderators,
+  &__description,
+  &__submit { grid-column: 1 / -1; }
+  &__heading h3 { margin: 0; color: #1e293b; }
+  &__heading p { margin: .25rem 0 0; color: #64748b; font-size: .9rem; }
+  &__title,
+  &__description { width: 100%; box-sizing: border-box; }
+  &__description { min-height: 7rem; resize: vertical; }
+  &__field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+  &__field label,
+  &__moderators-heading label { color: #475569; font-size: .85rem; font-weight: 700; }
+  &__field .config-style-select {
+    width: 100%; min-width: 0; box-sizing: border-box; padding: .4rem;
+    border: 1px solid #cbd5e1; border-radius: 4px; background: #fff;
+    color: #1e293b; font-size: .95rem;
+  }
+  &__moderators { min-width: 0; }
+  &__moderators-heading { display: flex; justify-content: space-between; margin-bottom: .4rem; }
+  &__moderators-heading span { color: #64748b; font-size: .8rem; }
+  &__moderators-toggle { display: inline-flex; align-items: center; gap: .45rem; cursor: pointer; }
+  &__moderators-toggle input { margin: 0; }
+  &__moderator-controls { display: flex; flex-direction: column; gap: .4rem; }
+  &__moderator-controls > .config-style-select {
+    width: 100%; box-sizing: border-box; padding: .4rem;
+    border: 1px solid #cbd5e1; border-radius: 4px; background: #fff;
+  }
+  &__search { position: relative; }
+  &__search i { position: absolute; left: .65rem; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+  &__search input { width: 100%; box-sizing: border-box; padding-left: 2rem; }
+  &__moderator-list {
+    max-height: 13rem; overflow-y: auto;
+    border: 1px solid #cbd5e1; border-radius: 4px; background: #fff;
+  }
+  &__moderator {
+    display: flex; align-items: center; gap: .65rem; padding: .45rem .65rem;
+    border-bottom: 1px solid #e2e8f0; cursor: pointer;
+  }
+  &__moderator:last-child { border-bottom: 0; }
+  &__moderator:hover { background: #f1f5f9; }
+  &__moderator > span { display: flex; flex-direction: column; min-width: 0; }
+  &__moderator > .jdenticon-avatar,
+  &__moderator > .defaultAvatar,
+  &__moderator > img.avatar { flex: 0 0 30px; margin-right: 0; }
+  &__moderator b { color: #1e293b; font-size: .9rem; }
+  &__moderator small { color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  &__empty { padding: 1rem; color: #64748b; text-align: center; }
+  &__submit { justify-self: end; }
+}
+
+.modal-content.create-forum-modal {
+  width: min(720px, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+@media (max-width: 600px) {
+  .modal-content.create-forum-modal { width: calc(100% - 1rem); max-height: calc(100% - 1rem); padding: 1rem; }
+  .create-forum-form {
+    grid-template-columns: minmax(0, 1fr);
+    &__heading,
+    &__title,
+    &__field,
+    &__moderators,
+    &__description,
+    &__submit { grid-column: 1; }
+    &__moderator-list { max-height: 10rem; }
+    &__submit { width: 100%; }
+  }
+}
+
+.forum-thread-composer {
+  width: min(720px, 100%);
+  height: auto;
+  box-sizing: border-box;
+  gap: .85rem;
+
+  &__heading { padding-right: 5.5rem; }
+  &__heading-copy { min-width: 0; }
+  &__heading h3 { margin: 0; color: #1e293b; }
+  &__heading p { margin: .25rem 0 0; color: #64748b; font-size: .9rem; }
+  &__fullscreen { position: absolute; z-index: 2; top: 1.25rem; right: 4.25rem; display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; margin: 0; padding: 0; border: 0; border-radius: 4px; background: #f1f5f9; color: #475569; box-shadow: none; }
+  &__fullscreen:hover { background: #e0f2fe; color: #0284c7; }
+  &__reply { padding: .6rem .75rem; border-radius: 4px; background: #f1f5f9; color: #475569; }
+  &__title { width: 100%; box-sizing: border-box; }
+  &__field { display: flex; flex-direction: column; gap: .35rem; }
+  &__field label { color: #475569; font-size: .85rem; font-weight: 700; }
+  &__field select { width: 100%; box-sizing: border-box; padding: .45rem; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; }
+  &__editor { position: relative; }
+  &__editor textarea { display: block; width: 100%; min-height: 8rem; padding: .75rem; border-radius: 4px 4px 0 0; box-sizing: border-box; resize: vertical; }
+  &__toolbar { position: relative; display: flex; gap: .25rem; padding: .4rem .5rem; border: 1px solid #cbd5e1; border-top: 0; border-radius: 0 0 4px 4px; background: #f8fafc; }
+  &__toolbar > input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+  &__tool { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #0284c7; cursor: pointer; box-shadow: none; box-sizing: border-box; }
+  &__tool:hover,
+  &__tool.active { background: #e0f2fe; }
+  &__emoji-picker { position: absolute; left: 2.75rem; bottom: 3rem; z-index: 10; width: min(22rem, calc(100vw - 4rem)); padding: .5rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; box-shadow: 0 10px 25px rgba(15, 23, 42, .18); }
+  &__emoji-categories { display: flex; gap: .15rem; overflow-x: auto; padding-bottom: .35rem; border-bottom: 1px solid #e2e8f0; }
+  //  color too: the global `button` rule paints its text white for a coloured
+  //  background, and this panel is white. Without this the emojis are there and
+  //  clickable, just invisible.
+  &__emoji-categories button,
+  &__emoji-grid button { border: 0; background: transparent; box-shadow: none; cursor: pointer; color: #0f172a; }
+  &__emoji-categories button { flex: 0 0 2rem; padding: .3rem; border-radius: 4px; }
+  &__emoji-categories button.active { background: #e0f2fe; }
+  &__emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); max-height: 12rem; overflow-y: auto; padding-top: .4rem; }
+  &__emoji-grid button { padding: .3rem; font-size: 1.15rem; }
+  &__file-panel { display: flex; flex-direction: column; gap: .35rem; padding: .65rem; border: 1px solid #cbd5e1; border-top: 0; background: #f8fafc; }
+  &__file-panel > div { display: flex; gap: .4rem; min-width: 0; }
+  &__file-panel input { flex: 1 1 auto; min-width: 0; box-sizing: border-box; }
+  &__file-panel label { display: flex; flex: 0 0 2.4rem; align-items: center; justify-content: center; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; color: #0284c7; cursor: pointer; }
+  &__file-panel button { flex: 0 0 auto; }
+  &__file-panel small { color: #64748b; }
+  &__file-panel small.error-text { color: #dc2626; }
+  &__inline-images { display: flex; flex-direction: column; gap: .65rem; padding: .75rem; border: 1px solid #cbd5e1; border-top: 0; background: #fff; }
+  &__inline-image { position: relative; align-self: flex-start; max-width: 100%; }
+  &__inline-image img { display: block; max-width: 100%; max-height: 12rem; border-radius: 6px; object-fit: contain; }
+  &__inline-image button { position: absolute; top: .4rem; right: .4rem; display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: 50%; background: rgba(15, 23, 42, .78); color: #fff; box-shadow: none; }
+  &__attachments { padding: .65rem; border: 1px solid #d7dee8; border-radius: 6px; background: #f8fafc; }
+  &__attachments-heading { display: flex; align-items: center; gap: .4rem; margin-bottom: .5rem; color: #475569; font-size: .85rem; font-weight: 700; }
+  &__attachment-list { display: flex; flex-wrap: wrap; gap: .5rem; max-height: 6rem; overflow-y: auto; }
+  &__attachment { display: flex; align-items: center; gap: .5rem; max-width: 18rem; padding: .35rem .5rem; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; }
+  &__attachment > img { width: 2rem; height: 2rem; border-radius: 4px; object-fit: cover; }
+  &__attachment > i { width: 2rem; color: #3b82f6; text-align: center; }
+  &__attachment > span { display: flex; flex-direction: column; min-width: 0; }
+  &__attachment b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .82rem; }
+  &__attachment small { color: #64748b; }
+  &__attachment button { margin-left: auto; padding: .25rem; border: 0; background: transparent; color: #ef4444; box-shadow: none; }
+  &__capacity { color: #64748b; font-size: .78rem; text-align: right; }
+  &__capacity.is-over-limit { color: #dc2626; font-weight: 700; }
+  &__actions { display: flex; justify-content: flex-end; }
+}
+
+.modal-content.create-forum-thread-modal {
+  width: min(720px, calc(100% - 2rem));
+  height: fit-content;
+  max-height: calc(100% - 2rem);
+  min-height: 0;
+  padding: 1.25rem;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  > .forum-thread-composer {
+    flex: 0 1 auto;
+    height: auto;
+    max-height: calc(100vh - 4.5rem);
+    min-height: 0;
+    padding-right: .25rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
+.modal-content.create-forum-thread-modal:not(.is-fullscreen) {
+  height: fit-content !important;
+
+  > .forum-thread-composer {
+    flex-grow: 0;
+    flex-shrink: 1;
+    align-self: stretch;
+  }
+}
+
+.modal-content.create-forum-thread-modal.is-fullscreen {
+  width: min(1100px, calc(100% - 3rem));
+  height: min(760px, calc(100vh - 3rem));
+  max-width: 1100px;
+  max-height: calc(100vh - 3rem);
+  min-height: 0;
+  overflow: hidden;
+
+  > .forum-thread-composer {
+    width: 100%;
+    height: auto;
+    max-height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .forum-thread-composer__title,
+  .forum-thread-composer__field,
+  .forum-thread-composer__editor,
+  .forum-thread-composer__toolbar,
+  .forum-thread-composer__attachments,
+  .forum-thread-composer__inline-images {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .forum-thread-composer__editor textarea {
+    width: 100%;
+    height: clamp(14rem, calc(100vh - 25rem), 28rem);
+    min-height: 14rem;
+    max-height: 28rem;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-content.create-forum-thread-modal {
+    width: calc(100% - 1rem);
+    height: auto;
+    max-height: calc(100% - 1rem);
+    padding: 1rem;
+    overflow-y: auto;
+  }
+  .modal-content.create-forum-thread-modal > .forum-thread-composer {
+    width: 100%;
+    height: auto;
+    max-height: calc(100vh - 3rem);
+    padding: 0;
+    overflow-y: visible;
+  }
+  .forum-thread-composer__fullscreen { display: none; }
+  .forum-thread-composer__editor textarea { min-height: 7rem; }
+  .forum-thread-composer__emoji-picker { left: 0; width: calc(100vw - 3rem); box-sizing: border-box; }
+  .forum-thread-composer__emoji-grid { grid-template-columns: repeat(6, 1fr); }
+  .forum-thread-composer__file-panel > div { flex-wrap: wrap; }
+  .forum-thread-composer__file-panel input { flex-basis: calc(100% - 3rem); }
+  .forum-thread-composer__file-panel button { flex: 1 1 100%; }
+  .forum-thread-composer__attachment { max-width: 100%; flex: 1 1 100%; }
+  .forum-thread-composer__actions button { width: 100%; }
 }

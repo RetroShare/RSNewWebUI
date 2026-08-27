@@ -7,15 +7,15 @@ const peopleUtil = require('people/people_util');
 
 const getForums = {
   All: [],
-  PopularForums: [],
-  SubscribedForums: [],
+  Popular: [],
+  Subscribed: [],
   MyForums: [],
   async load() {
     const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumsSummaries');
     if (res && res.body && res.body.forums) {
       getForums.All = res.body.forums;
-      getForums.PopularForums = getForums.All;
-      getForums.SubscribedForums = getForums.All.filter(
+      getForums.Popular = getForums.All;
+      getForums.Subscribed = getForums.All.filter(
         (forum) =>
           forum.mSubscribeFlags === util.GROUP_SUBSCRIBE_SUBSCRIBED ||
           forum.mSubscribeFlags === util.GROUP_MY_FORUM
@@ -26,11 +26,14 @@ const getForums = {
     }
   },
 };
+//  Group lists change on the scale of a conversation, not of a frame.
+const FORUM_LIST_REFRESH_MS = 30000;
+
 const sections = {
   MyForums: require('forums/my_forums'),
-  SubscribedForums: require('forums/subscribed_forums'),
-  PopularForums: require('forums/popular_forums'),
-  OtherForums: require('forums/other_forums'),
+  Subscribed: require('forums/subscribed_forums'),
+  Popular: require('forums/popular_forums'),
+  Other: require('forums/other_forums'),
 };
 
 const Layout = () => {
@@ -38,7 +41,10 @@ const Layout = () => {
 
   return {
     oninit: () => {
-      rs.setBackgroundTask(getForums.load, 5000, () => {
+      //  Was every 5 s. getForumsSummaries returns the whole list every time,
+      //  and on a phone each poll is a fresh TCP handshake on a server that
+      //  answers one request at a time; the boards list already settled on 30 s.
+      rs.setBackgroundTask(getForums.load, FORUM_LIST_REFRESH_MS, () => {
         return m.route.get().includes('/forums');
       });
       peopleUtil.ownIds((data) => {
@@ -63,7 +69,9 @@ const Layout = () => {
                 util.popupmessage(
                   m(viewUtil.createforum, {
                     authorId: ownId,
-                  })
+                    onCreated: getForums.load,
+                  }),
+                  'create-forum-modal'
                 ),
             },
             'Create Forum'
@@ -94,6 +102,7 @@ module.exports = {
       m(widget.Sidebar, {
         tabs: Object.keys(sections),
         baseRoute: '/forums/',
+        mobileDrawer: true,
       }),
       m('.node-panel', m(Layout, { pathInfo: vnode.attrs })),
     ];

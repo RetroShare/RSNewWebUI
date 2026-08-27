@@ -1,5 +1,4 @@
 const m = require('mithril');
-const rs = require('rswebui');
 const Data = require('network/network_data');
 const compose = require('mail/mail_compose');
 const {
@@ -9,22 +8,26 @@ const {
   fetchIdDetails,
   startDirectChat,
   getOnlineSslId,
+  preloadNetworkChatHistory,
+  loadDirectChatMessages,
+  markDirectChatRead,
 } = require('network/network_state');
 const { OwnProfileCard, FriendsList } = require('network/network_friends_list');
 const DetailsTab = require('network/network_details_tab');
 const ChatTab = require('network/network_chat_tab');
+const NetworkGraph = require('network/network_graph');
 
 const NetworkLayout = () => {
   return {
     oninit: () => {
-      Data.refreshGpgDetails().then(() => m.redraw());
+      // Keep the active-chat list current even when no conversation is open.
+      loadDirectChatMessages();
+      Data.refreshGpgDetails().then(() => {
+        preloadNetworkChatHistory();
+        m.redraw();
+      });
       loadOwnProfile();
       loadGxsIdentities();
-    },
-    onremove: () => {
-      if (rs.events[15]) {
-        rs.events[15].notify = () => {};
-      }
     },
     view: () => {
       const selectedFriend = State.selectedFriendGpgId
@@ -39,17 +42,23 @@ const NetworkLayout = () => {
         State.gxsIdentities.forEach((gxsId) => fetchIdDetails(gxsId));
       }
 
-      return m('.network-container', [
+      return m('.network-container' + (State.mobilePane === 'detail' ? '.mobile-detail-open' : ''), [
         m('.network-left-pane', [m(OwnProfileCard), m(FriendsList)]),
         m('.network-right-pane', [
-          selectedFriend
-            ? [
-                m('.network-tabs', [
+          m('.mobile-pane-header', [
+            m('button.mobile-back-button', {
+              type: 'button',
+              onclick: () => { State.mobilePane = 'list'; },
+            }, [m('i.fas.fa-chevron-left'), ' Network']),
+            m('strong', State.activeTab === 'graph' ? 'Network Graph' : (selectedFriend ? selectedFriend.name : 'Friend')),
+          ]),
+          m('.network-tabs', [
                   m(
                     'button.tab-btn' + (State.activeTab === 'details' ? '.active' : ''),
                     {
                       onclick: () => {
                         State.activeTab = 'details';
+                        State.mobilePane = 'detail';
                       },
                     },
                     'Details View'
@@ -59,6 +68,8 @@ const NetworkLayout = () => {
                     {
                       onclick: () => {
                         State.activeTab = 'chat';
+                        State.mobilePane = 'detail';
+                        markDirectChatRead(State.selectedFriendGpgId);
                         const sslId = getOnlineSslId(State.selectedFriendGpgId);
                         if (sslId && !State.currentChatPeerId) {
                           startDirectChat(sslId);
@@ -67,16 +78,23 @@ const NetworkLayout = () => {
                     },
                     'Chat Conversation'
                   ),
-                ]),
-                m('.network-tab-content', [
+                  m(
+                    'button.tab-btn' + (State.activeTab === 'graph' ? '.active' : ''),
+                    { onclick: () => { State.activeTab = 'graph'; State.mobilePane = 'detail'; } },
+                    [m('i.fas.fa-project-diagram'), ' Network Graph']
+                  ),
+          ]),
+          State.activeTab === 'graph'
+            ? m('.network-tab-content.network-graph-tab', m(NetworkGraph))
+            : selectedFriend
+              ? m('.network-tab-content' + (State.activeTab === 'chat' ? '.network-chat-tab-content' : ''), [
                   State.activeTab === 'details' ? m(DetailsTab) : m(ChatTab),
-                ]),
-              ]
-            : m('.network-pane-placeholder', [
+                ])
+              : m('.network-pane-placeholder', [
                 m('i.fas.fa-network-wired'),
                 m(
                   'p',
-                  'Select a friend node from the left side panel to view locations details or start a private chat.'
+                  'Select a friend for details or chat, or open the Network Graph tab.'
                 ),
               ]),
         ]),

@@ -7,15 +7,23 @@ const {
   getStatusTooltip,
   initializeDistantChat,
   sendDistantChatMessage,
-  stopStatusPolling,
-  loadAllHistoryForSelectedPeer,
+  leaveDistantChat,
+  setChatDraft,
+  switchChatIdentity,
 } = require('people/people_state');
+const { startAttachHash, stopAttachHash } = require('people/people_attach');
 const { renderChatMessage } = require('chat/chat_state');
 const chatEmoji = require('chat/chat_emoji');
 const peopleUtil = require('people/people_util');
 const HistoryBrowserModal = require('people/people_history');
 
-// Mirroring C++ Distant Chat packet size limit (200KB)
+//  Distant chat has no size limit of its own -- getMaxMessageSecuritySize()
+//  answers 0 for it and the core slices anything past 15000 characters -- but a
+//  photo straight from a phone is several megabytes of base64 crawling through a
+//  turtle tunnel. So the picture is scaled into a 800x600 box and its quality
+//  stepped down until it fits in a couple of hundred kilobytes.
+const MAX_IMAGE_CHARS = 200000;
+
 function formatChatImage(file, callback) {
   if (!file) return;
   const reader = new FileReader();
@@ -43,15 +51,15 @@ function formatChatImage(file, callback) {
       // Dynamically step down JPEG quality until base64 string is under 190,000 characters (190KB)
       let quality = 0.85;
       let dataUrl = canvas.toDataURL('image/jpeg', quality);
-      while (dataUrl.length > 190000 && quality > 0.20) {
+      while (dataUrl.length > MAX_IMAGE_CHARS * 0.95 && quality > 0.20) {
         quality -= 0.10;
         dataUrl = canvas.toDataURL('image/jpeg', quality);
       }
 
-      if (dataUrl.length <= 200000) {
+      if (dataUrl.length <= MAX_IMAGE_CHARS) {
         callback(`<img src="${dataUrl}" />`);
       } else {
-        alert('Image file is too large to send over Distant Chat 200KB packet size limit.');
+        alert('That picture stays too heavy once compressed to be worth sending over a distant chat tunnel.');
         callback(null);
       }
     };
@@ -62,7 +70,36 @@ function formatChatImage(file, callback) {
 }
 
 const ChatTab = () => {
+  let showAttachmentMenu = false;
+
+  function onDocClick(e) {
+    if (showAttachmentMenu && !e.target.closest('.mobile-chat-attachment')) {
+      showAttachmentMenu = false;
+      m.redraw();
+    }
+  }
+
+  function attachFileLink() {
+    if (State.isHashing) return;
+    //  The path is read by the RetroShare node, not by the browser, so a file
+    //  picker would name something the core cannot open.
+    const path = prompt('Path of the file to share, as seen by the RetroShare node:');
+    if (path && path.trim()) startAttachHash(path);
+  }
+
+  function attachImage(file) {
+    if (!file) return;
+    formatChatImage(file, (imgTag) => {
+      if (imgTag) {
+        setChatDraft((State.chatInputMsg || '') + imgTag);
+        m.redraw();
+      }
+    });
+  }
+
   return {
+    oncreate: () => document.addEventListener('click', onDocClick, true),
+    onremove: () => document.removeEventListener('click', onDocClick, true),
     view: () => {
       fetchIdDetails(State.selectedId);
       const details = State.selectedId ? State.gxsIdToDetailsMap[State.selectedId] : null;
@@ -82,7 +119,9 @@ const ChatTab = () => {
         return m('.chat-warning', [
           m('i.fas.fa-unlink', { style: 'font-size: 2rem; color: #ef4444; margin-bottom: 1rem;' }),
           m('h4', 'Conversation Ended'),
-          m('p', 'You have closed the distant chat tunnel. Click below to reconnect.'),
+          m('p', State.chatCloseFoundNothing
+            ? 'The tunnel was already gone: the core had no connection left to close. Click below to open a new one.'
+            : 'You have closed the distant chat tunnel. Click below to reconnect.'),
           m('button.blue', {
             style: 'margin-top: 1rem; padding: 0.5rem 1.5rem; border-radius: 0.375rem; border: none; font-weight: 600; cursor: pointer;',
             onclick: () => initializeDistantChat(),
@@ -105,7 +144,7 @@ const ChatTab = () => {
           style: 'padding: 0.5rem 1rem; background-color: #ffffff; border-bottom: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;',
         }, [
           m('.chat-tunnel-status', { style: 'display: flex; align-items: center; gap: 0.5rem;' }, [
-            m('span', { style: 'color: #64748b; font-weight: 500;' }, 'Distant Chat Tunnel'),
+            m('span.tunnel-label', { style: 'color: #64748b; font-weight: 500;' }, 'Distant Chat Tunnel'),
             m('i.fas.fa-circle', {
               style: {
                 color: getStatusColor(State.distantChatStatus ? State.distantChatStatus.status : 0),
@@ -117,7 +156,7 @@ const ChatTab = () => {
           ]),
           m('.chat-actions', { style: 'display: flex; align-items: center; gap: 0.75rem;' }, [
             m('.select-own-profile', { style: 'display: flex; align-items: center; gap: 0.5rem;' }, [
-              m('span', { style: 'color: #64748b;' }, 'Chatting as:'),
+              m('span.chatting-as-label', { style: 'color: #64748b;' }, 'Chatting as:'),
               (() => {
                 const ownId = State.selectedOwnGxsIdForChat;
                 if (ownId) fetchIdDetails(ownId);
@@ -131,10 +170,7 @@ const ChatTab = () => {
                   m('select', {
                     style: 'padding: 0.25rem 0.5rem; border-radius: 0.25rem; border: 1px solid #cbd5e1; outline: none; background: #f8fafc; font-weight: 600;',
                     value: ownId,
-                    onchange: (e) => {
-                      State.selectedOwnGxsIdForChat = e.target.value;
-                      initializeDistantChat(true);
-                    },
+                    onchange: (e) => switchChatIdentity(e.target.value),
                   }, State.ownGxsIds.map((id) => m('option', { value: id }, rs.userList.username(id)))),
                 ]);
               })(),
@@ -142,10 +178,10 @@ const ChatTab = () => {
             m('button.blue.history-btn', {
               style: 'padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem; border: none; cursor: pointer; background-color: #3b82f6; color: #ffffff; font-weight: 600;',
               title: 'View all past chat history with this contact',
+              //  The modal loads the history when it opens; asking here too
+              //  ran the whole "every message ever" query twice.
               onclick: () => {
                 State.showHistoryModal = true;
-                State.historySearchQuery = '';
-                loadAllHistoryForSelectedPeer();
               },
             }, [
               m('i.fas.fa-history', { style: 'color: #ffffff;' }),
@@ -161,17 +197,11 @@ const ChatTab = () => {
                       pid: State.chatPid,
                     },
                     (data, success) => {
-                      if (success) {
-                        if (State.selectedId && State.activeDistantChats[State.selectedId]) {
-                          delete State.activeDistantChats[State.selectedId];
-                        }
-                        State.chatPid = null;
-                        State.chatMessages = [];
-                        State.distantChatStatus = null;
-                        State.chatDisconnected = true;
-                        stopStatusPolling();
-                        m.redraw();
-                      }
+                      //  `success` is the HTTP status, not the answer: the core
+                      //  says in retval whether it had anything to close. Taking
+                      //  200 for a closed tunnel is how this button could report
+                      //  a conversation as ended while the tunnel lived on.
+                      leaveDistantChat(Boolean(success && data && data.retval));
                     }
                   );
                 }
@@ -224,20 +254,70 @@ const ChatTab = () => {
               }),
         ]),
 
+        //  Hashing has no deadline and the core never reports a failure, so
+        //  the wait must be visible and must always have a way out.
+        (State.isHashing || State.attachError) && m('.chat-attach-status', {
+          style: 'display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border-top: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.85rem; color: #475569;',
+        }, State.isHashing
+          ? [
+              m('i.fas.fa-spinner.fa-spin', { style: 'color: #3b82f6;' }),
+              m('span', { style: 'flex: 1; word-break: break-all;' }, `Hashing ${State.attachPath}…`),
+              m('button.btn.red', {
+                style: 'padding: 0.2rem 0.6rem; border-radius: 0.25rem; border: none; cursor: pointer; background-color: #ef4444; color: #ffffff;',
+                onclick: () => stopAttachHash(),
+              }, 'Stop'),
+            ]
+          : [
+              m('i.fas.fa-exclamation-triangle', { style: 'color: #ef4444;' }),
+              m('span', { style: 'flex: 1;' }, State.attachError),
+              m('button.btn', {
+                style: 'padding: 0.2rem 0.6rem; border-radius: 0.25rem; border: 1px solid #cbd5e1; cursor: pointer; background: #ffffff;',
+                onclick: () => { State.attachError = ''; },
+              }, 'Dismiss'),
+            ]),
+
         m('.chat-input-area', { style: 'display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem; background: #ffffff; border-top: 1px solid #cbd5e1;' }, [
-          m('button.chat-hub-action-btn', {
+          m('button.chat-hub-action-btn.desktop-chat-attachment', {
             disabled: !canTalk,
             style: !canTalk ? 'opacity: 0.5; cursor: not-allowed;' : '',
             title: 'Attach file link',
-            onclick: () => {
-              const path = prompt('Enter file path to attach as Retroshare link:');
-              if (path && path.trim()) {
-                const val = State.chatInputMsg || '';
-                State.chatInputMsg = val ? val + '\n' + path.trim() : path.trim();
-                m.redraw();
-              }
-            }
+            onclick: attachFileLink,
           }, m('i.fas.fa-paperclip')),
+
+          m('.mobile-chat-attachment', [
+            m('button.chat-hub-action-btn', {
+              disabled: !canTalk,
+              style: !canTalk ? 'opacity: 0.5; cursor: not-allowed;' : '',
+              title: 'Add attachment',
+              onclick: (e) => {
+                e.stopPropagation();
+                showAttachmentMenu = !showAttachmentMenu;
+                State.showEmojiPicker = false;
+              },
+            }, m('i.fas.fa-paperclip')),
+            showAttachmentMenu && m('.mobile-chat-attachment__menu', [
+              m('button.mobile-chat-attachment__option', {
+                type: 'button',
+                onclick: () => {
+                  showAttachmentMenu = false;
+                  attachFileLink();
+                },
+              }, [m('i.fas.fa-file'), ' File']),
+              m('label.mobile-chat-attachment__option', [
+                m('i.fas.fa-image'),
+                ' Picture',
+                m('input[type=file][accept=image/*]', {
+                  style: 'display: none;',
+                  disabled: !canTalk,
+                  onchange: (e) => {
+                    attachImage(e.target.files && e.target.files[0]);
+                    showAttachmentMenu = false;
+                    e.target.value = '';
+                  },
+                }),
+              ]),
+            ]),
+          ]),
 
           m('.emoji-picker-wrapper', { style: 'position: relative;' }, [
             m('button.chat-hub-action-btn', {
@@ -251,14 +331,14 @@ const ChatTab = () => {
             }, m('i.fas.fa-smile')),
             State.showEmojiPicker && m(chatEmoji.EmojiPicker, {
               onSelect: (emoji) => {
-                State.chatInputMsg = (State.chatInputMsg || '') + emoji;
+                setChatDraft((State.chatInputMsg || '') + emoji);
                 State.showEmojiPicker = false;
                 m.redraw();
               }
             }),
           ]),
 
-          m('label.chat-hub-action-btn', {
+          m('label.chat-hub-action-btn.desktop-chat-attachment', {
             title: 'Send image',
             style: `cursor: ${canTalk ? 'pointer' : 'not-allowed'}; opacity: ${canTalk ? 1 : 0.5};`,
           }, [
@@ -268,25 +348,19 @@ const ChatTab = () => {
               disabled: !canTalk,
               onchange: (e) => {
                 if (!e.target.files || !e.target.files[0]) return;
-                const file = e.target.files[0];
-                formatChatImage(file, (imgTag) => {
-                  if (imgTag) {
-                    State.chatInputMsg = (State.chatInputMsg || '') + imgTag;
-                    m.redraw();
-                  }
-                });
+                attachImage(e.target.files[0]);
                 e.target.value = '';
               }
             })
           ]),
 
           m('textarea.chat-textarea', {
-            placeholder: canTalk ? 'Type your encrypted message here... (or paste image)' : 'Waiting for tunnel to be secured...',
+            placeholder: canTalk ? 'Type a message here...' : 'Waiting for tunnel to be secured...',
             disabled: !canTalk,
             value: State.chatInputMsg,
             style: 'flex: 1; resize: none; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.5rem; font-family: inherit; font-size: 0.9rem; outline: none; min-height: 40px; max-height: 120px;',
             oninput: (e) => {
-              State.chatInputMsg = e.target.value;
+              setChatDraft(e.target.value);
             },
             onpaste: (e) => {
               if (!canTalk) return;
@@ -298,7 +372,7 @@ const ChatTab = () => {
                   const blob = items[i].getAsFile();
                   formatChatImage(blob, (imgTag) => {
                     if (imgTag) {
-                      State.chatInputMsg = (State.chatInputMsg || '') + imgTag;
+                      setChatDraft((State.chatInputMsg || '') + imgTag);
                       m.redraw();
                     }
                   });

@@ -31,58 +31,111 @@ const Data = {
   Votes: {},
 };
 
-async function updatecontent(content, channelid) {
-  const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelContent', {
-    channelId: channelid,
-    contentsIds: [content.mMsgId],
-  });
-  if (res.body.retval && res.body.posts.length > 0) {
-    Data.Posts[channelid][content.mMsgId] = { post: res.body.posts[0], isSearched: true };
-  } else if (res.body.retval && res.body.comments.length > 0) {
-    if (Data.Comments[content.mThreadId] === undefined) {
-      Data.Comments[content.mThreadId] = {};
-    }
-    Data.Comments[content.mThreadId][content.mMsgId] = {
-      comment: res.body.comments[0],
-      showReplies: false,
-    }; //  Comments[post][comment]
-    const comm = res.body.comments[0];
-    if (Data.TopComments[comm.mMeta.mThreadId] === undefined) {
-      Data.TopComments[comm.mMeta.mThreadId] = {};
-    }
-    if (comm.mMeta.mThreadId === comm.mMeta.mParentId) {
-      // this is a check for the top level comments
-      Data.TopComments[comm.mMeta.mThreadId][comm.mMeta.mMsgId] = comm;
-      //  pushing top comments respective to post
-    } else {
-      if (Data.ParentCommentMap[comm.mMeta.mParentId] === undefined) {
-        Data.ParentCommentMap[comm.mMeta.mParentId] = {};
-      }
-      Data.ParentCommentMap[comm.mMeta.mParentId][comm.mMeta.mMsgId] = comm;
-    }
-  } else if (res.body.retval && res.body.votes.length > 0) {
-    const vote = res.body.votes[0];
+//  getChannelContent takes a set of ids, so a whole channel is fetched in a few
+//  requests instead of one per item. Chunked rather than sent as a single call so
+//  that no request grows unbounded and so the UI can paint as batches land.
+const CONTENT_BATCH_SIZE = 25;
 
-    if (Data.Votes[vote.mMeta.mThreadId] === undefined) {
-      Data.Votes[vote.mMeta.mThreadId] = {};
-    }
-    if (Data.Votes[vote.mMeta.mThreadId][vote.mMeta.mParentId] === undefined) {
-      Data.Votes[vote.mMeta.mThreadId][vote.mMeta.mParentId] = { upvotes: 0, downvotes: 0 };
-    }
-    if (vote.mVoteType === GXS_VOTE_UP) {
-      Data.Votes[vote.mMeta.mThreadId][vote.mMeta.mParentId].upvotes += 1;
-    }
+function storePost(post, channelid) {
+  const msgId = post.mMeta && post.mMeta.mMsgId;
+  if (!msgId) {
+    return;
+  }
+  Data.Posts[channelid][msgId] = { post, isSearched: true };
+}
 
-    if (vote.mVoteType === GXS_VOTE_DOWN) {
-      Data.Votes[vote.mMeta.mThreadId][vote.mMeta.mParentId].downvotes += 1;
+function storeComment(comm) {
+  const meta = comm.mMeta;
+  if (!meta) {
+    return;
+  }
+  if (Data.Comments[meta.mThreadId] === undefined) {
+    Data.Comments[meta.mThreadId] = {};
+  }
+  Data.Comments[meta.mThreadId][meta.mMsgId] = { comment: comm, showReplies: false }; //  Comments[post][comment]
+  if (Data.TopComments[meta.mThreadId] === undefined) {
+    Data.TopComments[meta.mThreadId] = {};
+  }
+  if (meta.mThreadId === meta.mParentId) {
+    // this is a check for the top level comments
+    Data.TopComments[meta.mThreadId][meta.mMsgId] = comm;
+    //  pushing top comments respective to post
+  } else {
+    if (Data.ParentCommentMap[meta.mParentId] === undefined) {
+      Data.ParentCommentMap[meta.mParentId] = {};
     }
+    Data.ParentCommentMap[meta.mParentId][meta.mMsgId] = comm;
   }
 }
 
-async function updatedisplaychannels(keyid, details) {
+function storeVote(vote) {
+  const meta = vote.mMeta;
+  if (!meta) {
+    return;
+  }
+  if (Data.Votes[meta.mThreadId] === undefined) {
+    Data.Votes[meta.mThreadId] = {};
+  }
+  if (Data.Votes[meta.mThreadId][meta.mParentId] === undefined) {
+    Data.Votes[meta.mThreadId][meta.mParentId] = { upvotes: 0, downvotes: 0 };
+  }
+  if (vote.mVoteType === GXS_VOTE_UP) {
+    Data.Votes[meta.mThreadId][meta.mParentId].upvotes += 1;
+  }
+
+  if (vote.mVoteType === GXS_VOTE_DOWN) {
+    Data.Votes[meta.mThreadId][meta.mParentId].downvotes += 1;
+  }
+}
+
+async function updatecontent(contentIds, channelid) {
+  const ids = Array.isArray(contentIds) ? contentIds : [contentIds];
+  if (ids.length === 0) {
+    return true;
+  }
+  const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelContent', {
+    channelId: channelid,
+    contentsIds: ids,
+  });
+  //  rsJsonApiRequest resolves to undefined when the request never made it out
+  if (!res || !res.body || !res.body.retval) {
+    return false;
+  }
+  //  A batch mixes the three kinds, so all three lists have to be walked. The
+  //  metadata of each item is used rather than the summary it was asked from.
+  (res.body.posts || []).forEach((post) => storePost(post, channelid));
+  (res.body.comments || []).forEach(storeComment);
+  (res.body.votes || []).forEach(storeVote);
+  return true;
+}
+
+// Large posts can contain base64 media. If RetroShare truncates a response,
+// retry it as two smaller requests until the problematic batch is isolated.
+async function updateContentBatch(contentIds, channelid) {
+  const loaded = await updatecontent(contentIds, channelid);
+  //  Splitting only makes sense against a core that answers: when it is gone,
+  //  every half fails too and one batch of 25 turns into 49 doomed requests.
+  //  connectionState stays true when a 200 arrived but its body was cut short,
+  //  which is exactly the case worth retrying smaller.
+  if (loaded || contentIds.length <= 1 || !rs.connectionState.status) {
+    if (!loaded) {
+      console.warn('Unable to load channel content item', contentIds[0]);
+    }
+    return;
+  }
+
+  const middle = Math.ceil(contentIds.length / 2);
+  await updateContentBatch(contentIds.slice(0, middle), channelid);
+  await updateContentBatch(contentIds.slice(middle), channelid);
+}
+
+async function updatedisplaychannels(keyid, details, loadContent = true) {
   const res1 = await rs.rsJsonApiRequest('/rsgxschannels/getChannelsInfo', {
     chanIds: [keyid],
   });
+  if (!res1 || !res1.body || !Array.isArray(res1.body.channelsInfo) || !res1.body.channelsInfo[0]) {
+    return;
+  }
   details = res1.body.channelsInfo[0];
   Data.DisplayChannels[keyid] = {
     // struct for a channel
@@ -103,14 +156,25 @@ async function updatedisplaychannels(keyid, details) {
   if (Data.Posts[keyid] === undefined) {
     Data.Posts[keyid] = {};
   }
+  // Channel lists only need metadata. Fetching every post, comment, vote and
+  // embedded image for every listed channel made large lists extremely slow.
+  if (!loadContent) {
+    return;
+  }
   const res2 = await rs.rsJsonApiRequest('/rsgxschannels/getContentSummaries', {
     channelId: keyid,
   });
 
-  if (res2.body.retval) {
-    res2.body.summaries.map(async (content) => {
-      await updatecontent(content, keyid);
-    });
+  if (!res2 || !res2.body || !res2.body.retval || !Array.isArray(res2.body.summaries)) {
+    return;
+  }
+
+  const ids = res2.body.summaries.map((content) => content.mMsgId).filter(Boolean);
+  //  Sequential on purpose: this runs once per channel of the list, so firing the
+  //  batches concurrently would put the browser back where it started.
+  for (let i = 0; i < ids.length; i += CONTENT_BATCH_SIZE) {
+    await updateContentBatch(ids.slice(i, i + CONTENT_BATCH_SIZE), keyid);
+    m.redraw();
   }
 }
 const DisplayChannelsFromList = () => {
@@ -142,7 +206,7 @@ const ChannelSummary = () => {
   return {
     oninit: (v) => {
       keyid = v.attrs.details.mGroupId;
-      updatedisplaychannels(keyid);
+      updatedisplaychannels(keyid, undefined, false);
     },
 
     view: (v) => {},
@@ -154,7 +218,9 @@ const CommentsTable = () => {
     oninit: (v) => {},
     view: (v) =>
       m('table.comments', [
-        m('tr', [
+        // See table.mails: the header row is tagged so the small screen
+        // stylesheet can card-ify the data rows only.
+        m('tr.comments-head', [
           m('th', ''),
           m('th', 'Comment'),
           m('th', 'Author'),
@@ -173,8 +239,8 @@ const FilesTable = () => {
   return {
     oninit: (v) => {},
     view: (v) =>
-      m('table.files', [
-        m('tr', [m('th', 'File Name'), m('th', 'Size'), m('th', m('i.fas.fa-download'))]),
+      m('table.files.channel-files', [
+        m('thead', m('tr', [m('th', 'File Name'), m('th', 'Size'), m('th', m('i.fas.fa-download'))])),
         v.children,
       ]),
   };

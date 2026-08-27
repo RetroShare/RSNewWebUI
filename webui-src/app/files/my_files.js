@@ -61,7 +61,16 @@ const DisplayFiles = () => {
               left: `calc(1.5rem*${v.attrs.replyDepth})`,
             },
           },
-          translateName(parStruct.details.name || '')
+          [
+            parStruct.details.children !== undefined
+              ? m('i.fas', {
+                  class: parStruct.showChild ? 'fa-folder-open' : 'fa-folder',
+                  title: 'Folder',
+                  style: 'margin-right: 0.45rem; color: #d69e2e;',
+                })
+              : null,
+            translateName(parStruct.details.name || ''),
+          ]
         ),
         m('td', rs.formatBytes((parStruct.details.size && parStruct.details.size.xint64) || 0)),
       ]),
@@ -108,7 +117,15 @@ const Layout = () => {
     view: () => [
       m('.widget__heading', [
         m('h3', 'My Files'),
-        m('button', { onclick: () => (showShareManager = true) }, 'Configure shared directories'),
+        m(
+          'button.my-files__configure-shares',
+          {
+            onclick: () => (showShareManager = true),
+            title: 'Configure shared directories',
+            'aria-label': 'Configure shared directories',
+          },
+          [m('i.fas.fa-folder-plus'), m('span', 'Configure shared directories')]
+        ),
       ]),
       m('.widget__body', [
         m(
