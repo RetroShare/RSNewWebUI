@@ -428,6 +428,35 @@ const ChatRoomsModel = {
     // RsChatLobbyEventCode::CHAT_LOBBY_INVITE_RECEIVED
     if (event && Number(event.mEventCode) === 4) this.loadPendingInvitations();
   },
+  //  An invitation that is neither accepted nor refused keeps the Chat badge
+  //  lit for good: it is counted by invitationCount() and nothing else clears
+  //  it. denyLobbyInvite() is what the core offers for that.
+  declineInvitation(lobbyId) {
+    return rs.rsJsonApiRequest(
+      '/rsChats/denyLobbyInvite',
+      { id: { xstr64: lobbyId } },
+      (data, success) => {
+        if (!success || !data || !data.retval) {
+          this.joinError = 'RetroShare could not decline this invitation.';
+          m.redraw();
+          return;
+        }
+        this.invitationIds.delete(lobbyId);
+        //  The room came from the invitation, not from the nearby list, so it
+        //  has to go with it -- otherwise it stays as a room with no
+        //  participants that cannot be joined.
+        this.allRooms = this.allRooms.filter(
+          (room) => rs.idToHex(room.lobby_id) !== lobbyId
+        );
+        if (ChatHubState.selectedRoomId === lobbyId) {
+          ChatHubState.selectedRoomId = null;
+          ChatHubState.mobilePane = 'list';
+        }
+        this.joinError = '';
+        m.redraw();
+      }
+    );
+  },
   acceptInvitation(lobbyId, identity) {
     this.joiningLobbyId = lobbyId;
     this.joinError = '';
@@ -957,7 +986,8 @@ const ChatLobbyModel = {
           const flags = Number(room.lobby_flags || 0);
           if ((flags & 0x10) !== 0) {
             ChatRoomsModel.joinError = 'This room requires a signed identity. Select a PGP-linked identity.';
-          } else if (Number(room.total_number_of_peers || 0) === 0) {
+          } else if (!ChatRoomsModel.invitationIds.has(lobbyId)
+              && Number(room.total_number_of_peers || 0) === 0) {
             ChatRoomsModel.joinError = 'This room is no longer being advertised by an online participant. Try again when someone in the room is online.';
             ChatRoomsModel.loadPublicRooms();
           } else {

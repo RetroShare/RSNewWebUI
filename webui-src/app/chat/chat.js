@@ -1178,6 +1178,10 @@ const ChatRoomJoinView = () => {
       if (!room) return null;
 
       const lobbyHexId = rs.idToHex(room.lobby_id);
+      const isInvitation = ChatRoomsModel.invitationIds.has(lobbyHexId);
+      //  ChatLobbyInvite has no total_number_of_peers -- the field only exists
+      //  on the records the nearby-lobby list returns -- so an invited room
+      //  would always claim it has nobody in it.
       const participantCount = room.total_number_of_peers || 0;
       const privacy = getLobbyPrivacyInfo(room);
 
@@ -1194,13 +1198,13 @@ const ChatRoomJoinView = () => {
             m('.info-label', 'Security'),
             m('.info-value', privacy.security),
             m('.info-label', 'Participants'),
-            m('.info-value', participantCount + ' users'),
+            m('.info-value', isInvitation ? 'Unknown until you join' : participantCount + ' users'),
           ]),
         ]),
 
 
         m('.detail-section', [
-          m('h3', 'Join Room'),
+          m('h3', isInvitation ? 'Invitation' : 'Join Room'),
           m('p.join-description', 'Select an identity to join this chat room:'),
           ChatRoomsModel.joiningLobbyId === lobbyHexId &&
             m('p.join-description', [m('i.fas.fa-spinner.fa-spin'), ' Joining…']),
@@ -1229,6 +1233,17 @@ const ChatRoomJoinView = () => {
                 ]
               )
             )
+          ),
+          //  Without this an invitation can only be accepted: it stays in the
+          //  room list and keeps the Chat badge lit, since invitationCount()
+          //  feeds it and nothing else ever clears the entry.
+          isInvitation && m(
+            'button.chat-invite-decline',
+            {
+              disabled: ChatRoomsModel.joiningLobbyId === lobbyHexId,
+              onclick: () => ChatRoomsModel.declineInvitation(lobbyHexId),
+            },
+            [m('i.fas.fa-times'), ' Decline invitation']
           ),
         ]),
       ]);
