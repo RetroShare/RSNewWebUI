@@ -110,6 +110,24 @@ function scrollChatToBottom() {
   }, 50);
 }
 
+//  Whether the conversation is still pinned to its last message. It starts
+//  pinned, follows the user's own scrolling, and decides whether a redraw is
+//  allowed to jump back down -- without it, reading anything older is
+//  impossible: the pane redraws on every event and every poll answer, and each
+//  one dragged the reader back to the bottom a few tens of milliseconds later.
+let chatStickToBottom = true;
+
+//  A little slack, because a reader who stops one line short of the end still
+//  means "keep following", and because scrollTop is fractional on zoomed or
+//  high-density displays.
+const CHAT_STICK_SLACK_PX = 80;
+
+function updateChatStickToBottom(element) {
+  if (!element) return;
+  chatStickToBottom =
+    element.scrollHeight - element.scrollTop - element.clientHeight <= CHAT_STICK_SLACK_PX;
+}
+
 function renderUserTooltip(gxsId, name) {
   const details = ChatHubState.gxsDetails[gxsId];
   if (!details) return null;
@@ -359,8 +377,20 @@ const ChatConversationView = () => {
           m(
             '.chat-hub-messages' + (isRoom ? '.compact-container' : ''),
             {
-              oncreate: () => scrollChatToBottom(),
-              onupdate: () => scrollChatToBottom(),
+              oncreate: () => {
+                chatStickToBottom = true;
+                scrollChatToBottom();
+              },
+              onupdate: () => {
+                if (chatStickToBottom) scrollChatToBottom();
+              },
+              onscroll: (event) => {
+                //  A scroll must not trigger a redraw: mithril redraws after
+                //  every handler by default, and this one fires continuously
+                //  while the reader drags the pane.
+                event.redraw = false;
+                updateChatStickToBottom(event.target);
+              },
             },
             ChatLobbyModel.messages
           ),
@@ -1220,6 +1250,10 @@ const Layout = {
     if (lobbyId && ChatHubState.selectedRoomId !== lobbyId) {
       ChatHubState.mobilePane = 'detail';
       ChatHubState.selectedRoomId = lobbyId;
+      //  Another room, another conversation: it opens on its last message,
+      //  whatever the reader had scrolled to in the previous one. The pane
+      //  itself is reused rather than recreated, so its oncreate does not run.
+      chatStickToBottom = true;
       ChatLobbyModel.loadLobby(lobbyId);
     } else if (!lobbyId) {
       ChatHubState.mobilePane = 'list';
