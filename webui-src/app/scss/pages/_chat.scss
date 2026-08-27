@@ -798,6 +798,35 @@ textarea.chatMsg {
   gap: 0.75rem;
 }
 
+//  Refusing is the secondary action next to the identity cards that accept:
+//  outlined rather than filled, and full width on a phone like the other
+//  buttons of these panels.
+.chat-invite-decline {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  margin-top: 1rem;
+  padding: .5rem 1rem;
+  border: 1px solid #fca5a5;
+  border-radius: .5rem;
+  background: #fff;
+  color: #b91c1c;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover { background: #fef2f2; }
+
+  &:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 700px) {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 .identity-card {
   display: flex;
   align-items: center;
