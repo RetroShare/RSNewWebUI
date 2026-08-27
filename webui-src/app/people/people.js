@@ -130,7 +130,7 @@ const PeopleLayout = () => {
                     'Chat Conversation'
                   ),
                 ]),
-                m('.network-tab-content', [
+                m('.network-tab-content' + (State.activeTab === 'chat' ? '.network-chat-tab-content' : ''), [
                   State.activeTab === 'details' ? m(DetailsTab) : m(ChatTab),
                 ]),
               ]
