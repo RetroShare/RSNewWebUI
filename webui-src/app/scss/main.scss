@@ -24,3 +24,6 @@
 // 7. Small screen / touch adaptations. Must stay last: it overrides the
 //    layouts defined above without relying on !important.
 @use 'responsive';
+
+// 8. Runtime light/dark theme overrides. Must stay last.
+@use 'theme';

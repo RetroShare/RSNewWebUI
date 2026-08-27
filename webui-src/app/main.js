@@ -1,4 +1,5 @@
 const m = require('mithril');
+const theme = require('theme');
 
 const login = require('login');
 const rs = require('rswebui');
@@ -115,6 +116,7 @@ const navbar = () => {
               },
             },
             [
+              m(theme.ThemeToggle),
               m(
                 '.nav-menu__status',
                 {
@@ -297,6 +299,7 @@ const MobileNavigation = () => {
           }, [m(navIcon[name]), m('span', name.charAt(0).toUpperCase() + name.slice(1))])
         )),
         m('.mobile-more-sheet__actions', [
+          m(theme.ThemeToggle),
           m('button[type=button]', { onclick: () => window.location.reload(true) }, [m('i.fas.fa-sync-alt'), ' Reload']),
           m('button[type=button]', { onclick: () => rs.logout() }, [m('i.fas.fa-sign-out-alt'), ' Logout']),
         ]),
@@ -378,7 +381,7 @@ const Layout = () => {
 
 m.route(document.getElementById('main'), '/', {
   '/': {
-    render: () => m(login),
+    render: () => [m('.login-theme-control', m(theme.ThemeToggle)), m(login)],
   },
   '/home': {
     render: () => m(Layout, m(home)),

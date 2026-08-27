@@ -2,6 +2,7 @@ const m = require('mithril');
 const widget = require('widgets');
 
 const sections = {
+  appearance: require('config/config_appearance'),
   network: require('config/config_network'),
   node: require('config/config_node'),
   services: require('config/config_services'),
