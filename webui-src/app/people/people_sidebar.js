@@ -15,6 +15,8 @@ const {
   get64Num,
   stopStatusPolling,
   initializeDistantChat,
+  markDistantChatRead,
+  isDistantChatActive,
 } = require('people/people_state');
 
 const LIST_RENDER_CAP = 200;
@@ -47,7 +49,8 @@ const PeopleSidebar = () => {
         const hist = State.chatHistoryMap[gxsId];
         return Boolean(hist && hist.lastMsg && !isSystemMsg(hist.lastMsg));
       });
-      const activeChatsCount = chatPeerIds.length;
+      const unreadChatsCount = Object.values(State.unreadChatCount || {})
+        .reduce((total, count) => total + count, 0);
 
       if (State.mainTab === 'people') {
         let baseList;
@@ -142,7 +145,7 @@ const PeopleSidebar = () => {
               [
                 m('i.fas.fa-comments'),
                 ' Chats',
-                activeChatsCount > 0 && m('span.segment-badge', activeChatsCount),
+                unreadChatsCount > 0 && m('span.segment-badge', unreadChatsCount),
               ]
             ),
           ]),
@@ -211,6 +214,7 @@ const PeopleSidebar = () => {
                   const itemEntry = rs.userList.userMap[gxsId];
                   const itemIsContact = itemEntry && itemEntry.isContact;
                   const itemIsOwn = State.ownGxsIds.includes(gxsId);
+                  const hasActiveTunnel = isDistantChatActive(gxsId);
 
                   const hist = State.chatHistoryMap[gxsId];
                   const lastTS = hist ? hist.lastTime : (itemDetails ? get64Num(itemDetails.mLastUsageTS) : 0);
@@ -231,6 +235,7 @@ const PeopleSidebar = () => {
                           State.selectedId = gxsId;
                           State.activeTab = 'chat';
                           State.mobilePane = 'detail';
+                          markDistantChatRead(gxsId);
                           initializeDistantChat();
                           m.redraw();
                         },
@@ -258,8 +263,11 @@ const PeopleSidebar = () => {
                           }),
                           m('.status-dot', {
                             style: {
-                              backgroundColor: itemIsContact || itemIsOwn ? '#22c55e' : '#cbd5e1',
+                              backgroundColor: hasActiveTunnel ? '#22c55e' : '#cbd5e1',
                             },
+                            title: hasActiveTunnel
+                              ? 'Distant chat tunnel active'
+                              : 'Distant chat tunnel inactive',
                           }),
                         ]),
                         m('.chat-info', [
@@ -268,6 +276,8 @@ const PeopleSidebar = () => {
                         ]),
                         m('.chat-meta', [
                           relativeTimeStr && m('.chat-time', relativeTimeStr),
+                          (State.unreadChatCount[gxsId] || 0) > 0
+                            && m('.chat-unread-badge', State.unreadChatCount[gxsId]),
                         ]),
                       ]
                     );

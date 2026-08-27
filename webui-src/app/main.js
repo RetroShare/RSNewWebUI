@@ -14,6 +14,20 @@ const boards = require('boards/boards');
 const config = require('config/config_resolver');
 const statistics = require('statistics/statistics');
 const statusbar = require('statusbar');
+const networkState = require('network/network_state');
+const peopleState = require('people/people_state');
+const { ChatRoomsModel, receiveLobbyChatMessage } = require('chat/chat_state');
+
+const sumCounts = (counts) => Object.values(counts || {})
+  .reduce((total, count) => total + Number(count || 0), 0);
+
+function navigationCount(name) {
+  if (name === 'network') return sumCounts(networkState.State.unreadChatCount);
+  if (name === 'people') return sumCounts(peopleState.State.unreadChatCount);
+  if (name === 'chat') return sumCounts(ChatRoomsModel.unreadCount);
+  if (name === 'mail') return mail.Messages.unreadCount();
+  return 0;
+}
 
 const navIcon = {
   home: 'i.fas.fa-home.sidenav-icon',
@@ -62,13 +76,18 @@ const navbar = () => {
           m('.nav-menu__box', { style: { flex: 1 } }, [
             Object.keys(vnode.attrs.links).map((linkName) => {
               const active = m.route.get().split('/')[1] === linkName;
+              const count = navigationCount(linkName);
               return m(
                 m.route.Link,
                 {
                   href: vnode.attrs.links[linkName],
                   class: (active ? 'active-link' : '') + ' item',
                 },
-                [m(navIcon[linkName]), m('span', linkName.charAt(0).toUpperCase() + linkName.slice(1))]
+                [
+                  m(navIcon[linkName]),
+                  m('span', linkName.charAt(0).toUpperCase() + linkName.slice(1)),
+                  count > 0 && m('b.nav-unread-badge', count),
+                ]
               );
             }),
             m(
@@ -253,7 +272,11 @@ const MobileNavigation = () => {
     href,
     class: `mobile-bottom-nav__item${routeName() === name ? ' active' : ''}`,
     onclick: () => (isMoreOpen = false),
-  }, [m(navIcon[name]), m('span', name.charAt(0).toUpperCase() + name.slice(1))]);
+  }, [
+    m(navIcon[name]),
+    m('span', name.charAt(0).toUpperCase() + name.slice(1)),
+    navigationCount(name) > 0 && m('b.nav-unread-badge', navigationCount(name)),
+  ]);
 
   return {
     view: () => [
@@ -290,6 +313,24 @@ const MobileNavigation = () => {
 
 const Layout = () => {
   return {
+    oninit: () => {
+      mail.Messages.load();
+      [rs.RsEventsType.MAIL_STATUS, rs.RsEventsType.MAIL_TAG].forEach((eventType) => {
+        if (!rs.events[eventType]) {
+          rs.events[eventType] = {
+            handler: (event, owner) => owner.notify(event),
+            notify: () => {},
+          };
+        }
+        rs.events[eventType].notify = () => mail.Messages.refreshSoon();
+      });
+      if (!rs.events[15]) return;
+      rs.events[15].notify = (message) => {
+        networkState.receiveDirectChatMessage(message);
+        peopleState.receiveDistantChatMessage(message);
+        receiveLobbyChatMessage(message);
+      };
+    },
     view: (vnode) =>
       m('.content', [
         m(navbar, {

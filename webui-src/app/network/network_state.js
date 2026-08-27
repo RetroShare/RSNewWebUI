@@ -251,8 +251,7 @@ function preloadNetworkChatHistory() {
   });
 }
 
-function loadDirectChatMessages() {
-  rs.events[15].notify = (chatMessage) => {
+function receiveDirectChatMessage(chatMessage) {
     const messagePeerId = chatMessage.chat_id && chatMessage.chat_id.peer_id
       ? rs.idToHex(chatMessage.chat_id.peer_id)
       : '';
@@ -275,6 +274,7 @@ function loadDirectChatMessages() {
       };
 
       const isOpenConversation =
+        m.route.get().split('/')[1] === 'network' &&
         State.activeTab === 'chat' &&
         State.selectedFriendGpgId === gpgId &&
         normalizedPeerId === String(State.currentChatPeerId || '').toLowerCase() &&
@@ -289,7 +289,11 @@ function loadDirectChatMessages() {
       scrollChatToBottom();
     }
     m.redraw();
-  };
+}
+
+function loadDirectChatMessages() {
+  // Kept for older callers. Incoming messages are now dispatched globally by
+  // main.js so counters continue to work while another page is open.
 }
 
 function markDirectChatRead(gpgId) {
@@ -440,6 +444,7 @@ module.exports = {
   getOnlineSslId,
   preloadNetworkChatHistory,
   loadDirectChatMessages,
+  receiveDirectChatMessage,
   markDirectChatRead,
   loadRecentDirectChatHistory,
   loadAllDirectChatHistory,

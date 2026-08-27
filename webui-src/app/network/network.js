@@ -1,5 +1,4 @@
 const m = require('mithril');
-const rs = require('rswebui');
 const Data = require('network/network_data');
 const compose = require('mail/mail_compose');
 const {
@@ -29,11 +28,6 @@ const NetworkLayout = () => {
       });
       loadOwnProfile();
       loadGxsIdentities();
-    },
-    onremove: () => {
-      if (rs.events[15]) {
-        rs.events[15].notify = () => {};
-      }
     },
     view: () => {
       const selectedFriend = State.selectedFriendGpgId

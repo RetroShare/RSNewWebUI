@@ -19,6 +19,27 @@ const Messages = {
   personal: [],
   todo: [],
   later: [],
+  refreshTimer: null,
+  unreadCount() {
+    return (Messages.inbox || []).filter((msg) => {
+      const status = msg.msgflags & 0xf0;
+      return (status === util.RS_MSG_NEW || status === util.RS_MSG_UNREAD_BY_USER)
+        && !(msg.msgflags & util.RS_MSG_TRASH)
+        && !(msg.msgflags & util.RS_MSG_SPAM);
+    }).length;
+  },
+  refreshSoon() {
+    if (Messages.refreshTimer) return;
+    Messages.refreshTimer = setTimeout(() => {
+      Messages.refreshTimer = null;
+      Messages.load();
+    }, 250);
+  },
+  markReadLocally(msgId) {
+    Messages.all.forEach((msg) => {
+      if (msg.msgId === msgId) msg.msgflags &= ~0xf0;
+    });
+  },
   load() {
     rs.rsJsonApiRequest('/rsMail/getMessageSummaries', { box: util.BOX_ALL }, (data) => {
       if (data && data.msgList) {
@@ -61,6 +82,7 @@ const Messages = {
         Messages.later = Messages.all.filter(
           (msg) => msg.msgtags && msg.msgtags.includes(util.RS_MSGTAGTYPE_LATER)
         );
+        m.redraw();
       }
     });
   },
@@ -247,6 +269,10 @@ const GenericMailList = () => {
                   key: msg.msgId,
                   details: msg,
                   category,
+                  onOpen: () => {
+                    Messages.markReadLocally(msg.msgId);
+                    m.redraw();
+                  },
                 })
               )
             )
@@ -258,6 +284,7 @@ const GenericMailList = () => {
 };
 
 module.exports = {
+  Messages,
   view: ({ attrs, attrs: { tab, msgId } }) => {
     // TODO: utilize multiple routing params
     if (Object.prototype.hasOwnProperty.call(attrs, 'msgId')) {

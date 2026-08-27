@@ -1227,6 +1227,7 @@ const Layout = {
   },
   onremove: () => {
     ChatLobbyModel.stopStatusPolling();
+    ChatLobbyModel.stopParticipantPolling();
     window.removeEventListener('click', Layout.dismissMenu);
   },
   view: () => {
@@ -1314,20 +1315,6 @@ const Layout = {
               ]),
               subscribedRooms.map((info) => {
                 const hexId = rs.idToHex(info.lobby_id);
-                let count = 0;
-                let hasOwn = false;
-                if (info.gxs_ids) {
-                  if (Array.isArray(info.gxs_ids)) {
-                    count = info.gxs_ids.length;
-                    hasOwn = info.gxs_ids.some((u) => u.key === info.gxs_id);
-                  } else if (typeof info.gxs_ids === 'object') {
-                    count = Object.keys(info.gxs_ids).length;
-                    hasOwn = info.gxs_ids[info.gxs_id] !== undefined;
-                  }
-                }
-                if (!hasOwn && info.gxs_id && info.gxs_id !== '00000000000000000000000000000000') {
-                  count++;
-                }
                 return m(
                   '.chat-room-list-item' +
                     (isSelected(info, 'subscribed') ? '.selected' : ''),
@@ -1344,7 +1331,8 @@ const Layout = {
                       m('.room-name', info.lobby_name || '<unnamed>'),
                       m('.room-topic', info.lobby_topic || 'No topic'),
                     ]),
-                    count > 0 && m('.room-badge', count),
+                    (ChatRoomsModel.unreadCount[hexId] || 0) > 0
+                      && m('.room-badge', ChatRoomsModel.unreadCount[hexId]),
                   ]
                 );
               }),
@@ -1357,7 +1345,7 @@ const Layout = {
               ]),
               publicRooms.map((info) => {
                 const hexId = rs.idToHex(info.lobby_id);
-                const count = info.total_number_of_peers || 0;
+                const participantCount = info.total_number_of_peers || 0;
                 return m(
                   '.chat-room-list-item.public-room' +
                     (isSelected(info, 'public') ? '.selected' : ''),
@@ -1374,7 +1362,9 @@ const Layout = {
                       m('.room-name', info.lobby_name || '<unnamed>'),
                       m('.room-topic', info.lobby_topic || 'No topic'),
                     ]),
-                    count > 0 && m('.room-badge', count),
+                    participantCount > 0 && m('.room-badge', {
+                      title: `${participantCount} participant${participantCount === 1 ? '' : 's'}`,
+                    }, participantCount),
                   ]
                 );
               }),

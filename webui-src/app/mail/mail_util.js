@@ -42,6 +42,16 @@ const MailHoverState = {
   hoveredUser: null,
 };
 
+function markMessageRead(msgId, onDone) {
+  rs.rsJsonApiRequest(
+    '/rsMail/MessageRead',
+    { msgId, unreadByUser: false },
+    (data, success) => {
+      if (onDone) onDone(Boolean(success && (!data || data.retval !== false)));
+    }
+  );
+}
+
 function renderMailUserTooltip() {
   if (!MailHoverState.hoveredUser) return null;
   const hUser = MailHoverState.hoveredUser;
@@ -160,8 +170,10 @@ const MessageSummary = () => {
         {
           key: v.attrs.details.msgId,
           class: msgStatus,
-          onclick: () =>
-            m.route.set('/mail/:tab/:msgId', { tab: v.attrs.category, msgId: v.attrs.details.msgId }),
+          onclick: () => {
+            if (v.attrs.onOpen) v.attrs.onOpen();
+            m.route.set('/mail/:tab/:msgId', { tab: v.attrs.category, msgId: v.attrs.details.msgId });
+          },
         },
         [
           m(
@@ -326,6 +338,7 @@ const MessageView = () => {
 
   return {
     oninit: async (v) => {
+      markMessageRead(v.attrs.msgId);
       const res = await rs.rsJsonApiRequest('/rsMail/getMessage', {
         msgId: v.attrs.msgId,
       });
@@ -808,4 +821,5 @@ module.exports = {
   RS_MSGTAGTYPE_TODO,
   RS_MSGTAGTYPE_WORK,
   BOX_ALL,
+  markMessageRead,
 };

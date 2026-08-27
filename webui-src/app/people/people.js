@@ -15,7 +15,7 @@ const {
   initializeDistantChat,
   getDistantChatSession,
   drainBufferedChatMessages,
-  receiveDistantChatMessage,
+  markDistantChatRead,
 } = require('people/people_state');
 
 const PeopleSidebar = require('people/people_sidebar');
@@ -67,9 +67,6 @@ const PeopleLayout = () => {
       });
       window.addEventListener('click', dismissMenu);
 
-      // Register for chatEvents to receive live incoming messages
-      rs.events[15].notify = receiveDistantChatMessage;
-
       if (State.chatPid && !State.chatDisconnected) {
         //  Messages received while the tab was unmounted sit in the event
         //  queue buffer: pick them up before the first redraw.
@@ -80,9 +77,6 @@ const PeopleLayout = () => {
       }
     },
     onremove: () => {
-      if (rs.events[15]) {
-        rs.events[15].notify = () => {};
-      }
       stopStatusPolling();
       if (stopWatchingOwnIds) stopWatchingOwnIds();
       window.removeEventListener('click', dismissMenu);
@@ -129,6 +123,7 @@ const PeopleLayout = () => {
                       onclick: () => {
                         State.activeTab = 'chat';
                         State.mobilePane = 'detail';
+                        markDistantChatRead(State.selectedId);
                         initializeDistantChat();
                       },
                     },

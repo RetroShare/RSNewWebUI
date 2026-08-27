@@ -373,6 +373,7 @@ const ChatRoomsModel = {
   allRooms: [],
   knownSubscrIds: [],
   subscribedRooms: {},
+  unreadCount: {},
   loadPublicRooms() {
     rs.rsJsonApiRequest(
       '/rsChats/getListOfNearbyChatLobbies',
@@ -570,6 +571,76 @@ const ChatLobbyModel = {
   lastLobbyId: null,
   distantChatStatus: null,
   statusPollInterval: null,
+  participantPollInterval: null,
+
+  updateParticipants(detail) {
+    if (!detail) return;
+    const byId = new Map();
+    if (detail.gxs_ids) {
+      if (Array.isArray(detail.gxs_ids)) {
+        detail.gxs_ids.forEach((entry) => {
+          const key = entry && entry.key;
+          if (key) byId.set(key, {
+            key,
+            name: rs.userList.username(key) || key,
+            lastAct: get64Num(entry.value),
+          });
+        });
+      } else if (typeof detail.gxs_ids === 'object') {
+        Object.keys(detail.gxs_ids).forEach((key) => byId.set(key, {
+          key,
+          name: rs.userList.username(key) || key,
+          lastAct: get64Num(detail.gxs_ids[key]),
+        }));
+      }
+    }
+
+    const ownId = detail.gxs_id;
+    if (ownId && ownId !== '00000000000000000000000000000000' && !byId.has(ownId)) {
+      byId.set(ownId, {
+        key: ownId,
+        name: rs.userList.username(ownId) || ownId,
+        lastAct: Math.floor(Date.now() / 1000),
+      });
+    }
+    this.users = Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name));
+  },
+
+  rememberLiveParticipant(chatMessage) {
+    const cid = chatMessage && chatMessage.chat_id;
+    if (!cid || cid.type !== 3 || rs.idToHex(cid.lobby_id) !== this.lastLobbyId) return;
+    const key = rs.idToHex(chatMessage.lobby_peer_gxs_id || chatMessage.peerId);
+    if (!key || /^0+$/.test(key)) return;
+    const existing = this.users.find((user) => user.key === key);
+    if (existing) {
+      existing.lastAct = chatMessage.sendTime || Math.floor(Date.now() / 1000);
+    } else {
+      this.users.push({
+        key,
+        name: rs.userList.username(key) || chatMessage.peerName || key,
+        lastAct: chatMessage.sendTime || Math.floor(Date.now() / 1000),
+      });
+    }
+  },
+
+  startParticipantPolling(lobbyId) {
+    this.stopParticipantPolling();
+    const refresh = () => loadLobbyDetails(lobbyId, (detail) => {
+      if (!detail || this.lastLobbyId !== lobbyId) return;
+      this.currentLobby = { ...this.currentLobby, ...detail, chatType: 3 };
+      this.updateParticipants(detail);
+      m.redraw();
+    });
+    refresh();
+    this.participantPollInterval = setInterval(refresh, 5000);
+  },
+
+  stopParticipantPolling() {
+    if (this.participantPollInterval) {
+      clearInterval(this.participantPollInterval);
+      this.participantPollInterval = null;
+    }
+  },
 
   pollDistantChatStatus() {
     if (!this.currentLobby || this.currentLobby.chatType !== 2) return;
@@ -799,7 +870,9 @@ const ChatLobbyModel = {
   },
   loadLobby(currentlobbyid) {
     this.stopStatusPolling();
+    this.stopParticipantPolling();
     this.lastLobbyId = currentlobbyid;
+    ChatRoomsModel.unreadCount[currentlobbyid] = 0;
 
     const finishLoad = (detail) => {
       this.setupAction = this.setIdentity;
@@ -817,76 +890,50 @@ const ChatLobbyModel = {
         this.addMessages(l);
       });
 
-      rs.events[15].notify = (chatMessage) => {
-        const msgCid = chatMessage.chat_id;
-        let msgId;
-
-        if (msgCid.type === 3) {
-          msgId = rs.idToHex(msgCid.lobby_id);
-        } else if (msgCid.type === 2) {
-          msgId = rs.idToHex(msgCid.distant_chat_id);
-        } else if (msgCid.type === 1) {
-          msgId = rs.idToHex(msgCid.peer_id);
-        } else {
-          msgId = rs.idToHex(msgCid);
-        }
-
-        if (msgId === currentlobbyid) {
-          this.addMessages([chatMessage]);
-        }
-      };
-
-      let list = [];
-      if (detail.gxs_ids) {
-        if (Array.isArray(detail.gxs_ids)) {
-          list = detail.gxs_ids.map((u) => {
-            const key = u.key;
-            return { key, name: rs.userList.username(key) || key, lastAct: get64Num(u.value) };
-          });
-        } else if (typeof detail.gxs_ids === 'object') {
-          list = Object.keys(detail.gxs_ids).map((key) => {
-            return { key, name: rs.userList.username(key) || key, lastAct: get64Num(detail.gxs_ids[key]) };
-          });
-        }
-      }
-
-      const ownId = detail.gxs_id;
-      if (ownId && ownId !== '00000000000000000000000000000000') {
-        const hasOwn = list.some((u) => u.key === ownId);
-        if (!hasOwn) {
-          list.push({
-            key: ownId,
-            name: rs.userList.username(ownId) || ownId,
-            lastAct: Math.floor(Date.now() / 1000)
-          });
-        }
-      }
-
-      if (list.length === 0) {
-        list = [{ key: ownId || '', name: rs.userList.username(ownId) || detail.lobby_name || '???', lastAct: Math.floor(Date.now() / 1000) }];
-      }
-
-      list.sort((a, b) => a.name.localeCompare(b.name));
-      this.users = list;
+      this.updateParticipants(detail);
 
       if (detail.chatType === 2) {
         this.startStatusPolling();
+      } else if (detail.chatType === 3) {
+        this.startParticipantPolling(currentlobbyid);
       }
 
       m.redraw();
     };
 
-    loadLobbyDetails(currentlobbyid, (detail) => {
+    const isDistantChatId = /^[0-9a-f]{32}$/i.test(String(currentlobbyid));
+    const loadDetails = (attempt = 0) => loadLobbyDetails(currentlobbyid, (detail) => {
       if (detail) {
         finishLoad(detail);
-      } else {
+        return;
+      }
+
+      // Public lobby IDs are uint64 decimal strings. Passing one to the
+      // distant-chat fallback makes the core construct a 128-bit tunnel ID
+      // from (for example) a 20-character decimal value and can terminate the
+      // JSON API listener. Only a real 32-hex-character tunnel ID may use it.
+      if (isDistantChatId) {
         loadDistantChatDetails(currentlobbyid, (dDetail) => {
-          if (dDetail) {
-            finishLoad(dDetail);
-          }
+          if (dDetail) finishLoad(dDetail);
         });
+        return;
+      }
+
+      // A newly joined room may not be immediately visible through
+      // getChatLobbyInfo. Prefer the lobby data already loaded by the room
+      // lists, then retry briefly while the core completes the subscription.
+      const cached = ChatRoomsModel.subscribedRooms[currentlobbyid]
+        || (ChatRoomsModel.allRooms || []).find(
+          (room) => rs.idToHex(room.lobby_id) === currentlobbyid
+        );
+      if (cached) {
+        finishLoad({ ...cached, chatType: 3 });
+      } else if (attempt < 3) {
+        setTimeout(() => loadDetails(attempt + 1), 250 * (attempt + 1));
       }
     });
+
+    loadDetails();
   },
   loadPublicLobby(currentlobbyid) {
     this.setupAction = this.enterPublicLobby;
@@ -993,6 +1040,22 @@ const ChatHubState = {
   },
 };
 
+function receiveLobbyChatMessage(chatMessage) {
+  const cid = chatMessage && chatMessage.chat_id;
+  if (!cid || cid.type !== 3) return;
+  const lobbyId = rs.idToHex(cid.lobby_id);
+  if (!lobbyId) return;
+  ChatLobbyModel.rememberLiveParticipant(chatMessage);
+  const isOpen = m.route.get().split('/')[1] === 'chat'
+    && ChatLobbyModel.lastLobbyId === lobbyId
+    && (window.innerWidth > 700 || ChatHubState.mobilePane === 'detail');
+  if (isOpen) ChatLobbyModel.addMessages([chatMessage]);
+  else if (chatMessage.incoming === true) {
+    ChatRoomsModel.unreadCount[lobbyId] = (ChatRoomsModel.unreadCount[lobbyId] || 0) + 1;
+    m.redraw();
+  }
+}
+
 module.exports = {
   get64Num,
   loadLobbyDetails,
@@ -1009,4 +1072,5 @@ module.exports = {
   Message,
   ChatLobbyModel,
   ChatHubState,
+  receiveLobbyChatMessage,
 };

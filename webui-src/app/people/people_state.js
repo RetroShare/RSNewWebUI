@@ -12,6 +12,7 @@ const State = {
   ownGxsIds: [],
   gpgToGxsIdMap: {},
   chatHistoryMap: {}, // gxsId -> { lastMsg, lastTime }
+  unreadChatCount: {}, // gxsId -> new incoming messages not yet opened
   showMailCompose: false,
   activeTab: 'details',
   mobilePane: 'list', // Phone master/detail navigation: 'list' | 'detail'
@@ -645,14 +646,7 @@ function leaveDistantChat(closed) {
   m.redraw();
 }
 
-//  Live incoming distant chat message, coming from the rsEvents stream.
-function receiveDistantChatMessage(chatMessage) {
-  const msgCid = chatMessage && chatMessage.chat_id;
-  if (!msgCid || msgCid.type !== 2) return;
-
-  const msgPid = rs.idToHex(msgCid.distant_chat_id);
-  if (!msgPid) return;
-
+function findDistantChatSession(msgPid) {
   let session = null;
   let targetGxsId = null;
   Object.keys(State.activeDistantChats || {}).forEach((id) => {
@@ -670,7 +664,48 @@ function receiveDistantChatMessage(chatMessage) {
     session = getDistantChatSession(targetGxsId);
     session.pid = msgPid;
   }
-  if (!session) return;
+  return { session, targetGxsId };
+}
+
+function isDistantChatActive(gxsId) {
+  const session = gxsId && State.activeDistantChats[gxsId];
+  return Boolean(
+    session
+      && session.pid
+      && !session.disconnected
+      && session.status
+      && session.status.status === 2
+  );
+}
+
+// A tunnel can survive a page reload, while activeDistantChats cannot. Resolve
+// its deterministic id against the small set of identities we can actually be
+// chatting with, so background messages still reach the People counter.
+async function resolveDistantChatPeer(msgPid) {
+  const ownIds = State.ownGxsIds.length > 0
+    ? State.ownGxsIds
+    : await peopleUtil.ownIds();
+  if (State.ownGxsIds.length === 0) State.ownGxsIds = ownIds || [];
+
+  const candidates = new Set([
+    State.selectedId,
+    ...Object.keys(State.chatHistoryMap || {}),
+    ...Object.keys(State.activeDistantChats || {}),
+  ].filter(peopleUtil.isUsableIdentityId));
+  peopleUtil.contactlist(rs.userList.users || []).forEach((user) => {
+    if (user && peopleUtil.isUsableIdentityId(user.mGroupId)) candidates.add(user.mGroupId);
+  });
+
+  for (const ownId of ownIds || []) {
+    for (const peerId of candidates) {
+      if (peopleUtil.distantChatPid(ownId, peerId) === msgPid) return peerId;
+    }
+  }
+  return null;
+}
+
+function recordDistantChatMessage(chatMessage, msgPid, session, targetGxsId) {
+  if (!session || !targetGxsId) return;
 
   if (!addSessionMessages(session, [chatMessage])) return;
 
@@ -679,6 +714,13 @@ function receiveDistantChatMessage(chatMessage) {
       lastMsg: chatMessage.msg || chatMessage.message || '',
       lastTime: chatMessage.sendTime || chatMessage.recvTime || Math.floor(Date.now() / 1000),
     };
+    const isOpenConversation = m.route.get().split('/')[1] === 'people'
+      && State.activeTab === 'chat'
+      && State.selectedId === targetGxsId
+      && (window.innerWidth > 700 || State.mobilePane === 'detail');
+    if (chatMessage.incoming === true && !isOpenConversation) {
+      State.unreadChatCount[targetGxsId] = (State.unreadChatCount[targetGxsId] || 0) + 1;
+    }
   }
 
   //  The view renders State.chatMessages, so it has to point at the session
@@ -687,6 +729,32 @@ function receiveDistantChatMessage(chatMessage) {
 
   m.redraw();
   if (State.selectedId === targetGxsId) scrollChatToBottom();
+}
+
+//  Live incoming distant chat message, coming from the rsEvents stream.
+function receiveDistantChatMessage(chatMessage) {
+  const msgCid = chatMessage && chatMessage.chat_id;
+  if (!msgCid || msgCid.type !== 2) return;
+
+  const msgPid = rs.idToHex(msgCid.distant_chat_id);
+  if (!msgPid) return;
+
+  const known = findDistantChatSession(msgPid);
+  if (known.session) {
+    recordDistantChatMessage(chatMessage, msgPid, known.session, known.targetGxsId);
+    return;
+  }
+
+  resolveDistantChatPeer(msgPid).then((targetGxsId) => {
+    if (!targetGxsId) return;
+    const session = getDistantChatSession(targetGxsId);
+    session.pid = msgPid;
+    recordDistantChatMessage(chatMessage, msgPid, session, targetGxsId);
+  });
+}
+
+function markDistantChatRead(gxsId) {
+  if (gxsId) State.unreadChatCount[gxsId] = 0;
 }
 
 //  Two /rsHistory/getMessages per known identity, and a node knows hundreds of
@@ -839,9 +907,11 @@ function preloadAllChatHistory() {
         if (pid) tasks.push(historyPreloadTask(gxsId, distantChatIdFor(pid), false));
       });
 
-      locationIdsOf(gxsId).forEach((sslId) => {
-        tasks.push(historyPreloadTask(gxsId, privateChatIdFor(sslId), true));
-      });
+      // Direct messages are keyed only by an SSL location, not by the GXS
+      // identity used for a distant chat. Assigning that same SSL history to
+      // every GXS identity belonging to the PGP friend creates duplicate chat
+      // rows. Direct chat belongs to Network; this list is keyed by the exact
+      // GXS identity whose distant tunnel history matched above.
     });
 
     if (tasks.length === 0) {
@@ -926,9 +996,11 @@ function loadAllHistoryForSelectedPeer(callback) {
 module.exports = {
   State,
   getDistantChatSession,
+  isDistantChatActive,
   addSessionMessages,
   drainBufferedChatMessages,
   receiveDistantChatMessage,
+  markDistantChatRead,
   scrollChatToBottom,
   isSystemMsg,
   preloadAllChatHistory,
