@@ -1202,12 +1202,20 @@ const ChatRoomJoinView = () => {
         m('.detail-section', [
           m('h3', 'Join Room'),
           m('p.join-description', 'Select an identity to join this chat room:'),
+          ChatRoomsModel.joiningLobbyId === lobbyHexId &&
+            m('p.join-description', [m('i.fas.fa-spinner.fa-spin'), ' Joining…']),
+          ChatRoomsModel.joinError && m('p.error', ChatRoomsModel.joinError),
           m(
             '.identities-grid',
             ownIds.map((nick) =>
               m(
                 '.identity-card',
-                { onclick: () => ChatLobbyModel.enterPublicLobby(lobbyHexId, nick) },
+                {
+                  class: ChatRoomsModel.joiningLobbyId === lobbyHexId ? 'disabled' : '',
+                  onclick: () => ChatRoomsModel.invitationIds.has(lobbyHexId)
+                    ? ChatRoomsModel.acceptInvitation(lobbyHexId, nick)
+                    : ChatLobbyModel.enterPublicLobby(lobbyHexId, nick),
+                },
                 [
                   m('.identity-card__identity', [
                     m(peopleUtil.IdentityAvatar, {
@@ -1298,6 +1306,13 @@ const Layout = {
     const publicRooms = (ChatRoomsModel.allRooms || [])
       .filter((info) => !ChatRoomsModel.subscribed(info))
       .filter((info) => (info.lobby_name || '').toLowerCase().includes(search));
+
+    const invitedRooms = publicRooms.filter((info) =>
+      ChatRoomsModel.invitationIds.has(rs.idToHex(info.lobby_id))
+    );
+    const discoverableRooms = publicRooms.filter((info) =>
+      !ChatRoomsModel.invitationIds.has(rs.idToHex(info.lobby_id))
+    );
 
     const isSelected = (info, type) =>
       ChatHubState.selectedRoomId === rs.idToHex(info.lobby_id);
@@ -1396,12 +1411,41 @@ const Layout = {
               }),
             ],
 
-            publicRooms.length > 0 && [
+            invitedRooms.length > 0 && [
+              m('.rooms-section-title.invited-rooms-title', [
+                m('i.fas.fa-envelope'),
+                m('span', 'Invitations (' + invitedRooms.length + ')'),
+              ]),
+              invitedRooms.map((info) => {
+                const hexId = rs.idToHex(info.lobby_id);
+                return m(
+                  '.chat-room-list-item.public-room.invited-room' +
+                    (isSelected(info, 'public') ? '.selected' : ''),
+                  {
+                    key: hexId,
+                    onclick: () => {
+                      ChatHubState.mobilePane = 'detail';
+                      m.route.set('/chat/:lobby', { lobby: hexId });
+                    },
+                  },
+                  [
+                    m('.room-icon', m('i.fas.fa-envelope-open-text')),
+                    m('.room-meta', [
+                      m('.room-name', info.lobby_name || '<unnamed>'),
+                      m('.room-topic', info.lobby_topic || 'You were invited to join'),
+                    ]),
+                    m('.room-badge', { title: 'Chat room invitation' }, '!'),
+                  ]
+                );
+              }),
+            ],
+
+            discoverableRooms.length > 0 && [
               m('.rooms-section-title', [
                 m('i.fas.fa-globe'),
-                m('span', 'Public (' + publicRooms.length + ')'),
+                m('span', 'Public (' + discoverableRooms.length + ')'),
               ]),
-              publicRooms.map((info) => {
+              discoverableRooms.map((info) => {
                 const hexId = rs.idToHex(info.lobby_id);
                 const participantCount = info.total_number_of_peers || 0;
                 return m(
@@ -1429,7 +1473,8 @@ const Layout = {
             ],
 
             subscribedRooms.length === 0 &&
-              publicRooms.length === 0 &&
+              invitedRooms.length === 0 &&
+              discoverableRooms.length === 0 &&
               m('p.no-rooms', 'No chat rooms found'),
           ]),
         ]),

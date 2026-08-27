@@ -265,9 +265,9 @@ const eventQueue = {
             r.push(event.mChatMessage);
             owner.notify(event.mChatMessage);
           });
-        } else if (event && event.mCid) {
+        } else if (event && (event.mCid || event.mEventCode !== undefined)) {
           // Administrative chat event (e.g. lobby info change, peer join/leave)
-          // Silent for now to avoid console spam, as actual messages use mChatMessage
+          owner.notify(event);
         }
       },
       notify: () => { },

@@ -24,7 +24,9 @@ const sumCounts = (counts) => Object.values(counts || {})
 function navigationCount(name) {
   if (name === 'network') return sumCounts(networkState.State.unreadChatCount);
   if (name === 'people') return sumCounts(peopleState.State.unreadChatCount);
-  if (name === 'chat') return sumCounts(ChatRoomsModel.unreadCount);
+  if (name === 'chat') {
+    return sumCounts(ChatRoomsModel.unreadCount) + ChatRoomsModel.invitationCount();
+  }
   if (name === 'mail') return mail.Messages.unreadCount();
   return 0;
 }
@@ -325,10 +327,14 @@ const Layout = () => {
         rs.events[eventType].notify = () => mail.Messages.refreshSoon();
       });
       if (!rs.events[15]) return;
-      rs.events[15].notify = (message) => {
-        networkState.receiveDirectChatMessage(message);
-        peopleState.receiveDistantChatMessage(message);
-        receiveLobbyChatMessage(message);
+      rs.events[15].notify = (messageOrEvent) => {
+        if (messageOrEvent && messageOrEvent.mEventCode !== undefined) {
+          ChatRoomsModel.receiveAdministrativeEvent(messageOrEvent);
+          return;
+        }
+        networkState.receiveDirectChatMessage(messageOrEvent);
+        peopleState.receiveDistantChatMessage(messageOrEvent);
+        receiveLobbyChatMessage(messageOrEvent);
       };
     },
     view: (vnode) =>

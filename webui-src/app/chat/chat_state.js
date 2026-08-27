@@ -404,6 +404,51 @@ const ChatRoomsModel = {
   knownSubscrIds: [],
   subscribedRooms: {},
   unreadCount: {},
+  invitationIds: new Set(),
+  joiningLobbyId: null,
+  joinError: '',
+  invitationCount() {
+    return this.invitationIds.size;
+  },
+  loadPendingInvitations() {
+    rs.rsJsonApiRequest('/rsChats/getPendingChatLobbyInvites', {}, (data) => {
+      const invites = data && Array.isArray(data.invites) ? data.invites : [];
+      const previousInvitationIds = this.invitationIds;
+      this.invitationIds = new Set(invites.map((invite) => rs.idToHex(invite.lobby_id)));
+      const inviteIds = this.invitationIds;
+      const rooms = this.allRooms.filter((room) => {
+        const id = rs.idToHex(room.lobby_id);
+        return !previousInvitationIds.has(id) && !inviteIds.has(id);
+      });
+      this.allRooms = sortLobbies([...rooms, ...invites]);
+      m.redraw();
+    });
+  },
+  receiveAdministrativeEvent(event) {
+    // RsChatLobbyEventCode::CHAT_LOBBY_INVITE_RECEIVED
+    if (event && Number(event.mEventCode) === 4) this.loadPendingInvitations();
+  },
+  acceptInvitation(lobbyId, identity) {
+    this.joiningLobbyId = lobbyId;
+    this.joinError = '';
+    return rs.rsJsonApiRequest(
+      '/rsChats/acceptLobbyInvite',
+      { id: { xstr64: lobbyId }, identity },
+      (data, success) => {
+        this.joiningLobbyId = null;
+        if (!success || !data || !data.retval) {
+          this.joinError = 'RetroShare rejected this identity. This room may require a signed identity.';
+          m.redraw();
+          return;
+        }
+        this.invitationIds.delete(lobbyId);
+        this.loadSubscribedRooms();
+        ChatHubState.selectedRoomType = 'subscribed';
+        ChatLobbyModel.loadLobby(lobbyId);
+        m.redraw();
+      }
+    );
+  },
   loadPublicRooms() {
     rs.rsJsonApiRequest(
       '/rsChats/getListOfNearbyChatLobbies',
@@ -417,14 +462,24 @@ const ChatRoomsModel = {
             seen.add(id);
             return true;
           });
-          ChatRoomsModel.allRooms = sortLobbies(uniqueLobbies);
+          const inviteIds = ChatRoomsModel.invitationIds;
+          const pendingInvites = ChatRoomsModel.allRooms.filter((room) =>
+            inviteIds.has(rs.idToHex(room.lobby_id))
+          );
+          ChatRoomsModel.allRooms = sortLobbies([
+            ...uniqueLobbies.filter((room) => !inviteIds.has(rs.idToHex(room.lobby_id))),
+            ...pendingInvites,
+          ]);
         } else {
-          ChatRoomsModel.allRooms = [];
+          ChatRoomsModel.allRooms = ChatRoomsModel.allRooms.filter((room) =>
+            ChatRoomsModel.invitationIds.has(rs.idToHex(room.lobby_id))
+          );
         }
       }
     );
   },
   loadSubscribedRooms(after = null) {
+    ChatRoomsModel.loadPendingInvitations();
     rs.rsJsonApiRequest(
       '/rsChats/getChatLobbyList',
       {},
@@ -432,6 +487,7 @@ const ChatRoomsModel = {
         if (data && data.cl_list) {
           const ids = [...new Set(data.cl_list.map((lid) => rs.idToHex(lid)))];
           ChatRoomsModel.knownSubscrIds = ids;
+          ids.forEach((id) => ChatRoomsModel.invitationIds.delete(id));
 
           Object.keys(ChatRoomsModel.subscribedRooms).forEach((id) => {
             if (!ids.includes(id)) {
@@ -886,6 +942,8 @@ const ChatLobbyModel = {
     );
   },
   enterPublicLobby(lobbyId, nick) {
+    ChatRoomsModel.joiningLobbyId = lobbyId;
+    ChatRoomsModel.joinError = '';
     rs.rsJsonApiRequest(
       '/rsChats/joinVisibleChatLobby',
       {
@@ -893,7 +951,21 @@ const ChatLobbyModel = {
         own_id: nick,
       },
       (data, success) => {
-        if (!success || !data || !data.retval) return;
+        ChatRoomsModel.joiningLobbyId = null;
+        if (!success || !data || !data.retval) {
+          const room = ChatHubState.selectedRoom || {};
+          const flags = Number(room.lobby_flags || 0);
+          if ((flags & 0x10) !== 0) {
+            ChatRoomsModel.joinError = 'This room requires a signed identity. Select a PGP-linked identity.';
+          } else if (Number(room.total_number_of_peers || 0) === 0) {
+            ChatRoomsModel.joinError = 'This room is no longer being advertised by an online participant. Try again when someone in the room is online.';
+            ChatRoomsModel.loadPublicRooms();
+          } else {
+            ChatRoomsModel.joinError = 'RetroShare could not join this room. It may no longer be available; refresh the room list and try again.';
+          }
+          m.redraw();
+          return;
+        }
 
         // Keep the subscription in the RetroShare profile so the core joins
         // this room again after a restart. Recent cores also enable this from
@@ -909,13 +981,10 @@ const ChatLobbyModel = {
           true
         );
 
-        loadLobbyDetails(lobbyId, (info) => {
-          if (!info) return;
-          ChatRoomsModel.subscribedRooms[lobbyId] = info;
-          ChatRoomsModel.loadSubscribedRooms(() => {
-            m.route.set('/chat/:lobby', { lobby: rs.idToHex(info.lobby_id) });
-          });
-        });
+        ChatRoomsModel.loadSubscribedRooms();
+        ChatHubState.selectedRoomType = 'subscribed';
+        ChatLobbyModel.loadLobby(lobbyId);
+        m.redraw();
       },
       true
     );
