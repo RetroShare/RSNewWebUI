@@ -20,13 +20,22 @@ const Messages = {
   todo: [],
   later: [],
   refreshTimer: null,
-  unreadCount() {
-    return (Messages.inbox || []).filter((msg) => {
+  unread: 0,
+  //  The badge is read from the navigation view, so it is asked for on every
+  //  redraw -- once for the rail, twice more for the bottom bar. Counting is a
+  //  full pass over the inbox, so it happens when the inbox changes instead:
+  //  after a load, and after a message is marked read here.
+  recountUnread() {
+    Messages.unread = (Messages.inbox || []).filter((msg) => {
       const status = msg.msgflags & 0xf0;
       return (status === util.RS_MSG_NEW || status === util.RS_MSG_UNREAD_BY_USER)
         && !(msg.msgflags & util.RS_MSG_TRASH)
         && !(msg.msgflags & util.RS_MSG_SPAM);
     }).length;
+    return Messages.unread;
+  },
+  unreadCount() {
+    return Messages.unread;
   },
   refreshSoon() {
     if (Messages.refreshTimer) return;
@@ -37,8 +46,15 @@ const Messages = {
   },
   markReadLocally(msgId) {
     Messages.all.forEach((msg) => {
-      if (msg.msgId === msgId) msg.msgflags &= ~0xf0;
+      //  Only the two unread bits. RS_MSG_TRASH is 0x20, inside the 0xf0 the
+      //  status is read through, so clearing the whole nibble also takes a
+      //  message out of the trash: opening one from there showed it as an
+      //  ordinary read mail until the next load.
+      if (msg.msgId === msgId) {
+        msg.msgflags &= ~(util.RS_MSG_NEW | util.RS_MSG_UNREAD_BY_USER);
+      }
     });
+    Messages.recountUnread();
   },
   load() {
     rs.rsJsonApiRequest('/rsMail/getMessageSummaries', { box: util.BOX_ALL }, (data) => {
@@ -82,6 +98,7 @@ const Messages = {
         Messages.later = Messages.all.filter(
           (msg) => msg.msgtags && msg.msgtags.includes(util.RS_MSGTAGTYPE_LATER)
         );
+        Messages.recountUnread();
         m.redraw();
       }
     });

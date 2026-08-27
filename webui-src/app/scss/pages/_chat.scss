@@ -1294,6 +1294,61 @@ label.mobile-chat-attachment__option:hover {
   .network-chat-view .chat-input-area .mobile-chat-attachment {
     display: block;
   }
+
+  .chat-hub-input-area {
+    gap: 0.2rem;
+    align-items: center;
+    padding: 0.35rem 0.45rem;
+  }
+
+  .chat-hub-input-area .mobile-chat-attachment {
+    order: 1;
+  }
+
+  .chat-hub-input-area textarea.chat-hub-textarea {
+    order: 2;
+    min-width: 0;
+    min-height: 40px;
+    height: 40px;
+    max-height: 120px;
+    padding: 0.55rem 0.7rem;
+    resize: none;
+    border-color: #dbe2ea;
+    border-radius: 1.25rem;
+    background: #ffffff;
+  }
+
+  .chat-hub-input-area .emoji-picker-wrapper {
+    order: 3;
+  }
+
+  .chat-hub-input-area .emoji-picker-wrapper .emoji-picker {
+    right: -2.7rem;
+    left: auto;
+    width: min(320px, calc(100vw - 1rem));
+    max-height: min(420px, calc(100dvh - 8rem));
+  }
+
+  .chat-hub-input-area .mobile-chat-attachment .chat-hub-action-btn,
+  .chat-hub-input-area .emoji-picker-wrapper .chat-hub-action-btn {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0.25rem !important;
+  }
+
+  .chat-hub-input-area button.chat-hub-send-btn {
+    order: 4;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+
+  .chat-hub-input-area button.chat-hub-send-btn i {
+    margin: 0;
+  }
 }
 
 /* Compact Room Chat Style (No bubbles, unique nickname colors, IRC-style) */
