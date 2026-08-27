@@ -867,4 +867,36 @@ body {
 
   .create-channel-post-form__attachment-item { border-color: var(--rs-border-soft) !important; }
   .create-channel-post-form__attachment-info span { color: var(--rs-text) !important; }
+
+  .modal-content.create-channel-modal,
+  .create-channel-form {
+    background: var(--rs-surface) !important;
+    color: var(--rs-text) !important;
+  }
+
+  .create-channel-form__heading h3 { color: var(--rs-text-strong) !important; }
+  .create-channel-form__heading p,
+  .create-channel-form__thumbnail small { color: var(--rs-text-muted) !important; }
+
+  .create-channel-form__thumbnail,
+  .channel-thumbnail-preview {
+    background: var(--rs-surface-muted) !important;
+    color: var(--rs-text) !important;
+    border-color: var(--rs-border) !important;
+  }
+
+  .channel-thumbnail-preview__placeholder {
+    background: var(--rs-surface-raised) !important;
+    color: var(--rs-text-muted) !important;
+  }
+
+  .channel-thumbnail-preview__placeholder span,
+  .create-channel-form__thumbnail-label,
+  .create-channel-form__field label { color: var(--rs-text-strong) !important; }
+
+  .create-channel-form__field .config-style-select {
+    background: var(--rs-surface-muted) !important;
+    color: var(--rs-text-strong) !important;
+    border-color: var(--rs-border) !important;
+  }
 }
