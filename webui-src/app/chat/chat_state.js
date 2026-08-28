@@ -436,8 +436,33 @@ const ChatRoomsModel = {
       '/rsChats/denyLobbyInvite',
       { id: { xstr64: lobbyId } },
       (data, success) => {
-        if (!success || !data || !data.retval) {
-          this.joinError = 'RetroShare could not decline this invitation.';
+        if (!success) {
+          //  No answer at all: the core is unreachable or the endpoint is not
+          //  in this build. Nothing was decided, so nothing is dropped here.
+          this.joinError = 'No answer from RetroShare, the invitation was left alone.';
+          m.redraw();
+          return;
+        }
+        if (!data || !data.retval) {
+          //  denyLobbyInvite() only returns false for one reason: the id is not
+          //  in the core's invite queue (DistributedChatService, "lobby invite
+          //  not in cache"). The queue lives in memory only, so a core restart
+          //  empties it while this list still shows what it held before.
+          //
+          //  Either way the invitation is gone as far as the core is concerned,
+          //  and keeping it here would leave the Chat badge lit over something
+          //  that can never be accepted nor refused. Drop it and re-read the
+          //  queue, so the list ends up saying what the core says.
+          this.invitationIds.delete(lobbyId);
+          this.allRooms = this.allRooms.filter(
+            (room) => rs.idToHex(room.lobby_id) !== lobbyId
+          );
+          if (ChatHubState.selectedRoomId === lobbyId) {
+            ChatHubState.selectedRoomId = null;
+            ChatHubState.mobilePane = 'list';
+          }
+          this.joinError = 'RetroShare no longer had this invitation; it has been removed from the list.';
+          this.loadPendingInvitations();
           m.redraw();
           return;
         }
