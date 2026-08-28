@@ -78,6 +78,417 @@ table {
     }
   }
 }
+
+.posts-container-card .channel-post__placeholder {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  color: #64748b;
+  background: linear-gradient(135deg, #f8fafc, #dbe5f1);
+}
+.channel-post__placeholder i { font-size: 1.35rem; color: #64748b; }
+.channel-post__placeholder span { font-size: 2rem; font-weight: 700; color: #2563eb; }
+.channel-post__placeholder small { font-size: .72rem; font-weight: 600; }
+
+/* Compact YouTube-style post description with an opt-in expansion control. */
+.post-description {
+  margin: 1rem 0;
+  padding: .85rem 1rem;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #1e293b;
+}
+.post-description__text { overflow-wrap: anywhere; line-height: 1.5; }
+.post-description__text > :first-child { margin-top: 0; }
+.post-description__text > :last-child { margin-bottom: 0; }
+.post-description__text--collapsed {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.post-description__toggle {
+  margin-top: .35rem;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: #0f172a !important;
+  font-size: .85rem !important;
+  font-weight: 700 !important;
+}
+.post-description__toggle:hover { color: #2563eb !important; text-decoration: underline; }
+
+.create-channel-form {
+  display: grid !important;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: 1rem 1.5rem !important;
+
+  &__heading,
+  &__title,
+  &__description,
+  &__submit {
+    grid-column: 1 / -1;
+  }
+
+  &__heading h3 { margin: 0; color: #1e293b; }
+  &__heading p { margin: .25rem 0 0; color: #64748b; font-size: .9rem; }
+  &__title { width: 100%; }
+
+  &__thumbnail {
+    grid-row: span 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    padding: .75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: .65rem;
+    background: #f8fafc;
+  }
+
+  &__thumbnail-label,
+  &__field label {
+    color: #475569;
+    font-size: .85rem;
+    font-weight: 700;
+  }
+
+  &__file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+  &__file-button {
+    padding: .4rem .65rem;
+    border: 1px solid #0284c7;
+    border-radius: .35rem;
+    background: #0284c7;
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  &__thumbnail small { color: #64748b; text-align: center; }
+  &__field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+  &__field .config-style-select {
+    width: 100%;
+    max-width: 320px;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: .4rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background-color: #fff;
+    color: #1e293b;
+    font-size: .95rem;
+  }
+  &__description { width: 100%; min-height: 7rem; resize: vertical; }
+  &__submit { justify-self: end; }
+}
+
+.modal-content.create-channel-modal {
+  width: min(760px, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.channel-thumbnail-preview {
+  width: 9rem;
+  height: 9rem;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+
+  img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  &__placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    background: linear-gradient(135deg, #eef2ff, #dbeafe);
+    color: #64748b;
+  }
+
+  &__placeholder i { color: #3ba4d7; font-size: 2rem; }
+  &__placeholder span { color: #334155; font-weight: 700; }
+  &__placeholder small { font-size: .72rem; }
+}
+
+.channel-detail-default-thumbnail {
+  display: flex;
+  flex: 0 0 6rem;
+  align-items: center;
+  justify-content: center;
+  width: 6rem;
+  height: 6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #eef6fb, #dbeafe);
+  color: #3ba4d7;
+  box-sizing: border-box;
+
+  i { font-size: 2.75rem; }
+}
+
+.create-channel-post-form {
+  display: grid !important;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: 1rem 1.5rem !important;
+
+  &__heading,
+  &__title,
+  &__description,
+  &__submit { grid-column: 1 / -1; }
+  &__heading h3 { margin: 0; color: #1e293b; }
+  &__heading p { margin: .25rem 0 0; color: #64748b; font-size: .9rem; }
+  &__title,
+  &__description { width: 100%; box-sizing: border-box; }
+  &__thumbnail {
+    grid-row: span 2; display: flex; flex-direction: column; align-items: center;
+    gap: .5rem; padding: .75rem; border: 1px solid #e2e8f0;
+    border-radius: .65rem; background: #f8fafc;
+  }
+  &__thumbnail-label,
+  &__attachments > label:first-child { color: #475569; font-size: .85rem; font-weight: 700; }
+  &__file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+  &__file-button,
+  &__attachment-button {
+    display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
+    padding: .4rem .65rem; border: 1px solid #0284c7; border-radius: .35rem;
+    background: #0284c7; color: #fff; font-size: .8rem; font-weight: 600; cursor: pointer;
+  }
+  &__thumbnail small,
+  &__attachments small { color: #64748b; text-align: center; }
+  &__attachments {
+    display: flex; flex-direction: column; align-items: flex-start;
+    align-self: start; gap: .5rem; min-width: 0;
+    padding: .8rem; border: 1px solid #e2e8f0; border-radius: .5rem; background: #f8fafc;
+  }
+  &__attachment-list {
+    width: 100%; max-height: 9rem; overflow-y: auto; box-sizing: border-box;
+    border: 1px solid #cbd5e1; border-radius: .35rem; background: #fff;
+  }
+  &__attachment-item {
+    display: flex; align-items: center; gap: .55rem; padding: .45rem .55rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  &__attachment-item:last-child { border-bottom: 0; }
+  &__attachment-item > i { flex: 0 0 auto; color: #64748b; }
+  &__attachment-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+  &__attachment-info span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #334155; }
+  &__attachment-info small { text-align: left; }
+  &__attachment-remove {
+    flex: 0 0 auto; padding: .25rem .4rem; border: 0; box-shadow: none;
+    background: transparent; color: #dc2626;
+  }
+  &__attachment-remove:hover { background: #fee2e2; }
+  &__description { min-height: 9rem; resize: vertical; }
+  &__submit { justify-self: end; }
+}
+
+.channel-post-thumbnail-preview {
+  width: 9rem; height: 9rem; overflow: hidden;
+  border: 1px solid #cbd5e1; border-radius: .5rem; background: #f8fafc;
+  img { width: 100%; height: 100%; display: block; object-fit: cover; }
+  &__placeholder {
+    width: 100%; height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: .35rem;
+    background: linear-gradient(135deg, #eef2ff, #dbeafe); color: #64748b;
+  }
+  &__placeholder i { color: #3ba4d7; font-size: 2rem; }
+  &__placeholder span { color: #334155; font-weight: 700; text-align: center; }
+  &__placeholder small { font-size: .72rem; }
+}
+
+.modal-content.create-channel-post-modal {
+  width: min(760px, calc(100% - 2rem)); max-height: calc(100% - 2rem);
+  box-sizing: border-box; overflow-x: hidden; overflow-y: auto;
+}
+
+.posts > .posts__heading.channel-posts-heading {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100%;
+  gap: 1rem !important;
+  flex-wrap: wrap;
+  text-align: left;
+}
+.posts > .posts__heading.channel-posts-heading h3 { margin: 0; text-align: left; }
+.channel-posts-heading__create { display: inline-flex; align-items: center; gap: .35rem; }
+
+@media (max-width: 600px) {
+  .modal-content.create-channel-modal {
+    width: calc(100% - 1rem);
+    max-height: calc(100% - 1rem);
+    padding: 1rem;
+  }
+
+  .create-channel-form {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    overflow: visible;
+    grid-template-columns: 1fr;
+
+    &__heading,
+    &__title,
+    &__thumbnail,
+    &__field,
+    &__description,
+    &__submit { grid-column: 1; }
+
+    &__thumbnail { grid-row: auto; }
+    &__thumbnail input[type=file] { max-width: 100%; }
+    &__field .config-style-select { max-width: 100%; }
+    &__description { box-sizing: border-box; }
+    &__submit { width: 100%; }
+  }
+
+  .channel-thumbnail-preview {
+    width: 8rem;
+    height: 8rem;
+  }
+
+  .modal-content.create-channel-post-modal {
+    width: calc(100% - 1rem); max-height: calc(100% - 1rem); padding: 1rem;
+  }
+  .create-channel-post-form {
+    width: 100%; min-width: 0; padding: 0; grid-template-columns: minmax(0, 1fr);
+    &__heading,
+    &__title,
+    &__thumbnail,
+    &__attachments,
+    &__description,
+    &__submit { grid-column: 1; }
+    &__thumbnail { grid-row: auto; }
+    &__attachments { align-items: stretch; box-sizing: border-box; }
+    &__submit { width: 100%; }
+  }
+  .channel-post-thumbnail-preview { width: 8rem; height: 8rem; }
+  .channel-posts-heading__create span { display: none; }
+  .channel-posts-heading__create { min-width: 2.25rem; justify-content: center; padding-inline: .55rem; }
+}
+
+/* Keep image and generated-thumbnail cards the same size instead of stretching
+ * a sparse grid row to the full height of the Posts panel. */
+.posts-container { align-content: start; grid-auto-rows: 240px; }
+.posts-container-card {
+  position: relative;
+  display: flex;
+  align-self: start;
+  height: 240px;
+  min-height: 0;
+  overflow: hidden;
+}
+.posts-container-card > img,
+.posts-container-card > .channel-post__placeholder { min-height: 0; }
+
+.channel-post-comment-badge {
+  position: absolute;
+  z-index: 2;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.45rem;
+  box-sizing: border-box;
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.22);
+  font-size: 0.75rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.channel-post-comment-badge i {
+  color: #3ba4d7;
+}
+
+@media (max-width: 700px) {
+  .posts-container { grid-auto-rows: 210px; gap: 1rem; }
+  .posts-container-card { height: 210px; }
+}
+
+/* Channel attachment table -> compact cards on phones. */
+@media (max-width: 700px) {
+  .file-section { margin-top: 1.25rem; }
+
+  table.channel-files,
+  table.channel-files tbody,
+  table.channel-files tr,
+  table.channel-files td {
+    display: block;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  table.channel-files { padding: 0; table-layout: auto; }
+  table.channel-files thead { display: none; }
+
+  table.channel-files tr {
+    margin: 0 0 .7rem;
+    padding: .7rem;
+    border: 1px solid #dbe3ef;
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  table.channel-files td {
+    min-width: 0;
+    padding: .25rem 0;
+    border: 0;
+    text-align: left;
+  }
+
+  table.channel-files td::before {
+    display: block;
+    margin-bottom: .1rem;
+    color: #64748b;
+    content: attr(data-label);
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  table.channel-files .channel-file__name {
+    overflow-wrap: anywhere;
+    color: #0f172a;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  table.channel-files .channel-file__size { color: #475569; }
+  table.channel-files .channel-file__action { padding-top: .5rem; }
+  table.channel-files .channel-file__action > button { min-width: 116px; }
+  table.channel-files .channel-file__action .file-view { margin-top: .6rem; }
+}
 /* #options{
   width: 100px;
   text-align: center;

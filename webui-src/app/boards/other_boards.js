@@ -9,18 +9,14 @@ const Layout = () => {
         m(
           util.BoardTable,
           m('tbody', [
-            v.attrs.list.map((board) =>
-              m(util.BoardSummary, {
-                details: board,
-                category: 'OtherBoards',
-              })
-            ),
-            v.attrs.list.map((board) =>
-              m(util.DisplayBoardsFromList, {
-                id: board.mGroupId,
-                category: 'OtherBoards',
-              })
-            ),
+            v.attrs.list &&
+              v.attrs.list.map((board) =>
+                m(util.BoardSummary, {
+                  key: board.mGroupId,
+                  details: board,
+                  category: 'Other',
+                })
+              ),
           ])
         ),
       ]),
@@ -28,4 +24,4 @@ const Layout = () => {
   };
 };
 
-module.exports = Layout();
+module.exports = Layout;

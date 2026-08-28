@@ -3,8 +3,10 @@ const rs = require('rswebui');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
 const chatEmoji = require('chat/chat_emoji');
+const renderIdentityTooltip = require('mail/mail_identity_tooltip');
 
 const UserAvatarsCache = {};
+const RecipientDetailsCache = {};
 const MAX_RECIPIENTS = 20;
 
 function formatFileSize(bytes) {
@@ -23,6 +25,39 @@ const Layout = () => {
   let showEmojiPicker = false;
   let emojiSearch = '';
   let emojiCategory = 'Smileys';
+  let hoveredRecipient = null;
+
+  function showRecipientTooltip(item, element) {
+    hoveredRecipient = {
+      id: item.mGroupId,
+      name: item.mGroupName,
+      rect: element.getBoundingClientRect(),
+    };
+
+    if (!RecipientDetailsCache[item.mGroupId]) {
+      rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: item.mGroupId }, (data) => {
+        if (data && data.details) {
+          RecipientDetailsCache[item.mGroupId] = data.details;
+          UserAvatarsCache[item.mGroupId] = data.details.mAvatar;
+          m.redraw();
+        }
+      });
+    }
+  }
+
+  function renderRecipientTooltip() {
+    if (!hoveredRecipient) return null;
+    const details = RecipientDetailsCache[hoveredRecipient.id];
+    if (!details) return null;
+
+    return renderIdentityTooltip({
+      details,
+      gxsId: hoveredRecipient.id,
+      name: hoveredRecipient.name,
+      rect: hoveredRecipient.rect,
+      overlapAnchor: true,
+    });
+  }
 
   const Data = {
     allUsers: [],
@@ -488,13 +523,21 @@ const Layout = () => {
                   m('input[type=text].recipients__input-field', {
                     value: Data.recipients.to.inputVal,
                     oninput: (e) => handleInput(e, 'to'),
-                    placeholder: totalRecipients() >= MAX_RECIPIENTS ? 'Max recipients reached' : '',
+                    placeholder: totalRecipients() >= MAX_RECIPIENTS
+                      ? 'Max recipients reached'
+                      : Data.recipients.to.sendList.length === 0
+                        ? 'Recipients'
+                        : '',
                     disabled: totalRecipients() >= MAX_RECIPIENTS,
                   }),
                   m('ul.recipients__input-list[autocomplete=off]', [
                     Data.recipients.to.inputList.length > 0
                       ? Data.recipients.to.inputList.map((item) =>
-                          m('li', { onclick: () => handleClick(item, 'to') }, item.mGroupName)
+                          m('li', {
+                            onclick: () => handleClick(item, 'to'),
+                            onmouseenter: (event) => showRecipientTooltip(item, event.currentTarget),
+                            onmouseleave: () => (hoveredRecipient = null),
+                          }, item.mGroupName)
                         )
                       : m('li', 'No Item'),
                   ]),
@@ -552,7 +595,11 @@ const Layout = () => {
                         ? Data.recipients[recipientType].inputList.map((item) =>
                             m(
                               'li',
-                              { onclick: () => handleClick(item, recipientType) },
+                              {
+                                onclick: () => handleClick(item, recipientType),
+                                onmouseenter: (event) => showRecipientTooltip(item, event.currentTarget),
+                                onmouseleave: () => (hoveredRecipient = null),
+                              },
                               item.mGroupName
                             )
                           )
@@ -565,6 +612,7 @@ const Layout = () => {
             totalRecipients() >= MAX_RECIPIENTS && m('.compose-mail__recipient-limit', {
               style: { color: '#e67e22', fontSize: '0.85rem', padding: '0.25rem 0' }
             }, `Maximum of ${MAX_RECIPIENTS} recipients reached. Remove a recipient to add more.`),
+            renderRecipientTooltip(),
           ]),
           m('input.compose-mail__subject[type=text][placeholder=Subject]', {
             value: Data.subject,

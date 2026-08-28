@@ -154,8 +154,8 @@ const ShareDirTable = () => {
         ),
         m(
           'tbody.share-manager__table_body',
-          sharedDirArr.length &&
-          sharedDirArr.map((sharedDirItem, index) => {
+          sharedDirArr.length
+            ? sharedDirArr.map((sharedDirItem, index) => {
             const {
               filename,
               virtualname,
@@ -233,7 +233,8 @@ const ShareDirTable = () => {
                   : parentGroups.map((groupFlag) => futil.RsNodeGroupId[groupFlag]).join(', ')
               ),
             ]);
-          })
+              })
+            : m('tr.share-manager__empty', m('td[colspan=4]', 'No shared folders yet.'))
         ),
       ]);
     },

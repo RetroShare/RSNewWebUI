@@ -1,5 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const widget = require('widgets');
 
 const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this group
 const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in forums are shared with specific friends.
@@ -16,6 +17,11 @@ const Data = {
   ParentThreadMap: {},
   loading: new Set(),
 };
+
+//  'forumId/msgId' of the post bodies currently being fetched, see
+//  loadPostContent(). Module level rather than in Data: it is plumbing, not
+//  forum content.
+const bodyRequestsInFlight = new Set();
 
 function getTimestampValue(ts) {
   if (!ts) return 0;
@@ -154,6 +160,15 @@ async function loadPostContent(forumId, msgId) {
     return Data.Threads[forumId][msgId].thread.mMsg;
   }
 
+  //  This is called straight from the view (forum_view.js, the 'Loading
+  //  content...' branch), and the body stays null for the whole round trip, so
+  //  without this guard every redraw fires another getForumContent for the same
+  //  post -- and a redraw happens on each of the other posts' answers. An open
+  //  thread would multiply one request per post into one per post per redraw.
+  const inFlightKey = forumId + '/' + msgId;
+  if (bodyRequestsInFlight.has(inFlightKey)) return null;
+  bodyRequestsInFlight.add(inFlightKey);
+
   try {
     const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumContent', {
       forumId,
@@ -165,12 +180,17 @@ async function loadPostContent(forumId, msgId) {
       if (Data.Threads[forumId] && Data.Threads[forumId][msgId]) {
         Data.Threads[forumId][msgId].thread.mMsg = body;
       }
+      //  The cached body is what stops the view from asking again, so the key
+      //  is only released once it is in place.
+      bodyRequestsInFlight.delete(inFlightKey);
       m.redraw();
       return body;
     }
   } catch (e) {
     console.error('[RS] Error loading post content:', forumId, msgId, e);
   }
+  //  Failure: the key is deliberately kept, so a post the core cannot return
+  //  is asked for once per visit instead of once per redraw, forever.
   return null;
 }
 
@@ -251,22 +271,8 @@ const SearchBar = () => {
       }),
   };
 };
-function popupmessage(message) {
-  const container = document.getElementById('modal-container');
-  container.style.display = 'block';
-  m.render(
-    container,
-    m('.modal-content', [
-      m(
-        'button.red',
-        {
-          onclick: () => (container.style.display = 'none'),
-        },
-        m('i.fas.fa-times')
-      ),
-      message,
-    ])
-  );
+function popupmessage(message, modalClass = '') {
+  widget.popupMessage(message, modalClass);
 }
 
 module.exports = {

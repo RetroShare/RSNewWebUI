@@ -4,6 +4,7 @@ const util = require('files/files_util');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
 const compose = require('mail/mail_compose');
+const renderIdentityTooltip = require('mail/mail_identity_tooltip');
 
 // rsmail.h
 const RS_MSG_BOXMASK = 0x000f;
@@ -41,49 +42,28 @@ const MailHoverState = {
   hoveredUser: null,
 };
 
+function markMessageRead(msgId, onDone) {
+  rs.rsJsonApiRequest(
+    '/rsMail/MessageRead',
+    { msgId, unreadByUser: false },
+    (data, success) => {
+      if (onDone) onDone(Boolean(success && (!data || data.retval !== false)));
+    }
+  );
+}
+
 function renderMailUserTooltip() {
   if (!MailHoverState.hoveredUser) return null;
   const hUser = MailHoverState.hoveredUser;
   const details = MailGxsDetailsCache[hUser.gxsId];
   if (!details) return null;
 
-  const avatar = details.mAvatar && details.mAvatar.base64 ? details.mAvatar.base64 : null;
-  const firstLetter = (hUser.name || '?').slice(0, 1).toUpperCase();
-  const votes = details.mReputation
-    ? ((details.mReputation.mFriendsPositiveVotes || 0) - (details.mReputation.mFriendsNegativeVotes || 0))
-    : 0;
-
-  const top = hUser.rect.top - 10;
-  const left = Math.min(Math.max(hUser.rect.left, 140), window.innerWidth - 280);
-
-  return m('.user-tooltip', {
-    style: {
-      position: 'fixed',
-      top: `${top}px`,
-      left: `${left}px`,
-      transform: 'translateY(-100%)',
-      zIndex: 10000,
-    }
-  }, [
-    m('.tooltip-avatar', m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: hUser.gxsId, size: 64 })),
-    m('.tooltip-details', [
-      m('.tooltip-row', [m('span.tooltip-label', 'Identity name: '), m('span.tooltip-value', hUser.name)]),
-      m('.tooltip-row', [m('span.tooltip-label', 'Identity Id: '), m('span.tooltip-value.tooltip-id', hUser.gxsId)]),
-      details.mPgpId && details.mPgpId !== '0000000000000000' && m('.tooltip-row', [
-        m('span.tooltip-label', 'Node: '),
-        m('span.tooltip-value', `${rs.userList.username(details.mPgpId) || hUser.name} [${details.mPgpId}]`)
-      ]),
-      m('.tooltip-row', [
-        m('span.tooltip-label', 'Votes: '),
-        m('span.tooltip-value', {
-          style: {
-            color: votes >= 0 ? '#22c55e' : '#ef4444',
-            fontWeight: 'bold'
-          }
-        }, (votes >= 0 ? '+' : '') + votes)
-      ])
-    ])
-  ]);
+  return renderIdentityTooltip({
+    details,
+    gxsId: hUser.gxsId,
+    name: hUser.name,
+    rect: hUser.rect,
+  });
 }
 
 const tagTypesCache = {};
@@ -112,6 +92,22 @@ function loadTagTypes() {
   });
 }
 loadTagTypes();
+
+function formatMailDate(ts) {
+  if (!ts) return '';
+  const date = new Date(ts * 1000);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  const isThisYear = date.getFullYear() === now.getFullYear();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  if (isThisYear) {
+    return `${date.getDate()} ${months[date.getMonth()]}`;
+  }
+  return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear().toString().slice(2)}`;
+}
 
 // Utility functions
 const humanReadableSize = (fileSize) => {
@@ -174,12 +170,14 @@ const MessageSummary = () => {
         {
           key: v.attrs.details.msgId,
           class: msgStatus,
-          onclick: () =>
-            m.route.set('/mail/:tab/:msgId', { tab: v.attrs.category, msgId: v.attrs.details.msgId }),
+          onclick: () => {
+            if (v.attrs.onOpen) v.attrs.onOpen();
+            m.route.set('/mail/:tab/:msgId', { tab: v.attrs.category, msgId: v.attrs.details.msgId });
+          },
         },
         [
           m(
-            'td',
+            'td.cell-star',
             m(`input.star-check[type=checkbox][id=msg-${v.attrs.details.msgId}]`, { checked: isStarred }),
             // Use label with  [for] to manipulate hidden checkbox
             m(
@@ -191,8 +189,8 @@ const MessageSummary = () => {
               m('i.fas.fa-star')
             )
           ),
-          files && m('td', files.length),
-          m('td', { style: 'border-bottom: inherit;' }, [
+          m('td.cell-attachment', files && files.length > 0 ? m('i.fas.fa-paperclip', { title: `${files.length} attachment(s)` }) : null),
+          m('td.cell-subject', [
             m('div', {
               style: {
                 display: 'flex',
@@ -213,7 +211,7 @@ const MessageSummary = () => {
             ])
           ]),
           m(
-            'td',
+            'td.cell-from',
             m(
               'div',
               {
@@ -257,7 +255,7 @@ const MessageSummary = () => {
               ]
             )
           ),
-          m('td', new Date(details.ts * 1000).toLocaleString()),
+          m('td.cell-date', { title: new Date(details.ts * 1000).toLocaleString() }, formatMailDate(details.ts)),
         ]
       ),
   };
@@ -265,7 +263,8 @@ const MessageSummary = () => {
 
 const AttachmentSection = () => {
   function handleAttachmentDownload(item) {
-    const { fname: fileName, hash, size: xstr64 } = item;
+    const { fname: fileName, hash, size } = item;
+    const xstr64 = typeof size === 'object' ? size.xstr64 : String(size);
     const flags = util.RS_FILE_REQ_ANONYMOUS_ROUTING;
     rs.rsJsonApiRequest(
       '/rsFiles/FileRequest',
@@ -279,26 +278,22 @@ const AttachmentSection = () => {
   }
   return {
     view: (v) =>
-      m('table.attachment-container', [
-        m('tr.attachment-header', [
-          m('th', 'File Name'),
-          m('th', 'From'),
-          m('th', 'Size'),
-          m('th', 'Date'),
-          m('th', 'Download'),
-        ]),
-        m(
-          'tbody',
-          v.attrs.files.map((file) =>
-            m('tr.attachment', [
-              m('td.attachment__name', [m('i.fas.fa-file'), m('span', file.fname)]),
-              m('td.attachment__from', rs.userList.userMap[file.from._addr_string] || '[Unknown]'),
-              m('td.attachment__size', humanReadableSize(file.size.xint64)),
-              m('td.attachment__date', new Date(file.ts * 1000).toLocaleString()),
-              m('td', m('button', { onclick: () => handleAttachmentDownload(file) }, 'Download')),
-            ])
-          )
-        ),
+      m('.attachments-wrapper', [
+        v.attrs.files.map((file) => {
+          const fileSizeNum = file.size ? (typeof file.size === 'object' ? file.size.xint64 || parseInt(file.size.xstr64) || 0 : Number(file.size) || 0) : 0;
+          return m('.attachment-card', [
+            m('.attachment-icon', m('i.fas.fa-paperclip')),
+            m('.attachment-info', [
+              m('.attachment-name', file.fname),
+              m('.attachment-size', humanReadableSize(fileSizeNum)),
+            ]),
+            m(
+              'button.btn-attachment-download',
+              { onclick: () => handleAttachmentDownload(file) },
+              [m('i.fas.fa-download'), m('span.btn-text', ' Download')]
+            ),
+          ]);
+        }),
       ]),
   };
 };
@@ -343,6 +338,7 @@ const MessageView = () => {
 
   return {
     oninit: async (v) => {
+      markMessageRead(v.attrs.msgId);
       const res = await rs.rsJsonApiRequest('/rsMail/getMessage', {
         msgId: v.attrs.msgId,
       });
@@ -405,10 +401,10 @@ const MessageView = () => {
               m('i.fas.fa-arrow-left')
             ),
             m('.msg-view-nav__action', [
-              m('button', { onclick: () => { composeType = 'reply'; setShowCompose(true); } }, 'Reply'),
-              m('button', { onclick: () => { composeType = 'replyAll'; setShowCompose(true); } }, 'Reply All'),
-              m('button', { onclick: () => { composeType = 'forward'; setShowCompose(true); } }, 'Forward'),
-              m('button', { onclick: confirmMailDelete }, 'Delete'),
+              m('button', { onclick: () => { composeType = 'reply'; setShowCompose(true); } }, [m('i.fas.fa-reply'), m('span.btn-text', ' Reply')]),
+              m('button', { onclick: () => { composeType = 'replyAll'; setShowCompose(true); } }, [m('i.fas.fa-reply-all'), m('span.btn-text', ' Reply All')]),
+              m('button', { onclick: () => { composeType = 'forward'; setShowCompose(true); } }, [m('i.fas.fa-forward'), m('span.btn-text', ' Forward')]),
+              m('button.red', { onclick: confirmMailDelete }, [m('i.fas.fa-trash'), m('span.btn-text', ' Delete')]),
             ]),
           ]),
           m('.msg-view__header', [
@@ -736,12 +732,11 @@ const sidebarIcons = {
 
 const Sidebar = () => {
   return {
-    view: ({ attrs: { tabs, baseRoute, size } }) =>
+    view: ({ attrs: { tabs, baseRoute, size, onNavigate } }) =>
       m(
         '.sidebar',
         tabs.map((panelName, index) => {
           const displayName = panelName.charAt(0).toUpperCase() + panelName.slice(1);
-          const labelText = size[panelName] > 0 ? `${displayName} (${size[panelName]})` : displayName;
           return m(
             m.route.Link,
             {
@@ -750,12 +745,14 @@ const Sidebar = () => {
               onclick: () => {
                 activeSideLink.sideactive = index;
                 activeSideLink.quicksideactive = -1;
+                if (onNavigate) onNavigate();
               },
               href: baseRoute + panelName,
             },
             [
               sidebarIcons[panelName] || null,
-              labelText,
+              m('span.sidebar-link-text', displayName),
+              size[panelName] > 0 && m('span.sidebar-badge', size[panelName]),
             ]
           );
         })
@@ -766,13 +763,12 @@ const Sidebar = () => {
 const SidebarQuickView = () => {
   // for the Mail tab, to be moved later.
   return {
-    view: ({ attrs: { tabs, baseRoute, size } }) =>
+    view: ({ attrs: { tabs, baseRoute, size, onNavigate } }) =>
       m(
         '.sidebarquickview',
         m('h6.bold', 'Quick View'),
         tabs.map((panelName, index) => {
           const displayName = panelName.charAt(0).toUpperCase() + panelName.slice(1);
-          const labelText = size[panelName] > 0 ? `${displayName} (${size[panelName]})` : displayName;
           return m(
             m.route.Link,
             {
@@ -782,12 +778,14 @@ const SidebarQuickView = () => {
               onclick: () => {
                 activeSideLink.quicksideactive = index;
                 activeSideLink.sideactive = -1;
+                if (onNavigate) onNavigate();
               },
               href: baseRoute + panelName,
             },
             [
               sidebarIcons[panelName] || null,
-              labelText,
+              m('span.sidebar-link-text', displayName),
+              size[panelName] > 0 && m('span.sidebar-badge', size[panelName]),
             ]
           );
         })
@@ -823,4 +821,5 @@ module.exports = {
   RS_MSGTAGTYPE_TODO,
   RS_MSGTAGTYPE_WORK,
   BOX_ALL,
+  markMessageRead,
 };

@@ -35,6 +35,7 @@ const Layout = {
     m(widget.Sidebar, {
       tabs: Object.keys(sections),
       baseRoute: '/files/',
+      mobileDrawer: true,
     }),
     m('.node-panel', m('.widget', vnode.children)),
   ],

@@ -5,6 +5,10 @@ General site-wide rules
 
 #main {
   height: 100vh;
+  /* Mobile browsers count the collapsible URL bar in 100vh, which pushes the
+     statusbar and the bottom navigation off screen. dvh follows the visible
+     viewport; the vh above stays as the fallback. */
+  height: 100dvh;
 }
 
 /* Main base div for tabs used by m.route */
