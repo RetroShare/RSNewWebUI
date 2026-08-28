@@ -4,6 +4,7 @@ const peopleUtil = require('people/people_util');
 const people = require('people/people');
 const chatState = require('chat/chat_state');
 const chatEmoji = require('chat/chat_emoji');
+const chatStickers = require('chat/chat_stickers');
 const HistoryBrowserModal = require('people/people_history');
 
 const {
@@ -368,6 +369,10 @@ const ChatConversationView = () => {
       ChatHubState.showEmojiPicker = false;
       m.redraw();
     }
+    if (ChatHubState.showStickerPicker && !e.target.closest('.sticker-picker-wrapper')) {
+      ChatHubState.showStickerPicker = false;
+      m.redraw();
+    }
     if (showAttachmentMenu && !e.target.closest('.mobile-chat-attachment')) {
       showAttachmentMenu = false;
       m.redraw();
@@ -494,6 +499,20 @@ const ChatConversationView = () => {
                 ),
                 ChatHubState.showEmojiPicker && m(chatEmoji.EmojiPicker),
               ]),
+              m(chatStickers.StickerControl, {
+                state: ChatHubState,
+                disabled: !canTalk,
+                onToggle: () => { ChatHubState.showEmojiPicker = false; },
+                onSelect: (tag) => {
+                  const textarea = document.querySelector('.chat-hub-input-area textarea');
+                  if (!textarea) return;
+                  const start = textarea.selectionStart || 0;
+                  const end = textarea.selectionEnd || 0;
+                  textarea.value = textarea.value.substring(0, start) + tag + textarea.value.substring(end);
+                  textarea.dispatchEvent(new window.Event('input', { bubbles: true }));
+                  m.redraw();
+                },
+              }),
               m('label.chat-hub-action-btn.desktop-chat-attachment', {
                 title: 'Send image',
                 style: `cursor: ${canTalk ? 'pointer' : 'not-allowed'}; opacity: ${canTalk ? 1 : 0.5};`,

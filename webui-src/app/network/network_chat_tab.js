@@ -10,6 +10,7 @@ const {
 } = require('network/network_state');
 const { renderChatMessage } = require('chat/chat_state');
 const chatEmoji = require('chat/chat_emoji');
+const chatStickers = require('chat/chat_stickers');
 const HistoryBrowserModal = require('people/people_history');
 
 // Direct peer-to-peer chat images do NOT require 200KB compression limit
@@ -76,6 +77,10 @@ const ChatTab = () => {
   let showAttachmentMenu = false;
 
   function onDocClick(e) {
+    if (State.showStickerPicker && !e.target.closest('.sticker-picker-wrapper')) {
+      State.showStickerPicker = false;
+      m.redraw();
+    }
     if (showAttachmentMenu && !e.target.closest('.mobile-chat-attachment')) {
       showAttachmentMenu = false;
       m.redraw();
@@ -258,6 +263,15 @@ const ChatTab = () => {
               }
             }),
           ]),
+
+          m(chatStickers.StickerControl, {
+            state: State,
+            onToggle: () => { State.showEmojiPicker = false; },
+            onSelect: (tag) => {
+              State.chatInputMsg = (State.chatInputMsg || '') + tag;
+              m.redraw();
+            },
+          }),
 
           m('label.chat-hub-action-btn.desktop-chat-attachment', {
             title: 'Send image',

@@ -37,6 +37,7 @@ const State = {
   isHashing: false,
   hashingError: '',
   showEmojiPicker: false,
+  showStickerPicker: false,
   showHistoryModal: false,
   historySearchQuery: '',
   fullHistoryMessages: [],

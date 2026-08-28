@@ -14,6 +14,7 @@ const {
 const { startAttachHash, stopAttachHash } = require('people/people_attach');
 const { renderChatMessage } = require('chat/chat_state');
 const chatEmoji = require('chat/chat_emoji');
+const chatStickers = require('chat/chat_stickers');
 const peopleUtil = require('people/people_util');
 const HistoryBrowserModal = require('people/people_history');
 
@@ -73,6 +74,10 @@ const ChatTab = () => {
   let showAttachmentMenu = false;
 
   function onDocClick(e) {
+    if (State.showStickerPicker && !e.target.closest('.sticker-picker-wrapper')) {
+      State.showStickerPicker = false;
+      m.redraw();
+    }
     if (showAttachmentMenu && !e.target.closest('.mobile-chat-attachment')) {
       showAttachmentMenu = false;
       m.redraw();
@@ -337,6 +342,16 @@ const ChatTab = () => {
               }
             }),
           ]),
+
+          m(chatStickers.StickerControl, {
+            state: State,
+            disabled: !canTalk,
+            onToggle: () => { State.showEmojiPicker = false; },
+            onSelect: (tag) => {
+              setChatDraft((State.chatInputMsg || '') + tag);
+              m.redraw();
+            },
+          }),
 
           m('label.chat-hub-action-btn.desktop-chat-attachment', {
             title: 'Send image',

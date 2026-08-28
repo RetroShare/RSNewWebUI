@@ -1217,6 +1217,7 @@ const ChatHubState = {
   isHashing: false,
   hashingError: '',
   showEmojiPicker: false,
+  showStickerPicker: false,
   emojiSearch: '',
   emojiCategory: 'Smileys',
   showCreateRoomModal: false,

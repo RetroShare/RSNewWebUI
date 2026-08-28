@@ -33,6 +33,7 @@ const State = {
   chatCloseFoundNothing: false, // the core had no connection left to close
   statusPollFailures: 0, // consecutive getDistantChatStatus answers of false
   showEmojiPicker: false,
+  showStickerPicker: false,
   attachPath: '', // file being hashed for a retroshare:// link
   isHashing: false,
   attachError: '',
