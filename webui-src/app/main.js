@@ -1,5 +1,8 @@
 const m = require('mithril');
 
+//  Bumped at every change of the web UI (two places used to carry it).
+const WEBUI_VERSION = 'v164';
+
 const login = require('login');
 const rs = require('rswebui');
 const home = require('home');
@@ -137,7 +140,7 @@ const navbar = () => {
                       ? 'Connected to RetroShare Core'
                       : 'Connection Lost',
                   }),
-                  m('span.webui-version', { style: { fontSize: '0.7em' } }, 'v163'),
+                  m('span.webui-version', { style: { fontSize: '0.7em' } }, WEBUI_VERSION),
                   m('i.fas.fa-sync-alt.refresh-icon', {
                     style: { cursor: 'pointer', fontSize: '0.8em' },
                     onclick: () => window.location.reload(true),
@@ -212,6 +215,7 @@ const MobileStatus = () => {
           m('.mobile-app-header__brand', [
             m('img', { src: 'images/retroshare.svg', alt: '' }),
             m('strong', 'RetroShare'),
+            m('span.mobile-app-header__version', WEBUI_VERSION),
           ]),
           m('button.mobile-status-trigger[type=button]', {
             'aria-label': `Open connection status. ${summary.label}`,
@@ -277,7 +281,15 @@ const MobileStatus = () => {
               s.slowest.length > 0 && m('div', 'slowest: ' + s.slowest.map((e) => `${short(e.path)} ${e.ms}ms`).join(', ')),
             ]);
           })(),
-          m('.mobile-status-sheet__version', 'WebUI v163'),
+          m('.mobile-status-sheet__version', [
+            'WebUI ' + WEBUI_VERSION,
+            //  The page keeps the code it loaded until it is reloaded, and a
+            //  phone browser hides that action away. A new build shows up
+            //  here only after this.
+            m('button[type=button]', {
+              onclick: () => window.location.reload(true),
+            }, [m('i.fas.fa-sync-alt'), ' Reload']),
+          ]),
         ])),
       ];
     },

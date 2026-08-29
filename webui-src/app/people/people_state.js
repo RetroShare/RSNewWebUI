@@ -458,37 +458,27 @@ function initializeDistantChat(force = false) {
     return;
   }
 
-  //  A tunnel to this peer may already exist without this page knowing:
-  //  opened from the desktop window, or by the peer, possibly under another
-  //  of our identities. Its id is sha1(sorted(own || peer)), so every
-  //  candidate can be asked for by id before digging a new one -- which the
-  //  core would do for any own identity other than the tunnel's, and the
-  //  page then sat on "Connecting" beside a green tunnel in the desktop UI.
-  //  Explicit identity switches (force) skip this: the user chose.
+  //  A live tunnel to this peer may exist without this page knowing: opened
+  //  from the desktop window, or by the peer, possibly under another of our
+  //  identities. Its id is sha1(sorted(own || peer)), so every candidate can
+  //  be asked for by id. When one is up, chat as that identity: asking the
+  //  core for any other pair digs a second tunnel, and the page then sat on
+  //  "Connecting" beside a green tunnel in the desktop UI.
+  //
+  //  Only a tunnel that can talk (status 2) counts. The core also keeps
+  //  entries for tunnels that died -- a peer-opened one it cannot re-dig
+  //  itself -- and settling on one of those left the page waiting for good.
+  //  Either way the conversation is then opened through
+  //  initiateDistantChatConnexion: for an existing pair the core just hands
+  //  back the same tunnel id, and its notify pops the desktop window as it
+  //  always did. Explicit identity switches (force) skip the probe.
   if (!force) {
     const askedFor = State.selectedId;
-    adoptExistingTunnel(askedFor, (ownId, pid, info) => {
+    findLiveTunnelIdentity(askedFor, (ownId) => {
       //  The answers come back later; the user may have moved on.
       if (State.selectedId !== askedFor) return;
-      if (!ownId) {
-        openDistantChat(session);
-        return;
-      }
-      State.selectedOwnGxsIdForChat = ownId;
-      session.pid = pid;
-      session.status = info;
-      session.disconnected = false;
-      State.chatPid = pid;
-      State.chatMessages = session.messages;
-      State.distantChatStatus = info;
-      State.chatDisconnected = false;
-      State.chatCloseFoundNothing = false;
-      State.statusPollFailures = 0;
-      State.chatInputMsg = session.inputMsg || '';
-      drainBufferedChatMessages(session);
-      loadChatMessages();
-      startStatusPolling();
-      m.redraw();
+      if (ownId) State.selectedOwnGxsIdForChat = ownId;
+      openDistantChat(session);
     });
     return;
   }
@@ -497,9 +487,8 @@ function initializeDistantChat(force = false) {
 }
 
 //  Ask the core about every tunnel id we could share with this peer, one per
-//  own identity. Answers with the live one (status 2, "can talk") first, else
-//  any the core still holds, else nothing.
-function adoptExistingTunnel(peerGxsId, done) {
+//  own identity, and answer with the identity of the one that can talk.
+function findLiveTunnelIdentity(peerGxsId, done) {
   const candidates = (State.ownGxsIds || [])
     .map((ownId) => ({ ownId, pid: peopleUtil.distantChatPid(ownId, peerGxsId) }))
     .filter((c) => c.pid);
@@ -517,11 +506,8 @@ function adoptExistingTunnel(peerGxsId, done) {
       }
       left -= 1;
       if (left > 0) return;
-      const live = found.find((f) => f.info.status === 2)
-        || found.find((f) => f.ownId === State.selectedOwnGxsIdForChat)
-        || found[0];
-      if (live) done(live.ownId, live.pid, live.info);
-      else done(null);
+      const live = found.find((f) => f.info.status === 2);
+      done(live ? live.ownId : null);
     });
   });
 }
