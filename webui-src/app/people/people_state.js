@@ -407,14 +407,19 @@ function pollDistantChatStatus() {
       if (session) {
         session.status = detail.info;
 
+        //  A status line is a message like any other: when one really lands
+        //  (the helper drops what is already there) the pane has to follow it,
+        //  or "You can talk" sits below the fold and the tunnel looks stuck.
+        let statusLineAdded = false;
         if (detail.info.status === 2) {
-          addSessionSystemMessage(session, 'Tunnel is secured. You can talk!');
+          statusLineAdded = addSessionSystemMessage(session, 'Tunnel is secured. You can talk!');
           //  The tunnel just went up: anything the peer sent while it was still
           //  pending is waiting in the event buffer.
           drainBufferedChatMessages(session);
         } else if (detail.info.status === 3) {
-          addSessionSystemMessage(session, 'Your partner closed the conversation.');
+          statusLineAdded = addSessionSystemMessage(session, 'Your partner closed the conversation.');
         }
+        if (statusLineAdded && State.selectedId === askedFor) scrollChatToBottom();
       }
       m.redraw();
     }

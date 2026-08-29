@@ -1,7 +1,7 @@
 const m = require('mithril');
 
 //  Bumped at every change of the web UI (two places used to carry it).
-const WEBUI_VERSION = 'v167';
+const WEBUI_VERSION = 'v168';
 
 const login = require('login');
 const rs = require('rswebui');
