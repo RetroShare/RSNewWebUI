@@ -13,6 +13,7 @@ const {
   startStatusPolling,
   stopStatusPolling,
   initializeDistantChat,
+  selectChatContact,
   getDistantChatSession,
   drainBufferedChatMessages,
   markDistantChatRead,
@@ -67,12 +68,13 @@ const PeopleLayout = () => {
       });
       window.addEventListener('click', dismissMenu);
 
-      if (State.chatPid && !State.chatDisconnected) {
+      //  Only poll a tunnel that is the selected contact's own; anything
+      //  else is left over from a previous selection.
+      const selectedSession = State.selectedId ? getDistantChatSession(State.selectedId) : null;
+      if (State.chatPid && !State.chatDisconnected && selectedSession && selectedSession.pid === State.chatPid) {
         //  Messages received while the tab was unmounted sit in the event
         //  queue buffer: pick them up before the first redraw.
-        if (State.selectedId) {
-          drainBufferedChatMessages(getDistantChatSession(State.selectedId));
-        }
+        drainBufferedChatMessages(selectedSession);
         startStatusPolling();
       }
     },
@@ -190,6 +192,7 @@ PeopleLayout.setSelectedId = (id, activeTab = 'details', showCompose = false) =>
 
   State.activeFilter = filter;
   State.selectedId = id;
+  selectChatContact(id);
   State.activeTab = activeTab;
   State.pendingChatOpen = activeTab === 'chat' ? id : null;
   State.mobilePane = 'detail';

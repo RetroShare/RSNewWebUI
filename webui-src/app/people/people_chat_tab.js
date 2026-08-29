@@ -121,7 +121,9 @@ const ChatTab = () => {
           m('h4', 'Conversation Ended'),
           m('p', State.chatCloseFoundNothing
             ? 'The tunnel was already gone: the core had no connection left to close. Click below to open a new one.'
-            : 'You have closed the distant chat tunnel. Click below to reconnect.'),
+            : State.chatEndedByPoll
+              ? 'The tunnel went away: closed by your contact, or dropped by the core. Click below to open a new one.'
+              : 'You have closed the distant chat tunnel. Click below to reconnect.'),
           m('button.blue', {
             style: 'margin-top: 1rem; padding: 0.5rem 1.5rem; border-radius: 0.375rem; border: none; font-weight: 600; cursor: pointer;',
             onclick: () => initializeDistantChat(),

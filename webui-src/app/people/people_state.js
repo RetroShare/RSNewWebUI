@@ -31,6 +31,7 @@ const State = {
   isHistoryLoading: false,
   pendingChatOpen: null, // gxsId a chat was explicitly asked for from another page
   chatCloseFoundNothing: false, // the core had no connection left to close
+  chatEndedByPoll: false, // the status poll saw the tunnel go, we did not close it
   statusPollFailures: 0, // consecutive getDistantChatStatus answers of false
   showEmojiPicker: false,
   attachPath: '', // file being hashed for a retroshare:// link
@@ -365,14 +366,20 @@ function getStatusTooltip(status) {
 
 function pollDistantChatStatus() {
   if (!State.chatPid) return;
-  const session = State.selectedId ? getDistantChatSession(State.selectedId) : null;
+  //  Captured now: the answer lands seconds later on a slow link, and by then
+  //  the user may be on another contact, or the page on another tunnel. An
+  //  answer about a stale pid used to mark the new conversation as ended.
+  const pid = State.chatPid;
+  const askedFor = State.selectedId;
+  const session = askedFor ? getDistantChatSession(askedFor) : null;
 
   rs.rsJsonApiRequest(
     '/rsChats/getDistantChatStatus',
     {
-      pid: State.chatPid,
+      pid,
     },
     (detail, success) => {
+      if (State.chatPid !== pid || State.selectedId !== askedFor) return;
       //  getDistantChatStatus answers false once the tunnel is gone from the
       //  core -- died of inaction, closed by the peer, closed by us. Ignoring
       //  that answer left the last known status on screen for good: a dead
@@ -388,6 +395,7 @@ function pollDistantChatStatus() {
           State.distantChatStatus = null;
           State.chatDisconnected = true;
           State.chatCloseFoundNothing = false;
+          State.chatEndedByPoll = true;
           stopStatusPolling();
           m.redraw();
         }
@@ -530,6 +538,7 @@ function openDistantChat(session) {
   State.distantChatStatus = null;
   State.chatDisconnected = false;
   State.chatCloseFoundNothing = false;
+  State.chatEndedByPoll = false;
   State.statusPollFailures = 0;
   State.chatInputMsg = session.inputMsg || '';
   m.redraw();
@@ -695,6 +704,7 @@ function leaveDistantChat(closed) {
   State.distantChatStatus = null;
   State.chatDisconnected = true;
   State.chatCloseFoundNothing = !closed;
+  State.chatEndedByPoll = false;
   State.statusPollFailures = 0;
   stopStatusPolling();
   m.redraw();
@@ -719,6 +729,23 @@ function findDistantChatSession(msgPid) {
     session.pid = msgPid;
   }
   return { session, targetGxsId };
+}
+
+//  The page-wide chat fields (pid, status, messages) belong to one contact at
+//  a time. Selecting another one must not leave them pointing at the previous
+//  tunnel: the mount-time poll then asked about a pid the core may have
+//  dropped, and its "gone" answer ended the new conversation before it began.
+function selectChatContact(gxsId) {
+  stopStatusPolling();
+  const session = gxsId ? getDistantChatSession(gxsId) : null;
+  State.chatPid = session ? session.pid : null;
+  State.chatMessages = session ? session.messages : [];
+  State.distantChatStatus = session ? session.status : null;
+  State.chatDisconnected = session ? Boolean(session.disconnected) : false;
+  State.chatCloseFoundNothing = false;
+  State.chatEndedByPoll = false;
+  State.statusPollFailures = 0;
+  State.chatInputMsg = session ? (session.inputMsg || '') : '';
 }
 
 function isDistantChatActive(gxsId) {
@@ -1078,6 +1105,7 @@ module.exports = {
   loadChatMessages,
   sendDistantChatMessage,
   leaveDistantChat,
+  selectChatContact,
   setChatDraft,
   switchChatIdentity,
   refreshSelectedIdDetails,
