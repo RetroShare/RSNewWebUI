@@ -78,7 +78,7 @@ const ConfirmRemove = () => {
               pgpId: vnode.attrs.gpg_id,
             });
             State.selectedFriendGpgId = null;
-            await Data.refreshGpgDetails();
+            await Data.refreshGpgDetails({ force: true });
             m.redraw();
             widget.popupMessage(m('p', 'Friend removed successfully.'));
           },
