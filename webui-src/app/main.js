@@ -137,7 +137,7 @@ const navbar = () => {
                       ? 'Connected to RetroShare Core'
                       : 'Connection Lost',
                   }),
-                  m('span.webui-version', { style: { fontSize: '0.7em' } }, 'v161'),
+                  m('span.webui-version', { style: { fontSize: '0.7em' } }, 'v162'),
                   m('i.fas.fa-sync-alt.refresh-icon', {
                     style: { cursor: 'pointer', fontSize: '0.8em' },
                     onclick: () => window.location.reload(true),
@@ -260,7 +260,24 @@ const MobileStatus = () => {
               m('small', statusbar.formatBytes(state.totalOut)),
             ]),
           ]),
-          m('.mobile-status-sheet__version', 'WebUI v161'),
+          //  Where the seconds go, seen from this phone. A request slow on its
+          //  own points at the core; many pending at once points at the
+          //  browser's six sockets, one of them held by the event stream.
+          (() => {
+            const s = rs.apiStats;
+            const ago = (t) => (t ? Math.round((Date.now() - t) / 1000) + 's ago' : 'never');
+            const short = (p) => String(p || '').replace(/^\/rs/, '');
+            return m('.mobile-status-sheet__diag', [
+              m('h4', 'API from this browser'),
+              m('div', `pending ${s.pending} · total ${s.total} · up ${Math.round((Date.now() - s.startedAt) / 1000)}s`),
+              m('div', s.lastSend
+                ? `last sendChat ${s.lastSend.ms} ms (${ago(s.lastSend.at)})`
+                : 'no sendChat yet'),
+              m('div', `events: ${statusbar.formatBytes(s.eventsBytes)}, last ${ago(s.lastEventAt)}, restarts ${s.eventsRestarts}`),
+              s.slowest.length > 0 && m('div', 'slowest: ' + s.slowest.map((e) => `${short(e.path)} ${e.ms}ms`).join(', ')),
+            ]);
+          })(),
+          m('.mobile-status-sheet__version', 'WebUI v162'),
         ])),
       ];
     },
