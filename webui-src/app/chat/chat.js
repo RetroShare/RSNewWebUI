@@ -315,6 +315,22 @@ const ChatRoomHeader = () => {
                 )
               ]
             : [
+                //  Below 900px the participants column is not laid out; this
+                //  opens it as a sheet. Desktop hides the button (see
+                //  pages/_chat.scss), the column being always visible there.
+                m(
+                  'button.participants-toggle',
+                  {
+                    title: 'Participants',
+                    style: 'margin-right: 0.75rem;',
+                    onclick: () => {
+                      ChatHubState.showParticipants = !ChatHubState.showParticipants;
+                      ChatHubState.activeMenu = null;
+                      ChatHubState.hoveredUser = null;
+                    }
+                  },
+                  [m('i.fas.fa-users'), ' ' + ChatLobbyModel.users.length]
+                ),
                 m(
                   'button',
                   {
@@ -395,7 +411,7 @@ const ChatConversationView = () => {
       const isRoom = chatType === 3;
       const isDistant = chatType === 2;
       const canTalk = !isDistant || (ChatLobbyModel.distantChatStatus && ChatLobbyModel.distantChatStatus.status === 2);
-      return m('.chat-hub-conversation-layout', [
+      return m('.chat-hub-conversation-layout' + (ChatHubState.showParticipants ? '.show-participants' : ''), [
         m('.chat-hub-conversation-main', [
           m(
             '.chat-hub-messages' + (isRoom ? '.compact-container' : ''),
@@ -692,7 +708,18 @@ const ChatConversationView = () => {
           m(HistoryBrowserModal, { isRoom: true }),
         ]),
         m('.chat-hub-rightbar', [
-          m('.rightbar-title', 'Participants'),
+          m('.rightbar-title', [
+            'Participants',
+            m('button.rightbar-close', {
+              type: 'button',
+              title: 'Close',
+              'aria-label': 'Close participants',
+              onclick: () => {
+                ChatHubState.showParticipants = false;
+                ChatHubState.activeMenu = null;
+              },
+            }, m('i.fas.fa-times')),
+          ]),
           m('.rightbar-users-list', (() => {
             const sortedUsers = [...ChatLobbyModel.users];
             if (ChatHubState.userSortMethod === 'activity') {
@@ -744,25 +771,7 @@ const ChatConversationView = () => {
                 statusTooltip = 'Away';
               }
 
-              return m('.user', {
-                onmouseenter: (e) => {
-                  if (ChatHubState.activeMenu) return;
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  ChatHubState.hoveredUser = { gxsId, name, rect };
-                },
-                onmouseleave: () => {
-                  ChatHubState.hoveredUser = null;
-                },
-                onclick: (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  ChatHubState.hoveredUser = null;
-                  ChatHubState.activeMenu = null;
-                  m.redraw();
-                },
-                oncontextmenu: (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
+              const openUserMenu = (e) => {
                   ChatHubState.hoveredUser = null;
 
                   const rect = e.currentTarget.getBoundingClientRect();
@@ -779,7 +788,36 @@ const ChatConversationView = () => {
                     ChatHubState.activeMenu = { gxsId, name, top };
                     m.redraw();
                   }
-                }
+              };
+
+              return m('.user', {
+                onmouseenter: (e) => {
+                  if (ChatHubState.activeMenu) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  ChatHubState.hoveredUser = { gxsId, name, rect };
+                },
+                onmouseleave: () => {
+                  ChatHubState.hoveredUser = null;
+                },
+                onclick: (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  ChatHubState.hoveredUser = null;
+                  //  A phone has no right click: a tap on a participant is the
+                  //  only way to reach "Start private chat" and the rest of
+                  //  the menu. Same media query as the sheet in _chat.scss.
+                  if (window.matchMedia('(max-width: 899px), (hover: none)').matches) {
+                    openUserMenu(e);
+                    return;
+                  }
+                  ChatHubState.activeMenu = null;
+                  m.redraw();
+                },
+                oncontextmenu: (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  openUserMenu(e);
+                },
               }, [
                 m(peopleUtil.UserAvatar, { avatar, firstLetter, identityId: gxsId, size: 32 }),
                 m('span.user-name', name),
@@ -899,6 +937,7 @@ const ChatConversationView = () => {
               !isOwn && m('.menu-item', {
                 onclick: () => {
                   ChatHubState.activeMenu = null;
+                  ChatHubState.showParticipants = false;
                   people.setSelectedId(menu.gxsId, 'chat');
                 }
               }, [
@@ -908,6 +947,7 @@ const ChatConversationView = () => {
               !isOwn && m('.menu-item', {
                 onclick: () => {
                   ChatHubState.activeMenu = null;
+                  ChatHubState.showParticipants = false;
                   people.setSelectedId(menu.gxsId, 'details', true);
                 }
               }, [

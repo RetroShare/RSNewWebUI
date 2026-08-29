@@ -1078,6 +1078,7 @@ const ChatLobbyModel = {
     this.stopParticipantPolling();
     this.lastLobbyId = currentlobbyid;
     ChatRoomsModel.unreadCount[currentlobbyid] = 0;
+    ChatHubState.showParticipants = false;
 
     const finishLoad = (detail) => {
       this.setupAction = this.setIdentity;
@@ -1211,6 +1212,8 @@ const ChatHubState = {
   hoveredUser: null,
   mutedUsers: new Set(),
   activeMenu: null,
+  //  Phone only: the participants column is shown as a sheet over the messages.
+  showParticipants: false,
   showAttachModal: false,
   attachPath: '',
   attachBrowseHint: false,

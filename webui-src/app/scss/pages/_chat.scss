@@ -1112,9 +1112,54 @@ textarea.chatMsg {
   flex-shrink: 0;
 }
 
+/* Below 900px the participants column is not laid out: the room header's
+ * .participants-toggle opens it as a sheet over the messages instead, and
+ * a tap on a participant opens its menu (chat.js). Above, the column is
+ * always there, so the toggle and the sheet's close button are hidden. */
+.chat-hub-rightbar .rightbar-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chat-hub-rightbar .rightbar-close {
+  display: none;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 1rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+
+@media (min-width: 900px) {
+  .chat-hub-header-bar .chat-header-actions .participants-toggle {
+    display: none;
+  }
+}
+
 @media (max-width: 899px) {
+  .chat-hub-conversation-layout {
+    position: relative;
+  }
+
   .chat-hub-rightbar {
     display: none;
+  }
+
+  .chat-hub-conversation-layout.show-participants .chat-hub-rightbar {
+    display: flex;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(80vw, 320px);
+    z-index: 60;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
+  }
+
+  .chat-hub-conversation-layout.show-participants .rightbar-close {
+    display: inline-flex;
   }
 }
 
@@ -2238,6 +2283,10 @@ label.mobile-chat-attachment__option:hover {
   position: absolute !important;
   right: 10px !important;
   min-width: 220px !important;
+  /* Above its own .menu-backdrop (position: fixed, z-index 9998), which
+   * otherwise sits over the menu inside the phone participants sheet --
+   * the sheet's z-index makes a stacking context of its own. */
+  z-index: 9999 !important;
 }
 
 .chat-msg-context-menu {
