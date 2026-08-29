@@ -260,10 +260,27 @@ const eventQueue = {
         }
       },
       handler: (event, owner) => {
-        if (event && event.mChatMessage && event.mChatMessage.chat_id) {
-          owner.chatMessages(event.mChatMessage.chat_id, owner, (r) => {
-            r.push(event.mChatMessage);
-            owner.notify(event.mChatMessage);
+        //  Two event shapes carry a chat message on RsEventType::CHAT_SERVICE.
+        //  A message from a peer is posted twice by the core: as an
+        //  RsChatServiceEvent {mEventCode: CHAT_MESSAGE_RECEIVED, mMsg} and as
+        //  an RsChatMessageEvent {mChatMessage}. A message we send ourselves
+        //  -- from the desktop GUI, or from any other client of the same core
+        //  -- is posted once, as the RsChatServiceEvent only
+        //  (DistributedChatService::sendLobbyChat, p3ChatService::sendChat).
+        //  Reading mChatMessage alone therefore showed every peer's line and
+        //  none of our own typed elsewhere. Take our own messages from the
+        //  RsChatServiceEvent as well, and only those: a peer's message must
+        //  keep coming through once, because the room and direct chat unread
+        //  counters are bumped before the receivers dedup by message key.
+        const chatMessage = event && (
+          (event.mChatMessage && event.mChatMessage.chat_id && event.mChatMessage)
+          || (Number(event.mEventCode) === 1 && event.mMsg && event.mMsg.chat_id
+            && event.mMsg.incoming === false && event.mMsg)
+        );
+        if (chatMessage) {
+          owner.chatMessages(chatMessage.chat_id, owner, (r) => {
+            r.push(chatMessage);
+            owner.notify(chatMessage);
           });
         } else if (event && (event.mCid || event.mEventCode !== undefined)) {
           // Administrative chat event (e.g. lobby info change, peer join/leave)
