@@ -1,0 +1,86 @@
+// The debug page (debug/debug.js): build, API timings, event stream.
+.debug-page {
+  padding: 1.25rem;
+  max-width: 720px;
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: 1.25rem;
+  }
+
+  h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+  }
+
+  h4 {
+    margin: 0.75rem 0 0.25rem;
+    font-size: 0.8rem;
+    color: #475569;
+  }
+}
+
+.debug-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.debug-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  font-size: 0.9rem;
+  color: #334155;
+
+  strong {
+    word-break: break-word;
+  }
+}
+
+.debug-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+
+  button {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 0.375rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+}
+
+.debug-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th, td {
+    text-align: left;
+    padding: 0.25rem 0.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    white-space: nowrap;
+  }
+
+  td:first-child {
+    white-space: normal;
+    word-break: break-all;
+  }
+}
+
+.debug-empty, .debug-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0.25rem 0 0;
+}

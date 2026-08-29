@@ -1,7 +1,7 @@
 const m = require('mithril');
 
 //  Bumped at every change of the web UI (two places used to carry it).
-const WEBUI_VERSION = 'v164';
+const WEBUI_VERSION = 'v165';
 
 const login = require('login');
 const rs = require('rswebui');
@@ -16,6 +16,7 @@ const forums = require('forums/forums');
 const boards = require('boards/boards');
 const config = require('config/config_resolver');
 const statistics = require('statistics/statistics');
+const debug = require('debug/debug');
 const statusbar = require('statusbar');
 const networkState = require('network/network_state');
 const peopleState = require('people/people_state');
@@ -46,6 +47,7 @@ const navIcon = {
   boards: 'i.fas.fa-globe.sidenav-icon',
   config: 'i.fas.fa-cogs.sidenav-icon',
   statistics: 'i.fas.fa-chart-pie.sidenav-icon',
+  debug: 'i.fas.fa-bug.sidenav-icon',
 };
 
 const navbar = () => {
@@ -201,6 +203,7 @@ const mobileMoreLinks = {
   boards: '/boards/MyBoards',
   config: '/config/network',
   statistics: '/statistics',
+  debug: '/debug',
 };
 
 const MobileStatus = () => {
@@ -264,23 +267,6 @@ const MobileStatus = () => {
               m('small', statusbar.formatBytes(state.totalOut)),
             ]),
           ]),
-          //  Where the seconds go, seen from this phone. A request slow on its
-          //  own points at the core; many pending at once points at the
-          //  browser's six sockets, one of them held by the event stream.
-          (() => {
-            const s = rs.apiStats;
-            const ago = (t) => (t ? Math.round((Date.now() - t) / 1000) + 's ago' : 'never');
-            const short = (p) => String(p || '').replace(/^\/rs/, '');
-            return m('.mobile-status-sheet__diag', [
-              m('h4', 'API from this browser'),
-              m('div', `pending ${s.pending} · total ${s.total} · up ${Math.round((Date.now() - s.startedAt) / 1000)}s`),
-              m('div', s.lastSend
-                ? `last sendChat ${s.lastSend.ms} ms (${ago(s.lastSend.at)})`
-                : 'no sendChat yet'),
-              m('div', `events: ${statusbar.formatBytes(s.eventsBytes)}, last ${ago(s.lastEventAt)}, restarts ${s.eventsRestarts}`),
-              s.slowest.length > 0 && m('div', 'slowest: ' + s.slowest.map((e) => `${short(e.path)} ${e.ms}ms`).join(', ')),
-            ]);
-          })(),
           m('.mobile-status-sheet__version', [
             'WebUI ' + WEBUI_VERSION,
             //  The page keeps the code it loaded until it is reloaded, and a
@@ -381,6 +367,7 @@ const Layout = () => {
             boards: '/boards/MyBoards',
             statistics: '/statistics',
             config: '/config/network',
+            debug: '/debug',
           },
         }),
         m(
@@ -473,6 +460,9 @@ m.route(document.getElementById('main'), '/', {
   },
   '/statistics': {
     render: () => m(Layout, m(statistics)),
+  },
+  '/debug': {
+    render: () => m(Layout, m(debug, { version: WEBUI_VERSION })),
   },
 });
 

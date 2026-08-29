@@ -106,6 +106,8 @@ const apiStats = {
   lastSend: null,
   //  The five slowest requests since load, newest first on a tie.
   slowest: [],
+  //  The last twenty requests, newest first.
+  recent: [],
   //  Event stream: bytes received since (re)connection, last event time,
   //  number of reconnections.
   eventsBytes: 0,
@@ -121,6 +123,16 @@ function recordRequestTime(path, ms) {
   apiStats.slowest.push(entry);
   apiStats.slowest.sort((a, b) => b.ms - a.ms);
   if (apiStats.slowest.length > 5) apiStats.slowest.length = 5;
+  apiStats.recent.unshift(entry);
+  if (apiStats.recent.length > 20) apiStats.recent.length = 20;
+}
+
+function resetApiStats() {
+  apiStats.total = 0;
+  apiStats.lastSend = null;
+  apiStats.slowest = [];
+  apiStats.recent = [];
+  apiStats.eventsRestarts = 0;
 }
 
 const connectionState = {
@@ -577,6 +589,7 @@ module.exports = {
   idToHex: hexId,
   connectionState,
   apiStats,
+  resetApiStats,
   setKeys,
   setBackgroundTask,
   logon,
