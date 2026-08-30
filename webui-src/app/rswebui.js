@@ -96,9 +96,9 @@ function logout() {
   m.route.set('/');
 }
 
-//  What the API is doing, seen from this browser. Read by the phone status
-//  sheet: a request that takes ten seconds shows here, and whether it was slow
-//  on its own or queued behind others (pending) is what tells the two apart.
+//  What the API is doing, seen from this browser. Shown on the Debug page: a
+//  request that takes ten seconds shows here, and whether it was slow on its
+//  own or queued behind others (pending) is what tells the two apart.
 const apiStats = {
   pending: 0,
   total: 0,

@@ -283,3 +283,26 @@
     display: flex;
   }
 }
+
+/* =========================================================================
+   Pull-to-refresh
+   ========================================================================= */
+
+/* Reading older messages means scrolling to the top of a pane, and on a
+   phone that gesture, once the pane has nothing left to scroll, is also the
+   browser's pull-to-refresh: the whole page reloaded mid-conversation.
+   The panes stop the gesture at their edge, and the page itself never
+   turns it into a reload. */
+@include touch {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  .chat-messages,
+  .chat-hub-messages,
+  .tab-content,
+  .main-container {
+    overscroll-behavior-y: contain;
+  }
+}
