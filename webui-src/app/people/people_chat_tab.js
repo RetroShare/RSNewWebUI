@@ -8,6 +8,7 @@ const {
   initializeDistantChat,
   sendDistantChatMessage,
   leaveDistantChat,
+  loadOlderChatHistory,
   setChatDraft,
   switchChatIdentity,
 } = require('people/people_state');
@@ -216,7 +217,23 @@ const ChatTab = () => {
           ]),
         ]),
 
-        m('.chat-messages', [
+        m('.chat-messages', {
+          //  Near the top: ask for an older slice. It is inserted above what is
+          //  on screen, so its height is given back to scrollTop and the
+          //  reader does not move (same as the chat rooms).
+          onscroll: (e) => {
+            const element = e.target;
+            if (element.scrollTop > 120) return;
+            const previousHeight = element.scrollHeight;
+            const previousTop = element.scrollTop;
+            loadOlderChatHistory(() => {
+              requestAnimationFrame(() => {
+                const pane = document.querySelector('.chat-messages');
+                if (pane) pane.scrollTop = previousTop + (pane.scrollHeight - previousHeight);
+              });
+            });
+          },
+        }, [
           State.chatMessages.length === 0
             ? m('.chat-warning', [
                 m('i.fas.fa-comments'),

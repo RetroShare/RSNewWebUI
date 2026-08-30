@@ -571,25 +571,36 @@ function openDistantChat(session) {
 }
 
 
+function loadHistorySlice(session, chatPeerId, count) {
+  rs.rsJsonApiRequest('/rsHistory/getMessages', { chatPeerId, loadCount: count }, (data, success) => {
+    if (!success || !data || !data.msgs || !session) return;
+    if (addSessionMessages(session, data.msgs) && session.pid === State.chatPid) {
+      State.chatMessages = session.messages;
+      m.redraw();
+    }
+  });
+}
+
 function loadChatMessages() {
   if (!State.chatPid) return;
 
   //  Captured now: the answer may come back after the user selected another
   //  peer, and it must then land in the session it was asked for.
   const session = State.selectedId ? getDistantChatSession(State.selectedId) : null;
-  const chatPeerId = {
-    broadcast_status_peer_id: '00000000000000000000000000000000',
-    type: 2, // TYPE_PRIVATE_DISTANT
-    peer_id: '00000000000000000000000000000000',
-    distant_chat_id: State.chatPid,
-    lobby_id: { xstr64: '0' },
-  };
+  //  The current tunnel first, then whatever else the core holds with this
+  //  contact (other identities, direct chat), so the pane shows the whole
+  //  conversation and not only the file of the tunnel just opened.
+  const sources = historySourcesFor(State.selectedId);
+  const chatPeerId = distantChatIdFor(State.chatPid);
+  sources.forEach((other) => {
+    if (other.distant_chat_id !== State.chatPid) loadHistorySlice(session, other, HISTORY_PAGE);
+  });
 
   rs.rsJsonApiRequest(
     '/rsHistory/getMessages',
     {
       chatPeerId,
-      loadCount: 50,
+      loadCount: HISTORY_PAGE,
     },
     (data, success) => {
       if (success && data.msgs) {
@@ -1011,6 +1022,61 @@ function preloadAllChatHistory() {
   });
 }
 
+//  Everything the core may hold with this contact: one distant chat file per
+//  own identity we could have talked as (the tunnel id is derived from the
+//  pair), plus the direct chat file of every location of the friend behind
+//  the identity. The conversation pane and the history browser read the same.
+function historySourcesFor(gxsId) {
+  const queries = [];
+  const pids = new Set();
+  (State.ownGxsIds || []).forEach((ownId) => {
+    const pid = peopleUtil.distantChatPid(ownId, gxsId);
+    if (pid) pids.add(pid);
+  });
+  pids.forEach((pid) => queries.push(distantChatIdFor(pid)));
+  locationIdsOf(gxsId).forEach((sslId) => queries.push(privateChatIdFor(sslId)));
+  return queries;
+}
+
+//  Reading further back. p3HistoryMgr::getMessages takes a count and always
+//  answers with the newest ones -- no cursor -- so older text means asking
+//  every source for a bigger slice and letting addSessionMessages() drop what
+//  is already here. Same mechanism as the chat rooms (chat_state.js).
+const HISTORY_PAGE = 50;
+
+function loadOlderChatHistory(done) {
+  const gxsId = State.selectedId;
+  const session = gxsId ? getDistantChatSession(gxsId) : null;
+  if (!session || session.historyLoading || session.historyExhausted) return false;
+
+  const queries = historySourcesFor(gxsId);
+  if (queries.length === 0) return false;
+
+  session.historyLoading = true;
+  const wanted = (session.historyLoaded || HISTORY_PAGE) + HISTORY_PAGE * 2;
+  let left = queries.length;
+  let anyFull = false;
+
+  queries.forEach((chatPeerId) => {
+    rs.rsJsonApiRequest('/rsHistory/getMessages', { chatPeerId, loadCount: wanted }, (data, success) => {
+      if (success && data && data.msgs) {
+        if (data.msgs.length >= wanted) anyFull = true;
+        addSessionMessages(session, data.msgs);
+      }
+      left -= 1;
+      if (left > 0) return;
+      session.historyLoading = false;
+      session.historyLoaded = wanted;
+      //  Every source answered with fewer than asked: nothing older is left.
+      if (!anyFull) session.historyExhausted = true;
+      if (session.pid === State.chatPid) State.chatMessages = session.messages;
+      m.redraw();
+      if (done) done();
+    });
+  });
+  return true;
+}
+
 function loadAllHistoryForSelectedPeer(callback) {
   if (!State.selectedId) return;
 
@@ -1018,25 +1084,7 @@ function loadAllHistoryForSelectedPeer(callback) {
   State.fullHistoryMessages = [];
   m.redraw();
 
-  const pids = new Set();
-
-  // Distant chat history of the conversation currently open
-  if (State.chatPid) pids.add(State.chatPid);
-
-  //  Distant chat history of the earlier conversations with this peer: one
-  //  tunnel per own identity, and the tunnel id is the key -- the peer's GXS id
-  //  never is, so asking for it could only ever answer an empty list.
-  (State.ownGxsIds || []).forEach((ownId) => {
-    const pid = peopleUtil.distantChatPid(ownId, State.selectedId);
-    if (pid) pids.add(pid);
-  });
-
-  const queries = Array.from(pids).map(distantChatIdFor);
-
-  // Direct chat history, one query per location of the friend behind this identity
-  locationIdsOf(State.selectedId).forEach((sslId) => {
-    queries.push(privateChatIdFor(sslId));
-  });
+  const queries = historySourcesFor(State.selectedId);
 
   if (queries.length === 0) {
     State.isHistoryLoading = false;
@@ -1091,6 +1139,7 @@ module.exports = {
   isSystemMsg,
   preloadAllChatHistory,
   loadAllHistoryForSelectedPeer,
+  loadOlderChatHistory,
   fetchIdDetails,
   loadGxsIdentities,
   loadOwnGxsIds,
