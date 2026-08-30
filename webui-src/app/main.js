@@ -1,5 +1,9 @@
 const m = require('mithril');
 
+//  Bumped at every change of the web UI; shown in the rail, the phone header
+//  and the Debug page.
+const WEBUI_VERSION = 'v170';
+
 const login = require('login');
 const rs = require('rswebui');
 const home = require('home');
@@ -13,6 +17,7 @@ const forums = require('forums/forums');
 const boards = require('boards/boards');
 const config = require('config/config_resolver');
 const statistics = require('statistics/statistics');
+const debug = require('debug/debug');
 const statusbar = require('statusbar');
 const networkState = require('network/network_state');
 const peopleState = require('people/people_state');
@@ -43,6 +48,7 @@ const navIcon = {
   boards: 'i.fas.fa-globe.sidenav-icon',
   config: 'i.fas.fa-cogs.sidenav-icon',
   statistics: 'i.fas.fa-chart-pie.sidenav-icon',
+  debug: 'i.fas.fa-bug.sidenav-icon',
 };
 
 const navbar = () => {
@@ -137,7 +143,7 @@ const navbar = () => {
                       ? 'Connected to RetroShare Core'
                       : 'Connection Lost',
                   }),
-                  m('span.webui-version', { style: { fontSize: '0.7em' } }, 'v159'),
+                  m('span.webui-version', { style: { fontSize: '0.7em' } }, WEBUI_VERSION),
                   m('i.fas.fa-sync-alt.refresh-icon', {
                     style: { cursor: 'pointer', fontSize: '0.8em' },
                     onclick: () => window.location.reload(true),
@@ -198,6 +204,7 @@ const mobileMoreLinks = {
   boards: '/boards/MyBoards',
   config: '/config/network',
   statistics: '/statistics',
+  debug: '/debug',
 };
 
 const MobileStatus = () => {
@@ -212,6 +219,7 @@ const MobileStatus = () => {
           m('.mobile-app-header__brand', [
             m('img', { src: 'images/retroshare.svg', alt: '' }),
             m('strong', 'RetroShare'),
+            m('span.mobile-app-header__version', WEBUI_VERSION),
           ]),
           m('button.mobile-status-trigger[type=button]', {
             'aria-label': `Open connection status. ${summary.label}`,
@@ -260,7 +268,15 @@ const MobileStatus = () => {
               m('small', statusbar.formatBytes(state.totalOut)),
             ]),
           ]),
-          m('.mobile-status-sheet__version', 'WebUI v159'),
+          m('.mobile-status-sheet__version', [
+            'WebUI ' + WEBUI_VERSION,
+            //  The page keeps the code it loaded until it is reloaded, and a
+            //  phone browser hides that action away. A new build shows up
+            //  here only after this.
+            m('button[type=button]', {
+              onclick: () => window.location.reload(true),
+            }, [m('i.fas.fa-sync-alt'), ' Reload']),
+          ]),
         ])),
       ];
     },
@@ -352,6 +368,7 @@ const Layout = () => {
             boards: '/boards/MyBoards',
             statistics: '/statistics',
             config: '/config/network',
+            debug: '/debug',
           },
         }),
         m(
@@ -444,6 +461,9 @@ m.route(document.getElementById('main'), '/', {
   },
   '/statistics': {
     render: () => m(Layout, m(statistics)),
+  },
+  '/debug': {
+    render: () => m(Layout, m(debug, { version: WEBUI_VERSION })),
   },
 });
 

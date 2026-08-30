@@ -1,3 +1,4 @@
+const m = require('mithril');
 const rs = require('rswebui');
 
 async function refreshIds() {
@@ -6,15 +7,47 @@ async function refreshIds() {
   return sslIds;
 }
 
-async function loadSslDetails() {
-  const sslDetails = [];
-  const sslIds = await refreshIds();
-  await Promise.all(
-    sslIds.map((sslId) =>
-      rs.rsJsonApiRequest('/rsPeers/getPeerDetails', { sslId }, (data) => sslDetails.push(data.det))
-    )
-  );
-  return sslDetails;
+//  The friend list is read one location at a time -- there is no bulk
+//  getPeerDetails -- and a node can have two thousand of them. Fired all at
+//  once they fill the browser's six sockets for minutes on a slow link, and
+//  every interactive request (opening a chat, the status poll) queues behind.
+//  So: a few at a time, the list filling as answers land, and the result kept
+//  for a while, since every page mount used to redo the whole sweep.
+const SWEEP_CONCURRENCY = 3;
+const GPG_DETAILS_TTL_MS = 5 * 60 * 1000;
+let refreshInFlight = null;
+let refreshedAt = 0;
+
+function runQueued(tasks, concurrency) {
+  return new Promise((resolve) => {
+    let next = 0;
+    let finished = 0;
+    if (tasks.length === 0) {
+      resolve();
+      return;
+    }
+    const startNext = () => {
+      if (next >= tasks.length) return;
+      const task = tasks[next++];
+      Promise.resolve()
+        .then(task)
+        .catch(() => {})
+        .then(() => {
+          finished += 1;
+          if (finished >= tasks.length) resolve();
+          else startNext();
+        });
+    };
+    for (let i = 0; i < concurrency && i < tasks.length; i++) startNext();
+  });
+}
+
+async function loadOnlineIds() {
+  let ids = [];
+  await rs.rsJsonApiRequest('/rsPeers/getOnlineList', {}, (data) => {
+    if (data && data.sslIds) ids = data.sslIds;
+  });
+  return new Set(ids);
 }
 
 const Data = {
@@ -133,95 +166,119 @@ Data.getStatusPresentation = function (statusValue, isOnline = false) {
   };
 };
 
-Data.refreshGpgDetails = async function () {
-  const details = {};
-  const sslDetails = await loadSslDetails();
-  await Promise.all(
-    sslDetails.map((data) => {
-      let isOnline = false;
-      return rs
-        .rsJsonApiRequest(
-          '/rsPeers/isOnline',
-          { sslId: data.id },
-          (stat) => (isOnline = stat.retval)
-        )
-        .then(() => {
-          let customState = '';
-          let statusValue = isOnline ? 3 : 0;
-          let statusTimestamp = 0;
-          return rs
-            .rsJsonApiRequest(
-              '/rsChats/getCustomStateString',
-              { peer_id: data.id },
-              (statusData) => {
-                if (statusData && statusData.retval) {
-                  customState = statusData.retval;
-                }
-              }
-            )
-            .catch(() => {})
-            .then(() => rs.rsJsonApiRequest(
-              '/rsStatus/getStatus',
-              { id: data.id },
-              (statusData) => {
-                if (statusData && statusData.retval && statusData.statusInfo) {
-                  statusValue = normalizeStatusValue(statusData.statusInfo.status, statusValue);
-                  statusTimestamp = statusData.statusInfo.time_stamp || 0;
-                }
-              }
-            ).catch(() => {}))
-            .then(() => {
-              const avatar = '';
-              return Promise.resolve()
-                .then(() => {
-                  const gpgId = (data.gpg_id || '').toLowerCase();
-                  const loc = {
-                    name: data.location,
-                    id: data.id,
-                    lastSeen: data.lastConnect,
-                    isOnline,
-                    gpg_id: gpgId,
-                    customState,
-                    statusValue,
-                    statusTimestamp,
-                    avatar,
-                    peerDetails: data,
-                  };
+//  `force` redoes the sweep whatever its age: after adding or removing a
+//  friend. Otherwise a fresh enough result is only touched up with the online
+//  list, one request, and concurrent callers share the sweep in flight.
+Data.refreshGpgDetails = function (options = {}) {
+  const force = Boolean(options && options.force);
+  if (refreshInFlight) return refreshInFlight;
+  if (!force && refreshedAt && Date.now() - refreshedAt < GPG_DETAILS_TTL_MS) {
+    return refreshOnlineFlags();
+  }
+  refreshInFlight = sweepGpgDetails()
+    .then(() => { refreshedAt = Date.now(); })
+    .finally(() => { refreshInFlight = null; });
+  return refreshInFlight;
+};
 
-                  if (details[gpgId] === undefined) {
-                    details[gpgId] = {
-                      name: data.name,
-                      fingerprint: data.fpr || '',
-                      isSearched: true,
-                      isOnline,
-                      locations: [loc],
-                      customState,
-                      statusValue,
-                      statusTimestamp,
-                      avatar: avatar || '',
-                    };
-                  } else {
-                    details[gpgId].locations.push(loc);
-                    if (!details[gpgId].fingerprint && data.fpr) {
-                      details[gpgId].fingerprint = data.fpr;
-                    }
-                    if (avatar) {
-                      details[gpgId].avatar = avatar;
-                    }
-                    if (!details[gpgId].customState || (isOnline && customState)) {
-                      details[gpgId].customState = customState;
-                    }
-                    if (isOnline || !details[gpgId].isOnline) {
-                      details[gpgId].statusValue = statusValue;
-                      details[gpgId].statusTimestamp = statusTimestamp;
-                    }
-                  }
-                  details[gpgId].isOnline = details[gpgId].isOnline || isOnline;
-                });
-            });
-        });
-    })
-  );
+async function refreshOnlineFlags() {
+  const online = await loadOnlineIds();
+  Object.values(Data.gpgDetails || {}).forEach((friend) => {
+    let anyOnline = false;
+    (friend.locations || []).forEach((loc) => {
+      loc.isOnline = online.has(loc.id);
+      anyOnline = anyOnline || loc.isOnline;
+    });
+    friend.isOnline = anyOnline;
+  });
+}
+
+async function sweepGpgDetails() {
+  const details = {};
+  const sslIds = await refreshIds();
+  const online = await loadOnlineIds();
+
+  //  A first load shows the list as it fills rather than nothing for the
+  //  whole sweep; a refresh keeps the old list on screen until it is done.
+  const firstLoad = Object.keys(Data.gpgDetails || {}).length === 0;
+  if (firstLoad) Data.gpgDetails = details;
+  let sinceRedraw = 0;
+
+  const addLocation = (data, isOnline, customState, statusValue, statusTimestamp) => {
+    const gpgId = (data.gpg_id || '').toLowerCase();
+    const loc = {
+      name: data.location,
+      id: data.id,
+      lastSeen: data.lastConnect,
+      isOnline,
+      gpg_id: gpgId,
+      customState,
+      statusValue,
+      statusTimestamp,
+      avatar: '',
+      peerDetails: data,
+    };
+
+    if (details[gpgId] === undefined) {
+      details[gpgId] = {
+        name: data.name,
+        fingerprint: data.fpr || '',
+        isSearched: true,
+        isOnline,
+        locations: [loc],
+        customState,
+        statusValue,
+        statusTimestamp,
+        avatar: '',
+      };
+    } else {
+      details[gpgId].locations.push(loc);
+      if (!details[gpgId].fingerprint && data.fpr) {
+        details[gpgId].fingerprint = data.fpr;
+      }
+      if (!details[gpgId].customState || (isOnline && customState)) {
+        details[gpgId].customState = customState;
+      }
+      if (isOnline || !details[gpgId].isOnline) {
+        details[gpgId].statusValue = statusValue;
+        details[gpgId].statusTimestamp = statusTimestamp;
+      }
+    }
+    details[gpgId].isOnline = details[gpgId].isOnline || isOnline;
+
+    if (firstLoad && ++sinceRedraw >= 25) {
+      sinceRedraw = 0;
+      m.redraw();
+    }
+  };
+
+  //  Status string and status value only mean something for a peer that is
+  //  connected: two requests per online peer instead of two per location.
+  const tasks = sslIds.map((sslId) => async () => {
+    let data = null;
+    await rs.rsJsonApiRequest('/rsPeers/getPeerDetails', { sslId }, (res) => {
+      if (res && res.det) data = res.det;
+    });
+    if (!data) return;
+
+    const isOnline = online.has(sslId);
+    let customState = '';
+    let statusValue = isOnline ? 3 : 0;
+    let statusTimestamp = 0;
+    if (isOnline) {
+      await rs.rsJsonApiRequest('/rsChats/getCustomStateString', { peer_id: sslId }, (statusData) => {
+        if (statusData && statusData.retval) customState = statusData.retval;
+      });
+      await rs.rsJsonApiRequest('/rsStatus/getStatus', { id: sslId }, (statusData) => {
+        if (statusData && statusData.retval && statusData.statusInfo) {
+          statusValue = normalizeStatusValue(statusData.statusInfo.status, statusValue);
+          statusTimestamp = statusData.statusInfo.time_stamp || 0;
+        }
+      });
+    }
+    addLocation(data, isOnline, customState, statusValue, statusTimestamp);
+  });
+  await runQueued(tasks, SWEEP_CONCURRENCY);
 
   const remembered = loadPendingFriends();
   let rememberedChanged = false;
@@ -251,5 +308,5 @@ Data.refreshGpgDetails = async function () {
   });
   if (rememberedChanged) savePendingFriends();
   Data.gpgDetails = details;
-};
+}
 module.exports = Data;

@@ -8,6 +8,7 @@ const {
   initializeDistantChat,
   sendDistantChatMessage,
   leaveDistantChat,
+  loadOlderChatHistory,
   setChatDraft,
   switchChatIdentity,
 } = require('people/people_state');
@@ -121,7 +122,9 @@ const ChatTab = () => {
           m('h4', 'Conversation Ended'),
           m('p', State.chatCloseFoundNothing
             ? 'The tunnel was already gone: the core had no connection left to close. Click below to open a new one.'
-            : 'You have closed the distant chat tunnel. Click below to reconnect.'),
+            : State.chatEndedByPoll
+              ? 'The tunnel went away: closed by your contact, or dropped by the core. Click below to open a new one.'
+              : 'You have closed the distant chat tunnel. Click below to reconnect.'),
           m('button.blue', {
             style: 'margin-top: 1rem; padding: 0.5rem 1.5rem; border-radius: 0.375rem; border: none; font-weight: 600; cursor: pointer;',
             onclick: () => initializeDistantChat(),
@@ -214,7 +217,23 @@ const ChatTab = () => {
           ]),
         ]),
 
-        m('.chat-messages', [
+        m('.chat-messages', {
+          //  Near the top: ask for an older slice. It is inserted above what is
+          //  on screen, so its height is given back to scrollTop and the
+          //  reader does not move (same as the chat rooms).
+          onscroll: (e) => {
+            const element = e.target;
+            if (element.scrollTop > 120) return;
+            const previousHeight = element.scrollHeight;
+            const previousTop = element.scrollTop;
+            loadOlderChatHistory(() => {
+              requestAnimationFrame(() => {
+                const pane = document.querySelector('.chat-messages');
+                if (pane) pane.scrollTop = previousTop + (pane.scrollHeight - previousHeight);
+              });
+            });
+          },
+        }, [
           State.chatMessages.length === 0
             ? m('.chat-warning', [
                 m('i.fas.fa-comments'),

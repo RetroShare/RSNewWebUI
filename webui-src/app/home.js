@@ -192,7 +192,7 @@ async function refreshFriendLists(expectedGpgId) {
   for (const delay of retryDelays) {
     if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
     try {
-      await NetworkData.refreshGpgDetails();
+      await NetworkData.refreshGpgDetails({ force: true });
       if (!expected || NetworkData.gpgDetails[expected]) break;
     } catch (_) {
       // RetroShare may still be storing the imported certificate/location.

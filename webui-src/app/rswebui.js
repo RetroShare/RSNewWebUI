@@ -96,6 +96,45 @@ function logout() {
   m.route.set('/');
 }
 
+//  What the API is doing, seen from this browser. Shown on the Debug page: a
+//  request that takes ten seconds shows here, and whether it was slow on its
+//  own or queued behind others (pending) is what tells the two apart.
+const apiStats = {
+  pending: 0,
+  total: 0,
+  //  Last /rsChats/sendChat: the one round trip the user feels directly.
+  lastSend: null,
+  //  The five slowest requests since load, newest first on a tie.
+  slowest: [],
+  //  The last twenty requests, newest first.
+  recent: [],
+  //  Event stream: bytes received since (re)connection, last event time,
+  //  number of reconnections.
+  eventsBytes: 0,
+  lastEventAt: 0,
+  eventsRestarts: 0,
+  startedAt: Date.now(),
+};
+
+function recordRequestTime(path, ms) {
+  apiStats.pending = Math.max(0, apiStats.pending - 1);
+  const entry = { path, ms: Math.round(ms), at: Date.now() };
+  if (path === '/rsChats/sendChat') apiStats.lastSend = entry;
+  apiStats.slowest.push(entry);
+  apiStats.slowest.sort((a, b) => b.ms - a.ms);
+  if (apiStats.slowest.length > 5) apiStats.slowest.length = 5;
+  apiStats.recent.unshift(entry);
+  if (apiStats.recent.length > 20) apiStats.recent.length = 20;
+}
+
+function resetApiStats() {
+  apiStats.total = 0;
+  apiStats.lastSend = null;
+  apiStats.slowest = [];
+  apiStats.recent = [];
+  apiStats.eventsRestarts = 0;
+}
+
 const connectionState = {
   status: true,
   //  Status of the last HTTP response, or 0 when the request never reached the
@@ -120,6 +159,9 @@ function rsJsonApiRequest(
       headers['Authorization'] = 'Basic ' + btoa(loginKey.username + ':' + loginKey.passwd);
     }
   }
+  apiStats.pending += 1;
+  apiStats.total += 1;
+  const startedAt = performance.now();
   // NOTE: After upgrading to mithrilv2, options.extract is no longer required
   // since the status will become part of return value and then
   // handleDeserialize can also be simply passed as options.deserialize
@@ -145,6 +187,7 @@ function rsJsonApiRequest(
       xhr: config,
     })
     .then((result) => {
+      recordRequestTime(path, performance.now() - startedAt);
       if (result.status === 200) {
         connectionState.status = true;
         try {
@@ -176,6 +219,7 @@ function rsJsonApiRequest(
       return result;
     })
     .catch(function (e) {
+      recordRequestTime(path, performance.now() - startedAt);
       //  Reaching here after a valid 200 means the body could not be parsed,
       //  i.e. the response was cut short. The core answered and is still there;
       //  it is the answer that did not survive the trip.
@@ -260,10 +304,27 @@ const eventQueue = {
         }
       },
       handler: (event, owner) => {
-        if (event && event.mChatMessage && event.mChatMessage.chat_id) {
-          owner.chatMessages(event.mChatMessage.chat_id, owner, (r) => {
-            r.push(event.mChatMessage);
-            owner.notify(event.mChatMessage);
+        //  Two event shapes carry a chat message on RsEventType::CHAT_SERVICE.
+        //  A message from a peer is posted twice by the core: as an
+        //  RsChatServiceEvent {mEventCode: CHAT_MESSAGE_RECEIVED, mMsg} and as
+        //  an RsChatMessageEvent {mChatMessage}. A message we send ourselves
+        //  -- from the desktop GUI, or from any other client of the same core
+        //  -- is posted once, as the RsChatServiceEvent only
+        //  (DistributedChatService::sendLobbyChat, p3ChatService::sendChat).
+        //  Reading mChatMessage alone therefore showed every peer's line and
+        //  none of our own typed elsewhere. Take our own messages from the
+        //  RsChatServiceEvent as well, and only those: a peer's message must
+        //  keep coming through once, because the room and direct chat unread
+        //  counters are bumped before the receivers dedup by message key.
+        const chatMessage = event && (
+          (event.mChatMessage && event.mChatMessage.chat_id && event.mChatMessage)
+          || (Number(event.mEventCode) === 1 && event.mMsg && event.mMsg.chat_id
+            && event.mMsg.incoming === false && event.mMsg)
+        );
+        if (chatMessage) {
+          owner.chatMessages(chatMessage.chat_id, owner, (r) => {
+            r.push(chatMessage);
+            owner.notify(chatMessage);
           });
         } else if (event && (event.mCid || event.mEventCode !== undefined)) {
           // Administrative chat event (e.g. lobby info change, peer join/leave)
@@ -407,6 +468,8 @@ function startEventQueue(
 
   xhr.onprogress = (ev) => {
     const currIndex = xhr.responseText.length;
+    apiStats.eventsBytes = currIndex;
+    apiStats.lastEventAt = Date.now();
     if (currIndex > lastIndex) {
       const parts = xhr.responseText.substring(lastIndex, currIndex);
       lastIndex = currIndex;
@@ -450,6 +513,7 @@ function startEventQueue(
   xhr.onload = () => { };
 
   xhr.onerror = (err) => {
+    apiStats.eventsRestarts += 1;
     console.error('[RS] Event Queue XHR error occurred:', err);
     // Retry after 5 seconds to avoid silent event loss
     setTimeout(() => {
@@ -524,6 +588,8 @@ module.exports = {
   rsJsonApiRequest,
   idToHex: hexId,
   connectionState,
+  apiStats,
+  resetApiStats,
   setKeys,
   setBackgroundTask,
   logon,
