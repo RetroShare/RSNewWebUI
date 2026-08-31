@@ -1,5 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const peopleUtil = require('people/people_util');
+const widget = require('widgets');
 
 const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this group
 const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
@@ -20,137 +22,327 @@ const Data = {
   Comments: {}, // threadID, msgID -> {Comment, showReplies}
 };
 
-async function updateDisplayBoards(keyid, details) {
-  const res1 = await rs.rsJsonApiRequest('/rsPosted/getBoardsInfo', {
-    boardsIds: [keyid],
-  });
-  details = res1.body.boardsInfo[0];
-  Data.DisplayBoards[keyid] = {
-    name: details.mMeta.mGroupName,
-    isSearched: true,
-    description: details.mDescription,
-    image: details.mGroupImage,
-    author: details.mMeta.mAuthorId,
-    isSubscribed:
-      details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED ||
-      details.mMeta.mSubscribeFlags === GROUP_MY_BOARD,
-    posts: details.mMeta.mVisibleMsgCount,
-    activity: details.mMeta.mLastPost,
-    created: details.mMeta.mPublishTs,
-    all: details,
-  };
-
-  if (Data.Posts[keyid] === undefined) {
-    Data.Posts[keyid] = {};
-  }
-
-  /* const res2 = await rs.rsJsonApiRequest('/rsPosted/getContentSummaries', {
-    boardId: keyid,
-  });
-
-  if (res2.body.retval) {
-    res2.body.summaries.map((content) => {
-      updateContent(content, keyid);
-    });
-  }*/
+// Older Qt clients store board notes as rich HTML. Render them as readable,
+// inert text in the web UI instead of exposing the markup and embedded CSS.
+function plainText(value) {
+  if (value === null || value === undefined) return '';
+  const text = String(value);
+  if (!/<\/?[a-z][^>]*>/i.test(text)) return text.trim();
+  return text
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&(nbsp|#160);/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, '\'')
+    .replace(/\n\s*\n+/g, '\n')
+    .trim();
 }
 
-const DisplayBoardsFromList = () => {
+const BOARD_POST_BATCH_SIZE = 25;
+
+async function updateContent(content, boardid) {
+  const requested = Array.isArray(content) ? content : [content];
+  const msgIds = requested
+    .map((item) => item.mMsgId || item.msgId || item)
+    .filter(Boolean);
+  if (msgIds.length === 0) return false;
+  try {
+    const res = await rs.rsJsonApiRequest('/rsPosted/getBoardContent', {
+      boardId: boardid,
+      contentsIds: msgIds,
+    });
+    if (res && res.body && res.body.retval) {
+      const posts = res.body.posts || res.body.postList || [];
+      const comments = res.body.comments || res.body.commentList || [];
+      const votes = res.body.votes || res.body.voteList || [];
+
+      if (posts.length > 0) {
+        if (!Data.Posts[boardid]) Data.Posts[boardid] = {};
+        posts.forEach((post) => {
+          const msgId = post.mMeta && post.mMeta.mMsgId;
+          if (msgId) Data.Posts[boardid][msgId] = { post, isSearched: true };
+        });
+        m.redraw();
+      } else if (comments.length > 0 && requested.length === 1) {
+        const threadId = requested[0].mThreadId || comments[0].mMeta.mThreadId;
+        if (Data.Comments[threadId] === undefined) {
+          Data.Comments[threadId] = {};
+        }
+        Data.Comments[threadId][msgIds[0]] = comments[0];
+        m.redraw();
+      } else if (votes.length > 0) {
+        const vote = votes[0];
+        if (
+          Data.Comments[vote.mMeta.mThreadId] &&
+          Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId]
+        ) {
+          if (vote.mVoteType === GXS_VOTE_UP) {
+            Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].mUpVotes += 1;
+          }
+          if (vote.mVoteType === GXS_VOTE_DOWN) {
+            Data.Comments[vote.mMeta.mThreadId][vote.mMeta.mParentId].mDownVotes += 1;
+          }
+          m.redraw();
+        }
+      }
+      return true;
+    }
+  } catch (err) {
+    console.warn('updateContent error:', err);
+  }
+  return false;
+}
+
+// Same as the channel loader: a post can carry base64 media, and the JSON API
+// cuts a response it cannot flush in time. Retry a failed batch as two smaller
+// ones until the offending post is isolated, instead of dropping the 25 of them
+// on a single console.warn. Do not split when the core stopped answering, or
+// one batch would turn into 2N-1 doomed requests.
+async function updateContentBatch(contentIds, boardid) {
+  const loaded = await updateContent(contentIds, boardid);
+  if (loaded || contentIds.length <= 1 || !rs.connectionState.status) {
+    if (!loaded) {
+      console.warn('Unable to load board content item', contentIds[0]);
+    }
+    return;
+  }
+
+  const middle = Math.ceil(contentIds.length / 2);
+  await updateContentBatch(contentIds.slice(0, middle), boardid);
+  await updateContentBatch(contentIds.slice(middle), boardid);
+}
+
+const inFlightBoards = {};
+
+async function updateDisplayBoards(keyid, details) {
+  if (!keyid) return Promise.resolve();
+
+  // 1. Fast path: if posts for this board are already loaded in memory, render instantly and do not re-fetch
+  if (Data.DisplayBoards[keyid] && Data.Posts[keyid] && Object.keys(Data.Posts[keyid]).length > 0) {
+    m.redraw();
+    return Promise.resolve();
+  }
+
+  // 2. Prevent duplicate concurrent HTTP requests for the same board ID
+  if (inFlightBoards[keyid]) {
+    return inFlightBoards[keyid];
+  }
+
+  inFlightBoards[keyid] = (async () => {
+    try {
+      // Fetch board info metadata if missing
+      if (!Data.DisplayBoards[keyid]) {
+        const res1 = await rs.rsJsonApiRequest('/rsPosted/getBoardsInfo', {
+          boardsIds: [keyid],
+        });
+        if (res1 && res1.body && res1.body.boardsInfo && res1.body.boardsInfo.length > 0) {
+          details = res1.body.boardsInfo[0];
+          Data.DisplayBoards[keyid] = {
+            name: details.mMeta.mGroupName,
+            isSearched: true,
+            description: details.mDescription,
+            image: details.mGroupImage,
+            author: details.mMeta.mAuthorId,
+            subscribeFlags: details.mMeta.mSubscribeFlags,
+            isSubscribed:
+              details.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED ||
+              details.mMeta.mSubscribeFlags === GROUP_MY_BOARD,
+            posts: details.mMeta.mVisibleMsgCount,
+            activity: details.mMeta.mLastPost,
+            created: details.mMeta.mPublishTs,
+            all: details,
+          };
+          m.redraw();
+        }
+      }
+
+      if (!Data.Posts[keyid]) {
+        Data.Posts[keyid] = {};
+      }
+
+      // Load lightweight post metadata first, then fetch complete posts newest
+      // first in page-sized batches. The first page can render without waiting
+      // for every image and older post in a large board.
+      const summariesRes = await rs.rsJsonApiRequest('/rsPosted/getBoardPostSummaries', {
+        boardId: keyid,
+      });
+      const summaries = summariesRes && summariesRes.body && summariesRes.body.retval
+        && Array.isArray(summariesRes.body.summaries)
+        ? summariesRes.body.summaries
+        : null;
+
+      if (summaries) {
+        summaries.sort((a, b) => Number((b.mPublishTs && b.mPublishTs.xint64) || b.mPublishTs || 0)
+          - Number((a.mPublishTs && a.mPublishTs.xint64) || a.mPublishTs || 0));
+        for (let i = 0; i < summaries.length; i += BOARD_POST_BATCH_SIZE) {
+          await updateContentBatch(summaries.slice(i, i + BOARD_POST_BATCH_SIZE), keyid);
+        }
+      } else {
+        // Compatibility fallback for RetroShare cores which do not yet expose
+        // getBoardPostSummaries.
+        const resAll = await rs.rsJsonApiRequest('/rsPosted/getBoardAllContent', {
+          boardId: keyid,
+        });
+        const posts = resAll && resAll.body && resAll.body.retval
+          ? (resAll.body.posts || resAll.body.postList || [])
+          : [];
+        posts.forEach((post) => {
+          const msgId = (post.mMeta && post.mMeta.mMsgId) || post.mMsgId;
+          if (msgId) Data.Posts[keyid][msgId] = { post, isSearched: true };
+        });
+        m.redraw();
+      }
+    } catch (err) {
+      console.warn('updateDisplayBoards network error for board:', keyid, err);
+    } finally {
+      delete inFlightBoards[keyid];
+    }
+  })();
+
+  return inFlightBoards[keyid];
+}
+
+const BoardSummary = () => {
   return {
-    oninit: (v) => {},
-    view: (v) =>
-      m(
+    view: (vnode) => {
+      const details = vnode.attrs.details;
+      const bname = details.mGroupName || details.name || '';
+
+      return m(
         'tr',
         {
-          key: v.attrs.id,
-          class:
-            Data.DisplayBoards[v.attrs.id] && Data.DisplayBoards[v.attrs.id].isSearched
-              ? ''
-              : 'hidden',
+          key: details.mGroupId,
           onclick: () => {
             m.route.set('/boards/:tab/:mGroupId', {
-              tab: v.attrs.category,
-              mGroupId: v.attrs.id,
+              tab: vnode.attrs.category,
+              mGroupId: details.mGroupId,
             });
           },
         },
-        [m('td', Data.DisplayBoards[v.attrs.id] ? Data.DisplayBoards[v.attrs.id].name : '')]
-      ),
-  };
-};
-
-const BoardSummary = () => {
-  let keyid = {};
-  return {
-    oninit: (v) => {
-      keyid = v.attrs.details.mGroupId;
-      updateDisplayBoards(keyid);
+        [
+          m('td', bname),
+        ]
+      );
     },
-
-    view: (v) => {},
   };
 };
 
 const BoardTable = () => {
   return {
-    oninit: (v) => {},
-    view: (v) => m('table.boards', [m('tr', [m('th', 'Board Name')]), v.children]),
+    view: (vnode) =>
+      m('table.board-table', [
+        m('thead', [
+          m('tr', [
+            m('th', 'Board Name'),
+          ]),
+        ]),
+        vnode.children,
+      ]),
   };
 };
-
-function popupmessage(message) {
-  const container = document.getElementById('modal-container');
-  container.style.display = 'block';
-  m.render(
-    container,
-    m('.modal-content[id=composepopup]', [
-      m(
-        'button.red',
-        {
-          onclick: () => (container.style.display = 'none'),
-        },
-        m('i.fas.fa-times')
-      ),
-      message,
-    ])
-  );
-}
 
 const SearchBar = () => {
   let searchString = '';
   return {
-    view: (v) =>
-      m('input[type=text][id=searchboard][placeholder=Search Subject].searchbar', {
-        value: searchString,
-        oninput: (e) => {
-          searchString = e.target.value.toLowerCase();
-          for (const hash in Data.DisplayBoards) {
-            if (Data.DisplayBoards[hash].name.toLowerCase().indexOf(searchString) > -1) {
-              Data.DisplayBoards[hash].isSearched = true;
-            } else {
-              Data.DisplayBoards[hash].isSearched = false;
+    view: (vnode) =>
+      m('.search-bar', [
+        m('input[type=text][placeholder=Search Boards...]', {
+          value: searchString,
+          oninput: (e) => {
+            searchString = e.target.value;
+            const query = searchString.toLowerCase();
+            if (vnode.attrs.list) {
+              vnode.attrs.list.forEach((board) => {
+                const name = (board.mGroupName || board.name || '').toLowerCase();
+                board.isSearched = name.includes(query);
+              });
             }
-          }
-        },
-      }),
+          },
+        }),
+      ]),
   };
 };
 
+function popupmessage(message, modalClass = '') {
+  widget.popupMessage(message, modalClass);
+}
+
+async function voteForPost(postGrpId, postMsgId, voteType, voterId = null) {
+  try {
+    let authorId = voterId;
+    if (!authorId) {
+      //  Goes through people_util so the endpoints and their caching stay in
+      //  one place: /rsIdentity/getOwnIds is deprecated and answers 404.
+      const ownIds = await peopleUtil.ownIds();
+      if (ownIds.length === 0) {
+        alert('No identity found to vote.');
+        return false;
+      }
+      authorId = ownIds[0];
+    }
+
+    const res = await rs.rsJsonApiRequest('/rsPosted/voteForPost', {
+      postGrpId,
+      postMsgId,
+      authorId,
+      vote: voteType,
+    });
+
+    if (res && res.body && res.body.retval) {
+      updateDisplayBoards(postGrpId);
+      m.redraw();
+      return true;
+    }
+  } catch (e) {
+    console.error('voteForPost error:', e);
+  }
+  return false;
+}
+
+async function voteForComment(boardId, postId, commentId, voteType, authorId) {
+  if (!authorId) return false;
+  try {
+    const res = await rs.rsJsonApiRequest('/rsPosted/voteForComment', {
+      boardId,
+      postId,
+      commentId,
+      authorId,
+      vote: voteType,
+    });
+    if (res && res.body && res.body.retval) {
+      updateDisplayBoards(boardId);
+      m.redraw();
+      return true;
+    }
+    console.warn('voteForComment failed:', res && res.body && res.body.errorMessage);
+  } catch (error) {
+    console.error('voteForComment error:', error);
+  }
+  return false;
+}
+
 module.exports = {
   Data,
+  updateDisplayBoards,
+  updateContent,
+  BoardSummary,
+  BoardTable,
   SearchBar,
   popupmessage,
-  BoardSummary,
-  DisplayBoardsFromList,
-  updateDisplayBoards,
-  BoardTable,
+  voteForPost,
+  voteForComment,
+  plainText,
+  GXS_VOTE_UP,
+  GXS_VOTE_DOWN,
   GROUP_SUBSCRIBE_ADMIN,
-  GROUP_SUBSCRIBE_NOT_SUBSCRIBED,
   GROUP_SUBSCRIBE_PUBLISH,
   GROUP_SUBSCRIBE_SUBSCRIBED,
+  GROUP_SUBSCRIBE_NOT_SUBSCRIBED,
   GROUP_MY_BOARD,
-  GXS_VOTE_DOWN,
-  GXS_VOTE_UP,
   PUBLIC,
   EXTERNAL,
   NODES_GROUP,

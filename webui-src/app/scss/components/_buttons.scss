@@ -5,8 +5,12 @@
 
 button {
   @include button($primary-color);
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
 }
 button.red {
   @include button($red-color);
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
 }
 

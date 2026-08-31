@@ -25,7 +25,7 @@ function displayfiles() {
           haveFile = res.body.retval;
         }
       }
-      if (v.attrs.replyDepth === 1 && parStruct) {
+      if (v.attrs.replyDepth === 0 && parStruct) {
         isId = true;
         const res = await rs.rsJsonApiRequest('/rsPeers/getPeerDetails', {
           sslId: parStruct.details.name,
@@ -37,25 +37,29 @@ function displayfiles() {
     },
     view: (v) => [
       m('tr', [
-        parStruct && Object.keys(parStruct.details.children).length
+        parStruct && parStruct.details.children && Object.keys(parStruct.details.children).length
           ? m(
               'td',
               m('i.fas.fa-angle-right', {
                 class: 'fa-rotate-' + (parStruct.showChild ? '90' : '0'),
                 style: 'margin-top:12px',
-                onclick: () => {
+                onclick: async () => {
                   if (!loaded) {
-                    // if it is not already retrieved.
-                    parStruct.details.children.map(async (child) => {
-                      const res = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
-                        handle: child.handle.xint64,
-                        flags: util.RS_FILE_HINTS_REMOTE,
-                      });
-                      childrenList.push(res.body.details);
-                      loaded = true;
-                    });
+                    // Retrieve the directory entries before displaying the nested rows.
+                    const entries = await Promise.all(
+                      parStruct.details.children.map(async (child) => {
+                        const res = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
+                          handle: child.handle.xint64,
+                          flags: util.RS_FILE_HINTS_REMOTE,
+                        });
+                        return res.body.details;
+                      })
+                    );
+                    childrenList.push(...entries);
+                    loaded = true;
                   }
                   parStruct.showChild = !parStruct.showChild;
+                  m.redraw();
                 },
               })
             )
@@ -69,9 +73,25 @@ function displayfiles() {
               left: `calc(30px*${v.attrs.replyDepth})`,
             },
           },
-          isId
-            ? nameOfId + ' (' + parStruct.details.name.slice(0, 8) + '...)'
-            : parStruct.details.name
+          [
+            m('i.fas', {
+              class: isId
+                ? 'fa-user-friends friends-files__friend-icon'
+                : !isFile
+                  ? parStruct.showChild
+                    ? 'fa-folder-open friends-files__folder-icon'
+                    : 'fa-folder friends-files__folder-icon'
+                  : 'fa-file friends-files__file-icon',
+              title: isId ? 'Friend' : isFile ? 'File' : 'Folder',
+              style: 'margin-right:0.45rem',
+            }),
+            isId
+              ? (nameOfId || parStruct.details.name) +
+                ' (' +
+                parStruct.details.name.slice(0, 8) +
+                '...)'
+              : parStruct.details.name,
+          ]
         ),
         m('td', rs.formatBytes(parStruct.details.size.xint64)),
         isFile &&
@@ -142,13 +162,31 @@ function displayfiles() {
 }
 
 const Layout = () => {
-  //  let root_handle;
-  let parent;
+  let directories = [];
   return {
-    oninit: () => {
-      rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
+    oninit: async () => {
+      const res = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
         flags: util.RS_FILE_HINTS_REMOTE,
-      }).then((res) => (parent = res));
+      });
+      const root = res.body.details;
+
+      // The remote API returns a synthetic "root" directory.  It is not a
+      // friend and only adds an unnecessary level to this view, so begin at
+      // its children instead.
+      if (root && root.name === 'root' && root.children) {
+        directories = await Promise.all(
+          root.children.map(async (child) => {
+            const childRes = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
+              handle: child.handle.xint64,
+              flags: util.RS_FILE_HINTS_REMOTE,
+            });
+            return childRes.body.details;
+          })
+        );
+      } else if (root) {
+        directories = [root];
+      }
+      m.redraw();
     },
     view: () => [
       m('.widget__heading', [m('h3', 'Friends Files')]),
@@ -157,11 +195,12 @@ const Layout = () => {
           util.FriendsFilesTable,
           m(
             'tbody',
-            parent && // root
+            directories.map((directory) =>
               m(displayfiles, {
-                par_directory: { details: parent.body.details, showChild: false },
+                par_directory: { details: directory, showChild: false },
                 replyDepth: 0,
               })
+            )
           )
         ),
       ]),

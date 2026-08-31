@@ -89,6 +89,127 @@ function getStatusTooltip(status) {
   }
 }
 
+// Chat messages travel as HTML. Stripping the tags is not enough: the entities
+// they leave behind are still raw text and end up displayed verbatim, the most
+// visible one being the &nbsp; that Qt emits for leading and repeated spaces.
+// A textarea decodes them without ever parsing markup, since its content model
+// is plain text and nothing in the string can become an element.
+function decodeHtmlEntities(text) {
+  const el = document.createElement('textarea');
+  el.innerHTML = text;
+  return el.value;
+}
+
+// Turn the HTML payload of a chat message into the text we display.
+function htmlToText(text) {
+  return decodeHtmlEntities(
+    text
+      .replaceAll('<br/>', '\n')
+      .replaceAll('<br>', '\n')
+      .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '')
+  );
+}
+
+//  data: covers what the web UI itself sends (a compressed JPEG data URI) and
+//  what any other client embeds the same way. Everything else -- http, https,
+//  file, anything exotic -- is a fetch to a third party.
+function isEmbeddedImageSrc(src) {
+  return /^data:image\//i.test(String(src).trim());
+}
+
+// Keep chat pictures inside the current page. A blank window opened here can
+// strand embedded browsers such as Android WebView without a usable Back entry.
+let chatImageViewer = null;
+let chatImageViewerPreviousOverflow = '';
+let chatImageViewerOpener = null;
+let chatImageViewerKeyHandler = null;
+const CHAT_IMAGE_VIEWER_HISTORY_KEY = 'chatImageViewer';
+
+function removeChatImageViewer() {
+  if (!chatImageViewer) return;
+  if (chatImageViewerKeyHandler) {
+    document.removeEventListener('keydown', chatImageViewerKeyHandler, true);
+    chatImageViewerKeyHandler = null;
+  }
+  chatImageViewer.remove();
+  chatImageViewer = null;
+  document.body.style.overflow = chatImageViewerPreviousOverflow;
+  //  Put the focus back where it was taken from, so closing the preview does
+  //  not leave the caret on <body> with the message list scrolled away.
+  if (chatImageViewerOpener && document.contains(chatImageViewerOpener)) {
+    chatImageViewerOpener.focus();
+  }
+  chatImageViewerOpener = null;
+}
+
+function closeChatImageViewer() {
+  if (history.state && history.state[CHAT_IMAGE_VIEWER_HISTORY_KEY]) {
+    history.back();
+  } else {
+    removeChatImageViewer();
+  }
+}
+
+window.addEventListener('popstate', () => removeChatImageViewer());
+
+function openChatImageViewer(src) {
+  removeChatImageViewer();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'chat-image-viewer';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Image preview');
+
+  const image = document.createElement('img');
+  image.className = 'chat-image-viewer__image';
+  image.src = src;
+  image.alt = 'Chat image';
+
+  const closeButton = document.createElement('button');
+  closeButton.className = 'chat-image-viewer__close';
+  closeButton.type = 'button';
+  closeButton.setAttribute('aria-label', 'Close image preview');
+  closeButton.innerHTML = '&times;';
+  closeButton.onclick = (event) => {
+    event.stopPropagation();
+    closeChatImageViewer();
+  };
+
+  overlay.append(image, closeButton);
+  overlay.onclick = (event) => {
+    if (event.target === overlay) closeChatImageViewer();
+  };
+
+  //  The overlay says role=dialog and aria-modal=true, so it has to behave like
+  //  one. Listening on the overlay only caught what bubbled through it: tapping
+  //  the picture moves the focus to <body> and Escape went dead from then on.
+  //  Listening on the document, in the capture phase, means Escape closes the
+  //  preview wherever the focus has drifted, and Tab cannot walk out of it into
+  //  the page underneath -- the close button is the only thing to land on.
+  chatImageViewerKeyHandler = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeChatImageViewer();
+    } else if (event.key === 'Tab') {
+      event.preventDefault();
+      closeButton.focus();
+    }
+  };
+  document.addEventListener('keydown', chatImageViewerKeyHandler, true);
+
+  chatImageViewerPreviousOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+  //  Captured before the overlay steals the focus, and restored on close.
+  chatImageViewerOpener = document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : null;
+  document.body.appendChild(overlay);
+  chatImageViewer = overlay;
+  history.pushState({ ...(history.state || {}), [CHAT_IMAGE_VIEWER_HISTORY_KEY]: true }, '');
+  closeButton.focus();
+}
+
 function renderChatMessage(rawText) {
   if (!rawText) return '';
 
@@ -103,17 +224,21 @@ function renderChatMessage(rawText) {
     while ((match = imgRegex.exec(rawText)) !== null) {
       if (match.index > lastIndex) {
         const precedingText = rawText.substring(lastIndex, match.index);
-        const cleanText = precedingText
-          .replaceAll('<br/>', '\n')
-          .replaceAll('<br>', '\n')
-          .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
+        const cleanText = htmlToText(precedingText);
         if (cleanText) {
           parts.push(renderTextWithEmoji(cleanText));
         }
       }
 
       const src = match[1];
-      if (src) {
+      //  A message is written by whoever is at the other end of the tunnel, and
+      //  an <img> pointing at a host of their choosing makes this browser fetch
+      //  it: the reader's address handed over, and a read receipt with it, on a
+      //  conversation whose whole point is that neither is knowable. Embedded
+      //  pictures travel as data: URIs; anything else is shown as the text it is.
+      if (src && !isEmbeddedImageSrc(src)) {
+        parts.push(renderTextWithEmoji(`[remote image not loaded: ${src}]`));
+      } else if (src) {
         parts.push(
           m('img.chat-embedded-image', {
             src,
@@ -127,12 +252,7 @@ function renderChatMessage(rawText) {
               cursor: 'pointer',
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
             },
-            onclick: () => {
-              const w = window.open('');
-              if (w) {
-                w.document.write(`<body style="margin:0;background:#0f172a;display:flex;justify-content:center;align-items:center;min-height:100vh;"><img src="${src}" style="max-width:100%;max-height:100vh;object-fit:contain;"/></body>`);
-              }
-            }
+            onclick: () => openChatImageViewer(src),
           })
         );
       }
@@ -142,10 +262,7 @@ function renderChatMessage(rawText) {
 
     if (lastIndex < rawText.length) {
       const trailingText = rawText.substring(lastIndex);
-      const cleanText = trailingText
-        .replaceAll('<br/>', '\n')
-        .replaceAll('<br>', '\n')
-        .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
+      const cleanText = htmlToText(trailingText);
       if (cleanText) {
         parts.push(renderFormattedMessageText(cleanText));
       }
@@ -155,7 +272,7 @@ function renderChatMessage(rawText) {
   }
 
   // 2. Check for raw data:image/... base64 URLs
-  if (rawText.trim().startsWith('data:image/')) {
+  if (isEmbeddedImageSrc(rawText)) {
     const src = rawText.trim();
     return m('img.chat-embedded-image', {
       src,
@@ -169,22 +286,16 @@ function renderChatMessage(rawText) {
         cursor: 'pointer',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
       },
-      onclick: () => {
-        const w = window.open('');
-        if (w) {
-          w.document.write(`<body style="margin:0;background:#0f172a;display:flex;justify-content:center;align-items:center;min-height:100vh;"><img src="${src}" style="max-width:100%;max-height:100vh;object-fit:contain;"/></body>`);
-        }
-      }
+      onclick: () => openChatImageViewer(src),
     });
   }
 
   // 3. Normal text message
-  const cleanText = rawText
-    .replace(/<blockquote[^>]*>/gi, '\n> ')
-    .replace(/<\/blockquote>/gi, '\n')
-    .replaceAll('<br/>', '\n')
-    .replaceAll('<br>', '\n')
-    .replace(new RegExp('<style[^<]*</style>|<[^>]*>', 'gm'), '');
+  const cleanText = htmlToText(
+    rawText
+      .replace(/<blockquote[^>]*>/gi, '\n> ')
+      .replace(/<\/blockquote>/gi, '\n')
+  );
 
   return renderFormattedMessageText(cleanText);
 }
@@ -292,6 +403,106 @@ const ChatRoomsModel = {
   allRooms: [],
   knownSubscrIds: [],
   subscribedRooms: {},
+  unreadCount: {},
+  invitationIds: new Set(),
+  joiningLobbyId: null,
+  joinError: '',
+  invitationCount() {
+    return this.invitationIds.size;
+  },
+  loadPendingInvitations() {
+    rs.rsJsonApiRequest('/rsChats/getPendingChatLobbyInvites', {}, (data) => {
+      const invites = data && Array.isArray(data.invites) ? data.invites : [];
+      const previousInvitationIds = this.invitationIds;
+      this.invitationIds = new Set(invites.map((invite) => rs.idToHex(invite.lobby_id)));
+      const inviteIds = this.invitationIds;
+      const rooms = this.allRooms.filter((room) => {
+        const id = rs.idToHex(room.lobby_id);
+        return !previousInvitationIds.has(id) && !inviteIds.has(id);
+      });
+      this.allRooms = sortLobbies([...rooms, ...invites]);
+      m.redraw();
+    });
+  },
+  receiveAdministrativeEvent(event) {
+    // RsChatLobbyEventCode::CHAT_LOBBY_INVITE_RECEIVED
+    if (event && Number(event.mEventCode) === 4) this.loadPendingInvitations();
+  },
+  //  An invitation that is neither accepted nor refused keeps the Chat badge
+  //  lit for good: it is counted by invitationCount() and nothing else clears
+  //  it. denyLobbyInvite() is what the core offers for that.
+  declineInvitation(lobbyId) {
+    return rs.rsJsonApiRequest(
+      '/rsChats/denyLobbyInvite',
+      { id: { xstr64: lobbyId } },
+      (data, success) => {
+        if (!success) {
+          //  No answer at all: the core is unreachable or the endpoint is not
+          //  in this build. Nothing was decided, so nothing is dropped here.
+          this.joinError = 'No answer from RetroShare, the invitation was left alone.';
+          m.redraw();
+          return;
+        }
+        if (!data || !data.retval) {
+          //  denyLobbyInvite() only returns false for one reason: the id is not
+          //  in the core's invite queue (DistributedChatService, "lobby invite
+          //  not in cache"). The queue lives in memory only, so a core restart
+          //  empties it while this list still shows what it held before.
+          //
+          //  Either way the invitation is gone as far as the core is concerned,
+          //  and keeping it here would leave the Chat badge lit over something
+          //  that can never be accepted nor refused. Drop it and re-read the
+          //  queue, so the list ends up saying what the core says.
+          this.invitationIds.delete(lobbyId);
+          this.allRooms = this.allRooms.filter(
+            (room) => rs.idToHex(room.lobby_id) !== lobbyId
+          );
+          if (ChatHubState.selectedRoomId === lobbyId) {
+            ChatHubState.selectedRoomId = null;
+            ChatHubState.mobilePane = 'list';
+          }
+          this.joinError = 'RetroShare no longer had this invitation; it has been removed from the list.';
+          this.loadPendingInvitations();
+          m.redraw();
+          return;
+        }
+        this.invitationIds.delete(lobbyId);
+        //  The room came from the invitation, not from the nearby list, so it
+        //  has to go with it -- otherwise it stays as a room with no
+        //  participants that cannot be joined.
+        this.allRooms = this.allRooms.filter(
+          (room) => rs.idToHex(room.lobby_id) !== lobbyId
+        );
+        if (ChatHubState.selectedRoomId === lobbyId) {
+          ChatHubState.selectedRoomId = null;
+          ChatHubState.mobilePane = 'list';
+        }
+        this.joinError = '';
+        m.redraw();
+      }
+    );
+  },
+  acceptInvitation(lobbyId, identity) {
+    this.joiningLobbyId = lobbyId;
+    this.joinError = '';
+    return rs.rsJsonApiRequest(
+      '/rsChats/acceptLobbyInvite',
+      { id: { xstr64: lobbyId }, identity },
+      (data, success) => {
+        this.joiningLobbyId = null;
+        if (!success || !data || !data.retval) {
+          this.joinError = 'RetroShare rejected this identity. This room may require a signed identity.';
+          m.redraw();
+          return;
+        }
+        this.invitationIds.delete(lobbyId);
+        this.loadSubscribedRooms();
+        ChatHubState.selectedRoomType = 'subscribed';
+        ChatLobbyModel.loadLobby(lobbyId);
+        m.redraw();
+      }
+    );
+  },
   loadPublicRooms() {
     rs.rsJsonApiRequest(
       '/rsChats/getListOfNearbyChatLobbies',
@@ -305,14 +516,24 @@ const ChatRoomsModel = {
             seen.add(id);
             return true;
           });
-          ChatRoomsModel.allRooms = sortLobbies(uniqueLobbies);
+          const inviteIds = ChatRoomsModel.invitationIds;
+          const pendingInvites = ChatRoomsModel.allRooms.filter((room) =>
+            inviteIds.has(rs.idToHex(room.lobby_id))
+          );
+          ChatRoomsModel.allRooms = sortLobbies([
+            ...uniqueLobbies.filter((room) => !inviteIds.has(rs.idToHex(room.lobby_id))),
+            ...pendingInvites,
+          ]);
         } else {
-          ChatRoomsModel.allRooms = [];
+          ChatRoomsModel.allRooms = ChatRoomsModel.allRooms.filter((room) =>
+            ChatRoomsModel.invitationIds.has(rs.idToHex(room.lobby_id))
+          );
         }
       }
     );
   },
   loadSubscribedRooms(after = null) {
+    ChatRoomsModel.loadPendingInvitations();
     rs.rsJsonApiRequest(
       '/rsChats/getChatLobbyList',
       {},
@@ -320,6 +541,7 @@ const ChatRoomsModel = {
         if (data && data.cl_list) {
           const ids = [...new Set(data.cl_list.map((lid) => rs.idToHex(lid)))];
           ChatRoomsModel.knownSubscrIds = ids;
+          ids.forEach((id) => ChatRoomsModel.invitationIds.delete(id));
 
           Object.keys(ChatRoomsModel.subscribedRooms).forEach((id) => {
             if (!ids.includes(id)) {
@@ -334,6 +556,15 @@ const ChatRoomsModel = {
             return;
           }
 
+          //  One getChatLobbyInfo per subscribed room, and each one is a whole
+          //  round trip: the JSON API answers `Connection: close`, so nothing is
+          //  pipelined and the browser only keeps six sockets open. Waiting for
+          //  the last answer before painting anything means the list appears
+          //  after N round trips -- invisible over loopback, seconds on a phone.
+          //  Paint each room as it lands instead, and ask for the public ones
+          //  right away rather than queueing them behind the whole batch.
+          ChatRoomsModel.loadPublicRooms();
+
           let count = 0;
           ids.forEach((id) =>
             loadLobbyDetails(id, (info) => {
@@ -341,12 +572,9 @@ const ChatRoomsModel = {
                 ChatRoomsModel.subscribedRooms[id] = info;
               }
               count++;
-              if (count === ids.length) {
-                ChatRoomsModel.loadPublicRooms();
-                if (after != null) {
-                  after();
-                }
-                m.redraw();
+              m.redraw();
+              if (count === ids.length && after != null) {
+                after();
               }
             })
           );
@@ -483,6 +711,76 @@ const ChatLobbyModel = {
   lastLobbyId: null,
   distantChatStatus: null,
   statusPollInterval: null,
+  participantPollInterval: null,
+
+  updateParticipants(detail) {
+    if (!detail) return;
+    const byId = new Map();
+    if (detail.gxs_ids) {
+      if (Array.isArray(detail.gxs_ids)) {
+        detail.gxs_ids.forEach((entry) => {
+          const key = entry && entry.key;
+          if (key) byId.set(key, {
+            key,
+            name: rs.userList.username(key) || key,
+            lastAct: get64Num(entry.value),
+          });
+        });
+      } else if (typeof detail.gxs_ids === 'object') {
+        Object.keys(detail.gxs_ids).forEach((key) => byId.set(key, {
+          key,
+          name: rs.userList.username(key) || key,
+          lastAct: get64Num(detail.gxs_ids[key]),
+        }));
+      }
+    }
+
+    const ownId = detail.gxs_id;
+    if (ownId && ownId !== '00000000000000000000000000000000' && !byId.has(ownId)) {
+      byId.set(ownId, {
+        key: ownId,
+        name: rs.userList.username(ownId) || ownId,
+        lastAct: Math.floor(Date.now() / 1000),
+      });
+    }
+    this.users = Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name));
+  },
+
+  rememberLiveParticipant(chatMessage) {
+    const cid = chatMessage && chatMessage.chat_id;
+    if (!cid || cid.type !== 3 || rs.idToHex(cid.lobby_id) !== this.lastLobbyId) return;
+    const key = rs.idToHex(chatMessage.lobby_peer_gxs_id || chatMessage.peerId);
+    if (!key || /^0+$/.test(key)) return;
+    const existing = this.users.find((user) => user.key === key);
+    if (existing) {
+      existing.lastAct = chatMessage.sendTime || Math.floor(Date.now() / 1000);
+    } else {
+      this.users.push({
+        key,
+        name: rs.userList.username(key) || chatMessage.peerName || key,
+        lastAct: chatMessage.sendTime || Math.floor(Date.now() / 1000),
+      });
+    }
+  },
+
+  startParticipantPolling(lobbyId) {
+    this.stopParticipantPolling();
+    const refresh = () => loadLobbyDetails(lobbyId, (detail) => {
+      if (!detail || this.lastLobbyId !== lobbyId) return;
+      this.currentLobby = { ...this.currentLobby, ...detail, chatType: 3 };
+      this.updateParticipants(detail);
+      m.redraw();
+    });
+    refresh();
+    this.participantPollInterval = setInterval(refresh, 5000);
+  },
+
+  stopParticipantPolling() {
+    if (this.participantPollInterval) {
+      clearInterval(this.participantPollInterval);
+      this.participantPollInterval = null;
+    }
+  },
 
   pollDistantChatStatus() {
     if (!this.currentLobby || this.currentLobby.chatType !== 2) return;
@@ -576,7 +874,12 @@ const ChatLobbyModel = {
     }
   },
 
-  loadHistory(id, type) {
+  //  How much of a conversation is on screen when it opens. Small on purpose:
+  //  every room opening pays for it, and on a phone each request is a fresh
+  //  connection on a core that answers one at a time.
+  HISTORY_PAGE: 20,
+
+  historyChatPeerId(id, type) {
     const chatPeerId = {
       broadcast_status_peer_id: '00000000000000000000000000000000',
       type,
@@ -588,19 +891,65 @@ const ChatLobbyModel = {
     if (type === 3) chatPeerId.lobby_id.xstr64 = id;
     else if (type === 2) chatPeerId.distant_chat_id = id;
     else if (type === 1) chatPeerId.peer_id = id;
+    return chatPeerId;
+  },
+
+  loadHistory(id, type) {
+    this.historyLoaded = this.HISTORY_PAGE;
+    this.historyExhausted = false;
+    this.historyLoading = false;
 
     rs.rsJsonApiRequest(
       '/rsHistory/getMessages',
       {
-        chatPeerId,
-        loadCount: 20,
+        chatPeerId: this.historyChatPeerId(id, type),
+        loadCount: this.HISTORY_PAGE,
       },
       (data, success) => {
         if (success && data.msgs) {
+          if (data.msgs.length < this.HISTORY_PAGE) this.historyExhausted = true;
           this.addMessages(data.msgs);
         }
       }
     );
+  },
+
+  //  Reading further back. p3HistoryMgr::getMessages takes a count and nothing
+  //  else -- no cursor, no "before this message" -- and always answers with the
+  //  newest ones, so the only way to see older text is to ask for a bigger slice
+  //  and let addMessages() drop what is already here. It re-sends what we hold,
+  //  which is the price of that API; a page is small and the core keeps ten days
+  //  at most anyway (mMaxStorageDurationSeconds).
+  loadOlderHistory(done) {
+    const detail = this.currentLobby;
+    if (!detail || this.historyLoading || this.historyExhausted) return false;
+
+    const id = this.lastLobbyId;
+    if (!id) return false;
+
+    this.historyLoading = true;
+    const wanted = (this.historyLoaded || this.HISTORY_PAGE) + this.HISTORY_PAGE * 2;
+
+    rs.rsJsonApiRequest(
+      '/rsHistory/getMessages',
+      {
+        chatPeerId: this.historyChatPeerId(id, detail.chatType),
+        loadCount: wanted,
+      },
+      (data, success) => {
+        this.historyLoading = false;
+        if (!success || !data.msgs) {
+          if (done) done();
+          return;
+        }
+        //  Fewer than asked for means the core has nothing older left.
+        if (data.msgs.length < wanted) this.historyExhausted = true;
+        this.historyLoaded = wanted;
+        this.addMessages(data.msgs);
+        if (done) done();
+      }
+    );
+    return true;
   },
   loadAllHistoryForRoom(lobbyId, callback) {
     ChatHubState.isHistoryLoading = true;
@@ -647,19 +996,50 @@ const ChatLobbyModel = {
     );
   },
   enterPublicLobby(lobbyId, nick) {
+    ChatRoomsModel.joiningLobbyId = lobbyId;
+    ChatRoomsModel.joinError = '';
     rs.rsJsonApiRequest(
       '/rsChats/joinVisibleChatLobby',
       {
         lobby_id: { xstr64: lobbyId },
         own_id: nick,
       },
-      () => {
-        loadLobbyDetails(lobbyId, (info) => {
-          ChatRoomsModel.subscribedRooms[lobbyId] = info;
-          ChatRoomsModel.loadSubscribedRooms(() => {
-            m.route.set('/chat/:lobby', { lobby: rs.idToHex(info.lobby_id) });
-          });
-        });
+      (data, success) => {
+        ChatRoomsModel.joiningLobbyId = null;
+        if (!success || !data || !data.retval) {
+          const room = ChatHubState.selectedRoom || {};
+          const flags = Number(room.lobby_flags || 0);
+          if ((flags & 0x10) !== 0) {
+            ChatRoomsModel.joinError = 'This room requires a signed identity. Select a PGP-linked identity.';
+          } else if (!ChatRoomsModel.invitationIds.has(lobbyId)
+              && Number(room.total_number_of_peers || 0) === 0) {
+            ChatRoomsModel.joinError = 'This room is no longer being advertised by an online participant. Try again when someone in the room is online.';
+            ChatRoomsModel.loadPublicRooms();
+          } else {
+            ChatRoomsModel.joinError = 'RetroShare could not join this room. It may no longer be available; refresh the room list and try again.';
+          }
+          m.redraw();
+          return;
+        }
+
+        // Keep the subscription in the RetroShare profile so the core joins
+        // this room again after a restart. Recent cores also enable this from
+        // joinVisibleChatLobby, but doing it explicitly preserves the expected
+        // behaviour with cores where joining only lasts for the current run.
+        rs.rsJsonApiRequest(
+          '/rsChats/setLobbyAutoSubscribe',
+          {
+            lobby_id: { xstr64: lobbyId },
+            autoSubscribe: true,
+          },
+          () => { },
+          true
+        );
+
+        ChatRoomsModel.loadSubscribedRooms();
+        ChatHubState.selectedRoomType = 'subscribed';
+        ChatLobbyModel.loadLobby(lobbyId);
+        m.redraw();
       },
       true
     );
@@ -695,7 +1075,10 @@ const ChatLobbyModel = {
   },
   loadLobby(currentlobbyid) {
     this.stopStatusPolling();
+    this.stopParticipantPolling();
     this.lastLobbyId = currentlobbyid;
+    ChatRoomsModel.unreadCount[currentlobbyid] = 0;
+    ChatHubState.showParticipants = false;
 
     const finishLoad = (detail) => {
       this.setupAction = this.setIdentity;
@@ -713,76 +1096,50 @@ const ChatLobbyModel = {
         this.addMessages(l);
       });
 
-      rs.events[15].notify = (chatMessage) => {
-        const msgCid = chatMessage.chat_id;
-        let msgId;
-
-        if (msgCid.type === 3) {
-          msgId = rs.idToHex(msgCid.lobby_id);
-        } else if (msgCid.type === 2) {
-          msgId = rs.idToHex(msgCid.distant_chat_id);
-        } else if (msgCid.type === 1) {
-          msgId = rs.idToHex(msgCid.peer_id);
-        } else {
-          msgId = rs.idToHex(msgCid);
-        }
-
-        if (msgId === currentlobbyid) {
-          this.addMessages([chatMessage]);
-        }
-      };
-
-      let list = [];
-      if (detail.gxs_ids) {
-        if (Array.isArray(detail.gxs_ids)) {
-          list = detail.gxs_ids.map((u) => {
-            const key = u.key;
-            return { key, name: rs.userList.username(key) || key, lastAct: get64Num(u.value) };
-          });
-        } else if (typeof detail.gxs_ids === 'object') {
-          list = Object.keys(detail.gxs_ids).map((key) => {
-            return { key, name: rs.userList.username(key) || key, lastAct: get64Num(detail.gxs_ids[key]) };
-          });
-        }
-      }
-
-      const ownId = detail.gxs_id;
-      if (ownId && ownId !== '00000000000000000000000000000000') {
-        const hasOwn = list.some((u) => u.key === ownId);
-        if (!hasOwn) {
-          list.push({
-            key: ownId,
-            name: rs.userList.username(ownId) || ownId,
-            lastAct: Math.floor(Date.now() / 1000)
-          });
-        }
-      }
-
-      if (list.length === 0) {
-        list = [{ key: ownId || '', name: rs.userList.username(ownId) || detail.lobby_name || '???', lastAct: Math.floor(Date.now() / 1000) }];
-      }
-
-      list.sort((a, b) => a.name.localeCompare(b.name));
-      this.users = list;
+      this.updateParticipants(detail);
 
       if (detail.chatType === 2) {
         this.startStatusPolling();
+      } else if (detail.chatType === 3) {
+        this.startParticipantPolling(currentlobbyid);
       }
 
       m.redraw();
     };
 
-    loadLobbyDetails(currentlobbyid, (detail) => {
+    const isDistantChatId = /^[0-9a-f]{32}$/i.test(String(currentlobbyid));
+    const loadDetails = (attempt = 0) => loadLobbyDetails(currentlobbyid, (detail) => {
       if (detail) {
         finishLoad(detail);
-      } else {
+        return;
+      }
+
+      // Public lobby IDs are uint64 decimal strings. Passing one to the
+      // distant-chat fallback makes the core construct a 128-bit tunnel ID
+      // from (for example) a 20-character decimal value and can terminate the
+      // JSON API listener. Only a real 32-hex-character tunnel ID may use it.
+      if (isDistantChatId) {
         loadDistantChatDetails(currentlobbyid, (dDetail) => {
-          if (dDetail) {
-            finishLoad(dDetail);
-          }
+          if (dDetail) finishLoad(dDetail);
         });
+        return;
+      }
+
+      // A newly joined room may not be immediately visible through
+      // getChatLobbyInfo. Prefer the lobby data already loaded by the room
+      // lists, then retry briefly while the core completes the subscription.
+      const cached = ChatRoomsModel.subscribedRooms[currentlobbyid]
+        || (ChatRoomsModel.allRooms || []).find(
+          (room) => rs.idToHex(room.lobby_id) === currentlobbyid
+        );
+      if (cached) {
+        finishLoad({ ...cached, chatType: 3 });
+      } else if (attempt < 3) {
+        setTimeout(() => loadDetails(attempt + 1), 250 * (attempt + 1));
       }
     });
+
+    loadDetails();
   },
   loadPublicLobby(currentlobbyid) {
     this.setupAction = this.enterPublicLobby;
@@ -845,6 +1202,7 @@ const ChatLobbyModel = {
 // ************************* Chat Hub State ****************************
 
 const ChatHubState = {
+  mobilePane: 'list',
   selectedRoomId: null,
   selectedRoom: null,
   selectedRoomType: null,
@@ -854,6 +1212,8 @@ const ChatHubState = {
   hoveredUser: null,
   mutedUsers: new Set(),
   activeMenu: null,
+  //  Phone only: the participants column is shown as a sheet over the messages.
+  showParticipants: false,
   showAttachModal: false,
   attachPath: '',
   attachBrowseHint: false,
@@ -888,6 +1248,22 @@ const ChatHubState = {
   },
 };
 
+function receiveLobbyChatMessage(chatMessage) {
+  const cid = chatMessage && chatMessage.chat_id;
+  if (!cid || cid.type !== 3) return;
+  const lobbyId = rs.idToHex(cid.lobby_id);
+  if (!lobbyId) return;
+  ChatLobbyModel.rememberLiveParticipant(chatMessage);
+  const isOpen = m.route.get().split('/')[1] === 'chat'
+    && ChatLobbyModel.lastLobbyId === lobbyId
+    && (window.innerWidth > 700 || ChatHubState.mobilePane === 'detail');
+  if (isOpen) ChatLobbyModel.addMessages([chatMessage]);
+  else if (chatMessage.incoming === true) {
+    ChatRoomsModel.unreadCount[lobbyId] = (ChatRoomsModel.unreadCount[lobbyId] || 0) + 1;
+    m.redraw();
+  }
+}
+
 module.exports = {
   get64Num,
   loadLobbyDetails,
@@ -904,4 +1280,5 @@ module.exports = {
   Message,
   ChatLobbyModel,
   ChatHubState,
+  receiveLobbyChatMessage,
 };

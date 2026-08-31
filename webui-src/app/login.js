@@ -29,13 +29,18 @@ function loginComponent() {
   const urlParams = new URLSearchParams(window.location.search);
   let uname = urlParams.get('Username') || 'webui';
   let passwd = urlParams.get('Password') || '';
+  //  Parenthesised on purpose: === binds tighter than ||, so without them the
+  //  test read `(Url || protocol === 'file:') ? default : origin`, and any
+  //  ?Url= given was thrown away in favour of the hardcoded default -- the one
+  //  case the parameter exists for.
   let url =
-    urlParams.get('Url') || window.location.protocol === 'file:'
+    urlParams.get('Url') ||
+    (window.location.protocol === 'file:'
       ? 'http://127.0.0.1:9092'
       : window.location.protocol +
       '//' +
       window.location.host +
-      window.location.pathname.replace('/index.html', '');
+      window.location.pathname.replace('/index.html', ''));
   let withOptions = false;
 
   const logo = () =>

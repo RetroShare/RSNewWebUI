@@ -7,6 +7,7 @@ const { EditIdentity, DeleteIdentity } = ownIdsLayout;
 const {
   State,
   fetchIdDetails,
+  refreshSelectedIdDetails,
   getSafeAvatar,
   get64Num,
   createUsageString,
@@ -16,6 +17,7 @@ const {
 
 const DetailsTab = () => {
   return {
+    oninit: () => refreshSelectedIdDetails(),
     view: () => {
       fetchIdDetails(State.selectedId);
       const details = State.selectedId ? State.gxsIdToDetailsMap[State.selectedId] : null;
@@ -97,10 +99,11 @@ const DetailsTab = () => {
                           widget.popupMessage(
                             m(EditIdentity, {
                               details,
-                            })
+                            }),
+                            'edit-identity-modal'
                           ),
                       },
-                      [m('i.fas.fa-edit'), ' Edit']
+                      [m('i.fas.fa-edit'), m('span.btn-text', ' Edit')]
                     ),
                     m(
                       'button.btn.red',
@@ -113,7 +116,7 @@ const DetailsTab = () => {
                             })
                           ),
                       },
-                      [m('i.fas.fa-trash-alt'), ' Delete']
+                      [m('i.fas.fa-trash-alt'), m('span.btn-text', ' Delete')]
                     ),
                   ]
                 : [
@@ -125,7 +128,7 @@ const DetailsTab = () => {
                           initializeDistantChat();
                         },
                       },
-                      [m('i.fas.fa-comment-alt'), ' Start Chat']
+                      [m('i.fas.fa-comment-alt'), m('span.btn-text', ' Start Chat')]
                     ),
                     m(
                       'button.btn.blue',
@@ -134,7 +137,7 @@ const DetailsTab = () => {
                           State.showMailCompose = true;
                         },
                       },
-                      [m('i.fas.fa-envelope'), ' Send Mail']
+                      [m('i.fas.fa-envelope'), m('span.btn-text', ' Send Mail')]
                     ),
                     m(
                       'button.btn' + (isContact ? '.red' : '.blue'),
@@ -151,8 +154,8 @@ const DetailsTab = () => {
                         },
                       },
                       isContact
-                        ? [m('i.fas.fa-user-minus'), ' Remove Contact']
-                        : [m('i.fas.fa-user-plus'), ' Add Contact']
+                        ? [m('i.fas.fa-user-minus'), m('span.btn-text', ' Remove Contact')]
+                        : [m('i.fas.fa-user-plus'), m('span.btn-text', ' Add Contact')]
                     ),
                   ],
             ]),
@@ -164,23 +167,26 @@ const DetailsTab = () => {
             m('.info-label', 'GXS ID'),
             m('.info-value', details.mId),
             m('.info-label', 'Type'),
-            m('.info-value', details.mFlags === 14 ? 'Signed ID' : 'Anonymous ID'),
+            //  mFlags is a bitfield: RS_IDENTITY_FLAGS_PGP_LINKED is 0x2.
+            //  Comparing the whole word against 14 -- PGP_LINKED | PGP_KNOWN |
+            //  IS_OWN_ID -- only ever matched our own signed identities, so
+            //  every signed identity of somebody else read "Anonymous".
+            m('.info-value', (details.mFlags & 0x2) ? 'Signed ID' : 'Anonymous ID'),
             m('.info-label', 'Owner Node GPG'),
             m('.info-value', pgpId && pgpId !== '0000000000000000' ? pgpId : 'None'),
             m('.info-label', 'Created On'),
-            m(
-              '.info-value',
-              typeof details.mPublishTS === 'object'
-                ? new Date(details.mPublishTS.xint64 * 1000).toLocaleString()
-                : 'Unknown'
-            ),
+            //  get64Num exists for these: a 64 bit field arrives as
+            //  {xint64, xstr64}, and large values carry xstr64 alone -- reading
+            //  .xint64 straight then dates the identity to "Invalid Date".
+            m('.info-value', (() => {
+              const ts = get64Num(details.mPublishTS);
+              return ts > 0 ? new Date(ts * 1000).toLocaleString() : 'Unknown';
+            })()),
             m('.info-label', 'Last Used'),
-            m(
-              '.info-value',
-              typeof details.mLastUsageTS === 'object'
-                ? new Date(details.mLastUsageTS.xint64 * 1000).toLocaleDateString()
-                : 'Unknown'
-            ),
+            m('.info-value', (() => {
+              const ts = get64Num(details.mLastUsageTS);
+              return ts > 0 ? new Date(ts * 1000).toLocaleDateString() : 'Unknown';
+            })()),
             m('.info-label', 'Friend votes'),
             m('.info-value', details.mReputation && (details.mReputation.mFriendsPositiveVotes > 0 || details.mReputation.mFriendsNegativeVotes > 0)
               ? `${details.mReputation.mFriendsPositiveVotes} positive, ${details.mReputation.mFriendsNegativeVotes} negative`

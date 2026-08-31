@@ -2,6 +2,7 @@ const m = require('mithril');
 const rs = require('rswebui');
 const Data = require('network/network_data');
 const compose = require('mail/mail_compose');
+const peopleUtil = require('people/people_util');
 const {
   State,
   fetchIdDetails,
@@ -12,6 +13,10 @@ const {
   startStatusPolling,
   stopStatusPolling,
   initializeDistantChat,
+  selectChatContact,
+  getDistantChatSession,
+  drainBufferedChatMessages,
+  markDistantChatRead,
 } = require('people/people_state');
 
 const PeopleSidebar = require('people/people_sidebar');
@@ -19,6 +24,7 @@ const DetailsTab = require('people/people_details_tab');
 const ChatTab = require('people/people_chat_tab');
 
 const PeopleLayout = () => {
+  let stopWatchingOwnIds;
   const dismissMenu = () => {
     if (State.activeMenu) {
       State.activeMenu = null;
@@ -29,75 +35,52 @@ const PeopleLayout = () => {
   return {
     oninit: (vnode) => {
       syncFilter(vnode.attrs.tab);
-      Data.refreshGpgDetails().then(() => m.redraw());
+      //  The friend list carries the locations the direct chat history is keyed
+      //  by, so the preload only has its full candidate set once it landed.
+      Data.refreshGpgDetails().then(() => {
+        preloadAllChatHistory();
+        m.redraw();
+      });
       loadGxsIdentities();
-      loadOwnGxsIds().then(() => preloadAllChatHistory());
-      preloadAllChatHistory();
+      loadOwnGxsIds().then(() => {
+        preloadAllChatHistory();
+        //  "Start private chat" from a chat room routes here with the chat tab
+        //  preselected, but nothing ever opened the tunnel: the pane sat on its
+        //  Connecting spinner for good. That intent is explicit, so it is
+        //  honoured -- once the own identities needed to open a tunnel are in.
+        if (State.pendingChatOpen && State.pendingChatOpen === State.selectedId) {
+          State.pendingChatOpen = null;
+          initializeDistantChat();
+        } else {
+          State.pendingChatOpen = null;
+        }
+      });
+      stopWatchingOwnIds = peopleUtil.watchOwnIds((ids) => {
+        State.ownGxsIds = ids || [];
+        if (!peopleUtil.isUsableIdentityId(State.selectedId)) {
+          State.selectedId = State.ownGxsIds[0] || null;
+          State.mobilePane = State.selectedId ? State.mobilePane : 'list';
+        }
+        if (!State.selectedOwnGxsIdForChat && State.ownGxsIds.length) {
+          State.selectedOwnGxsIdForChat = State.ownGxsIds[0];
+        }
+        m.redraw();
+      });
       window.addEventListener('click', dismissMenu);
 
-      // Register for chatEvents to receive live incoming messages
-      rs.events[15].notify = (chatMessage) => {
-        const msgCid = chatMessage.chat_id;
-        if (msgCid && msgCid.type === 2) {
-          const msgPid = rs.idToHex(msgCid.distant_chat_id);
-
-          // Find active session matching this distant chat PID
-          let session = null;
-          let targetGxsId = null;
-          Object.keys(State.activeDistantChats || {}).forEach((id) => {
-            if (State.activeDistantChats[id] && State.activeDistantChats[id].pid === msgPid) {
-              session = State.activeDistantChats[id];
-              targetGxsId = id;
-            }
-          });
-
-          if (session) {
-            const isNearDuplicate = session.messages.some(
-              (m) => (m.msg || m.message) === chatMessage.msg && Math.abs(m.sendTime - chatMessage.sendTime) < 5
-            );
-            if (!isNearDuplicate) {
-              session.messages.push(chatMessage);
-              session.messages.sort((a, b) => a.sendTime - b.sendTime);
-              if (targetGxsId) {
-                State.chatHistoryMap[targetGxsId] = {
-                  lastMsg: chatMessage.msg || chatMessage.message || '',
-                  lastTime: chatMessage.sendTime || Math.floor(Date.now() / 1000),
-                };
-              }
-              m.redraw();
-              if (State.selectedId === targetGxsId) {
-                setTimeout(() => {
-                  const element = document.querySelector('.chat-messages');
-                  if (element) element.scrollTop = element.scrollHeight;
-                }, 100);
-              }
-            }
-          } else if (State.chatPid && msgPid === State.chatPid) {
-            const isNearDuplicate = State.chatMessages.some(
-              (m) => (m.msg || m.message) === chatMessage.msg && Math.abs(m.sendTime - chatMessage.sendTime) < 5
-            );
-            if (!isNearDuplicate) {
-              State.chatMessages.push(chatMessage);
-              State.chatMessages.sort((a, b) => a.sendTime - b.sendTime);
-              m.redraw();
-              setTimeout(() => {
-                const element = document.querySelector('.chat-messages');
-                if (element) element.scrollTop = element.scrollHeight;
-              }, 100);
-            }
-          }
-        }
-      };
-
-      if (State.chatPid && !State.chatDisconnected) {
+      //  Only poll a tunnel that is the selected contact's own; anything
+      //  else is left over from a previous selection.
+      const selectedSession = State.selectedId ? getDistantChatSession(State.selectedId) : null;
+      if (State.chatPid && !State.chatDisconnected && selectedSession && selectedSession.pid === State.chatPid) {
+        //  Messages received while the tab was unmounted sit in the event
+        //  queue buffer: pick them up before the first redraw.
+        drainBufferedChatMessages(selectedSession);
         startStatusPolling();
       }
     },
     onremove: () => {
-      if (rs.events[15]) {
-        rs.events[15].notify = () => {};
-      }
       stopStatusPolling();
+      if (stopWatchingOwnIds) stopWatchingOwnIds();
       window.removeEventListener('click', dismissMenu);
     },
 
@@ -109,12 +92,19 @@ const PeopleLayout = () => {
       const details = State.selectedId ? State.gxsIdToDetailsMap[State.selectedId] : null;
       const name = details ? details.mNickname || details.mGroupName || 'Unknown' : '';
 
-      return m('.people-container', [
+      return m('.people-container' + (State.mobilePane === 'detail' ? '.mobile-detail-open' : ''), [
         // Left Side Panel
         m(PeopleSidebar),
 
         // Right Side Details / Actions Pane
         m('.people-right-pane', [
+          m('.mobile-pane-header', [
+            m('button.mobile-back-button', {
+              type: 'button',
+              onclick: () => { State.mobilePane = 'list'; },
+            }, [m('i.fas.fa-chevron-left'), State.mainTab === 'chats' ? ' Chats' : ' People']),
+            m('strong', name || 'Profile'),
+          ]),
           State.selectedId && details
             ? [
                 m('.network-tabs', [
@@ -123,6 +113,7 @@ const PeopleLayout = () => {
                     {
                       onclick: () => {
                         State.activeTab = 'details';
+                        State.mobilePane = 'detail';
                         stopStatusPolling();
                       },
                     },
@@ -133,13 +124,15 @@ const PeopleLayout = () => {
                     {
                       onclick: () => {
                         State.activeTab = 'chat';
+                        State.mobilePane = 'detail';
+                        markDistantChatRead(State.selectedId);
                         initializeDistantChat();
                       },
                     },
                     'Chat Conversation'
                   ),
                 ]),
-                m('.network-tab-content', [
+                m('.network-tab-content' + (State.activeTab === 'chat' ? '.network-chat-tab-content' : ''), [
                   State.activeTab === 'details' ? m(DetailsTab) : m(ChatTab),
                 ]),
               ]
@@ -199,7 +192,10 @@ PeopleLayout.setSelectedId = (id, activeTab = 'details', showCompose = false) =>
 
   State.activeFilter = filter;
   State.selectedId = id;
+  selectChatContact(id);
   State.activeTab = activeTab;
+  State.pendingChatOpen = activeTab === 'chat' ? id : null;
+  State.mobilePane = 'detail';
   if (showCompose) {
     State.showMailCompose = true;
   }

@@ -2,6 +2,7 @@ const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
+const chatPreviewText = require('chat/chat_preview');
 const ownIdsLayout = require('people/people_ownids');
 const { CreateIdentity } = ownIdsLayout;
 const {
@@ -14,7 +15,11 @@ const {
   get64Num,
   stopStatusPolling,
   initializeDistantChat,
+  markDistantChatRead,
+  isDistantChatActive,
 } = require('people/people_state');
+
+const LIST_RENDER_CAP = 200;
 
 function formatRelativeTime(ts) {
   if (!ts) return '';
@@ -35,16 +40,17 @@ const PeopleSidebar = () => {
       // 1. Determine list based on mainTab ('people' vs 'chats')
       let displayItems;
 
-      // 0. Compute active chats count (conversations with real message history)
-      const allUserGroupIds = new Set((rs.userList.users || []).map((u) => u.mGroupId));
-      Object.keys(State.chatHistoryMap || {}).forEach((id) => allUserGroupIds.add(id));
-      let activeChatsCount = 0;
-      allUserGroupIds.forEach((gxsId) => {
-        const hist = State.chatHistoryMap && State.chatHistoryMap[gxsId];
-        if (hist && hist.lastMsg && !isSystemMsg(hist.lastMsg)) {
-          activeChatsCount++;
-        }
+      //  0. The conversations we know of. Only peers with a real message ever
+      //  get an entry in chatHistoryMap, so reading it directly answers both
+      //  the badge and the list. Sweeping the whole identity list instead --
+      //  tens of thousands of them on an old node -- costs that sweep on every
+      //  redraw, and it counts nothing the map does not already hold.
+      const chatPeerIds = Object.keys(State.chatHistoryMap || {}).filter((gxsId) => {
+        const hist = State.chatHistoryMap[gxsId];
+        return Boolean(hist && hist.lastMsg && !isSystemMsg(hist.lastMsg));
       });
+      const unreadChatsCount = Object.values(State.unreadChatCount || {})
+        .reduce((total, count) => total + count, 0);
 
       if (State.mainTab === 'people') {
         let baseList;
@@ -67,25 +73,19 @@ const PeopleSidebar = () => {
           return nameA.localeCompare(nameB);
         });
       } else {
-        // Chats Tab: ONLY contacts and identities that have real chat history (ignoring system tunnel status logs)
-        displayItems = Array.from(allUserGroupIds)
+        // Chats Tab: ONLY identities that have real chat history (ignoring system tunnel status logs)
+        displayItems = chatPeerIds
           .map((gxsId) => {
+            //  Details are fetched for the handful of peers actually listed,
+            //  not for every identity the node has ever seen.
+            fetchIdDetails(gxsId);
             const entry = rs.userList.userMap[gxsId];
             const name = entry && entry.name ? entry.name : (rs.userList.username(gxsId) || 'Unknown');
             return { mGroupId: gxsId, mGroupName: name };
           })
-          .filter((item) => {
-            const gxsId = item.mGroupId;
-            fetchIdDetails(gxsId);
-            const hist = State.chatHistoryMap && State.chatHistoryMap[gxsId];
-
-            const hasRealHistory = Boolean(hist && hist.lastMsg && !isSystemMsg(hist.lastMsg));
-
-            if (!hasRealHistory) return false;
-
-            const name = item.mGroupName || 'Unknown';
-            return name.toLowerCase().includes(State.searchString.toLowerCase());
-          });
+          .filter((item) => (item.mGroupName || 'Unknown')
+            .toLowerCase()
+            .includes(State.searchString.toLowerCase()));
 
         // Sort by chat timestamp descending
         displayItems.sort((a, b) => {
@@ -99,6 +99,13 @@ const PeopleSidebar = () => {
           return timeB - timeA;
         });
       }
+
+      //  "All Users" is every identity the node has ever seen -- tens of
+      //  thousands on an old profile. Rendering them all builds that many DOM
+      //  rows and fires one getIdDetails per row from inside this view. The
+      //  list is capped instead, and the search narrows it.
+      const shownItems = displayItems.slice(0, LIST_RENDER_CAP);
+      const hiddenCount = displayItems.length - shownItems.length;
 
       return m('.people-left-pane', [
         // Sidebar Header Container
@@ -138,7 +145,7 @@ const PeopleSidebar = () => {
               [
                 m('i.fas.fa-comments'),
                 ' Chats',
-                activeChatsCount > 0 && m('span.segment-badge', activeChatsCount),
+                unreadChatsCount > 0 && m('span.segment-badge', unreadChatsCount),
               ]
             ),
           ]),
@@ -173,7 +180,7 @@ const PeopleSidebar = () => {
                 m(
                   'button.btn-add-id[title=Create New Identity]',
                   {
-                    onclick: () => widget.popupMessage(m(CreateIdentity)),
+                    onclick: () => widget.popupMessage(m(CreateIdentity), 'create-identity-modal'),
                   },
                   m('i.fas.fa-plus')
                 ),
@@ -185,18 +192,21 @@ const PeopleSidebar = () => {
           m('.friends-scroll', [
             displayItems.length === 0
               ? m('.network-pane-placeholder', { style: 'padding: 2rem 0;' }, State.mainTab === 'chats' ? 'No active chats' : 'No identities found')
-              : displayItems.map((item) => {
-                  let gxsId, displayName;
+              : shownItems.map((item) => {
+                  let gxsId;
                   if (State.mainTab === 'people' && State.activeFilter === 'own') {
                     gxsId = item;
-                    displayName = rs.userList.username(gxsId) || 'Unknown';
                   } else {
                     gxsId = item.mGroupId;
-                    displayName = item.mGroupName || 'Unknown';
                   }
 
                   fetchIdDetails(gxsId);
                   const itemDetails = State.gxsIdToDetailsMap[gxsId];
+                  const displayName = (itemDetails && (itemDetails.mNickname || itemDetails.mGroupName))
+                    || (State.mainTab === 'people' && State.activeFilter === 'own'
+                      ? rs.userList.username(gxsId)
+                      : item.mGroupName)
+                    || 'Loading…';
                   const itemAvatar = getSafeAvatar(itemDetails);
                   const itemFirstLetter = (displayName || '?').slice(0, 1).toUpperCase();
                   const isSelected = State.selectedId === gxsId;
@@ -204,11 +214,14 @@ const PeopleSidebar = () => {
                   const itemEntry = rs.userList.userMap[gxsId];
                   const itemIsContact = itemEntry && itemEntry.isContact;
                   const itemIsOwn = State.ownGxsIds.includes(gxsId);
+                  const hasActiveTunnel = isDistantChatActive(gxsId);
 
                   const hist = State.chatHistoryMap[gxsId];
                   const lastTS = hist ? hist.lastTime : (itemDetails ? get64Num(itemDetails.mLastUsageTS) : 0);
                   const relativeTimeStr = formatRelativeTime(lastTS);
-                  const lastMsgText = hist && hist.lastMsg ? hist.lastMsg : (itemIsOwn ? 'My Identity' : itemIsContact ? 'Saved Contact' : 'Distant Chat');
+                  const lastMsgText = hist && hist.lastMsg
+                    ? chatPreviewText(hist.lastMsg)
+                    : (itemIsOwn ? 'My Identity' : itemIsContact ? 'Saved Contact' : 'Distant Chat');
 
                   if (State.mainTab === 'chats') {
                     return m(
@@ -221,6 +234,8 @@ const PeopleSidebar = () => {
                           State.activeMenu = null;
                           State.selectedId = gxsId;
                           State.activeTab = 'chat';
+                          State.mobilePane = 'detail';
+                          markDistantChatRead(gxsId);
                           initializeDistantChat();
                           m.redraw();
                         },
@@ -248,8 +263,11 @@ const PeopleSidebar = () => {
                           }),
                           m('.status-dot', {
                             style: {
-                              backgroundColor: itemIsContact || itemIsOwn ? '#22c55e' : '#cbd5e1',
+                              backgroundColor: hasActiveTunnel ? '#22c55e' : '#cbd5e1',
                             },
+                            title: hasActiveTunnel
+                              ? 'Distant chat tunnel active'
+                              : 'Distant chat tunnel inactive',
                           }),
                         ]),
                         m('.chat-info', [
@@ -258,6 +276,8 @@ const PeopleSidebar = () => {
                         ]),
                         m('.chat-meta', [
                           relativeTimeStr && m('.chat-time', relativeTimeStr),
+                          (State.unreadChatCount[gxsId] || 0) > 0
+                            && m('.chat-unread-badge', State.unreadChatCount[gxsId]),
                         ]),
                       ]
                     );
@@ -275,13 +295,19 @@ const PeopleSidebar = () => {
 
                         const idChanged = State.selectedId !== gxsId;
                         State.selectedId = gxsId;
+                        State.mobilePane = 'detail';
                         if (idChanged) {
                           State.chatPid = null;
                           State.chatMessages = [];
                           stopStatusPolling();
-                          if (State.activeTab === 'chat') {
-                            initializeDistantChat();
-                          }
+                          //  Selecting somebody is not asking to talk to them.
+                          //  The chat tab is sticky, so inheriting it here meant
+                          //  that once a conversation had been opened, every
+                          //  later click in the list silently requested a GXS
+                          //  tunnel toward the contact -- an action the peer
+                          //  sees. Show the profile; the tunnel waits for the
+                          //  Chat Conversation tab.
+                          State.activeTab = 'details';
                         }
                         m.redraw();
                       },
@@ -320,6 +346,9 @@ const PeopleSidebar = () => {
                     ]
                   );
                 }),
+            hiddenCount > 0 && m('.friends-list-more', {
+              style: 'padding: 0.75rem 1rem; color: #64748b; font-size: 0.85rem; font-style: italic;',
+            }, `${hiddenCount} more identities — search to narrow the list`),
           ]),
 
           // Context Menu
@@ -327,66 +356,91 @@ const PeopleSidebar = () => {
             const menu = State.activeMenu;
             const isOwn = State.ownGxsIds.includes(menu.gxsId);
 
-            return m('.people-context-menu', {
-              style: {
-                top: `${menu.top}px`,
-                left: menu.left !== undefined ? `${menu.left}px` : '10px',
-                position: 'absolute',
-                zIndex: 1000,
-              },
-              onclick: (e) => {
-                e.stopPropagation();
-              },
-            }, [
-              !isOwn && m('.menu-item', {
-                onclick: () => {
+            return [
+              m('.menu-backdrop', {
+                style: {
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 9998,
+                },
+                onclick: (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   State.activeMenu = null;
-                  State.selectedId = menu.gxsId;
-                  State.activeTab = 'chat';
-                  State.chatPid = null;
-                  State.chatMessages = [];
-                  initializeDistantChat();
                   m.redraw();
                 },
-              }, [
-                m('i.fas.fa-comments', { style: 'color: #3b82f6; margin-right: 0.5rem;' }),
-                'Start chat',
-              ]),
-              !isOwn && m('.menu-item', {
-                onclick: () => {
+                oncontextmenu: (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   State.activeMenu = null;
-                  State.selectedId = menu.gxsId;
-                  State.activeTab = 'details';
-                  State.showMailCompose = true;
                   m.redraw();
                 },
-              }, [
-                m('i.fas.fa-envelope', { style: 'color: #10b981; margin-right: 0.5rem;' }),
-                'Send mail',
-              ]),
-              !isOwn && m('.menu-item', {
-                onclick: () => {
-                  State.activeMenu = null;
-                  rs.rsJsonApiRequest(
-                    '/rsIdentity/setAsRegularContact',
-                    { id: menu.gxsId, isContact: !menu.isContact },
-                    (data, success) => {
-                      if (success) {
-                        loadGxsIdentities();
-                      }
-                    }
-                  );
+              }),
+              m('.people-context-menu', {
+                style: {
+                  top: `${menu.top}px`,
+                  left: menu.left !== undefined ? `${menu.left}px` : '10px',
+                  position: 'absolute',
+                  zIndex: 9999,
+                },
+                onclick: (e) => {
+                  e.stopPropagation();
                 },
               }, [
-                m('i.fas' + (menu.isContact ? '.fa-user-minus' : '.fa-user-plus'), {
-                  style: {
-                    color: menu.isContact ? '#ef4444' : '#3b82f6',
-                    marginRight: '0.5rem',
+                !isOwn && m('.menu-item', {
+                  onclick: () => {
+                    State.activeMenu = null;
+                    State.selectedId = menu.gxsId;
+                    State.activeTab = 'chat';
+                    State.chatPid = null;
+                    State.chatMessages = [];
+                    initializeDistantChat();
+                    m.redraw();
                   },
-                }),
-                menu.isContact ? 'Remove from Contacts' : 'Add to Contacts',
+                }, [
+                  m('i.fas.fa-comments', { style: 'color: #3b82f6; margin-right: 0.5rem;' }),
+                  'Start chat',
+                ]),
+                !isOwn && m('.menu-item', {
+                  onclick: () => {
+                    State.activeMenu = null;
+                    State.selectedId = menu.gxsId;
+                    State.activeTab = 'details';
+                    State.showMailCompose = true;
+                    m.redraw();
+                  },
+                }, [
+                  m('i.fas.fa-envelope', { style: 'color: #10b981; margin-right: 0.5rem;' }),
+                  'Send mail',
+                ]),
+                !isOwn && m('.menu-item', {
+                  onclick: () => {
+                    State.activeMenu = null;
+                    rs.rsJsonApiRequest(
+                      '/rsIdentity/setAsRegularContact',
+                      { id: menu.gxsId, isContact: !menu.isContact },
+                      (data, success) => {
+                        if (success) {
+                          //  isContact is read from rs.userList.userMap, which
+                          //  only loadUsers() refreshes: reloading the identity
+                          //  summaries alone left the list showing the old state.
+                          rs.userList.loadUsers();
+                          loadGxsIdentities();
+                        }
+                      }
+                    );
+                  },
+                }, [
+                  m('i.fas' + (menu.isContact ? '.fa-user-minus' : '.fa-user-plus'), {
+                    style: {
+                      color: menu.isContact ? '#ef4444' : '#3b82f6',
+                      marginRight: '0.5rem',
+                    },
+                  }),
+                  menu.isContact ? 'Remove from Contacts' : 'Add to Contacts',
+                ]),
               ]),
-            ]);
+            ];
           })(),
         ]),
       ]);
