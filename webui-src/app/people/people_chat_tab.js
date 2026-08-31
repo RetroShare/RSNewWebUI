@@ -109,15 +109,15 @@ const ChatTab = () => {
       const name = details.mNickname || details.mGroupName || 'Unknown';
 
       if (State.ownGxsIds.length === 0) {
-        return m('.chat-warning', [
+        return m('.network-chat-view', m('.chat-warning', [
           m('i.fas.fa-exclamation-triangle'),
           m('h4', 'No Identities Found'),
           m('p', 'You need to create a GXS identity in the "My Identities" tab before you can start distant chats.'),
-        ]);
+        ]));
       }
 
       if (State.chatDisconnected) {
-        return m('.chat-warning', [
+        return m('.network-chat-view', m('.chat-warning', [
           m('i.fas.fa-unlink', { style: 'font-size: 2rem; color: #ef4444; margin-bottom: 1rem;' }),
           m('h4', 'Conversation Ended'),
           m('p', State.chatCloseFoundNothing
@@ -129,15 +129,15 @@ const ChatTab = () => {
             style: 'margin-top: 1rem; padding: 0.5rem 1.5rem; border-radius: 0.375rem; border: none; font-weight: 600; cursor: pointer;',
             onclick: () => initializeDistantChat(),
           }, 'Reconnect'),
-        ]);
+        ]));
       }
 
       if (!State.chatPid) {
-        return m('.chat-warning', [
+        return m('.network-chat-view', m('.chat-warning', [
           m('i.fas.fa-spinner.fa-spin'),
           m('h4', 'Connecting...'),
           m('p', 'Initiating distant chat tunnel to the peer identity...'),
-        ]);
+        ]));
       }
 
       const canTalk = State.distantChatStatus && State.distantChatStatus.status === 2;
