@@ -742,12 +742,22 @@ textarea.chatMsg {
   }
 
   .participant-name {
+    flex: 1;
+    min-width: 0;
     font-size: 0.875rem;
     color: #334155;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
+}
+
+.participant-actions {
+  display: none;
+}
+
+.participant-more {
+  display: none;
 }
 
 @media (max-width: 700px) {
@@ -764,6 +774,56 @@ textarea.chatMsg {
 
   .chat-hub-tab-content.details-content .participant-card {
     min-height: 3rem;
+    flex-wrap: wrap;
+  }
+
+  .chat-hub-tab-content.details-content .participant-card.has-actions {
+    cursor: pointer;
+  }
+
+  .chat-hub-tab-content.details-content .participant-card.has-actions:focus-visible {
+    outline: 2px solid #0284c7;
+    outline-offset: 1px;
+  }
+
+  .chat-hub-tab-content.details-content .participant-more {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    transition: transform 0.15s ease;
+  }
+
+  .chat-hub-tab-content.details-content .participant-card.actions-open .participant-more {
+    transform: rotate(180deg);
+  }
+
+  .chat-hub-tab-content.details-content .participant-actions {
+    display: flex;
+    width: 100%;
+    gap: 0.4rem;
+    padding-top: 0.25rem;
+  }
+
+  .chat-hub-tab-content.details-content .participant-action {
+    display: inline-flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    gap: 0.3rem;
+    padding: 0.4rem 0.35rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.375rem;
+    background: #ffffff;
+    color: #0369a1;
+    box-shadow: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .chat-hub-tab-content.details-content .participant-action:active {
+    background: #e0f2fe;
+    box-shadow: none;
   }
 }
 

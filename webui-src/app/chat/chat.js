@@ -1104,6 +1104,8 @@ function getLobbyPrivacyInfo(room) {
 }
 
 const ChatRoomDetailView = () => {
+  let activeParticipantId = null;
+
   return {
     view: () => {
       const room = ChatHubState.selectedRoom;
@@ -1183,8 +1185,23 @@ const ChatRoomDetailView = () => {
                   const details = ChatHubState.gxsDetails[participant.key];
                   const avatar = getSafeAvatar(details);
                   const firstLetter = (participant.name || '?').slice(0, 1).toUpperCase();
+                  const isOwn = participant.key === rs.idToHex(room.gxs_id || '');
+                  const actionsOpen = activeParticipantId === participant.key;
 
-                  return m('.participant-card', [
+                  return m('.participant-card' + (!isOwn ? '.has-actions' : '') + (actionsOpen ? '.actions-open' : ''), {
+                    role: !isOwn ? 'button' : undefined,
+                    tabindex: !isOwn ? 0 : undefined,
+                    'aria-expanded': !isOwn ? String(actionsOpen) : undefined,
+                    onclick: !isOwn ? () => {
+                      activeParticipantId = actionsOpen ? null : participant.key;
+                    } : undefined,
+                    onkeydown: !isOwn ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        activeParticipantId = actionsOpen ? null : participant.key;
+                      }
+                    } : undefined,
+                  }, [
                     m(peopleUtil.UserAvatar, {
                       avatar,
                       firstLetter,
@@ -1192,6 +1209,33 @@ const ChatRoomDetailView = () => {
                       size: 32,
                     }),
                     m('.participant-name', participant.name),
+                    !isOwn && m('i.fas.fa-chevron-down.participant-more', { 'aria-hidden': 'true' }),
+                    !isOwn && actionsOpen && m('.participant-actions', [
+                      m('button.participant-action', {
+                        type: 'button',
+                        title: `Start a private chat with ${participant.name}`,
+                        onclick: (e) => {
+                          e.stopPropagation();
+                          people.setSelectedId(participant.key, 'chat');
+                        },
+                      }, [m('i.fas.fa-comments'), m('span', 'Chat')]),
+                      m('button.participant-action', {
+                        type: 'button',
+                        title: `Send mail to ${participant.name}`,
+                        onclick: (e) => {
+                          e.stopPropagation();
+                          people.setSelectedId(participant.key, 'details', true);
+                        },
+                      }, [m('i.fas.fa-envelope'), m('span', 'Mail')]),
+                      m('button.participant-action', {
+                        type: 'button',
+                        title: `View details for ${participant.name}`,
+                        onclick: (e) => {
+                          e.stopPropagation();
+                          people.setSelectedId(participant.key, 'details');
+                        },
+                      }, [m('i.fas.fa-user'), m('span', 'Details')]),
+                    ]),
                   ]);
                 })
               )
