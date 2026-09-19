@@ -24,6 +24,3 @@
 // 7. Small screen / touch adaptations. Must stay last: it overrides the
 //    layouts defined above without relying on !important.
 @use 'responsive';
-
-// Shared library surfaces override the legacy page layouts at every breakpoint.
-@use 'library';

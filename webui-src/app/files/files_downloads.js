@@ -2,6 +2,8 @@ const m = require('mithril');
 const rs = require('rswebui');
 const util = require('files/files_util');
 const widget = require('widgets');
+const icon = require('icon');
+const toast = require('toast');
 
 const Downloads = {
   strategies: {},
@@ -78,12 +80,7 @@ const Downloads = {
 };
 
 function InvalidFileMessage() {
-  widget.popupMessage([
-    m('i.fas.fa-file-medical'),
-    m('h3', 'Add new file'),
-    m('hr'),
-    m('p', 'Error: could not add file'),
-  ]);
+  toast.info('Error: could not add file');
 }
 
 function addFile(url) {
@@ -112,12 +109,8 @@ function addFile(url) {
       },
     },
     (status) => {
-      widget.popupMessage([
-        m('i.fas.fa-file-medical'),
-        m('h3', 'Add new file'),
-        m('hr'),
-        m('p', 'Successfully added file!'),
-      ]);
+      widget.closePopupMessage();
+      toast.success('Successfully added file!');
     }
   );
 }
@@ -135,17 +128,16 @@ const NewFileDialog = () => {
           },
         },
         [
-          m('.add-file-dialog__heading', [
-            m('i.fas.fa-file-medical'),
-            m('h3', 'Add new file'),
-          ]),
-          m('hr'),
           m('label[for=new-file-url]', 'Enter the file link:'),
           m('input#new-file-url[type=text][name=fileurl]', {
+            placeholder: 'retroshare://file?name=...',
             value: url,
             oninput: (e) => (url = e.target.value),
           }),
-          m('button[type=submit]', 'Add'),
+          m('.modal__foot', [
+            m('button[type=button]', { onclick: () => widget.closePopupMessage() }, [icon('times'), 'Cancel']),
+            m('button[type=submit]', 'Add file'),
+          ]),
         ]
       ),
   };
@@ -162,16 +154,19 @@ const Component = () => {
       Downloads.resetSearch();
     },
     view: () => [
-      m('.widget__body-heading', { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start' } }, [
-        m('.action', { style: { marginBottom: '10px' } }, [
-          m(
-            'button',
-            { onclick: () => widget.popupMessage(m(NewFileDialog), 'add-file-modal') },
-            'Add new file'
-          ),
-          m('button', { onclick: clearFileCompleted }, 'Clear completed'),
-        ]),
+      //  Title left, actions right: the inline flex-column above stacked the
+      //  buttons over the heading, so they read as loose page furniture
+      //  rather than as the actions belonging to this section.
+      m('.widget__body-heading', [
         m('h3', `Downloads (${Downloads.hashes ? Downloads.hashes.length : 0} files)`),
+        m('.action', [
+          m(
+            'button.is-primary',
+            { onclick: () => widget.popupMessage(m(NewFileDialog), 'add-file-modal', { title: 'Add a file' }) },
+            [icon('plus'), 'Add new file']
+          ),
+          m('button', { onclick: clearFileCompleted }, [icon('eraser'), 'Clear completed']),
+        ]),
       ]),
       m('.widget__body-content', [
         Downloads.statusMap &&

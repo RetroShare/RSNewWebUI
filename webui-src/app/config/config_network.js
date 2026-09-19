@@ -82,9 +82,8 @@ const SetNwMode = () => {
       return [
         !hideLabel && m('p', isHiddenMode ? 'Discovery:' : 'Network mode:'),
         m(
-          'select',
+          'select.nw-input',
           {
-            style: 'flex: 1; max-width: 320px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;',
             value: selectedMode,
             onchange: (e) => {
               const idx = e.target.selectedIndex;
@@ -147,8 +146,8 @@ const SetLimits = () => {
         ulim = data.outKb;
       }),
     view: () => [
-      m('.nw-config-row', { style: 'display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: center; margin-bottom: 0.75rem;' }, [
-        m('p', { style: 'font-weight: 600; color: #475569;' }, [
+      m('.nw-config-row', [
+        m('p.nw-label', [
           util.tooltip(
             'The download limit covers the whole application. ' +
               'However, in some situations, such as when transfering ' +
@@ -158,15 +157,14 @@ const SetLimits = () => {
           ),
           'Download limit(KB/s):'
         ]),
-        m('input[type=number][name=download]', {
-          style: 'padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px; max-width: 320px; width: 100%;',
+        m('input[type=number][name=download].nw-input', {
           value: dlim,
           oninput: (e) => (dlim = Number(e.target.value)),
           onchange: setMaxRates,
         }),
       ]),
-      m('.nw-config-row', { style: 'display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: center; margin-bottom: 0.75rem;' }, [
-        m('p', { style: 'font-weight: 600; color: #475569;' }, [
+      m('.nw-config-row', [
+        m('p.nw-label', [
           util.tooltip(
             'The upload limit covers the entire software. ' +
               'Too small an upload limit may eventually block ' +
@@ -175,8 +173,7 @@ const SetLimits = () => {
           ),
           'Upload limit(KB/s):'
         ]),
-        m('input[type=number][name=upload]', {
-          style: 'padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px; max-width: 320px; width: 100%;',
+        m('input[type=number][name=upload].nw-input', {
           value: ulim,
           oninput: (e) => (ulim = Number(e.target.value)),
           onchange: setMaxRates,
@@ -196,8 +193,8 @@ const SetOpMode = () => {
     oninit: () =>
       rs.rsJsonApiRequest('/rsConfig/getOperatingMode', {}, (data) => (opmode = data.retval)),
     view: () => [
-      m('.nw-config-row', { style: 'display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: center; margin-bottom: 0.75rem;' }, [
-        m('p', { style: 'font-weight: 600; color: #475569;' }, [
+      m('.nw-config-row', [
+        m('p.nw-label', [
           'Operating mode: ',
           util.tooltip(
             `No Anon D/L: Switches off file forwarding\n
@@ -206,9 +203,8 @@ const SetOpMode = () => {
           )
         ]),
         m(
-          'select',
+          'select.nw-input',
           {
-            style: 'padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px; max-width: 320px; width: 100%;',
             oninput: (e) => (opmode = e.target.value),
             value: opmode,
             onchange: setmode,
@@ -225,8 +221,8 @@ const SetOpMode = () => {
 const displayIPAddresses = () => {
   return {
     view: ({ attrs: { details } }) =>
-      details && m('.nw-config-row', { style: 'display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: flex-start; margin-bottom: 0.75rem;' }, [
-        m('p', { style: 'font-weight: 600; color: #475569;' }, 'External Address: '),
+      details && m('.nw-config-row.nw-config-row--top', [
+        m('p.nw-label', 'External Address: '),
         m(
           'ul.external-address',
           details.ipAddressList.map((ip) => m('li', ip))
@@ -318,34 +314,24 @@ const NetworkConfigForm = () => {
       const isLocalOk = Boolean(netStatus.netLocalOk !== false);
       const isExtOk = Boolean(netStatus.netExtAddressOk);
 
-      return m('.network-config-form', {
-        style: {
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.75rem',
-          width: '100%',
-        }
-      }, [
+      return m('.network-config-form', [
         // Network Mode row
-        m('.nw-config-row', { style: 'display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: center;' }, [
-          m('label', { style: 'font-weight: 600; color: #475569;' }, 'Network Mode'),
-          m('.nw-mode-group', { style: 'display: flex; align-items: center; gap: 1rem;' }, [
+        m('.nw-config-row', [
+          m('label.nw-label', 'Network Mode'),
+          m('.nw-mode-group', [
             m(SetNwMode, { isHiddenMode, hideLabel: true }),
-            isHiddenMode && m('.status-indicator', { style: 'display: flex; align-items: center; gap: 0.4rem;' }, [
-              m('.bullet', {
-                style: 'width: 10px; height: 10px; border-radius: 50%; background-color: #22c55e;'
-              }),
-              m('span', { style: 'font-size: 0.85rem; font-weight: 700; color: #000000;' }, '[Hidden mode]'),
+            isHiddenMode && m('.status-indicator', [
+              m('.bullet.bullet--on'),
+              m('span.nw-status-text.nw-status-text--hidden', '[Hidden mode]'),
             ]),
           ]),
         ]),
 
         // NAT row + UPnP status bullet
-        !isHiddenMode && m('.nw-config-row', { style: 'display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: center;' }, [
-          m('label', { style: 'font-weight: 600; color: #475569;' }, 'NAT'),
-          m('.nat-control-group', { style: 'display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;' }, [
-            m('select', {
-              style: 'flex: 1; max-width: 320px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;',
+        !isHiddenMode && m('.nw-config-row', [
+          m('label.nw-label', 'NAT'),
+          m('.nat-control-group', [
+            m('select.nw-input', {
               value: netMode,
               onchange: (e) => saveNetMode(e.target.value),
             }, [
@@ -353,78 +339,67 @@ const NetworkConfigForm = () => {
               m('option', { value: util.RS_NETMODE_UDP }, 'FireWalled'),
               m('option', { value: util.RS_NETMODE_EXT }, 'Manually Forwarded Port'),
             ]),
-            m('.status-indicator', { style: 'display: flex; align-items: center; gap: 0.4rem;' }, [
-              m('.bullet', {
-                style: `width: 10px; height: 10px; border-radius: 50%; background-color: ${isUpnpOk ? '#22c55e' : '#475569'};`
-              }),
-              m('span', { style: 'font-size: 0.85rem; font-weight: 600; color: #334155;' }, 'UPnP'),
+            m('.status-indicator', [
+              m('.bullet', { class: isUpnpOk ? 'bullet--on' : 'bullet--off' }),
+              m('span.nw-status-text', 'UPnP'),
             ]),
           ]),
         ]),
 
         // Local Address + Port + Local network status bullet
-        m('.nw-config-row', { style: 'display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: center;' }, [
-          m('label', { style: 'font-weight: 600; color: #475569;' }, 'Local Address'),
-          m('.addr-control-group', { style: 'display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;' }, [
-            m('input[type=text]', {
-              style: 'flex: 1; max-width: 320px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;',
+        m('.nw-config-row', [
+          m('label.nw-label', 'Local Address'),
+          m('.addr-control-group', [
+            m('input[type=text].nw-input', {
               value: localAddr,
               oninput: (e) => (localAddr = e.target.value),
               onchange: saveLocalAddress,
             }),
-            m('.port-group', { style: 'display: flex; align-items: center; gap: 0.4rem;' }, [
-              m('span', { style: 'font-size: 0.85rem; font-weight: 600; color: #475569;' }, 'Port:'),
-              m('input[type=number]', {
-                style: 'width: 90px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;',
+            m('.port-group', [
+              m('span.nw-port-label', 'Port:'),
+              m('input[type=number].nw-port', {
                 value: localPort,
                 oninput: (e) => (localPort = parseInt(e.target.value) || 0),
                 onchange: saveLocalAddress,
               }),
             ]),
-            !isHiddenMode && m('.status-indicator', { style: 'display: flex; align-items: center; gap: 0.4rem; margin-left: 0.5rem;' }, [
-              m('.bullet', {
-                style: `width: 10px; height: 10px; border-radius: 50%; background-color: ${isLocalOk ? '#22c55e' : '#ef4444'};`
-              }),
-              m('span', { style: 'font-size: 0.85rem; font-weight: 600; color: #334155;' }, 'Local network'),
+            !isHiddenMode && m('.status-indicator', [
+              m('.bullet', { class: isLocalOk ? 'bullet--on' : 'bullet--off' }),
+              m('span.nw-status-text', 'Local network'),
             ]),
           ]),
         ]),
 
         // External Address + Port + External ip address finder status bullet
-        m('.nw-config-row', { style: 'display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: center;' }, [
-          m('label', { style: 'font-weight: 600; color: #475569;' }, 'External Address'),
-          m('.addr-control-group', { style: 'display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;' }, [
-            m('input[type=text]', {
-              style: 'flex: 1; max-width: 320px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;',
+        m('.nw-config-row', [
+          m('label.nw-label', 'External Address'),
+          m('.addr-control-group', [
+            m('input[type=text].nw-input', {
               value: isHiddenMode ? 'Hidden' : extAddr,
               disabled: isHiddenMode,
               oninput: (e) => (extAddr = e.target.value),
               onchange: saveExtAddress,
             }),
-            !isHiddenMode && m('.port-group', { style: 'display: flex; align-items: center; gap: 0.4rem;' }, [
-              m('span', { style: 'font-size: 0.85rem; font-weight: 600; color: #475569;' }, 'Port:'),
-              m('input[type=number]', {
-                style: 'width: 90px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;',
+            !isHiddenMode && m('.port-group', [
+              m('span.nw-port-label', 'Port:'),
+              m('input[type=number].nw-port', {
                 value: extPort,
                 oninput: (e) => (extPort = parseInt(e.target.value) || 0),
                 onchange: saveExtAddress,
               }),
             ]),
-            !isHiddenMode && m('.status-indicator', { style: 'display: flex; align-items: center; gap: 0.4rem; margin-left: 0.5rem;' }, [
-              m('.bullet', {
-                style: `width: 10px; height: 10px; border-radius: 50%; background-color: ${isExtOk ? '#22c55e' : '#808080'};`
-              }),
-              m('span', { style: 'font-size: 0.85rem; font-weight: 600; color: #334155;' }, 'External ip address finder'),
+            !isHiddenMode && m('.status-indicator', [
+              m('.bullet', { class: isExtOk ? 'bullet--on' : 'bullet--off' }),
+              m('span.nw-status-text', 'External ip address finder'),
             ]),
           ]),
         ]),
 
         // Dynamic DNS row
-        !isHiddenMode && m('.nw-config-row', { style: 'display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: center;' }, [
-          m('label', { style: 'font-weight: 600; color: #475569;' }, 'Dynamic DNS'),
-          m('input[type=text]', {
-            style: 'flex: 1; max-width: 320px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;',
-            value: dyndns,
+        !isHiddenMode && m('.nw-config-row', [
+          m('label.nw-label', 'Dynamic DNS'),
+          m('input[type=text].nw-input', {
+              value: dyndns,
             oninput: (e) => (dyndns = e.target.value),
             onchange: saveDynDNS,
           }),
@@ -530,8 +505,8 @@ const SetSocksProxy = () => {
       });
     },
     view: () =>
-      m('.proxy-server-form', { style: 'display: flex; flex-direction: column; gap: 0.75rem; width: 100%;' }, [
-        m('p.proxy-description', { style: 'margin-bottom: 0.5rem; color: #475569;' },
+      m('.proxy-server-form', [
+        m('p.proxy-description',
           'Configure your TOR and I2P SOCKS proxy here. It will allow you to also connect to hidden nodes.'
         ),
         Object.keys(socksProxyObj).map((proxyItem) => {
@@ -541,28 +516,26 @@ const SetSocksProxy = () => {
           const notEnabledText = isTor ? 'Tor proxy is not enabled' : 'I2P proxy is not enabled';
           const isOutgoing = socksProxyObj[proxyItem].outgoing;
 
-          return m('.nw-config-row', { style: 'display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: center;' }, [
-            m('label', { style: 'font-weight: 600; color: #475569;' }, labelText),
-            m('.proxy-control-group', { style: 'display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;' }, [
-              m('input[type=text]', {
-                style: 'flex: 1; max-width: 480px; min-width: 320px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;',
+          return m('.nw-config-row', [
+            m('label.nw-label', labelText),
+            m('.proxy-control-group', [
+              m('input[type=text].nw-input.nw-input--wide', {
                 value: socksProxyObj[proxyItem].addr || '',
                 oninput: (e) => (socksProxyObj[proxyItem].addr = e.target.value),
                 onchange: () => handleProxyChange(proxyItem),
               }),
-              m('input[type=number]', {
-                style: 'width: 90px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;',
+              m('input[type=number].nw-port', {
                 value: socksProxyObj[proxyItem].port || 0,
                 oninput: (e) => (socksProxyObj[proxyItem].port = parseInt(e.target.value) || 0),
                 onchange: () => handleProxyChange(proxyItem),
               }),
               socksProxyObj[proxyItem].outgoing !== undefined &&
-                m('.status-indicator', { style: 'display: flex; align-items: center; gap: 0.4rem; margin-left: 0.5rem;' }, [
+                m('.status-indicator', [
                   m('.bullet', {
-                    style: `width: 10px; height: 10px; border-radius: 50%; background-color: ${isOutgoing ? '#22c55e' : '#808080'};`,
+                    class: isOutgoing ? 'bullet--on' : 'bullet--off',
                     title: isOutgoing ? 'Proxy seems to work.' : notEnabledText,
                   }),
-                  m('span', { style: 'font-size: 0.85rem; font-weight: 600; color: #334155;' },
+                  m('span.nw-status-text',
                     `${outgoingText} ${isOutgoing ? 'on' : 'off'}`
                   ),
                 ]),
@@ -577,38 +550,34 @@ const displayHiddenServiceInfo = () => {
   return {
     view: ({ attrs: { details } }) =>
       details && details.hiddenNodeAddress &&
-        m('.hidden-service-info', { style: 'display: flex; flex-direction: column; gap: 0.75rem; width: 100%;' }, [
-          m('p.proxy-description', { style: 'margin-bottom: 0.5rem; color: #475569;' }, details.hiddenType === 4
+        m('.hidden-service-info', [
+          m('p.proxy-description', details.hiddenType === 4
             ? 'I2P has been automatically configured by Retroshare. You shouldn\'t need to change anything here.'
             : 'Tor has been automatically configured by Retroshare. You shouldn\'t need to change anything here.'
           ),
           // Local Address + Local Port row
-          m('.nw-config-row', { style: 'display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: center;' }, [
-            m('label', { style: 'font-weight: 600; color: #475569;' }, 'Local Address:'),
-            m('.addr-port-group', { style: 'display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;' }, [
-              m('input[type=text]', {
-                style: 'flex: 1; max-width: 480px; min-width: 320px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px; background-color: #f8fafc; color: #334155;',
+          m('.nw-config-row', [
+            m('label.nw-label', 'Local Address:'),
+            m('.addr-port-group', [
+              m('input[type=text].nw-input.nw-input--wide.nw-input--ro', {
                 readOnly: true,
                 value: details.localAddr || '127.0.0.1',
               }),
-              m('input[type=number]', {
-                style: 'width: 90px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px; background-color: #f8fafc; color: #334155;',
+              m('input[type=number].nw-port.nw-input--ro', {
                 readOnly: true,
                 value: details.localPort || 0,
               }),
             ]),
           ]),
           // Onion / I2P Address + Service Port row
-          m('.nw-config-row', { style: 'display: grid; grid-template-columns: 200px 1fr; gap: 1rem; align-items: center;' }, [
-            m('label', { style: 'font-weight: 600; color: #475569;' }, details.hiddenType === 4 ? 'I2P Address:' : 'Onion Address:'),
-            m('.addr-port-group', { style: 'display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;' }, [
-              m('input[type=text]', {
-                style: 'flex: 1; max-width: 480px; min-width: 320px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px; background-color: #f8fafc; color: #334155; font-family: monospace;',
+          m('.nw-config-row', [
+            m('label.nw-label', details.hiddenType === 4 ? 'I2P Address:' : 'Onion Address:'),
+            m('.addr-port-group', [
+              m('input[type=text].nw-input.nw-input--wide.nw-input--ro.nw-input--mono', {
                 readOnly: true,
                 value: details.hiddenNodeAddress,
               }),
-              details.hiddenNodePort && m('input[type=number]', {
-                style: 'width: 90px; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px; background-color: #f8fafc; color: #334155;',
+              details.hiddenNodePort && m('input[type=number].nw-port.nw-input--ro', {
                 readOnly: true,
                 value: details.hiddenNodePort,
               }),
@@ -645,27 +614,27 @@ const Component = () => {
       });
     },
     view: () =>
-      m('.config-network', { style: 'display:flex; flex-direction:column; gap:1rem;' }, [
-        m('.widget', [
-          m('.widget__heading', m('h3', 'Network Configuration')),
-          m('.widget__body', [
+      m('.config-network', [
+        m('.panel', [
+          m('.panel__head', m('h3', 'Network Configuration')),
+          m('.panel__body', [
             m(NetworkConfigForm, { isHiddenMode }),
-            m('hr', { style: 'margin: 1rem 0; border: none; border-top: 1px solid #e2e8f0;' }),
+            m('hr.nw-rule'),
             m(SetLimits),
             !isHiddenMode && m(SetOpMode),
             !isHiddenMode && m(displayIPAddresses, { details }),
           ]),
         ]),
-        m('.widget', [
-          m('.widget__heading', m('h3', 'Hidden Service Configuration')),
-          m('.widget__body', [
+        m('.panel', [
+          m('.panel__head', m('h3', 'Hidden Service Configuration')),
+          m('.panel__body', [
             m(SetSocksProxy),
           ]),
         ]),
         isHiddenMode &&
-          m('.widget', [
-            m('.widget__heading', m('h3', details && details.hiddenType === 4 ? 'Incoming I2P' : 'Incoming Tor')),
-            m('.widget__body', [
+          m('.panel', [
+            m('.panel__head', m('h3', details && details.hiddenType === 4 ? 'Incoming I2P' : 'Incoming Tor')),
+            m('.panel__body', [
               m(displayHiddenServiceInfo, { details }),
             ]),
           ]),

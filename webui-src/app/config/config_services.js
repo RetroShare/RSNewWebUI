@@ -55,9 +55,9 @@ const MyServices = {
     rs.rsJsonApiRequest('/rsServiceControl/getOwnServices', {}, servicesInfo.setData);
   },
   view() {
-    return m('.widget', [
-      m('.widget__heading', m('h3', 'My Services')),
-      m('.widget__body', [
+    return m('.panel', [
+      m('.panel__head', m('h3', 'My Services')),
+      m('.panel__body', [
         m('table', [
           m('tr', [
             m('th', 'Name'),

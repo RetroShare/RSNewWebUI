@@ -1,11 +1,15 @@
 const m = require('mithril');
+const widget = require('widgets');
 const rs = require('rswebui');
 const util = require('forums/forums_util');
 const viewUtil = require('forums/forum_view');
 const peopleUtil = require('people/people_util');
+const icon = require('icon');
 
 const getForums = {
   All: [],
+  //  Keyed by tab name, and the "All Forums" tab is called Other.
+  Other: [],
   Popular: [],
   Subscribed: [],
   MyForums: [],
@@ -13,6 +17,7 @@ const getForums = {
     const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumsSummaries');
     if (res && res.body && res.body.forums) {
       getForums.All = res.body.forums;
+      getForums.Other = getForums.All;
       getForums.Popular = getForums.All;
       getForums.Subscribed = getForums.All.filter(
         (forum) =>
@@ -22,18 +27,60 @@ const getForums = {
       getForums.MyForums = getForums.All.filter(
         (forum) => forum.mSubscribeFlags === util.GROUP_MY_FORUM
       );
+      await getForums.loadDescriptions();
     }
+  },
+
+  //  Summaries carry no description. getForumsInfo takes a list, so the whole
+  //  page costs one request -- asking per forum cost one per row.
+  async loadDescriptions() {
+    const ids = getForums.All.map((forum) => forum.mGroupId).filter(Boolean);
+    if (ids.length === 0) return;
+    const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumsInfo', { forumIds: ids });
+    const infos = res && res.body && res.body.forumsInfo;
+    if (!Array.isArray(infos)) return;
+    const byId = {};
+    infos.forEach((info) => {
+      if (info && info.mMeta) byId[info.mMeta.mGroupId] = info.mDescription;
+    });
+    getForums.All.forEach((forum) => {
+      forum.description = byId[forum.mGroupId] || '';
+    });
+    m.redraw();
   },
 };
 //  Group lists change on the scale of a conversation, not of a frame.
 const FORUM_LIST_REFRESH_MS = 30000;
 
+//  Forums have no popularity split: Popular is the full list as the core
+//  returns it, All the same list sorted by popularity. There is no Other.
 const sections = {
-  All: require('forums/popular_forums'),
   MyForums: require('forums/my_forums'),
   Subscribed: require('forums/subscribed_forums'),
+  All: require('forums/all_forums'),
   Popular: require('forums/popular_forums'),
-  Other: require('forums/other_forums'),
+};
+
+const navLabels = {
+  MyForums: 'My Forums',
+  Subscribed: 'Subscribed',
+  All: 'All Forums',
+  Popular: 'Popular',
+};
+
+//  The page title, which can say more than the rail label beside it.
+const pageTitles = {
+  MyForums: 'My Forums',
+  Subscribed: 'Subscribed Forums',
+  All: 'All Forums',
+  Popular: 'Popular Forums',
+};
+
+const navIcons = {
+  MyForums: 'comments',
+  Subscribed: 'bookmark',
+  All: 'globe',
+  Popular: 'fire',
 };
 
 const Layout = () => {
@@ -45,7 +92,11 @@ const Layout = () => {
         authorId: ownId,
         onCreated: getForums.load,
       }),
-      'create-forum-modal'
+      'create-forum-modal',
+      {
+        title: 'Create Forum',
+        lead: 'Set up the forum and choose its publishing permissions.',
+      }
     );
 
   return {
@@ -67,57 +118,58 @@ const Layout = () => {
       });
     },
     view: (vnode) => {
-      const isForumDetail = vnode.attrs.pathInfo.mGroupId && !vnode.attrs.pathInfo.mMsgId;
-      const isThreadDetail = vnode.attrs.pathInfo.mGroupId && vnode.attrs.pathInfo.mMsgId;
+      const forumId = vnode.attrs.pathInfo.mGroupId;
+      const msgId = vnode.attrs.pathInfo.mMsgId;
       return m('.widget', {
-        class: isForumDetail ? 'forums-detail-widget' : isThreadDetail ? 'forums-thread-widget' : '',
+        //  A selected post is a state of the forum page, not a page of its own.
+        //  The phone stylesheet uses it to show the reader in place of the list.
+        class: [
+          forumId ? 'forums-detail-widget' : '',
+          msgId ? 'has-selection' : '',
+        ].filter(Boolean).join(' '),
       }, [
-        m('.top-heading', [
-          vnode.attrs.pathInfo.tab === 'MyForums' &&
-          m(
-            'button.forums-create-button',
-            {
-              onclick: createForum,
-            },
-            'Create Forum'
-          ),
-          m(util.SearchBar, {
-            list: getForums.All,
-          }),
-        ]),
-        Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mMsgId') // thread's view
-          ? m(viewUtil.ThreadView, {
-            msgId: vnode.attrs.pathInfo.mMsgId,
-            forumId: vnode.attrs.pathInfo.mGroupId,
-          })
-          : Object.prototype.hasOwnProperty.call(vnode.attrs.pathInfo, 'mGroupId') // Forum's view
-            ? m(viewUtil.ForumView, {
-              id: vnode.attrs.pathInfo.mGroupId,
-              onSubscriptionChange: getForums.load,
-            })
-            : m(sections[vnode.attrs.pathInfo.tab], {
-              //  The full list, not Popular ∪ Other: getForums has no Other key,
-              //  and the merge only worked because forums' Popular happens to
-              //  alias the full list -- a trap for whoever makes it a top-5.
-              list: vnode.attrs.pathInfo.tab === 'All'
-                ? getForums.All
-                : getForums[vnode.attrs.pathInfo.tab],
-              title: vnode.attrs.pathInfo.tab === 'All' ? 'All Forums' : undefined,
-              category: vnode.attrs.pathInfo.tab,
-              onCreateForum: createForum,
+        //  Only the list views get a page header: a forum carries its own
+        //  heading, which is the forum's name rather than the tab's.
+        !forumId && m(widget.PageHead, {
+          class: 'group-list-head',
+          title: pageTitles[vnode.attrs.pathInfo.tab] || 'Forums',
+          actions: [
+            vnode.attrs.pathInfo.tab === 'MyForums' &&
+              m('button.forums-create-button.is-primary', {
+                onclick: createForum,
+              }, [icon('plus'), 'Create Forum']),
+            m(util.SearchBar, {
+              list: getForums.All,
             }),
+          ],
+        }),
+        forumId
+          ? m(viewUtil.ForumView, {
+            id: forumId,
+            msgId,
+            onSubscriptionChange: getForums.load,
+          })
+          : m(sections[vnode.attrs.pathInfo.tab], {
+            list: getForums[vnode.attrs.pathInfo.tab],
+            onCreateForum: createForum,
+          }),
       ]);
     },
   };
 };
 
 module.exports = {
-  view: (vnode) => m(require('library_layout'), {
-    title: 'Forums',
-    icon: 'bullhorn',
-    tabs: Object.keys(sections).filter((tab) => tab !== 'All'),
-    mobileTabs: [{ tab: 'MyForums', label: 'My' }, 'Subscribed', 'All'],
-    baseRoute: '/forums/',
-    detailOpen: Boolean(vnode.attrs.mGroupId),
-  }, m(Layout, { pathInfo: vnode.attrs })),
+  view: (vnode) => {
+    return [
+      m(widget.Sidebar, {
+        tabs: Object.keys(sections),
+        baseRoute: '/forums/',
+        mobileDrawer: true,
+        title: 'Forums',
+        labels: navLabels,
+        icons: navIcons,
+      }),
+      m('.node-panel', m(Layout, { pathInfo: vnode.attrs })),
+    ];
+  },
 };

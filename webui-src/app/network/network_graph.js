@@ -1,7 +1,9 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const Data = require('network/network_data');
+const icon = require('icon');
 const { State } = require('network/network_state');
+const widget = require('widgets');
 
 const WIDTH = 1000;
 const HEIGHT = 650;
@@ -267,7 +269,7 @@ const NetworkGraph = () => {
     view: () => m('.network-graph', [
       m('.network-graph__toolbar', [
         m('button.network-graph__redraw[type=button][title=Redraw graph][aria-label=Redraw graph]', { onclick: loadGraph, disabled: loading }, [
-          m('i.fas.fa-sync-alt', { class: loading ? 'fa-spin' : '' }),
+          icon('sync-alt', { spin: loading }),
           m('span', 'Redraw'),
         ]),
         m('label', [
@@ -292,9 +294,9 @@ const NetworkGraph = () => {
           }),
         ]),
         m('.network-graph__zoom-control', [
-          m('button[type=button][title=Zoom out][aria-label=Zoom out]', {
+          m('button.is-icon[type=button][title=Zoom out][aria-label=Zoom out]', {
             onclick: () => setZoom(zoom - 0.1),
-          }, m('i.fas.fa-minus')),
+          }, icon('minus')),
           m('label', [
             `Zoom ${Math.round(zoom * 100)}%`,
             m('input[type=range][min=0.5][max=2.5][step=0.1]', {
@@ -302,23 +304,23 @@ const NetworkGraph = () => {
               oninput: (event) => setZoom(event.target.value),
             }),
           ]),
-          m('button[type=button][title=Zoom in][aria-label=Zoom in]', {
+          m('button.is-icon[type=button][title=Zoom in][aria-label=Zoom in]', {
             onclick: () => setZoom(zoom + 0.1),
-          }, m('i.fas.fa-plus')),
+          }, icon('plus')),
           m('button[type=button][title=Reset zoom]', {
             onclick: () => setZoom(1),
           }, '100%'),
         ]),
-        m('.network-graph__search', [
-          m('i.fas.fa-search'),
-          m('input[type=search][placeholder=Find a peer…]', {
-            value: search,
-            oninput: (event) => (search = event.target.value),
-          }),
-        ]),
+        m(widget.SearchField, {
+          class: 'network-graph__search',
+          placeholder: 'Find a peer',
+          value: search,
+          oninput: (event) => (search = event.target.value),
+          onclear: () => (search = ''),
+        }),
       ]),
       loading
-        ? m('.network-graph__message', [m('i.fas.fa-spinner.fa-spin'), ' Loading network graph…'])
+        ? m('.network-graph__message', [icon('spinner', { spin: true }), ' Loading network graph…'])
         : error
           ? m('.network-graph__message.network-graph__message--error', error)
           : m('svg.network-graph__canvas', {
@@ -348,9 +350,11 @@ const NetworkGraph = () => {
               m('g.network-graph__nodes', nodes.map((node) => {
                 const position = positions[node.id];
                 const matches = search && node.name.toLowerCase().includes(search.toLowerCase());
-                const color = node.level === 0 ? '#d6d91f' : node.online ? '#16a34a' : '#64748b';
+                //  The fill lives in CSS so the node and its legend key cannot
+                //  drift apart.
+                const kind = node.level === 0 ? 'own' : node.online ? 'online' : 'offline';
                 return m('g.network-graph__node', {
-                  class: matches ? 'is-match' : '',
+                  class: `network-graph__node--${kind}${matches ? ' is-match' : ''}`,
                   transform: `translate(${position.x} ${position.y})`,
                   onpointerdown: (event) => {
                     draggedId = node.id;
@@ -358,7 +362,7 @@ const NetworkGraph = () => {
                   },
                 }, [
                   m('title', `${node.name}\n${node.id}`),
-                  m('circle', { r: node.level === 0 ? 13 : 10, fill: color }),
+                  m('circle', { r: node.level === 0 ? 12 : 9 }),
                   m('text', { x: 14, y: 4 }, node.name),
                 ]);
               })),

@@ -1,13 +1,12 @@
-@use 'sass:color';
-@use '../abstracts/colors' as *;
+@use '../abstracts' as *;
 
 .progress-bar {
   width: 100%;
   height: 2rem;
   position: relative;
   text-align: center;
-  background-color: $light-color;
-  border-radius: 20px;
+  background-color: var(--ground);
+  border-radius: var(--r-md);
   overflow: hidden;
 
   &__status {
@@ -15,8 +14,8 @@
     top: 0;
     left: 0;
     height: 100%;
-    color: $dark-color;
-    background-color: $primary-color;
+    color: var(--ink);
+    background-color: var(--accent);
   }
 
   &__percent {
@@ -27,42 +26,52 @@
     height: fit-content;
   }
 
+  //  A transfer's chunk map. It was 32px tall to hold a centred percentage;
+  //  with the number moved out beside it, the bar only has to be readable.
+  &-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+
+    &__percent {
+      flex: none;
+      min-width: 3.5rem;
+      text-align: right;
+      color: var(--ink-dim);
+      font-size: var(--t-meta);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
   &-chunks {
     position: relative;
-    margin-top: 0.5rem;
-    width: 100%;
-    height: 2rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 8px;
     display: flex;
-    border-radius: 0.25rem;
+    border-radius: var(--r-full);
     overflow: hidden;
-    background-color: $light-color;
+    background-color: var(--ground);
 
     & .chunk {
       width: 100%;
 
       &[data-chunkVal='0'] {
-        background-color: color.adjust($primary-light-color, $alpha: -0.8);
+        background-color: rgb(var(--select-rgb) / 0.2);
       }
 
       &[data-chunkVal='1'] {
-        background-color: $red-color;
+        background-color: var(--down);
       }
 
       &[data-chunkVal='2'] {
-        background-color: $primary-color;
+        background-color: var(--accent);
       }
 
       &[data-chunkVal='3'] {
-        background-color: $golden-yellow-color;
+        background-color: var(--warn);
       }
     }
 
-    &__percent {
-      position: absolute;
-      inset: 0;
-      margin: auto;
-      width: fit-content;
-      height: fit-content;
-    }
   }
 }

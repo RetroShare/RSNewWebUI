@@ -1,0 +1,264 @@
+// -----------------------------------------------------------------------------
+// The component layer.
+//
+// One implementation of each thing the product actually has, replacing the
+// per-page copies: 57 `*card*` classes, 48 `*btn*`, 29 tab classes, 13 modals,
+// 12 avatars and 11 empty states, each written separately by mail, boards,
+// channels and forums.
+//
+// Rules these encode (docs/design-system.html):
+//   · Colour means connection state. Nothing else is saturated.
+//   · Rows, not cards.
+//   · Chrome is a 6% vertical gradient and a hairline, never a shadow.
+//   · 30px controls on a pointer, 44px under `touch`.
+// -----------------------------------------------------------------------------
+
+@use '../abstracts' as *;
+
+/* == Buttons ============================================================== */
+
+.b {
+  @include btn-base;
+
+  &--strong { @include btn-strong; }
+  &--quiet { @include btn-quiet; }
+  &--danger { @include btn-danger; }
+  &--icon { @include btn-icon; }
+}
+
+/* == Form controls ======================================================== */
+
+.f {
+  @include field-base;
+
+  &--mono { font-family: var(--font-mono); font-size: var(--t-row); }
+}
+
+/* Every settings screen aligns on one label column. */
+.fieldrow {
+  display: grid;
+  grid-template-columns: 156px minmax(0, 1fr);
+  gap: var(--s3);
+  align-items: center;
+
+  > label { font-size: var(--t-row); color: var(--ink-body); }
+}
+
+.hint { margin: 4px 0 0; font-size: var(--t-meta); color: var(--ink-dim); }
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: var(--t-body);
+  cursor: pointer;
+
+  input { accent-color: var(--brand); width: 15px; height: 15px; }
+}
+
+/* == Row ==================================================================
+   The list primitive. Selection is the Qt idiom: a pale sky band across the
+   whole row with a saturated left edge, not a grey hover. */
+
+.row {
+  @include row-base;
+
+  &[aria-current='true'],
+  &.is-selected,
+  &.selected { @include row-selected; }
+
+  &__main { flex: 1; min-width: 0; }
+  &__title { font-size: var(--t-row); font-weight: var(--w-label); letter-spacing: -0.005em; color: var(--ink); }
+  &__sub { display: flex; align-items: center; gap: 6px; margin-top: 1px; font-size: var(--t-meta); color: var(--ink-dim); }
+  &__meta { flex: none; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: var(--t-label); color: var(--ink-dim); }
+
+  &--read &__title { font-weight: var(--w-body); color: var(--ink-body); }
+}
+
+/* == Reach ================================================================
+   How far a thing travelled to get here. The only saturated hue in the UI. */
+
+.dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: var(--r-full);
+  background: var(--reach-off);
+
+  &--0 { background: var(--reach-0); }
+  &--1 { background: var(--reach-1); }
+  &--2 { background: var(--reach-2); }
+  &--off { background: var(--reach-off); }
+}
+
+.reach {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-row);
+  color: var(--ink-dim);
+
+  &--0 { color: var(--brand-deep); }
+  &--1 { color: var(--reach-1-ink); }
+  &--2 { color: var(--reach-2-ink); }
+  &--off { color: var(--ink-dim); }
+}
+
+/* == Counts and tags ======================================================
+   The only two places --t-micro is legal. A count is not a state, so it is
+   never red on its own. */
+
+.count {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-full);
+  background: var(--ink-dim);
+  color: var(--surface);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-micro);
+  font-weight: var(--w-label);
+  line-height: 18px;
+  text-align: center;
+}
+
+.tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--sunken);
+  font-size: var(--t-micro);
+  font-weight: var(--w-label);
+  color: var(--ink-body);
+
+  &--reach { border-color: var(--select-edge); background: var(--select-soft); color: var(--brand-deep); }
+  &--up { border-color: var(--up-line); background: var(--up-bg); color: var(--up-ink); }
+  &--down { border-color: var(--down-line); background: var(--down-bg); color: var(--down-ink); }
+}
+
+/* == Avatar =============================================================== */
+
+.av {
+  @include avatar-base;
+
+  width: 28px;
+  height: 28px;
+
+  > svg, > img { width: 100%; height: 100%; }
+
+  &--lg { width: 40px; height: 40px; font-size: var(--t-row); }
+}
+
+/* == Tabs =================================================================
+   Folder tabs: the selected tab joins the panel it opens. */
+
+.tabs { @include tabstrip; }
+
+.tab {
+  @include tab-item;
+
+  &[aria-selected='true'],
+  &.is-active { @include tab-selected; }
+}
+
+/* == Toolbar ==============================================================
+   Every screen gets the same header: title, mono meta, actions right. */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 42px;
+  padding: var(--s2) var(--s3);
+  border-bottom: 1px solid var(--line);
+  background: var(--chrome);
+
+  &__title { font-size: var(--t-h3); font-weight: var(--w-label); letter-spacing: -0.01em; }
+  &__meta { font-family: var(--font-mono); font-size: var(--t-meta); color: var(--ink-dim); }
+  &__gap { margin-left: auto; }
+}
+
+/* == Empty state ==========================================================
+   Say why it is empty, then offer the action. */
+
+.empty {
+  @include empty-base;
+
+  b { display: block; font-size: var(--t-h3); font-weight: var(--w-label); color: var(--ink); }
+  span { display: block; max-width: 46ch; margin: var(--s1) auto var(--s3); }
+  .icon { color: var(--ink-faint); margin-bottom: var(--s2); }
+}
+
+/* == Sheet ================================================================
+   One overlay, three widths. The only surviving shadow in the product. */
+
+.sheet {
+  @include sheet-base;
+
+  width: 100%;
+  max-width: 430px;
+
+  &--form { max-width: 560px; }
+  &--wide { max-width: 860px; }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    padding: var(--s2) var(--s4);
+    border-bottom: 1px solid var(--line);
+    border-radius: var(--r-md) var(--r-md) 0 0;
+    background: var(--chrome);
+
+    b { font-size: var(--t-h3); font-weight: var(--w-label); }
+  }
+
+  &__body { display: flex; flex-direction: column; gap: var(--s3); padding: var(--s4); }
+
+  &__foot {
+    display: flex;
+    gap: var(--s2);
+    justify-content: flex-end;
+    padding: var(--s2) var(--s4);
+    border-top: 1px solid var(--line);
+    border-radius: 0 0 var(--r-md) var(--r-md);
+    background: var(--ground);
+  }
+}
+
+/* == Reading column ======================================================= */
+
+.prose {
+  max-width: var(--measure);
+  font-size: var(--t-body);
+  line-height: 1.65;
+  color: var(--ink-body);
+
+  h1, h2, h3, h4 { color: var(--ink); letter-spacing: -0.02em; line-height: 1.28; }
+  p { margin: 0 0 var(--s3); }
+  code { font-family: var(--font-mono); font-size: var(--t-row); }
+
+  img { max-width: 100%; height: auto; }
+}
+
+/* == Transfer meter ======================================================= */
+
+.meterbar {
+  height: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--sunken);
+  overflow: hidden;
+
+  i { display: block; height: 100%; background: linear-gradient(180deg, var(--reach-1), var(--brand-deep)); }
+}
+
+/* == Touch ================================================================
+   A floor, not a suggestion. Density survives where there is a pointer. */
+
+@include touch {
+  .b, .f, .tab, .row { min-height: var(--touch); }
+  .b--icon { width: var(--touch); }
+}

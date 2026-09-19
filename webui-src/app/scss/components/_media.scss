@@ -1,12 +1,11 @@
-@use 'sass:color';
 @use '../abstracts' as *;
 
 .media-item {
   display: flex;
   margin-top: 0.5rem;
   padding: 1rem;
-  border: 1px solid color.adjust($dark-color, $alpha: -0.9);
-  border-radius: 4px;
+  border: 1px solid rgb(var(--ink-rgb) / 0.1);
+  border-radius: var(--r-sm);
 
   &__details {
     flex-basis: 40%;

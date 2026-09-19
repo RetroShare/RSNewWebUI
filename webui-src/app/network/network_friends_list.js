@@ -2,6 +2,8 @@ const m = require('mithril');
 const Data = require('network/network_data');
 const peopleUtil = require('people/people_util');
 const chatPreviewText = require('chat/chat_preview');
+const icon = require('icon');
+const widget = require('widgets');
 const {
   State,
   startDirectChat,
@@ -38,7 +40,7 @@ const OwnProfileCard = () => {
       return m('.own-profile-card', [
         m('.profile-header', [
           m('.profile-avatar-wrapper', [
-            m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: State.ownProfile.name }),
+            m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: State.ownProfile.name, size: 40 }),
             m('button.status-dot.profile-status-button', {
               'aria-label': `Change status. Current status: ${status.label}`,
               'aria-expanded': String(isPresenceMenuOpen),
@@ -64,7 +66,7 @@ const OwnProfileCard = () => {
                 }, [
                   m('span', { style: { backgroundColor: optionStatus.color } }),
                   option.label,
-                  status.value === option.value && m('i.fas.fa-check'),
+                  status.value === option.value && icon('check'),
                 ]);
               }),
             ]),
@@ -72,13 +74,10 @@ const OwnProfileCard = () => {
           m('.profile-info', [
             m('.profile-name', { title: displayName }, displayName),
             isEditing
-              ? m('.profile-custom-status-edit', {
-                  style: 'display: flex; align-items: center; gap: 4px; margin-top: 3px;'
-                }, [
-                  m('input[type=text]', {
+              ? m('.profile-custom-status-edit', [
+                  m('input[type=text].profile-status-input', {
                     value: statusInputText,
                     placeholder: 'Set custom status...',
-                    style: 'font-size: 0.8rem; padding: 2px 6px; border: 1px solid #3ba4d7; border-radius: 4px; width: 125px; outline: none; background: #ffffff;',
                     oninput: (e) => { statusInputText = e.target.value; },
                     onkeydown: (e) => {
                       if (e.key === 'Enter') {
@@ -90,16 +89,16 @@ const OwnProfileCard = () => {
                     },
                     oncreate: (vnode) => vnode.dom.focus(),
                   }),
-                  m('i.fas.fa-check', {
-                    style: 'cursor: pointer; color: #10b981; font-size: 0.85rem; padding: 2px;',
+                  icon('check', {
+                    class: 'profile-status-confirm',
                     title: 'Save status',
                     onclick: () => {
                       setOwnCustomStateString(statusInputText);
                       isEditing = false;
                     },
                   }),
-                  m('i.fas.fa-times', {
-                    style: 'cursor: pointer; color: #ef4444; font-size: 0.85rem; padding: 2px;',
+                  icon('times', {
+                    class: 'profile-status-cancel',
                     title: 'Cancel',
                     onclick: () => {
                       isEditing = false;
@@ -109,9 +108,7 @@ const OwnProfileCard = () => {
               : m(
                   '.profile-custom-status',
                   {
-                    style: State.ownProfile.customState
-                      ? 'font-size: 0.825rem; color: #64748b; font-style: italic; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px; cursor: pointer; margin-top: 2px;'
-                      : 'font-size: 0.825rem; color: #94a3b8; font-style: italic; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px; cursor: pointer; margin-top: 2px;',
+                    class: State.ownProfile.customState ? '' : 'is-unset',
                     title: 'Edit status message',
                     onclick: () => {
                       statusInputText = State.ownProfile.customState || '';
@@ -167,57 +164,39 @@ const FriendsList = () => {
 
       return m('.friends-list-container', [
         m('.people-sidebar-header', [
-          m('.searchbar-wrapper', [
-            m('i.fas.fa-search'),
-            m('input.searchbar-input', {
-              type: 'text',
-              placeholder: State.mainTab === 'network' ? 'Search friends...' : 'Search chats...',
-              value: State.searchString,
-              oninput: (e) => {
-                State.searchString = e.target.value;
-              },
-            }),
-          ]),
-          m('.segmented-control', [
-            m(
-              'button.segment-tab' + (State.mainTab === 'network' ? '.active' : ''),
+          m(widget.SearchField, {
+            class: 'searchbar-wrapper',
+            placeholder: State.mainTab === 'network' ? 'Search friends' : 'Search chats',
+            value: State.searchString,
+            oninput: (e) => {
+              State.searchString = e.target.value;
+            },
+            onclear: () => {
+              State.searchString = '';
+            },
+          }),
+          m(widget.Segmented, {
+            class: 'segmented-control',
+            ariaLabel: 'Show',
+            value: State.mainTab,
+            options: [
+              { id: 'network', label: 'Network', icon: 'users' },
               {
-                onclick: () => {
-                  State.mainTab = 'network';
-                },
+                id: 'chats',
+                label: 'Chats',
+                icon: 'comments',
+                badge: unreadChatsCount > 0 ? unreadChatsCount : undefined,
               },
-              [m('i.fas.fa-users'), ' Network']
-            ),
-            m(
-              'button.segment-tab' + (State.mainTab === 'chats' ? '.active' : ''),
-              {
-                onclick: () => {
-                  State.mainTab = 'chats';
-                },
-              },
-              [
-                m('i.fas.fa-comments'),
-                ' Chats',
-                unreadChatsCount > 0 && m('span.segment-badge', unreadChatsCount),
-              ]
-            ),
-            m(
-              'button.segment-tab.mobile-graph-shortcut',
-              {
-                onclick: () => {
-                  State.activeTab = 'graph';
-                  State.mobilePane = 'detail';
-                },
-              },
-              [m('i.fas.fa-project-diagram'), ' Graph']
-            ),
-          ]),
+            ],
+            onSelect: (tab) => {
+              State.mainTab = tab;
+            },
+          }),
         ]),
         m('.friends-scroll', [
           displayFriends.length === 0
             ? m(
-                'p',
-                { style: 'padding: 1rem; color: #94a3b8; text-align: center;' },
+                'p.friends-empty',
                 State.mainTab === 'network' ? 'No friends found' : 'No active chats found'
               )
             : displayFriends.map(([gpgId, friend]) => {
@@ -226,7 +205,7 @@ const FriendsList = () => {
                 const isSelected = State.selectedFriendGpgId === gpgId;
                 const hist = State.chatHistoryMap && State.chatHistoryMap[gpgId];
                 const status = friend.pendingValidation
-                  ? { value: 0, label: 'Pending validation', color: '#f59e0b' }
+                  ? { value: 0, label: 'Pending validation', color: 'var(--warn)' }
                   : Data.getStatusPresentation(friend.statusValue, friend.isOnline);
 
                 const isOnlineOrActive = friend.isOnline || (status && status.value > 0);
@@ -248,7 +227,7 @@ const FriendsList = () => {
                     },
                     [
                       m('.chat-avatar-wrapper', [
-                        m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: gpgId }),
+                        m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: gpgId, size: 36 }),
                         m('.status-dot', {
                           style: {
                             backgroundColor: status.color,
@@ -257,13 +236,7 @@ const FriendsList = () => {
                         }),
                       ]),
                       m('.chat-info', [
-                        m(
-                          '.chat-name',
-                          {
-                            style: isOnlineOrActive ? { color: status.color, fontWeight: '700' } : {},
-                          },
-                          friend.name
-                        ),
+                        m('.chat-name', { class: isOnlineOrActive ? 'is-online' : '' }, friend.name),
                         m('.chat-last-msg', hist ? chatPreviewText(hist.lastMsg) : ''),
                       ]),
                       m('.chat-meta', [
@@ -294,34 +267,18 @@ const FriendsList = () => {
                   },
                   [
                     m('.friend-avatar', [
-                      m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: gpgId }),
+                      m(peopleUtil.UserAvatar, { avatar, firstLetter, seed: gpgId, size: 36 }),
                       m('.status-dot', {
                         style: { backgroundColor: status.color },
                         title: status.label,
                       }),
                     ]),
                     m('.friend-meta', [
-                      m(
-                        '.friend-name',
-                        {
-                          style: isOnlineOrActive ? { color: status.color, fontWeight: '700' } : {},
-                        },
-                        friend.name
-                      ),
+                      m('.friend-name', { class: isOnlineOrActive ? 'is-online' : '' }, friend.name),
                       friend.customState &&
-                        m(
-                          '.friend-custom-status',
-                          {
-                            style:
-                              'font-size: 0.85rem; color: #64748b; margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;',
-                            title: friend.customState,
-                          },
-                          friend.customState
-                        ),
+                        m('.friend-custom-status', { title: friend.customState }, friend.customState),
                       friend.pendingValidation &&
-                        m('.friend-custom-status', {
-                          style: 'font-size: 0.8rem; color: #b45309; margin-top: 2px;',
-                        }, 'Pending validation'),
+                        m('.friend-custom-status.is-pending', 'Pending validation'),
                     ]),
                   ]
                 );

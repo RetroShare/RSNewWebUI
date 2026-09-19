@@ -43,9 +43,9 @@ const Reputation = () => {
       );
     },
     view: (vnode) =>
-      m('.widget', [
-        m('.widget__heading', m('h3', 'Reputation')),
-        m('.widget__body', [
+      m('.panel', [
+        m('.panel__head', m('h3', 'Reputation')),
+        m('.panel__body', [
           m('.grid-2col', [
             m('p', 'Use "positive" as the default opinion for contacts(instead of neutral):'),
             m('input[type=checkbox]', {

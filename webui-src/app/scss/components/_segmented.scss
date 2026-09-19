@@ -1,0 +1,168 @@
+@use '../abstracts' as *;
+
+// -----------------------------------------------------------------------------
+// The segmented control.
+//
+// One object with two treatments, chosen by what the control does:
+//
+//  · --lozenge  a picker. Every alternative is visible at once and the chosen
+//               one is raised out of a sunken track. Use it when the choice is
+//               beside the thing it affects: People/Chats, card/list, All/Unread.
+//
+//  · --underline  tabs. The selected one is attached by its edge to the pane it
+//               reveals, which is the whole point of an underline. Use it only
+//               when the content directly below changes.
+//
+// It replaces eleven controls in seven treatments -- solid brand fills, pale
+// tints, white lozenges, two different underlines, and one pair of divs with a
+// hardcoded hex in a style attribute.
+// -----------------------------------------------------------------------------
+
+.segmented {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+
+  &__item {
+    @include control-base;
+
+    flex: 0 1 auto;
+    min-width: 0;
+    justify-content: center;
+    padding: 0 var(--s3);
+    border-radius: var(--r-sm);
+    //  A label's own line box, not the body's 1.5. The underline variant sizes
+    //  itself from padding + line + mark, so an inherited 21px line box made
+    //  the tab strip 4px taller than a picker beside it.
+    line-height: 1.2;
+    white-space: nowrap;
+
+    &[disabled] { opacity: 0.5; cursor: not-allowed; }
+  }
+
+  //  A count travelling with its tab. Neutral until selected, so the colour
+  //  means "this one" rather than "urgent".
+  &__badge {
+    flex: none;
+    min-width: 16px;
+    padding: 0 5px;
+    border-radius: var(--r-full);
+    background: var(--sunken);
+    color: var(--ink-dim);
+    font-size: var(--t-micro);
+    font-weight: var(--w-state);
+    line-height: 16px;
+    text-align: center;
+  }
+
+  //  Same optical compensation as a leading-icon button. Guarded on the
+  //  group rather than raced on specificity: an icons-only group can never
+  //  match this, so its `padding: 0` below is safe.
+  &:not(.segmented--icons) &__item:has(> .icon:first-child) {
+    padding-left: 10px;
+  }
+
+  //  Icon-only: a square, like every other glyph button in the product.
+  &--icons &__item {
+    width: var(--control);
+    padding: 0;
+    gap: 0;
+
+    > .icon { width: 1.05em; height: 1.05em; }
+  }
+}
+
+/* == Lozenge ============================================================== */
+
+//  A track and a raised tile. The track carries the same 1px --line edge a
+//  field does, so a picker sitting under a search box reads as the same family
+//  of control -- but nothing frames the selected tile: a frame around the group
+//  plus a frame around the selection is two rules saying the same thing.
+.segmented--lozenge {
+  gap: 2px;
+  padding: 2px;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--sunken);
+
+  //  Both variants come out at --control overall, so a picker and a tab strip
+  //  sitting near each other are the same size. Here the group contributes
+  //  2px of padding on each side.
+  .segmented__item {
+    min-height: calc(var(--control) - 6px);
+    border: 0;
+    color: var(--ink-dim);
+
+    &:hover { color: var(--ink-body); }
+
+    //  The pale sky band, same as the underline variant's selected tab and the
+    //  same as a selected row anywhere in the product. Not a solid brand fill:
+    //  that is the primary button, and it means "this is the action to take" --
+    //  on a segmented control it would point at the one you have already
+    //  chosen rather than the one you would click.
+    &.is-selected {
+      background: var(--select-soft);
+      color: var(--brand-deep);
+      font-weight: var(--w-label);
+
+      .segmented__badge { background: var(--brand); color: var(--surface); }
+    }
+  }
+
+  &.segmented--icons .segmented__item {
+    width: calc(var(--control) - 6px);
+    min-height: calc(var(--control) - 6px);
+  }
+}
+
+/* == Underline ============================================================ */
+
+.segmented--underline {
+  gap: var(--s1);
+  align-items: stretch;
+  border-bottom: 1px solid var(--line-soft);
+
+  .segmented__item {
+    //  The padding is the item's, not the group's: it is part of the tab, so
+    //  it is part of the hit area and of the hover band, and the label sits
+    //  low in its own box -- near the mark that belongs to it.
+    //
+    //  No min-height. The box is exactly its padding, its line, and the 2px
+    //  mark. That puts it ~2px over the lozenge variant; the label needs the
+    //  room off the mark more than the two strips need to measure identical.
+    min-height: 0;
+    padding-top: var(--s2);
+    padding-bottom: var(--s1);
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+
+    &:hover { color: var(--ink); }
+
+    //  The selected tab is a pale sky band with the brand edge under it -- the
+    //  same pair the product uses for a selected row everywhere else. The top
+    //  corners round and the bottom ones do not, so the fill reads as attached
+    //  to the pane it reveals rather than as a floating pill.
+    &.is-selected {
+      border-radius: var(--r-sm) var(--r-sm) 0 0;
+      background: var(--select-soft);
+      border-bottom-color: var(--brand);
+      color: var(--brand-deep);
+      font-weight: var(--w-label);
+    }
+  }
+}
+
+@media (max-width: 700px) {
+  //  A tab strip that outgrows a phone scrolls rather than wraps: wrapping
+  //  breaks the baseline the underline sits on.
+  .segmented--underline {
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar { display: none; }
+
+    .segmented__item { flex: none; }
+  }
+}

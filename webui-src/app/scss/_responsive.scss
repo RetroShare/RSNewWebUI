@@ -41,7 +41,7 @@
       padding-bottom: 1rem;
 
       .detail-title h2 {
-        font-size: 1.35rem;
+        font-size: var(--t-h2);
       }
 
       .detail-actions {
@@ -77,7 +77,7 @@
     grid-template-columns: 1fr;
     gap: 0.35rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--line-soft);
   }
 
   /* Generic two column form grid used across the config pages */
@@ -118,7 +118,7 @@
      every column below readability. Let the content drive the width instead. */
   table {
     table-layout: auto;
-    font-size: 1rem;
+    font-size: var(--t-h3);
   }
 
   table td,
@@ -165,8 +165,8 @@
       & > td:nth-child(n + 3) {
         display: inline-block;
         margin-right: 0.75rem;
-        font-size: 0.8rem;
-        color: #64748b;
+        font-size: var(--t-meta);
+        color: var(--ink-dim);
       }
 
       & > td:nth-child(5)::before {
@@ -226,12 +226,11 @@
   input[type='email'],
   select,
   textarea {
-    font-size: 16px;
+    font-size: var(--t-h3);
   }
 
   input {
-    &.stretched,
-    &.searchbar {
+    &.stretched {
       width: 100%;
     }
 
@@ -243,18 +242,13 @@
   /* Page level sidebars turned into a horizontal tab strip by _navbar.scss:
      make the targets tall enough for a finger. */
   .sidebar a {
-    min-height: $touch-target;
+    min-height: var(--control);
     display: inline-flex !important;
     align-items: center;
   }
 
-  /* Tooltips are anchored with a fixed -120px offset, which pushes them off
-     screen on a narrow viewport */
+  /* A centred tooltip can still overhang a narrow viewport; cap it. */
   .tooltiptext {
-    left: 0;
-    margin-left: 0;
-    min-width: 0;
-    width: max-content;
     max-width: 80vw;
   }
 }
@@ -264,19 +258,6 @@
    ========================================================================= */
 
 @include touch {
-  /* Hover-revealed helpers are unreachable without a pointer */
-  .tooltip .tooltiptext {
-    /* still hidden by default, but reachable by tapping the element */
-    &:focus,
-    &:focus-within {
-      visibility: visible;
-    }
-  }
-
-  .tooltip:focus-within .tooltiptext {
-    visibility: visible;
-  }
-
   /* Recipient autocomplete stays open while the field has focus; the list is
      only kept alive by :hover on desktop. */
   .compose-mail__recipients .recipients__input:focus-within .recipients__input-list {

@@ -1,5 +1,7 @@
 const m = require('mithril');
 const util = require('boards/boards_util');
+const icon = require('icon');
+const widget = require('widgets');
 
 const PAGE_SIZE = 25;
 
@@ -13,13 +15,8 @@ function numberValue(value) {
  * Fallback SVG Thumbnail when no image is available
  */
 const FallbackImage = {
-  view: () => m('.board-card__placeholder-content', {
-    style: {
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      gap: '.3rem', color: '#64748b', fontSize: '.72rem', fontWeight: '600', textAlign: 'center',
-    },
-  }, [
-    m('i.fas.fa-image[aria-hidden=true]', { style: { fontSize: '1.35rem' } }),
+  view: () => m('.board-card__placeholder-content', [
+    icon('image'),
     m('span', 'No image'),
   ]),
 };
@@ -164,7 +161,7 @@ function PhotoViewModal() {
                   type: 'button',
                   title: 'Previous',
                   onclick: (e) => { e.stopPropagation(); navigate(photoList, currentIndex - 1); },
-                }, m('i.fas.fa-chevron-left'))
+                }, icon('chevron-left'))
               : null,
           ]),
           m('.photo-view-img-wrap', [
@@ -178,7 +175,7 @@ function PhotoViewModal() {
                   type: 'button',
                   title: 'Next',
                   onclick: (e) => { e.stopPropagation(); navigate(photoList, currentIndex + 1); },
-                }, m('i.fas.fa-chevron-right'))
+                }, icon('chevron-right'))
               : null,
           ]),
         ]),
@@ -275,7 +272,6 @@ function BoardCard() {
             '.board-card__image-container',
             {
               title: thumbnailSrc ? 'Click to view photo' : 'View photo',
-              style: 'cursor: pointer',
               onclick: (e) => {
                 e.stopPropagation();
                 if (onOpenPhoto) {
@@ -336,14 +332,17 @@ function BoardCard() {
                   title: 'View notes',
                   onclick: (e) => {
                     e.stopPropagation();
-                    util.popupmessage(m('.board-notes-dialog', [
-                      m('h3', title),
-                      m('p.board-notes-dialog__label', 'Notes'),
-                      m('p.board-notes-dialog__content', notes),
-                    ]));
+                    util.popupmessage(
+                      m('.board-notes-dialog', [
+                        m('p.board-notes-dialog__label', 'Notes'),
+                        m('p.board-notes-dialog__content', notes),
+                      ]),
+                      '',
+                      { title }
+                    );
                   },
                 },
-                [m('i.fas.fa-sticky-note'), m('span', 'View notes')]
+                [icon('sticky-note'), m('span', 'View notes')]
               ) : null,
               m(
                 'button.board-card__comments-btn',
@@ -365,7 +364,7 @@ function BoardCard() {
                   },
                 },
                 [
-                  m('i.fas.fa-comment-alt.board-card__comments-icon'),
+                  icon('comment-alt', { class: 'board-card__comments-icon' }),
                   m('span.board-card__comments-label', commentCount > 0 ? `${commentCount} comment${commentCount === 1 ? '' : 's'}` : 'Comment'),
                 ]
               ),
@@ -386,7 +385,7 @@ function BoardCard() {
                       }
                     },
                   },
-                  [m('i.fas.fa-arrow-up')]
+                  [icon('arrow-up')]
                 ),
                 m('span.board-card__vote-score', score),
                 m(
@@ -405,7 +404,7 @@ function BoardCard() {
                       }
                     },
                   },
-                  [m('i.fas.fa-arrow-down')]
+                  [icon('arrow-down')]
                 ),
               ]),
             ]),
@@ -444,53 +443,31 @@ function Toolbar() {
         m('.board-toolbar__left', [
           vnode.attrs.onCreatePost && m('button.board-toolbar__create-post[type=button][title=Create Post][aria-label=Create Post]', {
             onclick: vnode.attrs.onCreatePost,
-          }, m('i.fas.fa-plus')),
+          }, icon('plus')),
           onSearchInput
-            ? m('.board-toolbar__search', [
-                m('i.fas.fa-search.board-toolbar__search-icon'),
-                m('input.board-toolbar__search-input[type=text][placeholder=Search...]', {
-                  value: searchString || '',
-                  oninput: (e) => onSearchInput(e.target.value),
-                }),
-              ])
+            ? m(widget.SearchField, {
+              class: 'board-toolbar__search',
+              placeholder: 'Search',
+              value: searchString || '',
+              oninput: (e) => onSearchInput(e.target.value),
+              onclear: () => onSearchInput(''),
+            })
             : null,
         ]),
 
         // Right section: View Switcher AND Pagination inline
         m('.board-toolbar__right', [
           // View Mode Switcher
-          m('.board-toolbar__view-toggle', { role: 'radiogroup', 'aria-label': 'Display Mode' }, [
-            m(
-              'button.board-toolbar__toggle-btn',
-              {
-                type: 'button',
-                class: viewMode === 'compact' ? 'board-toolbar__toggle-btn--active' : '',
-                role: 'radio',
-                'aria-checked': viewMode === 'compact',
-                title: 'Switch to Compact View',
-                onclick: () => onViewModeChange('compact'),
-              },
-              [
-                m('i.fas.fa-bars'),
-                m('span', 'Compact View'),
-              ]
-            ),
-            m(
-              'button.board-toolbar__toggle-btn',
-              {
-                type: 'button',
-                class: viewMode === 'card' ? 'board-toolbar__toggle-btn--active' : '',
-                role: 'radio',
-                'aria-checked': viewMode === 'card',
-                title: 'Switch to Card View',
-                onclick: () => onViewModeChange('card'),
-              },
-              [
-                m('i.fas.fa-th-large'),
-                m('span', 'Card View'),
-              ]
-            ),
-          ]),
+          m(widget.Segmented, {
+            class: 'board-toolbar__view-toggle',
+            ariaLabel: 'Display Mode',
+            value: viewMode,
+            options: [
+              { id: 'compact', label: 'Compact View', icon: 'bars', title: 'Switch to Compact View' },
+              { id: 'card', label: 'Card View', icon: 'th-large', title: 'Switch to Card View' },
+            ],
+            onSelect: onViewModeChange,
+          }),
 
           // Pagination Controls (< 1 - 25 >)
           itemCount > 0
@@ -503,7 +480,7 @@ function Toolbar() {
                     disabled: currentPage <= 1,
                     onclick: () => onPageChange(currentPage - 1),
                   },
-                  m('i.fas.fa-chevron-left')
+                  icon('chevron-left')
                 ),
                 m(
                   'span.board-pagination__label',
@@ -517,7 +494,7 @@ function Toolbar() {
                     disabled: currentPage >= totalPages,
                     onclick: () => onPageChange(currentPage + 1),
                   },
-                  m('i.fas.fa-chevron-right')
+                  icon('chevron-right')
                 ),
               ])
             : null,
@@ -674,7 +651,7 @@ function BoardView() {
               })
             )
           : m('.board-grid__empty', { key: 'empty-node' }, [
-              m('i.fas.fa-inbox.board-grid__empty-icon'),
+              icon('inbox', { class: 'board-grid__empty-icon' }),
               m('p.board-grid__empty-title', 'No items found'),
               m('p.board-grid__empty-desc', filterText ? 'Try adjusting your search criteria.' : 'This board currently has no posts.'),
             ]),

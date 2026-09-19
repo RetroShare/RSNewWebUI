@@ -2,6 +2,7 @@ const m = require('mithril');
 const rs = require('rswebui');
 const peopleUtil = require('people/people_util');
 const chatEmoji = require('chat/chat_emoji');
+const icon = require('icon');
 
 //  The core's contract (rsgxscommon.h RsGxsVoteType, same as the legacy
 //  GXS_VOTE_* constants used by boards_util/channels_util): DOWN = 1, UP = 2.
@@ -131,8 +132,8 @@ const CommentsSection = () => {
                 });
               }
             },
-          }, [m('i.fas.fa-thumbs-up'), ` ${votes.upvotes || 0}`]),
-          m('button[type=button]', {
+          }, [icon('thumbs-up'), ` ${votes.upvotes || 0}`]),
+          m('button.is-icon[type=button]', {
             disabled: !voteIdentity,
             onclick: () => {
               if (typeof vnode.attrs.onVoteComment === 'function') {
@@ -144,21 +145,21 @@ const CommentsSection = () => {
                 });
               }
             },
-          }, m('i.fas.fa-thumbs-down')),
+          }, icon('thumbs-down')),
           m('button[type=button]', {
             onclick: () => {
               replyTo = comment;
               composerText = '';
               submitError = '';
             },
-          }, 'Reply'),
+          }, [icon('reply'), 'Reply']),
         ]),
         repliesCount ? m('button.comment__replies-toggle[type=button]', {
           'aria-expanded': repliesExpanded,
           onclick: () => { expandedReplies[id] = !repliesExpanded; },
         }, [
-          `${repliesCount} ${repliesCount === 1 ? 'reply' : 'replies'} `,
-          m('i.fas', { class: repliesExpanded ? 'fa-chevron-up' : 'fa-chevron-down' }),
+          m('span', `${repliesCount} ${repliesCount === 1 ? 'reply' : 'replies'}`),
+          icon(repliesExpanded ? 'chevron-up' : 'chevron-down'),
         ]) : null,
         repliesCount && repliesExpanded
           ? m('.comment__replies', node.children.map((child) => renderCommentNode(child, depth + 1, vnode)))
@@ -181,7 +182,7 @@ const CommentsSection = () => {
       return m('.comments', [
         m('.comments__heading', [
           m('h3', `${totalCount} Comment${totalCount === 1 ? '' : 's'}`),
-          m('span', [m('i.fas.fa-sort-amount-down'), ' Oldest first']),
+          m('span', [icon('sort-amount-down'), ' Oldest first']),
           showVoter ? m('.comments__voter', [
             m('label[for=comment-voter-select]', 'Voter identity'),
             m('select#comment-voter-select', {
@@ -203,9 +204,9 @@ const CommentsSection = () => {
             replyTo ? m('.comment-composer__replying', [
               'Replying to ',
               m('b', nameOf(metaOf(replyTo).mAuthorId)),
-              m('button[type=button][aria-label=Cancel reply]', {
+              m('button.is-icon[type=button][aria-label=Cancel reply]', {
                 onclick: () => { replyTo = null; composerText = ''; },
-              }, m('i.fas.fa-times')),
+              }, icon('times')),
             ]) : null,
             identities.length ? m('select.comment-composer__identity', {
               value: authorId || '',
@@ -225,35 +226,20 @@ const CommentsSection = () => {
             submitError ? m('p.comment-composer__error', submitError) : null,
             m('.comment-composer__actions', [
               m('.comment-composer__emoji', [
-                m('button[type=button][title=Insert emoji][aria-label=Insert emoji]', {
-                  style: {
-                    width: '32px',
-                    height: '32px',
-                    padding: '0',
-                    borderRadius: '50%',
-                    border: '0',
-                    boxShadow: 'none',
-                    background: showEmojiPicker ? '#e0f2fe' : 'transparent',
-                    color: '#475569',
-                    fontSize: '1.15rem',
+                m('button.is-icon[type=button][title=Insert emoji][aria-label=Insert emoji]', {
+                  class: showEmojiPicker ? 'comment-emoji-toggle is-open' : 'comment-emoji-toggle',
+                  'aria-pressed': String(showEmojiPicker),
+                  onclick: (e) => {
+                    e.stopPropagation();
+                    showEmojiPicker = !showEmojiPicker;
                   },
-                  onclick: () => { showEmojiPicker = !showEmojiPicker; },
-                }, m('i.fas.fa-smile')),
-                showEmojiPicker && chatEmoji && chatEmoji.EMOJI_DATA && chatEmoji.EMOJI_DATA.Smileys ? m('.comment-emoji-popover', chatEmoji.EMOJI_DATA.Smileys.slice(0, 48).map((emoji) => m('button[type=button]', {
-                  style: {
-                    width: '28px',
-                    height: '28px',
-                    padding: '0',
-                    border: '0',
-                    boxShadow: 'none',
-                    background: 'transparent',
-                    fontSize: '1.1rem',
-                  },
-                  onclick: () => {
-                    composerText += emoji;
-                    showEmojiPicker = false;
-                  },
-                }, emoji))) : null,
+                }, icon('smile')),
+                //  The shared picker. This was the first 48 Smileys and
+                //  nothing else -- no other category, no search.
+                showEmojiPicker && m(chatEmoji.EmojiPicker, {
+                  onSelect: (emoji) => { composerText += emoji; },
+                  onClose: () => { showEmojiPicker = false; },
+                }),
               ]),
               composerText || replyTo ? m('button.comment-composer__cancel[type=button]', {
                 onclick: () => {
@@ -261,17 +247,17 @@ const CommentsSection = () => {
                   replyTo = null;
                   submitError = '';
                 },
-              }, 'Cancel') : null,
+              }, [icon('times'), 'Cancel']) : null,
               m('button.comment-composer__submit[type=button]', {
                 disabled: !composerText.trim() || !authorId || submitting,
                 onclick: () => handleSubmit(vnode),
-              }, submitting ? 'Posting…' : 'Comment'),
+              }, [icon('paper-plane'), submitting ? 'Posting…' : 'Comment']),
             ]),
           ]),
         ]),
-        vnode.attrs.loading ? m('.comments__status', [m('i.fas.fa-spinner.fa-spin'), ' Loading comments…'])
+        vnode.attrs.loading ? m('.comments__status', [icon('spinner', { spin: true }), ' Loading comments…'])
           : roots.length ? m('.comments__list', roots.map((node) => renderCommentNode(node, 0, vnode)))
-          : m('.comments__empty', [m('i.fas.fa-comment'), m('p', 'No comments yet. Start the conversation.')]),
+          : m('.comments__empty', [icon('comment'), m('p', 'No comments yet. Start the conversation.')]),
       ]);
     },
   };

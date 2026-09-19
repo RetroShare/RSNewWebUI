@@ -1,10 +1,12 @@
+@use '../abstracts' as *;
+
 .identity {
-  color: #444;
+  color: var(--ink);
   font-size: 1.1em;
   margin: 20px;
   padding: 10px;
-  border: 1px solid #aaa;
-  border-radius: 20px;
+  border: 1px solid var(--ink-faint);
+  border-radius: var(--r-md);
   & > h4 {
     margin: 5px;
     font-size: 1.3em;
@@ -25,12 +27,12 @@
   height: 3rem;
   aspect-ratio: 1;
   background: lightsteelblue;
-  border-radius: 50%;
+  border-radius: var(--r-full);
   display: grid;
   place-items: center;
+  //  The tile's colour comes from the id and is always mid-dark, so the
+  //  letter on it is the light ink -- see .avatar-initial.
   & p {
-    font-weight: 900;
-    color: #666f7f;
     transform: translateY(1px);
   }
 }
@@ -40,7 +42,7 @@ img.avatar {
   height: max-content;
   aspect-ratio: 1;
   margin-right: 0.3em;
-  border-radius: 50%;
+  border-radius: var(--r-full);
 }
 
 .counter {
@@ -64,138 +66,128 @@ img.avatar {
   flex-direction: column;
   padding: 0.75rem 1rem 0.5rem 1rem;
   gap: 0.75rem;
-  border-bottom: 1px solid #e2e8f0;
-  background-color: #ffffff;
+  border-bottom: 1px solid var(--line-soft);
+  background-color: var(--surface);
 
-  .searchbar-wrapper {
-    position: relative;
+  .people-search-row {
     display: flex;
-    align-items: center;
+    gap: var(--s1);
 
-    i.fa-search {
-      position: absolute;
-      left: 0.85rem;
-      color: #94a3b8;
-      font-size: 0.9rem;
-    }
-
-    input.searchbar-input {
-      width: 100%;
-      padding: 0.5rem 0.75rem 0.5rem 2.25rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
-      font-size: 0.9rem;
-      background-color: #f8fafc;
-      color: #1e293b;
-      outline: none;
-      transition: all 0.2s ease;
-
-      &:focus {
-        border-color: #3b82f6;
-        background-color: #ffffff;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-      }
-    }
+    .search-field { flex: 1; }
   }
 
+
+  //  Tabs on the left, the People filter on the right -- one row, the same
+  //  arrangement the mail list uses for its tabs and tag filter.
+  //  A tight gap, because the only place it shows is between the filter and
+  //  the add button -- the tabs are held apart from them by the auto margin.
+  //  At 300px the three of them are within a few pixels of the pane, so the
+  //  four the wider gap costs are four the row does not have.
+  .people-filter-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--s1);
+    min-height: var(--control);
+  }
+
+  //  Layout only: the picker treatment is the shared segmented control. It
+  //  spans the row, as it always has -- on People the filter takes its share
+  //  first and the tabs fill what is left, so the two sidebars keep the same
+  //  full-width tab bar.
   .segmented-control {
     display: flex;
-    background-color: #f1f5f9;
-    padding: 3px;
-    border-radius: 0.5rem;
-    gap: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
 
-    button.segment-tab {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: #64748b;
-      background: transparent;
-      border: none;
-      border-radius: 0.375rem;
-      cursor: pointer;
-      box-shadow: none;
-      transition: all 0.2s ease;
-
-      &:hover {
-        color: #1e293b;
-      }
-
-      &.active {
-        background-color: #ffffff;
-        color: #0f172a;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-
-        .segment-badge {
-          background-color: #019dff;
-          color: #ffffff;
-        }
-      }
-
-      .segment-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #cbd5e1;
-        color: #334155;
-        font-size: 0.75rem;
-        font-weight: 700;
-        min-width: 1.25rem;
-        height: 1.25rem;
-        padding: 0 0.35rem;
-        border-radius: 9999px;
-        line-height: 1;
-        transition: all 0.2s ease;
-      }
-    }
+    .segmented__item { flex: 1; min-width: 0; }
   }
 
-  .sub-filter-row {
+  //  Pushed to the far end. Nothing here shrinks -- a native select sizes to
+  //  its widest option, and squeezing it clips "My Identities" mid-word.
+  .people-filter-row__end {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    min-height: 32px;
+    gap: var(--s1);
+    flex: none;
+    margin-left: auto;
+  }
 
-    select.filter-select {
-      padding: 0.35rem 0.6rem;
-      border: 1px solid #cbd5e1;
-      border-radius: 0.375rem;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #475569;
-      background-color: #ffffff;
-      cursor: pointer;
-      outline: none;
-    }
+  .people-filter-menu {
+    .menu__panel { min-width: 0; }
+    .menu__item { min-height: var(--control); }
+  }
 
-    .btn-add-id {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      border-radius: 0.375rem;
-      background-color: #3b82f6;
-      color: #ffffff;
-      border: none;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background-color 0.2s;
+  .btn-add-id {
+    @include btn-base;
+    @include btn-square;
 
-      &:hover {
-        background-color: #2563eb;
-      }
-    }
+    flex: none;
   }
 }
 
+@include mobile {
+  .people-sidebar-header .people-filter-row { flex-wrap: wrap; }
+}
 
+
+
+/* == Distant chat header ===================================================
+   One bar across the top of a distant conversation: the tunnel light on the
+   left, the identity you are speaking as and the two actions on the right. */
+
+.chat-identity-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  box-sizing: border-box;
+  padding: var(--s2) var(--s4);
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--surface);
+  font-size: var(--t-row);
+}
+
+.chat-tunnel-status {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+  color: var(--ink-dim);
+
+  //  The one thing on this bar that changes by itself, so it is the one thing
+  //  allowed to carry a colour of its own -- set from the tunnel state in JS.
+  .tunnel-dot {
+    width: 10px;
+    height: 10px;
+    flex: none;
+  }
+}
+
+.chat-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.select-own-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+
+  .chatting-as-label { color: var(--ink-dim); white-space: nowrap; }
+}
+
+//  Wide enough for a name, and free to give the width back before the buttons
+//  beside it lose theirs.
+.chat-identity-select {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 11rem;
+}
 
 // Recent-chats split-pane + friends context menu (people_sidebar.js).
 // Recovered from compiled styles.css; hard-coded colors kept as-was.
@@ -204,10 +196,10 @@ img.avatar {
   position: absolute;
   left: 2rem;
   width: 210px;
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-  border-radius: 0.375rem;
+  background-color: var(--surface);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--lift);
+  border-radius: var(--r-md);
   z-index: 1010;
   padding: 0.25rem 0;
   display: flex;
@@ -216,17 +208,97 @@ img.avatar {
 
 .friends-list-container .people-context-menu .menu-item {
   padding: 0.5rem 1rem;
-  font-size: 0.85rem;
-  color: #334155;
+  font-size: var(--t-row);
+  color: var(--ink);
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: background-color 0.2s;
+  gap: var(--s2);
+
+  //  Every row here is an equal choice, so the glyphs take the row's own ink:
+  //  a colour each reads as three different kinds of thing in a list of three
+  //  of the same kind.
+  > .icon { color: var(--ink-dim); }
 }
 
 .friends-list-container .people-context-menu .menu-item:hover {
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background-color: var(--sunken);
+  color: var(--ink);
+}
+
+/* The passphrase step of the signed-identity form. Spacing from the scale,
+   not from magic offsets that only line up at one window height. */
+.passphrase-field { width: 80%; margin-top: var(--s5); }
+.passphrase-submit { margin-top: var(--s4); }
+
+.network-pane-placeholder { padding: var(--s5) 0; }
+
+/* The letter shown when an identity has no avatar. The tile's colour comes
+   from the id, so the letter is always the light ink on it. */
+.avatar-initial {
+  margin: 0;
+  color: var(--surface);
+  font-weight: var(--w-state);
+  line-height: 1;
+}
+
+/* == Identity details =====================================================
+   The reputation tally under an avatar, and the usage log below it. */
+
+.identity-votes {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  margin-top: var(--s2);
+}
+
+.vote-positive,
+.vote-negative {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  font-size: var(--t-h3);
+  font-variant-numeric: tabular-nums;
+}
+
+.vote-positive { color: var(--up-ink); }
+.vote-negative { color: var(--down-ink); }
+
+.usage-placeholder {
+  margin: 0;
+  padding: var(--s2) 0;
+  color: var(--ink-dim);
+  font-style: italic;
+}
+
+.usage-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s4);
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: var(--t-row);
+
+  &:last-child { border-bottom: 0; }
+}
+
+//  The timestamp is the column you scan down, so it is fixed-width and set in
+//  tabular figures; the description is what you read.
+.usage-time {
+  flex: none;
+  min-width: 150px;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-desc { min-width: 0; color: var(--ink-body); overflow-wrap: anywhere; }
+
+/* The "n more identities" line under a capped list. */
+.friends-list-more {
+  padding: var(--s3) var(--s4);
+  color: var(--ink-dim);
+  font-size: var(--t-row);
+  font-style: italic;
 }
 
 /* Main People Page Flex Layout Container */
@@ -236,22 +308,12 @@ img.avatar {
   height: 100% !important;
   width: 100% !important;
   overflow: hidden !important;
-  background-color: #f1f5f9 !important;
+  background-color: var(--sunken) !important;
 }
 
 /* Left Sidebar Pane (320px fixed width on Desktop) */
 .people-left-pane {
-  width: 280px !important;
-  min-width: 280px !important;
-  max-width: 280px !important;
-  height: 100% !important;
-  border-right: 1px solid #cbd5e1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  background: #ffffff !important;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05) !important;
-  flex-shrink: 0 !important;
-  overflow: hidden !important;
+  @include list-pane;
 }
 
 /* Right Content Details Pane */
@@ -262,14 +324,12 @@ img.avatar {
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
-  background-color: #f8fafc !important;
+  background-color: var(--ground) !important;
 }
 
 /* Scrollable list section inside left sidebar */
 .people-list-container {
-  flex: 1 !important;
-  overflow-y: auto !important;
-  padding: 0.5rem 0 !important;
+  @include list-pane-scroll;
 }
 
 /* Active Chats list item */
@@ -279,21 +339,21 @@ img.avatar {
   gap: 0.75rem !important;
   padding: 0.65rem 0.85rem !important;
   margin: 0.2rem 0.5rem !important;
-  border-radius: 0.5rem !important;
+  border-radius: var(--r-md) !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
   position: relative !important;
 
   &:hover {
-    background-color: #f1f5f9 !important;
+    background-color: var(--sunken) !important;
   }
 
   &.selected {
-    background-color: #e0f2fe !important;
+    background-color: var(--select-soft) !important;
 
     .chat-name {
-      color: #0369a1 !important;
-      font-weight: 700 !important;
+      color: var(--brand-deep) !important;
+      font-weight: var(--w-state) !important;
     }
   }
 
@@ -307,8 +367,8 @@ img.avatar {
       right: -1px !important;
       width: 13px !important;
       height: 13px !important;
-      border-radius: 50% !important;
-      border: 2px solid #ffffff !important;
+      border-radius: var(--r-full) !important;
+      border: 2px solid var(--surface) !important;
     }
   }
 
@@ -319,17 +379,17 @@ img.avatar {
     flex-direction: column !important;
 
     .chat-name {
-      font-size: 0.95rem !important;
-      font-weight: 600 !important;
-      color: #1e293b !important;
+      font-size: var(--t-body) !important;
+      font-weight: var(--w-label) !important;
+      color: var(--ink) !important;
       white-space: nowrap !important;
       overflow: hidden !important;
       text-overflow: ellipsis !important;
     }
 
     .chat-last-msg {
-      font-size: 0.825rem !important;
-      color: #64748b !important;
+      font-size: var(--t-meta) !important;
+      color: var(--ink-dim) !important;
       white-space: nowrap !important;
       overflow: hidden !important;
       text-overflow: ellipsis !important;
@@ -344,9 +404,9 @@ img.avatar {
     flex-shrink: 0 !important;
 
     .chat-time {
-      font-size: 0.75rem !important;
-      color: #94a3b8 !important;
-      font-weight: 500 !important;
+      font-size: var(--t-label) !important;
+      color: var(--ink-faint) !important;
+      font-weight: var(--w-label) !important;
     }
   }
 }
@@ -361,7 +421,7 @@ img.avatar {
     max-width: none !important;
     height: 45% !important;
     border-right: none !important;
-    border-bottom: 1px solid #cbd5e1 !important;
+    border-bottom: 1px solid var(--line) !important;
   }
   .people-right-pane {
     height: 55% !important;
@@ -394,43 +454,32 @@ img.avatar {
   display: grid !important;
   grid-template-columns: 11rem minmax(0, 1fr);
   gap: 1rem 1.5rem !important;
-
-  &__heading,
   &__name,
   &__help,
   &__submit { grid-column: 1 / -1; }
-  &__heading { display: flex; align-items: center; gap: .75rem; }
-  &__heading > i { color: #3ba4d7; font-size: 1.5rem; }
-  &__heading h3 { margin: 0; color: #1e293b; }
-  &__heading p { margin: .2rem 0 0; color: #64748b; font-size: .9rem; }
   &__name { width: 100%; }
   &__avatar {
     grid-row: span 2; display: flex; flex-direction: column; align-items: center;
-    gap: .5rem; padding: .75rem; border: 1px solid #e2e8f0;
-    border-radius: .65rem; background: #f8fafc;
+    gap: .5rem; padding: .75rem; border: 1px solid var(--line-soft);
+    border-radius: var(--r-md); background: var(--ground);
   }
   &__avatar-label,
-  &__field label { color: #475569; font-size: .85rem; font-weight: 700; }
+  &__field label { color: var(--ink-body); font-size: var(--t-row); font-weight: var(--w-label); }
   &__file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
   &__file-button {
     display: inline-flex; align-items: center; gap: .35rem; padding: .4rem .65rem;
-    border: 1px solid #0284c7; border-radius: .35rem; background: #0284c7;
-    color: #fff; font-size: .8rem; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--brand); border-radius: var(--r-sm); background: var(--brand);
+    color: var(--surface); font-size: var(--t-meta); font-weight: var(--w-label); cursor: pointer;
   }
   &__remove-avatar {
     padding: .25rem .5rem; border: 0; box-shadow: none;
-    background: transparent; color: #64748b; font-size: .78rem;
+    background: transparent; color: var(--ink-dim); font-size: var(--t-meta);
   }
-  &__remove-avatar:hover { color: #dc2626; text-decoration: underline; }
-  &__avatar small { color: #64748b; text-align: center; }
+  &__remove-avatar:hover { color: var(--down-ink); text-decoration: underline; }
+  &__avatar small { color: var(--ink-dim); text-align: center; }
   &__field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
-  &__field .config-style-select {
-    width: 100%; max-width: 320px; min-width: 0; box-sizing: border-box;
-    padding: .375rem .5rem; border: 1px solid #cbd5e1; border-radius: .375rem;
-    background: #fff; color: #334155; outline: none; font-weight: 600;
-  }
-  &__field .config-style-select:focus { border-color: #3ba4d7; }
-  &__help { color: #475569; line-height: 1.5; }
+  &__field .config-style-select { width: 100%; max-width: 320px; min-width: 0; }
+  &__help { color: var(--ink-body); line-height: 1.5; }
   &__submit { justify-self: end; }
 }
 
@@ -472,7 +521,7 @@ img.avatar {
 
 .create-identity-avatar-preview {
   width: 8rem; height: 8rem; overflow: hidden;
-  border: 1px solid #cbd5e1; border-radius: .5rem; background: #eef2ff;
+  border: 1px solid var(--line); border-radius: var(--r-md); background: var(--select-soft);
   display: flex; align-items: center; justify-content: center;
   > img { width: 100%; height: 100%; object-fit: cover; }
   > .jdenticon-avatar,
@@ -481,7 +530,7 @@ img.avatar {
 
 .modal-content.create-identity-modal {
   width: min(720px, calc(100% - 2rem)); max-height: calc(100% - 2rem);
-  box-sizing: border-box; overflow-x: hidden; overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .modal-content.signed-identity-modal {
@@ -503,15 +552,7 @@ img.avatar {
   min-width: 0;
   gap: .65rem;
 
-  &__heading {
-    display: flex;
-    align-items: center;
-    gap: .65rem;
-    padding-right: 2.5rem;
-  }
-  &__heading > i { color: #3ba4d7; font-size: 1.35rem; }
-  &__heading h3 { margin: 0; color: #1e293b; }
-  &__name-label { color: #475569; font-size: .85rem; font-weight: 700; }
+  &__name-label { color: var(--ink-body); font-size: var(--t-row); font-weight: var(--w-label); }
   &__name { width: 100%; min-width: 0; }
   &__avatar {
     display: flex;
@@ -519,28 +560,20 @@ img.avatar {
     min-width: 0;
     gap: .75rem;
     padding: .75rem;
-    border: 1px solid #e2e8f0;
-    border-radius: .65rem;
-    background: #f8fafc;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--r-md);
+    background: var(--ground);
   }
   &__avatar > .avatar,
   &__avatar > .jdenticon-avatar,
   &__avatar > .defaultAvatar { flex: 0 0 auto; margin: 0 !important; }
   &__avatar-button {
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
+    @include btn-base;
+
     min-width: 0;
-    padding: .45rem .7rem;
-    border-radius: .35rem;
-    background: #0284c7;
-    color: #fff;
-    font-size: .85rem;
-    font-weight: 600;
-    cursor: pointer;
     white-space: nowrap;
   }
-  &__keep { padding: .35rem .55rem; font-size: .8rem; }
+  &__keep { padding: .35rem .55rem; font-size: var(--t-meta); }
   &__save { align-self: flex-end; margin-top: .25rem !important; }
 }
 
@@ -550,16 +583,7 @@ img.avatar {
   gap: .75rem;
   width: 100%;
 
-  &__heading {
-    display: flex;
-    align-items: flex-start;
-    gap: .75rem;
-    padding-right: 2.5rem;
-  }
-  &__heading > i { color: #3ba4d7; font-size: 1.5rem; margin-top: .15rem; }
-  &__heading h3 { margin: 0; color: #1e293b; }
-  &__heading p { margin: .25rem 0 0; color: #64748b; line-height: 1.4; }
-  label { color: #475569; font-size: .85rem; font-weight: 700; }
+  label { color: var(--ink-body); font-size: var(--t-row); font-weight: var(--w-label); }
   input {
     width: 100%;
     box-sizing: border-box;
@@ -568,23 +592,15 @@ img.avatar {
   &__submit { align-self: flex-end; margin-top: .5rem !important; }
 }
 
-.signed-identity-result {
-  padding-right: 2.5rem;
-  h3 { margin: 0; color: #1e293b; }
-  p { margin: .75rem 0 0; color: #475569; line-height: 1.5; }
-}
-
 @media (max-width: 600px) {
   .modal-content.create-identity-modal {
     width: calc(100% - 1rem) !important;
     max-width: none !important;
     max-height: calc(100% - 1rem);
-    padding: 1rem;
   }
   .create-identity-form {
     width: 100%; min-width: 0; grid-template-columns: minmax(0, 1fr);
     gap: .75rem !important;
-    &__heading,
     &__name,
     &__avatar,
     &__field,
@@ -592,28 +608,21 @@ img.avatar {
     &__submit { grid-column: 1; }
     &__avatar { grid-row: auto; }
     &__field .config-style-select { max-width: none; }
-    &__heading { padding-right: 2.5rem; }
-    &__heading h3 { font-size: 1.35rem; white-space: nowrap; }
-    &__heading p { font-size: .82rem; }
     &__avatar { padding: .6rem; }
-    &__help { font-size: .85rem; }
+    &__help { font-size: var(--t-row); }
     &__submit { width: 100%; }
   }
   .create-identity-avatar-preview { width: 7rem; height: 7rem; }
   .modal-content.signed-identity-modal {
     width: calc(100% - 1rem) !important;
     max-width: none !important;
-    padding: 1rem;
   }
   .modal-content.edit-identity-modal {
     width: calc(100% - 1rem) !important;
     max-width: none !important;
     max-height: calc(100dvh - 1rem);
-    padding: 1rem;
-    overflow-y: auto;
   }
   .edit-identity-form {
-    &__heading h3 { font-size: 1.35rem; white-space: nowrap; }
     &__avatar { flex-direction: column; padding: .85rem; }
     &__avatar-button { justify-content: center; width: 100%; box-sizing: border-box; }
     &__keep,
@@ -625,10 +634,10 @@ img.avatar {
 .people-context-menu {
   position: absolute !important;
   z-index: 9999 !important;
-  background-color: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  border-radius: 8px !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  background-color: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r-md) !important;
+  box-shadow: var(--lift) !important;
   padding: 0.35rem 0 !important;
   min-width: 180px !important;
   font-family: inherit !important;
@@ -638,23 +647,22 @@ img.avatar {
     display: flex !important;
     align-items: center !important;
     padding: 0.6rem 0.9rem !important;
-    font-size: 0.875rem !important;
-    font-weight: 500 !important;
-    color: #1e293b !important;
+    font-size: var(--t-row) !important;
+    font-weight: var(--w-label) !important;
+    color: var(--ink) !important;
     cursor: pointer !important;
     transition: background-color 0.15s ease, color 0.15s ease !important;
     user-select: none !important;
 
     &:hover {
-      background-color: #f1f5f9 !important;
-      color: #0284c7 !important;
+      background-color: var(--sunken) !important;
+      color: var(--brand) !important;
     }
 
-    i {
-      font-size: 1rem !important;
+    .icon {
+      font-size: var(--t-h3) !important;
       width: 1.25rem !important;
       text-align: center !important;
     }
   }
 }
-

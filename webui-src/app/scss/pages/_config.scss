@@ -1,302 +1,673 @@
-@use 'sass:color';
+// -----------------------------------------------------------------------------
+// Settings.
+//
+// Everything here is scoped under `.config` (config/config_resolver.js). The
+// screen shares `.sidebar` and the bare form elements with the rest
+// of the product, so the overrides stay inside the wrapper until the other
+// screens are converted too.
+//
+// Settings is a form, not a feed: one label column, one control column, panels
+// grouped by subject, and colour reserved for whether a thing is actually
+// working. See docs/design-system.html.
+// -----------------------------------------------------------------------------
+
 @use '../abstracts' as *;
 
-.mail {
-  .permission-flag {
-    margin-bottom: 1rem;
-    @include flex($gap: 1rem);
-  }
-  &-tags {
-    padding: 0.5rem;
-    border: 1px solid color.adjust($dark-color, $alpha: -0.8);
-    border-radius: 6px;
-    &__container {
-      @include flex(column);
-      & .tag-item {
-        @include flex($align: center, $gap: 4px);
-        border-bottom: 1px solid color.adjust($dark-color, $alpha: -0.9);
-        padding: 2px 0;
-
-        &:last-child {
-          border: none;
-        }
-        &__color {
-          width: 18px;
-          height: 18px;
-          aspect-ratio: 1;
-          border-radius: 50%;
-        }
-        &__name {
-          font-size: 1.125rem;
-        }
-        &__modify {
-          margin-left: auto;
-          font-size: 0.75rem;
-          @include flex($gap: 4px);
-        }
-        &:hover {
-          background-color: $light-color;
-        }
-        & button,
-        & button.red {
-          padding: 0.25rem 0.6rem;
-        }
-      }
-    }
-  }
-}
-
-.mail-tags-form .input-field {
-  margin-bottom: 0.5rem;
-  label {
-    margin-right: 0.5rem;
-  }
-}
-
-.external-address {
-  margin: 0;
-  padding-left: 1rem;
-  height: 100px;
-  overflow: hidden auto;
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-.proxy-server {
-  @include flex(column, $gap: 4px);
-  &__tor,
-  &__i2p {
-    & > h4 {
-      margin-bottom: 0.25rem;
-    }
-    & > input {
-      margin-right: 0.5rem;
-    }
-    .proxy-outgoing {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      &__status {
-        width: 1rem;
-        height: 1rem;
-        aspect-ratio: 1;
-        border: 1px solid black;
-        border-radius: 50%;
-      }
-    }
-  }
-}
-
-.config-files {
-  @include flex(column, $gap: 1rem);
-}
-
-/* Hidden Service Configuration layout overrides */
-.proxy-server-container {
+.config {
+  display: flex;
   width: 100%;
-  @include flex(column, $gap: 1rem);
-}
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
 
-.proxy-description {
-  color: #334155;
-  font-size: 0.95rem;
-  margin-bottom: 0.5rem;
-}
+  /* The section rail is the shared component (components/_navbar.scss). */
 
-.proxy-rows-container {
-  @include flex(column, $gap: 0.75rem);
-  width: 100%;
-}
+  /* == Panel column ======================================================= */
 
-.proxy-row {
-  display: grid;
-  grid-template-columns: 160px 220px 220px auto;
-  gap: 0.75rem;
-  align-items: center;
-  width: 100%;
-}
-
-.proxy-label {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #1e293b;
-}
-
-.proxy-addr-input,
-.proxy-port-input {
-  width: 100% !important;
-  max-width: none !important;
-}
-
-.proxy-status-container {
-  @include flex($align: center, $gap: 0.5rem);
-}
-
-.proxy-status-bullet {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  display: inline-block;
-  border: 1px solid #475569;
-}
-
-.proxy-status-text {
-  font-size: 0.95rem;
-  color: #1e293b;
-}
-
-/* Network configuration uses desktop-sized inline styles. Override them on
- * phones so labels, fields, proxy details, and long IP addresses stay inside
- * the viewport. */
-@media (max-width: 700px) {
-  .config-network {
+  .node-panel {
+    flex: 1;
     min-width: 0;
-    overflow-x: hidden;
-  }
-
-  .config-network .widget {
-    min-width: 0;
-    padding: .8rem;
-  }
-
-  .config-network .nw-config-row {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: .35rem !important;
-    min-width: 0;
-  }
-
-  .config-network .nw-config-row > label,
-  .config-network .nw-config-row > p {
-    margin: 0 !important;
-  }
-
-  .config-network .nw-mode-group,
-  .config-network .nat-control-group,
-  .config-network .addr-control-group,
-  .config-network .proxy-control-group,
-  .config-network .addr-port-group {
-    width: 100%;
-    min-width: 0;
-    gap: .5rem !important;
-  }
-
-  .config-network input[type=text],
-  .config-network input[type=number],
-  .config-network select {
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    box-sizing: border-box;
-  }
-
-  .config-network .port-group,
-  .config-network .status-indicator {
-    margin-left: 0 !important;
-  }
-
-  .config-network .port-group input[type=number] {
-    width: 90px !important;
-  }
-
-  .config-network .external-address {
-    width: 100%;
-    height: auto;
-    max-height: 9rem;
-    padding-left: 1.25rem;
+    padding: var(--s5);
+    background: var(--ground);
     overflow: auto;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-    box-sizing: border-box;
-  }
-}
-
-/* Chat settings: replace the desktop grid/table with phone-friendly rows. */
-@media (max-width: 700px) {
-  .node-config .config-grid {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: .6rem !important;
-    min-width: 0;
-    box-sizing: border-box;
   }
 
-  .node-config .default-id-selector {
+  /* One panel per subject. Chrome is a hairline and a 6% gradient, not a
+     shadow — a settings page is not a stack of floating cards.
+
+     This is a card, several to a page, and its head is the card's chrome
+     band. It used to be `.widget__heading`, the same class the page title
+     uses elsewhere in the app — one name for two components, which is why
+     nothing about the two lined up. `.page-head` is the page title;
+     `.panel__head` is this. */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface);
+
+    + .panel { margin-top: var(--s4); }
+
+    &__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--s3);
+      padding: var(--s2) var(--s4);
+      border-bottom: 1px solid var(--line);
+      border-radius: var(--r-md) var(--r-md) 0 0;
+      background: var(--chrome);
+
+      h3 {
+        margin: 0;
+        font-size: var(--t-h3);
+        font-weight: var(--w-label);
+        letter-spacing: -0.01em;
+        color: var(--ink);
+      }
+    }
+
+    &__body {
+      display: flex;
+      flex-direction: column;
+      gap: var(--s3);
+      padding: var(--s4);
+    }
+
+    /* A nested head is a subsection, so it drops the panel chrome and sits
+       flush with the fields under it.
+
+       Written as a plain descendant, NOT `&__body &__head`: inside
+       `.config { .panel { … } }` the `&` is the whole parent selector, so
+       that shorthand expands to `.config .panel__body .config .panel__head`
+       and matches nothing. */
+    &__body .panel__head {
+      padding: 0;
+      border-radius: 0;
+      border-bottom: 0;
+      background: none;
+
+      //  Still a heading: --t-h3 on --ink. Dropping it to --t-body on
+      //  --ink-body made it identical to `.grid-2col > p` beside it -- same
+      //  size, same weight, same colour -- so it stopped reading as a
+      //  heading at all. The chrome band is what a section loses inside the
+      //  panel, not its rank.
+      h3 {
+        font-size: var(--t-h3);
+        font-weight: var(--w-state);
+        color: var(--ink);
+      }
+    }
+
+    //  One section: its heading, then its fields. The gap inside is much
+    //  smaller than the gap between, so the heading groups with what it names
+    //  and the sections read as separate blocks without needing a rule.
+    &__body-box {
+      display: flex;
+      flex-direction: column;
+      gap: var(--s2);
+
+      + .panel__body-box { margin-top: var(--s5); }
+    }
+  }
+
+  .config-network,
+  .config-files,
+  .node-config,
+  .network-config-form,
+  .proxy-server-form,
+  .hidden-service-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
     width: 100%;
     min-width: 0;
   }
 
-  .node-config .default-id-selector select,
-  .node-config .config-grid > select {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    box-sizing: border-box;
+  .config-network,
+  .node-config { gap: var(--s4); }
+
+  /* == The settings row ===================================================
+     Every screen aligns on one label column, so the eye runs down a single
+     edge instead of re-finding it per panel. */
+
+  .nw-config-row,
+  .config-grid,
+  .grid-2col {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: var(--s3) var(--s4);
+    align-items: center;
+    justify-content: start;
+    min-width: 0;
   }
 
-  .node-config .storage-input-group {
-    justify-content: flex-start;
-  }
+  .nw-config-row--top { align-items: start; }
 
-  .node-config .table-container {
-    overflow: visible !important;
-  }
-
-  .node-config .history-config-table,
-  .node-config .history-config-table tbody,
-  .node-config .history-config-table tr,
-  .node-config .history-config-table td {
-    display: block;
-    width: 100% !important;
-    box-sizing: border-box;
-  }
-
-  .node-config .history-config-table {
-    table-layout: auto;
-  }
-
-  .node-config .history-config-table thead {
-    display: none;
-  }
-
-  .node-config .history-config-table tr {
+  //  A field label is not emphasised text: it is in the label column, which
+  //  is what tells you it is a label. Leaving it at --w-label meant a
+  //  subsection heading and the fields under it shared a weight, so only a
+  //  1px size step separated them.
+  .nw-label,
+  .cfg-label,
+  .grid-2col > p {
     margin: 0;
-    padding: .75rem;
-    border-bottom: 1px solid #e2e8f0 !important;
+    font-size: var(--t-body);
+    font-weight: var(--w-body);
+    color: var(--ink-body);
+    //  "Operating mode: No Anonymous..." is longer than the label column at
+    //  every width, and ran over the control beside it.
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
-  .node-config .history-config-table tr:last-child {
-    border-bottom: 0 !important;
+  .nw-mode-group,
+  .nat-control-group,
+  .addr-control-group,
+  .proxy-control-group,
+  .addr-port-group,
+  .default-id-selector {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--s3);
+    min-width: 0;
   }
 
-  .node-config .history-config-table td {
-    padding: .25rem 0 !important;
-    text-align: left !important;
+  .port-group,
+  .storage-input-group,
+  .count-group {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
   }
 
-  .node-config .history-config-table td:nth-child(2),
-  .node-config .history-config-table td:nth-child(3) {
+  /* == Controls ===========================================================
+     One field. Addresses and ports are data, so they are set in the mono
+     face and given tabular figures. */
+
+  input[type='text'],
+  input[type='password'],
+  input[type='number'],
+  textarea,
+  select {
+    @include field-base;
+
+    max-width: 320px;
+  }
+
+  //  field-base sets `background` as a shorthand, which clears the chevron the
+  //  global select rule put in background-image. Put it back after.
+  select {
+    @include select-arrow;
+  }
+
+  input[type='number'],
+  .nw-port {
+    width: 92px;
+    max-width: 92px;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .nw-input { flex: 1; }
+  .nw-input--wide { max-width: 460px; }
+  .nw-input--mono { font-family: var(--font-mono); }
+
+  input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--brand);
+    cursor: pointer;
+  }
+
+  .grid-2col input[type='checkbox'] { margin-top: 0; justify-self: start; }
+
+  //  A filesystem path is long and the tail is the part that identifies it,
+  //  so it takes the whole value column rather than a default input width.
+  .cfg-path {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+  }
+
+  .cfg-note {
+    margin: 0;
+    font-size: var(--t-row);
+    color: var(--ink-dim);
+  }
+
+  .cfg-unit,
+  .nw-port-label {
+    font-size: var(--t-meta);
+    color: var(--ink-dim);
+  }
+
+  hr,
+  .nw-rule {
+    width: 100%;
+    margin: var(--s2) 0;
+    border: 0;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  /* == Connection state ===================================================
+     The only saturated colour on the screen: whether the thing works. */
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .bullet {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: var(--r-full);
+    background: var(--ink-faint);
+
+    &--on { background: var(--up); }
+    &--off { background: var(--ink-faint); }
+  }
+
+  .nw-status-text {
+    font-size: var(--t-meta);
+    color: var(--ink-dim);
+
+    &--hidden { color: var(--brand-deep); font-weight: var(--w-label); }
+  }
+
+  .proxy-description {
+    max-width: var(--measure);
+    margin: 0 0 var(--s2);
+    font-size: var(--t-body);
+    color: var(--ink-dim);
+  }
+
+  /* Addresses the node is reachable on. Mono, because they get copied. */
+  .external-address {
+    margin: 0;
+    padding-left: var(--s4);
+    max-height: 108px;
+    overflow: hidden auto;
+    font-family: var(--font-mono);
+    font-size: var(--t-row);
+    color: var(--ink-body);
+
+    &::-webkit-scrollbar { display: none; }
+  }
+
+  /* == Chat history ======================================================= */
+
+  .storage-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: .75rem;
+    gap: var(--s4);
+    width: 100%;
+    max-width: 520px;
+    padding: var(--s3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--sunken);
+
+    &__title {
+      display: block;
+      font-size: var(--t-body);
+      font-weight: var(--w-label);
+      color: var(--ink);
+    }
+
+    &__hint {
+      display: block;
+      max-width: 44ch;
+      margin-top: 2px;
+      font-size: var(--t-meta);
+      color: var(--ink-dim);
+    }
   }
 
-  .node-config .history-config-table td:nth-child(2)::before {
-    content: 'Enable history';
-    color: #64748b;
-    font-size: .8rem;
-    font-weight: 600;
+  .table-container {
+    width: 100%;
+    max-width: 520px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    overflow: hidden;
   }
 
-  .node-config .history-config-table td:nth-child(3)::before {
-    content: 'Max saved messages';
-    color: #64748b;
-    font-size: .8rem;
-    font-weight: 600;
+  .history-config-table {
+    width: 100%;
+    padding: 0;
+    border-collapse: collapse;
+    font-size: var(--t-body);
+
+    thead tr { background: var(--sunken); }
+
+    th {
+      padding: var(--s2) var(--s3);
+      border-bottom: 1px solid var(--line);
+      color: var(--ink-dim);
+      font-size: var(--t-meta);
+      font-weight: var(--w-label);
+      text-align: center;
+    }
+
+    td {
+      padding: var(--s2) var(--s3);
+      text-align: center;
+      color: var(--ink-body);
+    }
+
+    tr { border-bottom: 1px solid var(--line-soft); }
+    tbody tr:last-child { border-bottom: 0; }
+    tbody tr:hover { background: var(--select-faint); }
+
+    .col-type {
+      width: 220px;
+      text-align: left;
+      color: var(--ink);
+      font-weight: var(--w-label);
+
+      &__icon { color: var(--ink-dim); margin-right: 6px; }
+    }
+
+    .col-enable { width: 120px; }
+    .col-count { width: 170px; }
+  }
+
+  /* == Services and node facts ============================================ */
+
+  table:not(.history-config-table) {
+    padding: 0;
+    font-size: var(--t-body);
+    text-align: left;
+
+    th {
+      padding: var(--s2) var(--s3);
+      border-bottom: 1px solid var(--line);
+      color: var(--ink-dim);
+      font-size: var(--t-meta);
+      font-weight: var(--w-label);
+      text-align: left;
+    }
+
+    td { padding: var(--s2) var(--s3); color: var(--ink-body); }
+    tr { border-bottom: 1px solid var(--line-soft); }
+    tr:last-child { border-bottom: 0; }
+  }
+
+  .panel__body > ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      gap: var(--s3);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--line-soft);
+      font-size: var(--t-body);
+      color: var(--ink-body);
+
+      &:last-child { border-bottom: 0; }
+    }
+  }
+
+  /* == Mail tags ==========================================================
+     The colour belongs to the tag, so the row around it stays neutral. */
+
+  .permission-flag {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    margin-bottom: var(--s3);
+
+    p { margin: 0; font-size: var(--t-body); color: var(--ink-body); }
+  }
+
+  .mail-tags {
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+
+    > h4 {
+      margin: 0;
+      padding: var(--s4);
+      font-size: var(--t-body);
+      font-weight: var(--w-body);
+      color: var(--ink-dim);
+      text-align: center;
+    }
+
+    &__container {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tag-item {
+      display: flex;
+      align-items: center;
+      gap: var(--s3);
+      min-height: 38px;
+      padding: 0 var(--s3);
+      border-bottom: 1px solid var(--line-soft);
+
+      &:last-child { border-bottom: 0; }
+      &:hover { background: var(--select-faint); }
+
+      &__color {
+        width: 12px;
+        height: 12px;
+        flex: none;
+        aspect-ratio: 1;
+        border: 1px solid rgb(var(--ink-rgb) / 0.18);
+        border-radius: var(--r-full);
+      }
+
+      &__name {
+        margin: 0;
+        flex: 1;
+        min-width: 0;
+        font-size: var(--t-body);
+        color: var(--ink);
+      }
+
+      &__modify {
+        display: flex;
+        gap: var(--s1);
+        margin-left: auto;
+
+        button,
+        button.red {
+          @include btn-base;
+          @include btn-icon;
+        }
+
+        button.red { @include btn-danger; }
+      }
+    }
+  }
+
+  .mail-tags-form {
+    .input-field {
+      display: grid;
+      grid-template-columns: 148px minmax(0, 1fr);
+      gap: var(--s3);
+      align-items: center;
+      margin-bottom: var(--s3);
+
+      label { margin: 0; font-size: var(--t-body); color: var(--ink-body); }
+    }
+
+    h3 { margin: 0 0 var(--s2); font-size: var(--t-h3); }
+  }
+
+  /* == Hidden service proxy (legacy markup, still rendered) ================ */
+
+  .proxy-server {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+
+    .proxy-outgoing {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--s2);
+
+      &__status {
+        width: 8px;
+        height: 8px;
+        aspect-ratio: 1;
+        border-radius: var(--r-full);
+        background: var(--ink-faint);
+      }
+    }
+  }
+
+  /* == Touch =============================================================== */
+
+  @include touch {
+    input,
+    select,
+    textarea,
+    .sidebar a { min-height: var(--touch); }
+
+    input[type='checkbox'] { width: 20px; height: 20px; }
   }
 }
 
+/* == Small screens =========================================================
+   The label column collapses: a 200px gutter next to a full-width field wastes
+   half a phone. Rows stack, fields stretch, the history table becomes a list
+   with its column headers repeated per row. */
+
+@media (max-width: 700px) {
+  .config {
+    flex-direction: column;
+    overflow: auto;
+
+    .node-panel { padding: var(--s3); }
+
+
+    .nw-config-row,
+    .config-grid,
+    .grid-2col {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: var(--s1) !important;
+      min-width: 0;
+    }
+
+    .nw-label,
+    .cfg-label,
+    .grid-2col > p { margin: 0 !important; }
+
+    .nw-mode-group,
+    .nat-control-group,
+    .addr-control-group,
+    .proxy-control-group,
+    .addr-port-group,
+    .default-id-selector {
+      width: 100%;
+      min-width: 0;
+      gap: var(--s2);
+    }
+
+    input[type='text'],
+    input[type='password'],
+    input[type='number'],
+    textarea,
+    select {
+      width: 100% !important;
+      max-width: none !important;
+      min-width: 0 !important;
+    }
+
+    input[type='number'],
+    .nw-port { width: 96px !important; max-width: 96px !important; }
+
+    .port-group,
+    .status-indicator { margin-left: 0 !important; }
+
+    .external-address {
+      width: 100%;
+      max-height: 9rem;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .storage-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--s2);
+    }
+
+    .table-container { overflow: visible; }
+
+    .history-config-table,
+    .history-config-table tbody,
+    .history-config-table tr,
+    .history-config-table td {
+      display: block;
+      width: 100% !important;
+      box-sizing: border-box;
+    }
+
+    .history-config-table { table-layout: auto; }
+    .history-config-table thead { display: none; }
+
+    .history-config-table tr {
+      margin: 0;
+      padding: var(--s3);
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .history-config-table tr:last-child { border-bottom: 0; }
+
+    .history-config-table td {
+      padding: var(--s1) 0 !important;
+      text-align: left !important;
+    }
+
+    .history-config-table .col-enable,
+    .history-config-table .col-count {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--s3);
+    }
+
+    .history-config-table .col-enable::before { content: 'Enable history'; }
+    .history-config-table .col-count::before { content: 'Max saved messages'; }
+
+    .history-config-table .col-enable::before,
+    .history-config-table .col-count::before {
+      color: var(--ink-dim);
+      font-size: var(--t-meta);
+      font-weight: var(--w-label);
+    }
+
+    /* The drawer link is `display: block !important` globally; the icon needs
+       a flex line to sit on. */
+    .sidebar-drawer .sidebar a {
+      display: flex !important;
+      align-items: center;
+      gap: var(--s3);
+    }
+
+    .mail-tags-form .input-field {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--s1);
+    }
+  }
+}

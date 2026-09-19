@@ -1,0 +1,139 @@
+@use '../abstracts' as *;
+
+// -----------------------------------------------------------------------------
+// Tooltips.
+//
+// Two shapes of one object. `.tooltip` wraps a trigger and reveals
+// `.tooltiptext` on hover or focus — a sentence of help, CSS only. And
+// `.user-tooltip` is the identity card that mail, chat and people float beside
+// a name; that one is placed by JS, because it has to measure itself against
+// the viewport, but it is the same surface.
+//
+// The hint centres with a transform rather than a negative margin, which only
+// lands on a trigger of one particular width.
+// -----------------------------------------------------------------------------
+
+/* == Hover hint =========================================================== */
+
+.tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin: 0 var(--s1);
+  color: var(--ink-faint);
+
+  > .icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover,
+  &:focus-within { color: var(--ink-dim); }
+}
+
+.tooltiptext {
+  @include tip-surface;
+
+  position: absolute;
+  top: calc(100% + var(--s1));
+  left: 50%;
+  //  Centred against the trigger's own width rather than against a guess.
+  transform: translateX(-50%);
+  z-index: 60;
+  width: max-content;
+  max-width: 260px;
+  text-align: left;
+  //  Opacity rather than visibility alone, so it can fade; `visibility` still
+  //  carries the hiding, so the box cannot be hit by a stray hover.
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+
+//  `:focus-within` is what makes this reachable from a keyboard and from a
+//  touch device, where there is no hover to reveal it with.
+.tooltip:hover .tooltiptext,
+.tooltip:focus-within .tooltiptext {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* == Identity card ======================================================== */
+
+.user-tooltip {
+  @include tip-surface;
+
+  background: var(--warn-bg);
+
+  //  Placed by JS against the viewport, so it is taken out of flow entirely.
+  position: fixed;
+  z-index: 10000;
+  width: min(var(--popover-wide), calc(100vw - var(--s5)));
+  display: grid;
+  gap: var(--s3);
+  white-space: normal;
+  text-align: left;
+  pointer-events: none;
+
+  .tooltip-head {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    min-width: 0;
+  }
+
+  .tooltip-name {
+    min-width: 0;
+    color: var(--ink);
+    font-weight: var(--w-state);
+    overflow-wrap: anywhere;
+  }
+
+  //  UserAvatar writes its own size, radius and object-fit as inline styles,
+  //  which no stylesheet can override without `!important`. The size is passed
+  //  in instead; only what is NOT inline is set here.
+  .tooltip-avatar {
+    flex: none;
+
+    .jdenticon-avatar,
+    .defaultAvatar,
+    img.avatar {
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+  }
+
+  .tooltip-details {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--s1) var(--s2);
+  }
+
+  .tooltip-row {
+    display: contents;
+  }
+
+  .tooltip-label {
+    flex: none;
+    color: var(--ink-dim);
+    font-weight: var(--w-body);
+  }
+
+  .tooltip-value {
+    min-width: 0;
+    color: var(--ink);
+    font-weight: var(--w-label);
+    overflow-wrap: anywhere;
+
+    &.is-positive { color: var(--up-ink); font-weight: var(--w-state); }
+    &.is-negative { color: var(--down-ink); font-weight: var(--w-state); }
+
+    &.tooltip-id {
+      font-family: var(--font-mono);
+      font-size: var(--t-micro);
+      font-weight: var(--w-body);
+    }
+  }
+}

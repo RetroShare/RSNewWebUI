@@ -5,14 +5,16 @@
   padding: 1rem;
   @include flex(column, $gap: 0.5rem);
   background-color: white;
-  border-radius: 0.5rem;
+  border-radius: var(--r-md);
   overflow: auto;
-  & .top-heading {
-    @include flex($justify: space-between);
-  }
+  //  No rule under the title. A 2px --ink-dim line was the heaviest stroke
+  //  on most screens, and it separated a heading from the content it already
+  //  introduces -- space does that. A rule earns its place where content
+  //  scrolls under a fixed header; a page title is not that.
   &__heading {
     @include flex($justify: space-between, $align: center);
-    border-bottom: 2px solid #999;
+    gap: var(--s3);
+    margin-bottom: var(--s2);
   }
   &__body {
     height: 100%;

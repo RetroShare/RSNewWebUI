@@ -1,0 +1,120 @@
+@use '../abstracts' as *;
+
+// -----------------------------------------------------------------------------
+// The menu — see widget.Menu in app/widgets.js.
+//
+// A button that opens a short list under it. It replaced five hand-written
+// <details> popovers (the section overflow menus, the forum details panel, the
+// chat attach tools, the People filter), which had drifted to four widths and
+// three different ways of closing.
+//
+// On a phone the button keeps its mark and drops its label: a row of labelled
+// controls is what pushed every one of those section headers off the screen.
+// -----------------------------------------------------------------------------
+
+.menu {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+
+  &__button {
+    @include btn-base;
+
+    //  A <button> gets border-box from the browser and a <summary> does not,
+    //  so without this the shared min-height comes out taller here.
+    box-sizing: border-box;
+    list-style: none;
+    user-select: none;
+    cursor: pointer;
+  }
+
+  &__button::-webkit-details-marker { display: none; }
+
+  &[open] > &__button {
+    border-color: var(--select-edge);
+    background: var(--select-soft);
+    color: var(--brand-deep);
+  }
+
+  &__caret {
+    display: inline-flex;
+    color: var(--ink-dim);
+
+    > .icon { width: 12px; height: 12px; }
+  }
+
+  &__panel {
+    @include tip-surface;
+
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + var(--s1));
+    display: flex;
+    flex-direction: column;
+    //  As wide as its widest row, never wider than the screen. btn-base keeps
+    //  a label on one line, so the row is a floor the panel has to respect or
+    //  it hangs off the side of a phone.
+    width: max-content;
+    min-width: 11rem;
+    max-width: calc(100vw - var(--s5));
+    padding: var(--s1);
+  }
+
+  &--end > &__panel { right: 0; }
+  &--start > &__panel { left: 0; }
+
+  &--up > &__panel {
+    top: auto;
+    bottom: calc(100% + var(--s1));
+  }
+
+  &__item {
+    @include btn-base;
+
+    justify-content: flex-start;
+    min-height: var(--control);
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    box-shadow: none;
+    text-align: left;
+    //  A label too long for the panel wraps rather than widening it.
+    white-space: normal;
+
+    &:hover { background: var(--sunken); }
+
+    &.is-selected {
+      background: var(--select-soft);
+      color: var(--brand-deep);
+      font-weight: var(--w-state);
+    }
+
+    &.is-danger { color: var(--down-ink); }
+  }
+
+  &__file {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+  }
+}
+
+@include mobile {
+  //  The mark carries it. Every menu passes `title`, so the name is still
+  //  there for a pointer and for a screen reader.
+  .menu__button .btn-text,
+  .menu__caret {
+    display: none;
+  }
+
+  .menu__button {
+    @include btn-square;
+
+    width: var(--control);
+    height: var(--control);
+    min-width: var(--control);
+    min-height: var(--control);
+  }
+}

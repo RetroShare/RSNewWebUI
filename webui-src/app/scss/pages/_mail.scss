@@ -10,7 +10,7 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: #f1f5f9;
+  background-color: var(--sunken);
   position: relative;
 }
 
@@ -34,12 +34,12 @@
 // ==========================================================================
 
 .mail-folders-pane {
-  width: 280px;
-  min-width: 280px;
+  width: 250px;
+  min-width: 230px;
   max-width: 280px;
   height: 100%;
-  background: #ffffff;
-  border-right: 1px solid #e2e8f0;
+  background: var(--surface);
+  border-right: 1px solid var(--line-soft);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -48,43 +48,29 @@
 
 .mail-folders-header {
   padding: 1rem;
-  border-bottom: 1px solid #e2e8f0;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid var(--line-soft);
+  background: linear-gradient(135deg, var(--ground) 0%, var(--sunken) 100%);
 }
 
 .mail-compose-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.55rem;
-  width: 100%;
-  padding: 0.65rem 1.15rem;
-  border-radius: 4px;
-  background-color: #0284c7;
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 0.95rem;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.25);
-  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+  @include btn-base;
+  @include btn-strong;
 
-  i {
-    font-size: 1.05rem;
+  width: 100%;
+
+  .icon {
+    width: 17px; height: 17px;
     line-height: 1;
   }
-
   span {
     line-height: 1;
   }
-
   &:hover {
-    background-color: #0369a1;
-    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+    background: var(--brand-deep);
+    box-shadow: none;
   }
-
   &:active {
-    background-color: #075985;
+    background: var(--brand-press);
     transform: translateY(1px);
     box-shadow: none;
   }
@@ -100,11 +86,11 @@
 }
 
 .mail-nav-section-title {
-  font-size: 0.725rem;
-  font-weight: 700;
+  font-size: var(--t-label);
+  font-weight: var(--w-label);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #94a3b8;
+  color: var(--ink-faint);
   padding: 0.75rem 0.6rem 0.25rem;
 }
 
@@ -119,21 +105,21 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.55rem 0.75rem;
-  border-radius: 0.5rem;
-  color: #334155;
-  font-size: 0.9rem;
-  font-weight: 500;
+  border-radius: var(--r-md);
+  color: var(--ink);
+  font-size: var(--t-row);
+  font-weight: var(--w-label);
   text-decoration: none;
   transition: all 0.15s ease;
   user-select: none;
   border-left: 3px solid transparent;
 
-  i {
-    font-size: 1.05rem;
+  .icon {
+    width: 17px; height: 17px;
     width: 20px;
     text-align: center;
     flex-shrink: 0;
-    color: #1e293b;
+    color: var(--ink);
     transition: color 0.15s ease;
   }
 
@@ -141,10 +127,10 @@
     width: 18px;
     height: 18px;
     min-width: 18px;
-    border-radius: 50%;
+    border-radius: var(--r-full);
     margin: 0 1px;
     flex-shrink: 0;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    box-shadow: none;
   }
 
   .mail-nav-label {
@@ -155,38 +141,38 @@
   }
 
   .mail-nav-badge {
-    font-size: 0.725rem;
-    font-weight: 600;
+    font-size: var(--t-label);
+    font-weight: var(--w-state);
     padding: 0.15rem 0.45rem;
-    border-radius: 999px;
-    background: #f1f5f9;
-    color: #64748b;
+    border-radius: var(--r-full);
+    background: var(--sunken);
+    color: var(--ink-dim);
     margin-left: auto;
   }
 
   .mail-nav-badge--unread {
-    background: #0284c7;
-    color: #ffffff;
-    font-weight: 700;
+    background: var(--brand);
+    color: var(--surface);
+    font-weight: var(--w-state);
   }
 
   &:hover {
-    background: #f8fafc;
-    color: #0f172a;
+    background: var(--ground);
+    color: var(--ink);
 
-    i {
-      color: #0f172a;
+    .icon {
+      color: var(--ink);
     }
   }
 
   &.active {
-    background: #e0f2fe;
-    color: #0369a1;
-    font-weight: 600;
-    border-left-color: #0284c7;
+    background: var(--select-soft);
+    color: var(--brand-deep);
+    font-weight: var(--w-state);
+    border-left-color: var(--brand);
 
-    i {
-      color: #0284c7;
+    .icon {
+      color: var(--brand);
     }
   }
 }
@@ -195,23 +181,56 @@
 // 2. MIDDLE PANE: Message List (Cards or Table)
 // ==========================================================================
 
-  .mail-list-pane {
+.mail-list-pane {
   width: 400px;
   min-width: 350px;
   max-width: 460px;
   height: 100%;
-  background: #ffffff;
-  border-right: 1px solid #e2e8f0;
+  background: var(--surface);
+  border-right: 1px solid var(--line-soft);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
 
+  //  In table view the pane is the whole window, so the header's controls --
+  //  search, the All/Unread tabs, the tag filter -- were spread across 1600px
+  //  with the filter pinned to the far edge. Capping the header keeps them the
+  //  same block of controls they are in the card view.
   &--table-view {
     width: auto;
     min-width: 0;
     max-width: none;
     flex: 1;
     border-right: none;
+
+    //  One control row instead of two. The markup is identical in both views
+    //  -- this is flex wrapping, not a different tree -- so switching view
+    //  neither remounts the search field nor drops what you had typed in it.
+    //
+    //  The title keeps its own line; search, the All/Unread tabs and the tag
+    //  filter share the next one, which is the only row that has the width
+    //  for all three. In the card pane they cannot fit, so they stack.
+    .mail-list-header {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      column-gap: var(--s3);
+    }
+
+    //  order applies across the whole container, so the title row needs a
+    //  lower one than the tabs or it gets pushed onto the second line.
+    .mail-list-header-top { order: -2; flex: 1 0 100%; }
+
+    //  `display: contents` drops the row box so its two children join the
+    //  header's own flex line; `order` then puts the tabs first without
+    //  moving anything in the markup, so switching view still remounts
+    //  nothing and keeps what you typed in the search field.
+    .mail-filter-row { display: contents; }
+    .mail-filter-tabs { order: -1; flex: none; }
+    .mail-tag-select { flex: none; }
+
+    .searchbar-wrapper,
+    .mail-list-header > .search-field { flex: 1 1 260px; min-width: 0; }
   }
 
   &--table-selected-hidden {
@@ -221,8 +240,8 @@
 
 .mail-list-header {
   padding: 0.85rem 1rem 0.75rem;
-  border-bottom: 1px solid #e2e8f0;
-  background: #ffffff;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
@@ -241,16 +260,16 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  background: #f8fafc;
-  color: #334155;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  background: var(--ground);
+  color: var(--ink);
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: var(--t-h3);
 
   &:hover {
-    background: #f1f5f9;
-    color: #0284c7;
+    background: var(--sunken);
+    color: var(--brand);
   }
 }
 
@@ -261,16 +280,16 @@
   flex: 1;
   min-width: 0;
 
-  i {
-    font-size: 1.15rem;
-    color: #1e293b;
+  .icon {
+    width: 18px; height: 18px;
+    color: var(--ink);
   }
 
   .mail-folder-heading {
     margin: 0;
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #0f172a;
+    font-size: var(--t-h3);
+    font-weight: var(--w-label);
+    color: var(--ink);
     line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
@@ -278,110 +297,15 @@
   }
 
   .mail-folder-count {
-    font-size: 0.85rem;
-    color: #64748b;
-    font-weight: 500;
+    font-size: var(--t-row);
+    color: var(--ink-dim);
+    font-weight: var(--w-label);
   }
 }
 
-.mail-view-toggle {
-  display: inline-flex;
-  background: #f1f5f9;
-  padding: 2px;
-  border-radius: 0.45rem;
-  gap: 2px;
-  border: 1px solid #e2e8f0;
-}
+//  Layout only: the toggle itself is the shared segmented control.
+.mail-view-toggle { flex: none; }
 
-.mail-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  height: 28px;
-  padding: 0 0.45rem;
-  border: none;
-  border-radius: 0.35rem;
-  background: transparent;
-  color: #64748b;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  i {
-    font-size: 0.85rem;
-  }
-
-  &:hover {
-    color: #0f172a;
-  }
-
-  &.active {
-    background-color: #0284c7;
-    color: #ffffff;
-    box-shadow: 0 1px 3px rgba(2, 132, 199, 0.35);
-
-    i {
-      color: #ffffff;
-    }
-
-    &:hover {
-      background-color: #0369a1;
-      color: #ffffff;
-
-      i {
-        color: #ffffff;
-      }
-    }
-  }
-}
-
-.mail-search-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-
-  .mail-search-icon {
-    position: absolute;
-    left: 0.75rem;
-    color: #94a3b8;
-    font-size: 0.85rem;
-    pointer-events: none;
-  }
-
-  .mail-search-input {
-    width: 100%;
-    padding: 0.45rem 1.85rem 0.45rem 2.15rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 0.5rem;
-    background: #f8fafc;
-    font-size: 0.85rem;
-    color: #1e293b;
-    outline: none;
-    transition: all 0.15s ease;
-
-    &:focus {
-      background: #ffffff;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
-    }
-  }
-
-  .mail-search-clear {
-    position: absolute;
-    right: 0.5rem;
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    cursor: pointer;
-    padding: 0.25rem;
-    font-size: 0.75rem;
-
-    &:hover {
-      color: #334155;
-    }
-  }
-}
 
 .mail-filter-row {
   display: flex;
@@ -390,82 +314,15 @@
   gap: 0.5rem;
 }
 
-.mail-filter-tabs {
-  display: flex;
-  gap: 0.35rem;
-}
 
-.mail-filter-pill {
-  border: none !important;
-  background: transparent;
-  box-shadow: none !important;
-  outline: none !important;
-  padding: 0.25rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-
-  &:hover {
-    background: #f1f5f9 !important;
-    color: #1e293b;
-    box-shadow: none !important;
-  }
-
-  &.active {
-    background: #e0f2fe !important;
-    color: #0284c7;
-    box-shadow: none !important;
-
-    &:hover {
-      background: #bae6fd !important;
-      color: #0284c7;
-      box-shadow: none !important;
-    }
-  }
-
-  &:active {
-    box-shadow: none !important;
-    transform: scale(0.96);
-  }
-
-  .mail-unread-pill-count {
-    background: #0284c7;
-    color: #ffffff;
-    font-size: 0.7rem;
-    padding: 0.05rem 0.35rem;
-    border-radius: 999px;
-    font-weight: 700;
-    box-shadow: none !important;
-  }
-}
-
-.mail-tag-select {
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  font-size: 0.775rem;
-  font-weight: 500;
-  color: #475569;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  outline: none;
-  cursor: pointer;
-
-  &:focus {
-    border-color: #3b82f6;
-  }
-}
+//  Layout only: the pill treatment is the shared lozenge now.
+.mail-filter-tabs { flex: 0 1 auto; min-width: 0; }
 
 .mail-list-body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  background: #f8fafc;
+  background: var(--ground);
 }
 
 // Empty state
@@ -476,24 +333,24 @@
   justify-content: center;
   padding: 3.5rem 1.5rem;
   text-align: center;
-  color: #94a3b8;
+  color: var(--ink-faint);
 
   .mail-empty-icon {
-    font-size: 3rem;
-    color: #cbd5e1;
+    font-size: var(--t-title);
+    color: var(--line);
     margin-bottom: 0.75rem;
   }
 
   h4 {
     margin: 0 0 0.35rem;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #475569;
+    font-size: var(--t-h3);
+    font-weight: var(--w-label);
+    color: var(--ink-body);
   }
 
   p {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: var(--t-row);
     max-width: 250px;
   }
 }
@@ -506,7 +363,7 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  background: #e2e8f0;
+  background: var(--line-soft);
 }
 
 .mail-card-item {
@@ -514,75 +371,73 @@
   display: flex;
   gap: 0.75rem;
   padding: 0.85rem 1rem;
-  background: #ffffff;
+  background: var(--surface);
   cursor: pointer;
   transition: all 0.15s ease;
   border-left: 3.5px solid transparent;
 
   &:hover {
-    background: #f8fafc;
+    background: var(--ground);
   }
 
   &.selected {
-    background: #e0f2fe !important;
-    border-left-color: #0284c7 !important;
+    background: var(--select-soft) !important;
+    border-left-color: var(--brand) !important;
 
     &:hover {
-      background: #bae6fd !important;
+      background: var(--select) !important;
     }
 
     .mail-card-sender {
-      color: #0f172a;
-      font-weight: 600;
+      color: var(--ink);
+      font-weight: var(--w-state);
     }
 
     .mail-card-subject {
-      color: #0369a1;
-      font-weight: 600;
+      color: var(--brand-deep);
+      font-weight: var(--w-state);
     }
 
     .mail-card-date {
-      color: #64748b;
+      color: var(--ink-dim);
     }
 
     .mail-card-snippet {
-      color: #334155;
+      color: var(--ink);
     }
 
     .mail-card-clip {
-      color: #64748b;
+      color: var(--ink-dim);
     }
 
     .mail-card-star-btn {
-      color: #94a3b8;
+      @include btn-base;
+      @include btn-glyph;
 
-      &.starred,
-      &:hover {
-        color: #f59e0b;
-      }
+      &:hover { color: var(--star); }
+      &.starred { color: var(--star); }
     }
 
     .mail-card-spam-btn {
-      color: #94a3b8;
+      @include btn-base;
+      @include btn-glyph;
 
-      &.spammed,
-      &:hover {
-        color: #f97316;
-      }
+      &:hover { color: var(--down); }
+      &.spammed { color: var(--down); }
     }
   }
 
   &.unread {
-    background: #f0f9ff;
+    background: var(--select-faint);
 
     .mail-card-subject {
-      font-weight: 700;
-      color: #0f172a;
+      font-weight: var(--w-state);
+      color: var(--ink);
     }
 
     .mail-card-sender {
-      font-weight: 700;
-      color: #0f172a;
+      font-weight: var(--w-state);
+      color: var(--ink);
     }
   }
 
@@ -592,8 +447,8 @@
     left: 0.35rem;
     width: 7px;
     height: 7px;
-    border-radius: 50%;
-    background: #0284c7;
+    border-radius: var(--r-full);
+    background: var(--brand);
   }
 
   .mail-card-avatar-col {
@@ -617,19 +472,19 @@
   }
 
   .mail-card-sender {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #1e293b;
+    font-size: var(--t-row);
+    font-weight: var(--w-label);
+    color: var(--ink);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .mail-card-date {
-    font-size: 0.75rem;
-    color: #94a3b8;
+    font-size: var(--t-label);
+    color: var(--ink-faint);
     flex-shrink: 0;
-    font-weight: 500;
+    font-weight: var(--w-label);
   }
 
   .mail-card-row-subject {
@@ -640,14 +495,27 @@
   }
 
   .mail-card-subject {
-    font-size: 0.875rem;
-    color: #334155;
+    display: block;
+    font-size: var(--t-row);
+    color: var(--ink);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-weight: 500;
+    font-weight: var(--w-label);
     flex: 1;
     min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    text-align: left;
+
+    &:hover {
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
   }
 
   .mail-card-indicators {
@@ -658,89 +526,39 @@
   }
 
   .mail-card-clip {
-    font-size: 0.8rem;
-    color: #94a3b8;
+    font-size: var(--t-meta);
+    color: var(--ink-faint);
   }
 
   .mail-card-spam-btn {
-    background: transparent !important;
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-    padding: 0.15rem !important;
-    width: auto !important;
-    height: auto !important;
-    font-size: 0.85rem;
-    color: #cbd5e1;
-    cursor: pointer;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0 !important;
-    transition: color 0.15s ease, transform 0.12s ease;
-
-    &:hover,
-    &:active,
-    &:focus {
-      background: transparent !important;
-      background-color: transparent !important;
-      box-shadow: none !important;
-      outline: none !important;
-    }
+    @include btn-base;
+    @include btn-glyph;
 
     &.spammed {
-      color: #f97316 !important;
+      color: var(--down) !important;
     }
-
     &:hover {
-      color: #f97316 !important;
+      color: var(--down) !important;
       transform: scale(1.15);
     }
   }
 
   .mail-card-star-btn {
-    background: transparent !important;
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-    padding: 0.15rem !important;
-    width: auto !important;
-    height: auto !important;
-    font-size: 0.9rem;
-    color: #cbd5e1;
-    cursor: pointer;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0 !important;
-    transition: color 0.15s ease, transform 0.12s ease;
-
-    &:hover,
-    &:active,
-    &:focus {
-      background: transparent !important;
-      background-color: transparent !important;
-      box-shadow: none !important;
-      outline: none !important;
-    }
+    @include btn-base;
+    @include btn-glyph;
 
     &.starred {
-      color: #f59e0b !important;
+      color: var(--star) !important;
     }
-
     &:hover {
-      color: #f59e0b !important;
+      color: var(--star) !important;
       transform: scale(1.15);
     }
   }
 
   .mail-card-snippet {
-    font-size: 0.8rem;
-    color: #64748b;
+    font-size: var(--t-meta);
+    color: var(--ink-dim);
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -750,26 +568,54 @@
 
   .mail-card-tags {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
     gap: 0.35rem;
     margin-top: 0.2rem;
   }
 
-  .mail-card-tag-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 0.1rem 0.45rem;
-    border-radius: 4px;
-  }
+}
 
-  .mail-card-tag-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-  }
+//  A stand-in, not the mail's own words: quieter, and italic so it does not
+//  read as a subject that happens to be parenthesised. A row being unread or
+//  selected does not make its missing subject worth emphasising.
+//
+//  Spelled out through those two states rather than on its own: they set the
+//  subject's colour and weight from three and four classes deep, and a bare
+//  `.is-placeholder` would silently lose to both.
+.mail-card-item .mail-card-subject.is-placeholder,
+.mail-card-item.unread .mail-card-subject.is-placeholder,
+.mail-card-item.selected .mail-card-subject.is-placeholder,
+.table-pagination-container table.mails td.cell-subject span.is-placeholder,
+.table-pagination-container table.mails tr.unread td.cell-subject span.is-placeholder,
+.table-pagination-container table.mails tr.selected td.cell-subject span.is-placeholder {
+  color: var(--ink-faint);
+  font-style: italic;
+  font-weight: var(--w-body);
+}
+
+//  A tag's colour belongs to the tag, and the core owns it -- it arrives as
+//  the custom property --tag. The fill and the edge are mixed down from it
+//  here, instead of being spelled in JS as alpha appended to a hex string.
+//  One badge, used by the cards, the reading pane and the table column.
+.mail-card-tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--t-label);
+  font-weight: var(--w-state);
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--r-sm);
+  border: 1px solid color-mix(in srgb, var(--tag) 25%, transparent);
+  background: color-mix(in srgb, var(--tag) 12%, transparent);
+  color: var(--tag);
+}
+
+.mail-card-tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--tag);
 }
 
 // ==========================================================================
@@ -780,11 +626,14 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #ffffff;
-  overflow-x: hidden;
+  background: var(--surface);
+  //  The columns have real minimum widths, so on a narrow window the table
+  //  scrolls sideways instead of crushing Subject and From into nothing.
+  overflow-x: auto;
 
   table.mails {
     width: 100%;
+    min-width: 720px;
     table-layout: fixed;
     border-collapse: collapse;
 
@@ -795,23 +644,23 @@
     col.col-starred,
     th.col-starred,
     td.cell-star {
-      width: 44px;
-      min-width: 44px;
-      max-width: 44px;
+      width: 62px;
+      min-width: 62px;
+      max-width: 62px;
       text-align: center;
-      padding-left: 0.25rem;
-      padding-right: 0.25rem;
+      padding-left: 0.4rem;
+      padding-right: 0.4rem;
     }
 
     col.col-attachments,
     th.col-attachments,
     td.cell-attachment {
-      width: 38px;
-      min-width: 38px;
-      max-width: 38px;
+      width: 62px;
+      min-width: 62px;
+      max-width: 62px;
       text-align: center;
-      padding-left: 0.25rem;
-      padding-right: 0.25rem;
+      padding-left: 0.4rem;
+      padding-right: 0.4rem;
     }
 
     col.col-subject,
@@ -865,25 +714,41 @@
     col.col-spam,
     th.col-spam,
     td.cell-spam {
-      width: 38px;
-      min-width: 38px;
-      max-width: 38px;
+      width: 62px;
+      min-width: 62px;
+      max-width: 62px;
       text-align: center;
-      padding-left: 0.25rem;
-      padding-right: 0.25rem;
+      padding-left: 0.4rem;
+      padding-right: 0.4rem;
+    }
+
+    //  Named tag badges, the same object the cards use, in the last column.
+    //  No width of its own: the fixed columns are already spoken for and the
+    //  spacer after this one still takes whatever is left.
+    col.col-tags,
+    th.col-tags,
+    td.cell-tags {
+      text-align: left;
+      padding-left: 0.4rem;
+      padding-right: 0.4rem;
+      white-space: nowrap;
+    }
+
+    td.cell-tags {
+      .mail-card-tag-badge + .mail-card-tag-badge { margin-left: 0.25rem; }
     }
 
     col.col-date,
     th.col-date,
     td.cell-date {
-      width: 105px;
-      min-width: 95px;
-      max-width: 120px;
-      text-align: right;
-      padding-right: 0.75rem;
+      width: 160px;
+      min-width: 150px;
+      max-width: 180px;
+      text-align: left;
       white-space: nowrap;
     }
 
+    //  Takes the slack the fixed columns leave, so the row ends flush.
     col.col-spacer,
     th.col-spacer,
     td.cell-spacer {
@@ -892,91 +757,81 @@
     }
 
     tr {
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--sunken);
       transition: background-color 0.15s ease;
       height: 42px;
 
       &:hover {
-        background-color: #f8fafc;
+        background-color: var(--ground);
         cursor: pointer;
       }
 
       &.selected {
-        background-color: #e0f2fe !important;
+        background-color: var(--select-soft) !important;
 
         &:hover {
-          background-color: #bae6fd !important;
+          background-color: var(--select) !important;
         }
 
         td {
-          color: #1e293b;
+          color: var(--ink);
         }
 
         td.cell-subject span {
-          color: #0369a1;
-          font-weight: 600;
+          color: var(--brand-deep);
+          font-weight: var(--w-state);
         }
 
         td.cell-from span {
-          color: #0f172a;
-          font-weight: 600;
+          color: var(--ink);
+          font-weight: var(--w-state);
         }
 
         td.cell-date {
-          color: #64748b;
+          color: var(--ink-dim);
         }
 
         td.cell-attachment i {
-          color: #64748b;
+          color: var(--ink-dim);
         }
 
         td.cell-star label.star-check {
-          color: #cbd5e1;
+          color: var(--line);
 
-          &.starred {
-            color: #f59e0b !important;
-          }
-
-          &:hover {
-            color: #f59e0b !important;
-          }
+          &.starred { color: var(--star) !important; }
+          &:hover { color: var(--star) !important; }
         }
 
         td.cell-spam button.spam-btn {
-          color: #94a3b8;
+          color: var(--ink-faint);
 
-          &.spammed {
-            color: #f97316 !important;
-          }
-
-          &:hover {
-            color: #f97316 !important;
-          }
+          &.spammed { color: var(--down) !important; }
+          &:hover { color: var(--down) !important; }
         }
       }
 
       &.unread {
-        background-color: #f0f9ff;
+        background-color: var(--select-faint);
 
         td.cell-subject span {
-          font-weight: 700;
-          color: #0f172a;
+          font-weight: var(--w-state);
+          color: var(--ink);
         }
 
         td.cell-from span {
-          font-weight: 700;
-          color: #0f172a;
+          font-weight: var(--w-state);
+          color: var(--ink);
         }
       }
     }
 
     th {
       padding: 0.65rem 0.75rem;
-      background: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
-      color: #64748b;
-      font-size: 0.75rem;
-      font-weight: 700;
+      background: var(--ground);
+      border-bottom: 1px solid var(--line-soft);
+      color: var(--ink-dim);
+      font-size: var(--t-label);
+      font-weight: var(--w-label);
       text-transform: uppercase;
       letter-spacing: 0.04em;
       position: sticky;
@@ -984,16 +839,54 @@
       z-index: 2;
       box-sizing: border-box;
 
-      &.sortable-th:hover {
-        background: #f1f5f9;
-        color: #0f172a;
+      &.sortable-th {
+        cursor: pointer;
+        user-select: none;
+
+        &:hover {
+          background: var(--sunken);
+          color: var(--ink);
+
+          .sort-glyph { color: var(--ink-body); }
+        }
+      }
+
+      //  Label and glyph on one line. A `th` is not a flex container, so in
+      //  the two icon-only columns the glyph wrapped underneath the icon --
+      //  and once it is a flex row, the cell's text-align no longer places it,
+      //  so each column says where its own header sits: the icon columns
+      //  centred over their glyphs, the text columns left, the date right
+      //  above its right-aligned timestamps.
+      .sortable-th__inner {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        white-space: nowrap;
+        justify-content: flex-start;
+      }
+
+      &.col-starred .sortable-th__inner,
+      &.col-attachments .sortable-th__inner,
+      &.col-spam .sortable-th__inner { justify-content: center; }
+
+      //  It was opacity .2 -- close enough to invisible that the column read
+      //  as not sortable at all. Dim ink when idle, full ink when it is the
+      //  column being sorted by.
+      .sort-glyph {
+        flex: none;
+        width: 12px;
+        height: 12px;
+        color: var(--ink-faint);
+        transition: color 0.2s;
+
+        &.is-active { color: var(--brand-deep); }
       }
     }
 
     td {
       padding: 0.55rem 0.75rem;
-      font-size: 0.85rem;
-      color: #334155;
+      font-size: var(--t-row);
+      color: var(--ink);
       vertical-align: middle;
       box-sizing: border-box;
     }
@@ -1001,67 +894,59 @@
     td.cell-star {
       label.star-check {
         cursor: pointer;
-        color: #cbd5e1;
+        color: var(--line);
         transition: color 0.15s ease;
 
+        //  Gold for a star, red for a spam flag -- the same two the card view
+        //  uses. Both were --warn-ink here, an olive that matched neither.
         &.starred {
-          color: #eab308;
+          color: var(--star);
         }
 
         &:hover {
-          color: #eab308;
+          color: var(--star);
         }
       }
     }
 
     td.cell-spam {
       button.spam-btn {
-        background: transparent !important;
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        outline: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        width: auto !important;
-        height: auto !important;
-        font-size: 0.85rem;
-        color: #cbd5e1;
-        cursor: pointer;
-        line-height: 1;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 0 !important;
-        transition: color 0.15s ease, transform 0.12s ease;
+        @include btn-base;
+        @include btn-glyph;
 
-        &:hover,
-        &:active,
+        margin: 0 !important;
+        height: auto !important;
+
+        //  Same size as the star beside it; the flame carries its weight
+        //  through colour, not through being drawn smaller.
+        > .icon { width: 16px !important; height: 16px !important; }
+
         &:focus {
           background: transparent !important;
           background-color: transparent !important;
           box-shadow: none !important;
           outline: none !important;
         }
-
         &.spammed {
-          color: #f97316 !important;
+          color: var(--down) !important;
         }
-
         &:hover {
-          color: #f97316 !important;
+          color: var(--down) !important;
           transform: scale(1.15);
         }
       }
     }
 
     td.cell-attachment {
-      color: #94a3b8;
+      color: var(--ink-faint);
     }
 
+    //  --ink-faint is the placeholder tone; a timestamp is data you read.
     td.cell-date {
-      color: #94a3b8;
-      font-size: 0.775rem;
+      color: var(--ink-dim);
+      font-size: var(--t-meta);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
   }
 
@@ -1072,10 +957,13 @@
     align-items: center;
     gap: 1rem;
     padding: 0.75rem 1rem;
-    border-top: 1px solid #e2e8f0;
-    background: #ffffff;
-    font-size: 0.85rem;
-    color: #64748b;
+    border-top: 1px solid var(--line-soft);
+    background: var(--surface);
+    font-size: var(--t-row);
+    color: var(--ink-dim);
+    user-select: none;
+
+    &__range { font-variant-numeric: tabular-nums; }
   }
 }
 
@@ -1092,18 +980,14 @@ input.star-check {
   flex: 1;
   height: 100%;
   overflow-y: auto;
-  background: #f8fafc;
+  background: var(--ground);
   display: flex;
   flex-direction: column;
 
   &--table-view {
     flex: 1;
     width: auto;
-    background: #ffffff;
-
-    .mail-view-back-btn {
-      display: inline-flex !important;
-    }
+    background: var(--surface);
 
     .msg-view.mail-reading-card {
       width: 100%;
@@ -1120,24 +1004,24 @@ input.star-check {
   justify-content: center;
   padding: 3rem;
   text-align: center;
-  color: #94a3b8;
+  color: var(--ink-faint);
 
   .mail-reading-placeholder__icon {
-    font-size: 4.5rem;
-    color: #cbd5e1;
+    font-size: var(--t-title);
+    color: var(--line);
     margin-bottom: 1.25rem;
   }
 
   .mail-reading-placeholder__title {
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: #475569;
+    font-size: var(--t-h2);
+    font-weight: var(--w-label);
+    color: var(--ink-body);
     margin: 0 0 0.5rem;
   }
 
   .mail-reading-placeholder__subtitle {
-    font-size: 0.95rem;
-    color: #94a3b8;
+    font-size: var(--t-body);
+    color: var(--ink-faint);
     max-width: 320px;
     margin: 0;
     line-height: 1.5;
@@ -1157,54 +1041,11 @@ input.star-check {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1.5rem;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-soft);
   position: sticky;
   top: 0;
   z-index: 5;
-}
-
-.mail-view-back-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  padding: 0;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background-color: #e8f4fc;
-  color: #0788cb;
-  border: none;
-  font-size: 1.15rem;
-  cursor: pointer;
-  box-shadow: none;
-  text-decoration: none;
-  transition: background-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
-
-  i {
-    font-size: 1.05rem;
-    line-height: 1;
-    transition: transform 0.15s ease;
-  }
-
-  .fa-arrow-left::before {
-    content: "\f053";
-  }
-
-  &:hover {
-    background-color: #d5ebfa;
-    color: #0788cb;
-
-    i {
-      transform: translateX(-2px);
-    }
-  }
-
-  &:active {
-    transform: scale(0.92);
-  }
 }
 
 .msg-view-nav__action {
@@ -1215,61 +1056,56 @@ input.star-check {
 }
 
 .mail-action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.75rem;
-  border-radius: 0.375rem;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  color: #334155;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  @include btn-base;
 
-  i {
-    font-size: 0.85rem;
+  .icon {
+    width: 14px; height: 14px;
   }
-
   &:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-    color: #0f172a;
+    background: var(--sunken);
+    border-color: var(--line);
+    color: var(--ink);
   }
-
+  //  Both of these set border-color to --warn-bg, the same value as their own
+  //  background, so the border disappeared and the two buttons read as filled
+  //  chips in a row of outlined ones. --warn-line is the edge that goes with
+  //  that band.
   &.mail-action-btn--starred {
-    color: #eab308;
-    border-color: #fef08a;
-    background: #fefce8;
+    color: var(--warn-ink);
+    border-color: var(--warn-line);
+    background: var(--warn-bg);
+
+    > .icon { color: var(--star); }
+
+    &:hover { background: var(--warn-bg); border-color: var(--warn); }
   }
 
+  //  Spam is a warning about the message, so the chip stays in the warn band
+  //  -- but the flame itself is red, which is what the glyph means.
   &.mail-action-btn--spam {
-    color: #ea580c;
-    border-color: #fed7aa;
-    background: #fff7ed;
+    color: var(--warn-ink);
+    border-color: var(--warn-line);
+    background: var(--warn-bg);
 
-    &:hover {
-      background: #ffedd5;
-      border-color: #fdba74;
-    }
+    > .icon { color: var(--down); }
+
+    &:hover { background: var(--warn-bg); border-color: var(--warn); }
   }
-
   &.mail-action-btn--delete {
-    color: #ef4444;
-    border-color: #fecaca;
+    color: var(--down);
+    border-color: var(--down-line);
 
     &:hover {
-      background: #fef2f2;
-      border-color: #fca5a5;
+      background: var(--down-bg);
+      border-color: var(--down-line);
     }
   }
 }
 
 .msg-view__header {
   padding: 1.5rem 1.5rem 1rem;
-  background: #ffffff;
-  border-bottom: 1px solid #f1f5f9;
+  background: var(--surface);
+  border-bottom: 1px solid var(--sunken);
 }
 
 .mail-reading-title-row {
@@ -1281,9 +1117,9 @@ input.star-check {
 
   h2.msg-view__title {
     margin: 0;
-    font-size: 1.45rem;
-    font-weight: 700;
-    color: #0f172a;
+    font-size: var(--t-h2);
+    font-weight: var(--w-label);
+    color: var(--ink);
     line-height: 1.3;
   }
 
@@ -1313,61 +1149,98 @@ input.star-check {
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
+  //  A long nickname beside a full timestamp has nowhere to go on a narrow
+  //  reading pane: the row has to be allowed to shrink, and the name to
+  //  ellipsis, or the pair pushes past the pane's edge.
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.msg-details__info-row > .msg-sender-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .msg-sender-name {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #1e293b;
+  font-size: var(--t-h3);
+  font-weight: var(--w-label);
+  color: var(--ink);
   cursor: pointer;
   transition: color 0.15s ease;
 
   &:hover {
-    color: #0284c7;
+    color: var(--brand);
   }
 }
 
 .msg-timestamp {
-  font-size: 0.825rem;
-  color: #64748b;
-  font-weight: 500;
+  font-size: var(--t-meta);
+  color: var(--ink-dim);
+  font-weight: var(--w-label);
   flex-shrink: 0;
 }
 
+//  Label fixed at the start of the line, chips scrolling beside it. A
+//  broadcast can carry several hundred addresses, which would otherwise wrap
+//  down the whole pane and push the message itself off the screen.
 .msg-recipients-row {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 0.35rem;
-  font-size: 0.825rem;
-  color: #64748b;
+  font-size: var(--t-meta);
+  color: var(--ink-dim);
+
+  + .msg-recipients-row { margin-top: var(--s1); }
 
   .recipient-label {
-    font-weight: 600;
-    color: #475569;
+    flex: none;
+    margin-top: 2px;
     margin-right: 0.2rem;
+    font-weight: var(--w-label);
+    color: var(--ink-body);
+  }
+
+  //  About four lines of chips. Past that it scrolls; the scrollbar is the
+  //  only thing saying "there are more", so the count beside it says how many.
+  &__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    min-width: 0;
+    max-height: 6.5rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  &__count {
+    flex: none;
+    margin-top: 2px;
+    color: var(--ink-dim);
+    font-variant-numeric: tabular-nums;
   }
 
   .recipient-chip {
-    background: #f1f5f9;
+    background: var(--sunken);
     padding: 0.15rem 0.5rem;
-    border-radius: 999px;
-    font-size: 0.775rem;
-    color: #334155;
-    font-weight: 500;
+    border-radius: var(--r-full);
+    font-size: var(--t-label);
+    color: var(--ink);
+    font-weight: var(--w-label);
   }
 }
 
 .msg-view__attachment {
   padding: 1rem 1.5rem;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--ground);
+  border-bottom: 1px solid var(--line-soft);
 
   .attachments-title {
     margin: 0 0 0.5rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #475569;
+    font-size: var(--t-row);
+    font-weight: var(--w-label);
+    color: var(--ink-body);
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -1377,36 +1250,155 @@ input.star-check {
 .msg-view__body {
   flex: 1;
   padding: 1.5rem;
-  background: #f8fafc;
+  background: var(--ground);
   overflow-y: auto;
 }
 
+//  The two table cells that hold more than text: a subject with its clip and
+//  tag squares, and a sender with the hover card behind it.
+.cell-subject__row,
+.cell-from__row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.cell-from__row { cursor: pointer; }
+
+/* The emoji tool anchors its own popover. Offsets written on the popover
+   itself put it wherever those numbers land rather than above the button. */
+.mail-tool-btn__anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.emoji-picker__anchor {
+  position: absolute;
+  bottom: calc(100% + var(--s2));
+  left: 0;
+  z-index: 2000;
+
+  //  .emoji-picker positions itself against its own anchor; here the wrapper
+  //  is the anchor, so the picker sits flush inside it.
+  > .emoji-picker {
+    position: static;
+    animation: emoji-pop 0.15s ease-out;
+  }
+}
+
+/* == Compose ==============================================================
+   The Cc / Bcc switches, the recipient ceiling, and the attachment strip. */
+
+//  These were <span class="bold"> with a pointer cursor -- a control that
+//  looked like text and could not be reached by keyboard.
+.compose-mail__field-toggle {
+  padding: 0 var(--s1);
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ink-dim);
+  font-size: var(--t-row);
+  font-weight: var(--w-label);
+  cursor: pointer;
+
+  &:hover { color: var(--ink-body); }
+  &.is-on { color: var(--brand-deep); }
+}
+
+.compose-mail__recipient-limit {
+  padding: var(--s1) 0;
+  color: var(--warn-ink);
+  font-size: var(--t-row);
+}
+
+.mail-attachments-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  margin: var(--s2) 0;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--ground);
+
+  &__label {
+    display: flex;
+    align-items: center;
+    gap: var(--s1);
+    color: var(--ink-body);
+    font-size: var(--t-row);
+    font-weight: var(--w-label);
+
+    > .icon { color: var(--ink-dim); }
+  }
+}
+
+.mail-attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: 2px var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-size: var(--t-row);
+  max-width: 100%;
+
+  > .icon { flex: none; color: var(--ink-dim); }
+
+  &__name { min-width: 0; overflow-wrap: anywhere; color: var(--ink); }
+  &__size { flex: none; color: var(--ink-dim); font-size: var(--t-meta); }
+
+  //  A real button, so it is reachable and announced, rather than an icon
+  //  carrying an onclick and a cursor.
+  &__remove {
+    @include btn-close;
+
+    width: 18px;
+    height: 18px;
+    margin-left: 2px;
+
+    &:hover { color: var(--down-ink); }
+    > .icon { width: 11px; height: 11px; }
+  }
+}
+
+/* A message with nothing in it. Not an error, so it is dim rather than red. */
+.mail-body-empty {
+  margin: 0;
+  color: var(--ink-dim);
+  font-style: italic;
+}
+
+//  The row of small squares beside a subject in the table view.
 .mail-body-container {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-  font-size: 0.95rem;
+  box-shadow: none;
+  font-size: var(--t-body);
   line-height: 1.65;
-  color: #1e293b;
+  color: var(--ink);
   min-height: 220px;
   word-break: break-word;
 
   a {
-    color: #0284c7;
+    color: var(--brand);
     text-decoration: underline;
 
     &:hover {
-      color: #0369a1;
+      color: var(--brand-deep);
     }
   }
 
   blockquote {
-    border-left: 3px solid #cbd5e1;
+    border-left: 3px solid var(--line);
     padding-left: 1rem;
     margin-left: 0;
-    color: #64748b;
+    color: var(--ink-dim);
   }
 }
 
@@ -1422,25 +1414,25 @@ input.star-check {
 }
 
 .attachment-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
   padding: 0.75rem 1rem;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: none;
 
   .attachment-icon {
     width: 38px;
     height: 38px;
-    border-radius: 0.5rem;
-    background: #eff6ff;
-    color: #0284c7;
+    border-radius: var(--r-md);
+    background: var(--select-faint);
+    color: var(--brand);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.15rem;
+    font-size: var(--t-h3);
     flex-shrink: 0;
   }
 
@@ -1449,35 +1441,25 @@ input.star-check {
     min-width: 0;
 
     .attachment-name {
-      font-weight: 600;
-      font-size: 0.875rem;
-      color: #1e293b;
+      font-weight: var(--w-label);
+      font-size: var(--t-row);
+      color: var(--ink);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .attachment-size {
-      font-size: 0.75rem;
-      color: #64748b;
+      font-size: var(--t-label);
+      color: var(--ink-dim);
     }
   }
 
   .btn-attachment-download {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.8rem;
-    border-radius: 0.375rem;
-    background: #0284c7;
-    color: #ffffff;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
+    @include btn-base;
 
     &:hover {
-      background: #0369a1;
+      background: var(--brand-deep);
     }
   }
 }
@@ -1496,41 +1478,30 @@ input.star-check {
     margin: auto;
     width: min(850px, 92vw);
     height: min(750px, 90vh);
-    background: #ffffff;
-    border-radius: 0.75rem;
-    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+    background: var(--surface);
+    border-radius: var(--r-md);
+    box-shadow: var(--lift);
     display: flex;
     flex-direction: column;
     overflow: hidden;
 
     & > .widget {
-      padding: 1.5rem;
+      padding: 1.5rem 1.5rem 0;
       height: 100%;
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
 
+    //  Bare glyph until the pointer reaches it, and a soft square rather
+    //  than a circle -- circles read as avatars in this product.
     .close-btn {
+      @include btn-close;
+
       position: absolute;
       top: 1rem;
       right: 1rem;
       z-index: 10;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f1f5f9;
-      color: #64748b;
-      border: none;
-      cursor: pointer;
-
-      &:hover {
-        background: #fee2e2;
-        color: #ef4444;
-      }
     }
   }
 }
@@ -1544,22 +1515,32 @@ input.star-check {
   &__from {
     @include flex($justify: flex-start, $align: center, $gap: 0.5rem);
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--line-soft);
+
+    //  Same weight as the To: label below it. This carried `.bold` (700),
+    //  which the weight scale keeps for real emphasis, not field labels.
+    > label {
+      font-weight: var(--w-state);
+      font-size: var(--t-row);
+      color: var(--ink-body);
+    }
   }
 
   &__recipients {
     padding: 0.5rem 0;
     @include flex(column, $gap: 0.5rem);
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--line-soft);
 
     &__container {
-      @include flex($gap: 0.5rem);
+      @include flex($align: center, $gap: 0.5rem);
 
       & > label {
+        flex: none;
         text-transform: capitalize;
-        font-weight: 600;
-        color: #475569;
-        font-size: 0.85rem;
+        font-weight: var(--w-state);
+        color: var(--ink-body);
+        font-size: var(--t-row);
+        line-height: var(--control);
         width: 35px;
       }
 
@@ -1571,17 +1552,17 @@ input.star-check {
         &__selected {
           padding: 0.2rem 0.6rem;
           @include flex($align: center, $gap: 0.4rem);
-          border: 1px solid #cbd5e1;
-          border-radius: 999px;
-          background: #f1f5f9;
-          font-size: 0.8rem;
-          color: #334155;
+          border: 1px solid var(--line);
+          border-radius: var(--r-full);
+          background: var(--sunken);
+          font-size: var(--t-meta);
+          color: var(--ink);
 
-          i {
+          .icon {
             cursor: pointer;
-            color: #94a3b8;
+            color: var(--ink-faint);
             &:hover {
-              color: #ef4444;
+              color: var(--down);
             }
           }
         }
@@ -1597,7 +1578,7 @@ input.star-check {
             padding: 0.25rem 0.5rem;
             border: none;
             box-shadow: none;
-            font-size: 0.85rem;
+            font-size: var(--t-row);
             outline: none;
 
             &:focus + .recipients__input-list {
@@ -1617,9 +1598,9 @@ input.star-check {
             overflow: auto;
             display: none;
             background: white;
-            border: 1px solid #cbd5e1;
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--line);
+            border-radius: var(--r-md);
+            box-shadow: var(--lift);
 
             &:hover {
               display: flex;
@@ -1630,12 +1611,12 @@ input.star-check {
               padding: 0.5rem 0.75rem;
               cursor: pointer;
               background: white;
-              border-bottom: 1px solid #f1f5f9;
-              font-size: 0.85rem;
+              border-bottom: 1px solid var(--sunken);
+              font-size: var(--t-row);
 
               &:hover {
-                background: #eff6ff;
-                color: #0284c7;
+                background: var(--select-faint);
+                color: var(--brand);
               }
 
               &:last-child {
@@ -1652,137 +1633,84 @@ input.star-check {
     padding: 0.65rem 0.25rem;
     border: none;
     box-shadow: none;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--line-soft);
     border-radius: 0;
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: var(--t-body);
+    font-weight: var(--w-label);
     outline: none;
 
     &:focus {
-      border-bottom-color: #0284c7;
+      border-bottom-color: var(--brand);
     }
   }
 
   &__message {
     margin: 0.5rem 0;
     flex: 1;
+    min-height: 0;
     @include flex(column);
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
 
     &-body {
       flex: 1;
       min-height: 180px;
       outline: transparent;
       padding: 0.5rem;
-      font-size: 0.95rem;
+      font-size: var(--t-body);
       line-height: 1.5;
     }
   }
 
+  //  The same strip as the chat composer: tools on the left, the committing
+  //  button on the right, one border-top rather than a box of its own. It used
+  //  to be a full bordered card with Send leading the tools behind a divider,
+  //  which read as a second panel under the message rather than its footer.
   .mail-compose-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.5rem 0.75rem;
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    border-top: 1px solid #e2e8f0;
-    border-radius: 0 0 0.375rem 0.375rem;
+    gap: var(--s2);
+    flex: none;
+    margin: 0 -1.5rem;
+    //  The strip's bottom edge IS the modal's, so 8px read as the buttons
+    //  sitting on the rim. --s4 all round gives the row the same air the
+    //  fields above it have.
+    padding: var(--s4) 1.5rem;
+    background: var(--surface);
+    border-top: 1px solid var(--line-soft);
     position: relative;
 
     .toolbar-left {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: var(--s1);
     }
 
-    .toolbar-divider {
-      width: 1px;
-      height: 22px;
-      background: #cbd5e1;
-      margin: 0 0.25rem;
+    //  The tools are glyphs on the strip, exactly as in chat -- they are not
+    //  chrome buttons, so nothing frames them until the pointer arrives.
+    button.mail-tool-btn {
+      @include btn-base;
+      @include btn-glyph;
+
+      border-color: transparent;
+      background: none;
+      box-shadow: none;
+      color: var(--ink-dim);
+
+      > .icon { width: 17px; height: 17px; }
+
+      &:hover { background: var(--sunken); color: var(--ink-body); }
+      &.active { background: var(--select-soft); color: var(--brand-deep); }
     }
 
     button.mail-compose-send-btn {
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 0.5rem !important;
-      padding: 0.5rem 1.25rem !important;
-      border-radius: 999px !important;
-      background: #0284c7 !important;
-      background-image: none !important;
-      color: #ffffff !important;
-      font-weight: 600 !important;
-      font-size: 0.9rem !important;
-      border: none !important;
-      cursor: pointer !important;
-      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.28) !important;
-      transition: all 0.2s ease !important;
+      @include btn-base;
+      @include btn-strong;
 
-      i {
-        font-size: 0.85rem;
-      }
+      flex: none;
 
-      &:hover {
-        background: #0369a1 !important;
-        background-image: none !important;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 14px rgba(2, 132, 199, 0.38) !important;
-      }
-
-      &:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2) !important;
-      }
-    }
-
-    button.mail-tool-btn {
-      width: 34px !important;
-      height: 34px !important;
-      min-width: 34px !important;
-      max-width: 34px !important;
-      border-radius: 50% !important;
-      border: none !important;
-      background: transparent !important;
-      background-image: none !important;
-      box-shadow: none !important;
-      outline: none !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      color: #64748b !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      cursor: pointer !important;
-      transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease !important;
-
-      i {
-        font-size: 1.05rem;
-        color: inherit;
-      }
-
-      &:hover {
-        background: #f1f5f9 !important;
-        background-image: none !important;
-        box-shadow: none !important;
-        color: #0284c7 !important;
-      }
-
-      &:active,
-      &:focus {
-        background: #f1f5f9 !important;
-        background-image: none !important;
-        box-shadow: none !important;
-        outline: none !important;
-      }
-
-      &.active {
-        background: #e0f2fe !important;
-        background-image: none !important;
-        box-shadow: none !important;
-        color: #0284c7 !important;
-      }
+      > .icon { width: 14px; height: 14px; }
     }
   }
 }
@@ -1796,6 +1724,11 @@ input.star-check {
 // ==========================================================================
 
 @media (max-width: 1024px) {
+  .mail-folders-pane {
+    width: 210px;
+    min-width: 200px;
+  }
+
   .mail-list-pane {
     width: 340px;
     min-width: 310px;
@@ -1814,11 +1747,10 @@ input.star-check {
     left: 0;
     bottom: 0;
     width: min(82vw, 290px);
-    min-width: 0;
     max-width: 85vw;
     z-index: 1200;
-    background: #ffffff;
-    box-shadow: 8px 0 28px rgba(15, 23, 42, 0.2);
+    background: var(--surface);
+    box-shadow: none;
     transform: translateX(-105%);
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -1840,6 +1772,8 @@ input.star-check {
   }
 
   // Table view responsiveness on mobile screens
+  //  On a phone the table drops its attachment, spam and spacer columns
+  //  rather than scrolling, so what is left always fits.
   .table-pagination-container {
     overflow-x: hidden !important;
     width: 100% !important;
@@ -1847,6 +1781,7 @@ input.star-check {
 
     table.mails {
       width: 100% !important;
+      min-width: 0 !important;
       max-width: 100% !important;
       table-layout: fixed !important;
 
@@ -1877,7 +1812,6 @@ input.star-check {
       col.col-subject,
       th.col-subject,
       td.cell-subject {
-        width: auto !important;
         min-width: 0 !important;
         max-width: none !important;
         padding: 0.35rem 0.35rem 0.35rem 0.2rem !important;
@@ -1889,13 +1823,13 @@ input.star-check {
         .mobile-subject-clip {
           display: inline-flex !important;
           align-items: center;
-          font-size: 0.72rem;
-          color: #94a3b8;
+          font-size: var(--t-label);
+          color: var(--ink-faint);
           flex-shrink: 0;
         }
 
         span {
-          font-size: 0.8rem !important;
+          font-size: var(--t-meta) !important;
         }
       }
 
@@ -1917,7 +1851,7 @@ input.star-check {
         }
 
         span {
-          font-size: 0.75rem !important;
+          font-size: var(--t-label) !important;
         }
       }
 
@@ -1932,8 +1866,16 @@ input.star-check {
         text-align: center !important;
 
         button.spam-btn {
-          font-size: 0.75rem !important;
+          font-size: var(--t-label) !important;
         }
+      }
+
+      //  Named badges do not fit a phone row; the card view is what a phone
+      //  gets anyway, and it shows the tags in full.
+      col.col-tags,
+      th.col-tags,
+      td.cell-tags {
+        display: none !important;
       }
 
       // Compact Date column
@@ -1944,12 +1886,12 @@ input.star-check {
         min-width: 50px !important;
         max-width: 64px !important;
         padding: 0.35rem 0.35rem 0.35rem 0.1rem !important;
-        font-size: 0.72rem !important;
-        text-align: right !important;
+        font-size: var(--t-label) !important;
+        text-align: left !important;
       }
 
       th {
-        font-size: 0.68rem !important;
+        font-size: var(--t-label) !important;
         padding-top: 0.45rem !important;
         padding-bottom: 0.45rem !important;
         letter-spacing: 0.02em !important;
@@ -1958,7 +1900,7 @@ input.star-check {
         i.fas.fa-sort,
         i.fas.fa-sort-up,
         i.fas.fa-sort-down {
-          font-size: 0.62rem !important;
+          font-size: var(--t-label) !important;
           margin-left: 0.15rem !important;
         }
       }
@@ -1971,7 +1913,7 @@ input.star-check {
     .pagination {
       padding: 0.5rem 0.75rem !important;
       gap: 0.5rem !important;
-      font-size: 0.8rem !important;
+      font-size: var(--t-meta) !important;
     }
   }
 
@@ -1983,7 +1925,7 @@ input.star-check {
       display: none !important;
     }
 
-    .mail-view-back-btn {
+    .back-button {
       display: inline-flex !important;
     }
   }
@@ -1996,13 +1938,13 @@ input.star-check {
     bottom: calc(56px + env(safe-area-inset-bottom) + 1rem);
     width: 52px;
     height: 52px;
-    border-radius: 50%;
-    background: #0284c7;
-    color: #ffffff;
+    border-radius: var(--r-full);
+    background: var(--brand);
+    color: var(--surface);
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
-    box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45);
+    font-size: var(--t-h3);
+    box-shadow: var(--lift);
     z-index: 1050;
     border: none;
     cursor: pointer;
@@ -2042,8 +1984,8 @@ input.star-check {
     gap: 0.35rem;
     position: sticky;
     top: 0;
-    background: #ffffff;
-    border-bottom: 1px solid #f1f5f9;
+    background: var(--surface);
+    border-bottom: 1px solid var(--sunken);
     z-index: 10;
   }
 
@@ -2061,65 +2003,51 @@ input.star-check {
   }
 
   .mail-action-btn {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    padding: 0 !important;
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    border-radius: 50% !important;
-    color: #475569 !important;
-    transition: all 0.15s ease;
+    @include btn-glyph;
 
-    i {
-      font-size: 1.05rem !important;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+
+    .icon {
+      font-size: var(--t-h3) !important;
       line-height: 1 !important;
     }
-
     .btn-text {
       display: none !important;
     }
-
-    &:hover,
     &:active {
-      background: #f1f5f9 !important;
-      color: #0f172a !important;
+      background: var(--sunken) !important;
+      color: var(--ink) !important;
     }
-
     &.mail-action-btn--starred {
-      color: #f59e0b !important;
+      color: var(--warn-ink) !important;
       background: transparent !important;
 
       &:hover,
       &:active {
-        background: #fefce8 !important;
-        color: #d97706 !important;
+        background: var(--warn-bg) !important;
+        color: var(--warn-ink) !important;
       }
     }
-
     &.mail-action-btn--spam {
-      color: #f97316 !important;
+      color: var(--warn-ink) !important;
       background: transparent !important;
 
       &:hover,
       &:active {
-        background: #fff7ed !important;
-        color: #ea580c !important;
+        background: var(--warn-bg) !important;
+        color: var(--warn-ink) !important;
       }
     }
-
     &.mail-action-btn--delete {
-      color: #ef4444 !important;
+      color: var(--down) !important;
       background: transparent !important;
 
       &:hover,
       &:active {
-        background: #fef2f2 !important;
-        color: #dc2626 !important;
+        background: var(--down-bg) !important;
+        color: var(--down-ink) !important;
       }
     }
   }
@@ -2135,7 +2063,7 @@ input.star-check {
   }
 
   .mail-reading-title-row h2.msg-view__title {
-    font-size: 1.2rem;
+    font-size: var(--t-h3);
   }
 
   .msg-view__body {
@@ -2153,17 +2081,12 @@ input.star-check {
   justify-content: center;
   gap: 1rem;
   padding: 0.75rem;
-  border-top: 1px solid #e2e8f0;
-  color: #475569;
-  font-size: 0.9rem;
+  border-top: 1px solid var(--line-soft);
+  color: var(--ink-body);
+  font-size: var(--t-row);
 
   button {
-    padding: 0.3rem 0.7rem;
-    border: 1px solid #cbd5e1;
-    background: #f8fafc;
-    color: #334155;
-    border-radius: 0.375rem;
-    box-shadow: none;
+    @include btn-base;
 
     &:disabled {
       opacity: 0.45;
@@ -2172,63 +2095,39 @@ input.star-check {
   }
 }
 
-// Show identifying details before a recipient is selected, including on touch.
+//  Autocomplete rows carry enough to tell two identities with the same
+//  nickname apart: the avatar and the full GXS id, not just a name.
 .recipients__input-list .mail-recipient-result {
   display: flex;
   align-items: center;
-  gap: .65rem;
+  gap: var(--s2);
   min-width: 0;
 
+  //  The avatar keeps its size; only the text column gives way.
   > :first-child { flex-shrink: 0; }
 
-  &__details { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
-  &__name { color: #1e293b; font-weight: 600; overflow-wrap: anywhere; }
+  &__details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__name {
+    color: var(--ink);
+    font-weight: var(--w-label);
+    overflow-wrap: anywhere;
+  }
+
+  //  A GXS id has no word breaks, so it needs both an explicit break and
+  //  permission to wrap -- `nowrap` inherited from the row would push the
+  //  list wider than the composer.
   &__id {
-    color: #64748b;
-    font-family: monospace;
-    font-size: .7rem;
+    color: var(--ink-dim);
+    font-family: var(--font-mono);
+    font-size: var(--t-micro);
     line-height: 1.4;
     overflow-wrap: anywhere;
     white-space: normal;
-  }
-}
-
-// Match the Settings controls while retaining native identity selection.
-.compose-mail__from {
-  min-width: 0;
-
-  > label, > .avatar, > .jdenticon-avatar, > .defaultAvatar { flex-shrink: 0; }
-
-  select {
-    flex: 1;
-    min-width: 0;
-    max-width: 320px;
-    height: 30px;
-    min-height: 30px;
-    box-sizing: border-box;
-    padding: .2rem .5rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 4px;
-    background-color: #ffffff;
-    color: #334155;
-    font-family: inherit;
-    font-size: .9rem;
-    box-shadow: none;
-    cursor: pointer;
-
-    &:focus-visible {
-      outline: 2px solid #bae6fd;
-      outline-offset: 1px;
-      border-color: #3ba4d7;
-    }
-  }
-}
-
-@media (max-width: 700px) {
-  .compose-mail__from select {
-    max-width: 100%;
-    height: 34px;
-    min-height: 34px;
-    font-size: 16px;
   }
 }

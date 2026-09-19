@@ -1,0 +1,118 @@
+// -----------------------------------------------------------------------------
+// Toasts.
+//
+// A notice the user does not have to answer. It carries the semantic colour on
+// its icon and a hairline accent only -- a fully tinted panel would make every
+// routine success shout as loudly as a failure.
+// -----------------------------------------------------------------------------
+
+@use '../abstracts' as *;
+
+.toasts {
+  position: fixed;
+  right: var(--s4);
+  bottom: var(--s4);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  width: min(380px, calc(100vw - var(--s4) * 2));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--s3);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--ink-dim);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  color: var(--ink-body);
+  pointer-events: auto;
+  animation: toast-in 180ms cubic-bezier(0.21, 1.02, 0.73, 1);
+
+  &.is-leaving {
+    animation: toast-out 180ms ease forwards;
+  }
+
+  &__icon {
+    width: 18px;
+    height: 18px;
+    flex: none;
+    margin-top: 1px;
+    color: var(--ink-dim);
+  }
+
+  &__text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__message {
+    font-size: var(--t-body);
+    font-weight: var(--w-label);
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+
+  &__description {
+    margin-top: 2px;
+    font-size: var(--t-meta);
+    color: var(--ink-dim);
+    overflow-wrap: anywhere;
+  }
+
+  &__action {
+    @include btn-base;
+
+    flex: none;
+    align-self: center;
+    min-height: 26px;
+    padding: 2px 9px;
+    font-size: var(--t-meta);
+  }
+
+  //  Plain glyph, no chrome until the pointer is on it.
+  &__close {
+    @include btn-close;
+
+    flex: none;
+    margin: -2px -2px 0 0;
+  }
+
+  &--success { border-left-color: var(--up);   .toast__icon { color: var(--up-ink); } }
+  &--error   { border-left-color: var(--down); .toast__icon { color: var(--down-ink); } }
+  &--warning { border-left-color: var(--warn); .toast__icon { color: var(--warn-ink); } }
+  &--info    { border-left-color: var(--brand);.toast__icon { color: var(--brand-deep); } }
+  &--loading { border-left-color: var(--line); .toast__icon { color: var(--ink-dim); } }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(6px) scale(0.97); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast.is-leaving { animation: none; }
+}
+
+//  On a phone the stack spans the width and sits above the bottom navigation.
+@include mobile {
+  .toasts {
+    right: var(--s2);
+    left: var(--s2);
+    bottom: calc(var(--s2) + 60px);
+    width: auto;
+  }
+}

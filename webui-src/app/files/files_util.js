@@ -1,6 +1,8 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
+const icon = require('icon');
+const toast = require('toast');
 
 const RS_FILE_CTRL_PAUSE = 0x00000100;
 const RS_FILE_CTRL_START = 0x00000200;
@@ -172,9 +174,13 @@ function fileAction(hash, action) {
 const ProgressBar = () => {
   return {
     view: (v) =>
-      m('.progress-bar-chunks', [
-        v.attrs.chunksInfo.chunks.map((item) => m(`span.chunk[data-chunkVal=${item}]`)),
-        m('span.progress-bar-chunks__percent', v.attrs.rate.toPrecision(3) + '%'),
+      //  The percentage sits beside the bar, not centred inside it: the bar
+      //  is a few pixels tall now, and a label over it was the reason it had
+      //  to be 32px in the first place.
+      m('.progress-bar-row', [
+        m('.progress-bar-chunks',
+          v.attrs.chunksInfo.chunks.map((item) => m(`span.chunk[data-chunkVal=${item}]`))),
+        m('span.progress-bar-row__percent', `${v.attrs.rate.toFixed(1)}%`),
       ]),
   };
 };
@@ -190,20 +196,24 @@ const File = () => {
   };
   function fileCancel(hash) {
     rs.rsJsonApiRequest('/rsFiles/FileCancel', { hash }).then((res) =>
-      widget.popupMessage(m('p', `Download Cancel ${res ? 'Successful' : 'Failed'}`))
+      toast.info(`Download Cancel ${res ? 'Successful' : 'Failed'}`)
     );
   }
   function cancelFileDownload(hash) {
-    widget.popupMessage([
-      m('p', 'Are you sure you want to cancel download?'),
-      m('button', { onclick: () => fileCancel(hash) }, 'Cancel'),
-    ]);
+    widget.confirmMessage({
+      title: 'Cancel download',
+      message: 'The partial file will be discarded.',
+      cancelLabel: 'Keep downloading',
+      confirmLabel: 'Cancel download',
+      danger: true,
+      onConfirm: () => fileCancel(hash),
+    });
   }
   function actionButton(file, action) {
     return m(
-      'button',
+      'button.is-icon',
       { title: action, onclick: () => fileAction(file.hash, action) },
-      m(`i.fas.fa-${action === 'resume' ? 'play' : action}`)
+      icon(action === 'resume' ? 'play' : action)
     );
   }
 
@@ -221,13 +231,15 @@ const File = () => {
         });
       }
       return m('.file-view', { style: { display: info.isSearched ? 'block' : 'none' } }, [
-        m('.file-view__heading', { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start' } }, [
+        m('.file-view__heading', [
           m('h6', info.fname),
           chunkStrat !== undefined &&
           direction === 'down' && [
             m('.file-view__heading-chunk', [
-              m('label[for=chunkTag]', 'Set Chunk Strategy: '),
-              m('select[id=chunkTag]', { value: chunkStrat, onchange: changeChunkStrategy }, [
+              //  Keyed by hash: one `chunkTag` id was shared by every row, so
+              //  the label focused whichever select happened to render last.
+              m(`label[for=chunk-${info.hash}]`, 'Chunk strategy'),
+              m(`select[id=chunk-${info.hash}]`, { value: chunkStrat, onchange: changeChunkStrategy }, [
                 Object.keys(chunkStrats).map((strat) =>
                   m('option', { value: strat }, chunkStrats[strat])
                 ),
@@ -244,32 +256,32 @@ const File = () => {
           m('.file-view__body-details', [
             m('.file-view__body-details-stat', [
               m('span', { title: 'downloaded size' }, [
-                m('i.fas.fa-download'),
+                icon('download'),
                 rs.formatBytes(transferred),
               ]),
               m('span', { title: 'total size' }, [
-                m('i.fas.fa-file'),
+                icon('file'),
                 rs.formatBytes(info.size.xint64),
               ]),
               m('span', { title: 'speed' }, [
-                m(`i.fas.fa-arrow-circle-${direction}`),
+                icon(`arrow-circle-${direction}`),
                 `${rs.formatBytes(info.tfRate * 1024)}/s`,
               ]),
               direction === 'down' &&
               m('span', { title: 'time remaining' }, [
-                m('i.fas.fa-clock'),
+                icon('clock'),
                 calcRemainingTime(info.size.xint64 - transferred, info.tfRate),
               ]),
-              m('span', { title: 'peers' }, [m('i.fas.fa-users'), info.peers.length]),
+              m('span', { title: 'peers' }, [icon('users'), info.peers.length]),
             ]),
             m(
               '.file-view__body-details-action',
               info.downloadStatus !== FT_STATE_COMPLETE && [
                 actionButton(info, info.downloadStatus === FT_STATE_PAUSED ? 'resume' : 'pause'),
                 m(
-                  'button.red',
-                  { title: 'cancel', onclick: () => cancelFileDownload(info.hash) },
-                  m('i.fas.fa-times')
+                  'button.red.is-icon',
+                  { title: 'Cancel download', onclick: () => cancelFileDownload(info.hash) },
+                  icon('times')
                 ),
               ]
             ),
@@ -284,7 +296,8 @@ const SearchBar = () => {
   let searchString = '';
   return {
     view: (v) =>
-      m('input[type=text][placeholder=Search].searchbar', {
+      m(widget.SearchField, {
+        placeholder: 'Search',
         value: searchString,
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
@@ -310,7 +323,9 @@ const MyFilesTable = () => {
   return {
     view: (v) =>
       m('table.myfiles', [
-        m('tr', [m('th', ''), m('th', 'My Directories'), m('th', 'Size')]),
+        //  No separate twist column: the chevron lives in the name cell, so
+        //  it indents with the row it belongs to.
+        m('tr', [m('th', 'My Directories'), m('th', 'Size')]),
         v.children,
       ]),
   };
@@ -321,10 +336,9 @@ const FriendsFilesTable = () => {
     view: (v) =>
       m('table.friendsfiles', [
         m('tr', [
-          m('th', ''),
           m('th', 'Friends Directories'),
           m('th', 'Size'),
-          m('th', m('i.fas.fa-download')),
+          m('th', 'Download'),
         ]),
         v.children,
       ]),

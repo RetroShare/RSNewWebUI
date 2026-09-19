@@ -3,7 +3,9 @@ const rs = require('rswebui');
 const widget = require('widgets');
 const Data = require('network/network_data');
 const peopleUtil = require('people/people_util');
+const icon = require('icon');
 const { State, startDirectChat, getOnlineSslId } = require('network/network_state');
+const toast = require('toast');
 
 function formatFingerprint(fingerprint) {
   return String(fingerprint || '')
@@ -58,36 +60,25 @@ function displayedAddresses(detail, knownAddresses) {
   };
 }
 
-const ConfirmRemove = () => {
-  return {
-    view: (vnode) => [
-      m('h3', 'Remove Friend'),
-      m('hr'),
-      m('p', 'Are you sure you want to end connections with this node?'),
-      m(
-        'button',
-        {
-          onclick: async () => {
-            //  Drop the placeholder first: refreshGpgDetails() re-injects any
-            //  remembered friend the core does not return, so removing one added
-            //  by short ID would otherwise put it straight back in the list.
-            Data.forgetPendingFriend(vnode.attrs.gpg_id);
-            //  And wait for the removal before asking for the list again, or the
-            //  refresh races the core and shows the friend as still there.
-            await rs.rsJsonApiRequest('/rsPeers/removeFriend', {
-              pgpId: vnode.attrs.gpg_id,
-            });
-            State.selectedFriendGpgId = null;
-            await Data.refreshGpgDetails({ force: true });
-            m.redraw();
-            widget.popupMessage(m('p', 'Friend removed successfully.'));
-          },
-        },
-        'Confirm'
-      ),
-    ],
-  };
-};
+const confirmRemove = (gpgId) => widget.confirmMessage({
+  title: 'Remove Friend',
+  message: 'Are you sure you want to end connections with this node?',
+  confirmLabel: 'Remove friend',
+  danger: true,
+  onConfirm: async () => {
+    //  Drop the placeholder first: refreshGpgDetails() re-injects any
+    //  remembered friend the core does not return, so removing one added
+    //  by short ID would otherwise put it straight back in the list.
+    Data.forgetPendingFriend(gpgId);
+    //  And wait for the removal before asking for the list again, or the
+    //  refresh races the core and shows the friend as still there.
+    await rs.rsJsonApiRequest('/rsPeers/removeFriend', { pgpId: gpgId });
+    State.selectedFriendGpgId = null;
+    await Data.refreshGpgDetails({ force: true });
+    m.redraw();
+    toast.info('Friend removed successfully.');
+  },
+});
 
 //  Version and short invite of a node do not change while the web UI is open,
 //  and the dialog is reopened often. Cached by node id so that reopening it
@@ -174,12 +165,14 @@ const LocationDetails = () => {
       ];
 
       return m('.location-details-dialog', [
-        m('h3', `${detail.name || 'Profile'} (${loc.name || 'Location'})`),
-        m('.network-tabs.location-detail-tabs', tabs.map(([id, label]) => m(
-          `button.tab-btn${activeTab === id ? '.active' : ''}`,
-          { onclick: () => (activeTab = id) },
-          label
-        ))),
+        m(widget.Segmented, {
+          variant: 'underline',
+          class: 'location-detail-tabs',
+          ariaLabel: 'Location details',
+          value: activeTab,
+          options: tabs.map(([id, label]) => ({ id, label })),
+          onSelect: (id) => (activeTab = id),
+        }),
         m('.location-detail-content',
           activeTab === 'details'
             ? detailContent
@@ -201,7 +194,7 @@ const DetailsTab = () => {
 
       const friendGxsId = State.gpgToGxsIdMap[gpgId.toLowerCase()];
       const status = friend.pendingValidation
-        ? { label: 'Pending validation', color: '#b45309' }
+        ? { label: 'Pending validation', color: 'var(--warn-ink)' }
         : Data.getStatusPresentation(friend.statusValue, friend.isOnline);
       const fingerprint = formatFingerprint(friend.fingerprint);
 
@@ -216,12 +209,11 @@ const DetailsTab = () => {
           m('.detail-title', [
             m('h2', friend.name),
             m('.detail-subtitle', [
-              m('i.fas.fa-fingerprint'),
+              icon('fingerprint'),
               m('span', 'GPG ID: ' + gpgId),
             ]),
-            m('.detail-actions', { style: 'margin-top: 0.75rem;' }, [
-              m(
-                'button',
+            m('.detail-actions', [
+              m('button.is-primary',
                 {
                   onclick: () => {
                     const sslId = getOnlineSslId(gpgId);
@@ -231,16 +223,15 @@ const DetailsTab = () => {
                     }
                   },
                 },
-                [m('i.fas.fa-comments'), m('span.btn-text', ' Start Chat')]
+                [icon('comments'), m('span.btn-text', ' Start Chat')]
               ),
-              m(
-                'button',
+              m('button.is-primary',
                 {
                   onclick: () => {
                     State.showMailCompose = true;
                   },
                 },
-                [m('i.fas.fa-envelope'), m('span.btn-text', ' Send Mail')]
+                [icon('envelope'), m('span.btn-text', ' Send Mail')]
               ),
             ]),
           ]),
@@ -252,13 +243,13 @@ const DetailsTab = () => {
             m('.info-label', 'Status'),
             m(
               '.info-value',
-              { style: `color: ${status.color}; font-weight: 600;` },
+              { class: 'detail-status-label', style: { color: status.color } },
               status.label
             ),
             m('.info-label', 'Custom Status'),
             m(
               '.info-value',
-              { style: 'font-style: italic; color: #64748b;' },
+              { class: 'detail-custom-status' },
               friend.customState || 'None'
             ),
             friendGxsId ? [
@@ -298,27 +289,25 @@ const DetailsTab = () => {
                 ]),
                 m('.loc-footer', [
                   m(
-                    'button',
+                    'button.is-sm',
                     {
                       onclick: () => widget.popupMessage(
                         m(LocationDetails, { loc }),
-                        'location-details-modal'
+                        'location-details-modal',
+                        {
+                          title: loc.name || 'Location Details',
+                          lead: friend.name ? `A location of ${friend.name}.` : undefined,
+                        }
                       ),
                     },
-                    [m('i.fas.fa-info-circle'), ' View Details']
+                    [icon('info-circle'), 'View Details']
                   ),
                   m(
-                    'button.red',
+                    'button.red.is-sm',
                     {
                       onclick: () =>
-                        widget.popupMessage(
-                          m(ConfirmRemove, {
-                            gpg_id: loc.gpg_id,
-                          })
-                        ),
-                    },
-                    'Remove Location'
-                  ),
+                        confirmRemove(loc.gpg_id),
+                    }, [icon('trash'), 'Remove Location']),
                 ]),
               ]);
             })

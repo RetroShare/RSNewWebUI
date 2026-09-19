@@ -1,5 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const icon = require('icon');
 
 const displayErrorMessage = function (message) {
   m.render(document.getElementById('error'), message);
@@ -55,16 +56,13 @@ function loginComponent() {
       onchange: (e) => (uname = e.target.value),
     });
   const buttonLogin = () =>
-    m(
-      'button[type=submit].submit-btn#loginBtn',
+    m('button.is-primary[type=submit].submit-btn#loginBtn',
       {
         onclick: (ev) => {
           ev.preventDefault();
           verifyLogin(uname, passwd, url);
         },
-      },
-      'Login'
-    );
+      }, [icon('sign-in-alt'), 'Login']);
 
   const inputPassword = () =>
     m('input[autofocus]', {

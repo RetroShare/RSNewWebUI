@@ -13,9 +13,9 @@ const Node = () => {
     },
     view() {
       return [
-        m('.widget', [
-          m('.widget__heading', m('h3', 'Public Information')),
-          m('.widget__body', [
+        m('.panel', [
+          m('.panel__head', m('h3', 'Public Information')),
+          m('.panel__body', [
             m('ul', [
               m('li', 'Name: ' + nodeInfo.ownName),
               m('li', 'Location ID: ' + nodeInfo.ownId),

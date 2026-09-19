@@ -1,0 +1,125 @@
+@use '../abstracts' as *;
+
+// -----------------------------------------------------------------------------
+// The chat composer — see app/chat/chat_composer.js.
+//
+// Tools, field, send, on one row. The border belongs to the FIELD, not to the
+// strip: that way the field is plainly its own object and the tools are plainly
+// outside it, so the arrangement holds however tall the message grows. The
+// tools sit on the bottom edge as it grows upward.
+//
+// This replaced three copies of the same strip, one per chat surface, which had
+// drifted to three paddings, two radii and — in People's — a second palette
+// written into `style` attributes.
+// -----------------------------------------------------------------------------
+
+.chat-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s1);
+  flex: none;
+  padding: var(--s2) var(--s3);
+  background: var(--surface);
+  border-top: 1px solid var(--line-soft);
+
+  &__field {
+    flex: 1;
+    min-width: 0;
+    margin: 0 var(--s1);
+    padding: 6px var(--s3);
+    resize: none;
+    //  autoResizeTextarea reads both of these off the computed style, so the
+    //  resting and maximum heights are settled here and nowhere else.
+    min-height: var(--control);
+    height: var(--control);
+    max-height: 160px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: var(--t-row);
+    line-height: 1.45;
+    outline: none;
+    box-sizing: border-box;
+
+    &::placeholder { color: var(--ink-faint); }
+
+    &:focus {
+      border-color: var(--brand);
+      box-shadow: var(--ring);
+    }
+
+    &[disabled] {
+      background: var(--sunken);
+      cursor: not-allowed;
+    }
+  }
+
+  &__tool {
+    flex: none;
+
+    //  btn-base already dims anything marked disabled; this stops the label
+    //  variant from reacting to the pointer as well.
+    &[aria-disabled='true'] {
+      pointer-events: none;
+    }
+
+    //  Held while the popover it opens is on screen, so the button reads as
+    //  the thing currently showing rather than one you pressed a moment ago.
+    &.is-on {
+      background: var(--select-soft);
+      color: var(--brand-deep);
+    }
+  }
+
+  //  Anchors the picker, which is absolutely positioned above the strip.
+  &__emoji {
+    position: relative;
+    flex: none;
+  }
+
+  //  Photo and File link behind one paperclip. The menu opens upward: the
+  //  composer sits on the bottom edge of the screen.
+  &.chat-composer &__attach {
+    display: none;
+
+    .menu__panel { min-width: 0; }
+    .menu__item { min-height: var(--control); }
+  }
+
+  &__attach-button {
+    width: var(--control);
+    height: var(--control);
+    min-width: var(--control);
+    min-height: var(--control);
+    padding: 0;
+  }
+
+  &__file {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+  }
+
+  &__send {
+    flex: none;
+    height: var(--control);
+  }
+}
+
+@media (max-width: 700px) {
+  .chat-composer .chat-composer__desktop-attach { display: none; }
+  .chat-composer.chat-composer .chat-composer__attach { display: inline-flex; }
+  .chat-composer.chat-composer .chat-composer__attach-button {
+    width: var(--control);
+    height: var(--control);
+    min-width: var(--control);
+    min-height: var(--control);
+  }
+
+  //  The field needs the width more than the action needs its label.
+  .chat-composer__send .btn-text { display: none; }
+}

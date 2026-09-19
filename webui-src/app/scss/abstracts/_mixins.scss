@@ -1,8 +1,6 @@
 // -----------------------------------------------------------------------------
 // This file contains all application-wide Sass mixins.
 // -----------------------------------------------------------------------------
-@use 'sass:color';
-@use './colors' as *;
 @use './variables' as *;
 
 /// Responsive helpers
@@ -33,17 +31,378 @@
   height: max-content;
   color: white;
   background: $bg-color;
-  font-size: 1rem;
+  font-size: var(--t-h3);
   padding: 0.4rem 1rem;
   border: 0;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   cursor: pointer;
-  box-shadow: inset -3px -3px 0 color.adjust($bg-color, $lightness: -20%);
 
   &:active {
-    outline: none;
-    box-shadow: inset 3px 3px 0 color.adjust($bg-color, $lightness: -20%);
+    filter: brightness(0.92);
   }
+}
+
+/// Buttons.
+///
+/// Defined here so both the `.b` component class and the bare `button` element
+/// can carry the same rules — every <button> in the product is the system
+/// button by default, and the per-page button classes inherit it.
+@mixin btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  //  Tight enough that the glyph reads as part of the label rather than as a
+  //  separate object sitting next to it.
+  gap: 5px;
+  min-height: var(--control);
+  //  Wider than tall. Equal padding on all four sides is what makes a button
+  //  read as a box with a word in it rather than as a control.
+  padding: 3px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--chrome);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-row);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover { border-color: var(--line-hover); background: linear-gradient(180deg, var(--surface), var(--sunken)); }
+  &:active { background: var(--press); }
+
+  &:focus-visible {
+    outline: 2px solid var(--select-edge);
+    outline-offset: -2px;
+  }
+
+  //  A shade under the cap height of the label beside it. The global 1.15em
+  //  is sized for icons standing alone in a row, where they carry the meaning;
+  //  in a button the word does that, so the glyph steps back.
+  > .icon {
+    width: 1em;
+    height: 1em;
+  }
+
+  &[disabled],
+  &[aria-disabled='true'] { opacity: 0.5; cursor: not-allowed; }
+}
+
+/// The confirming action — the one place the brand appears in ordinary chrome.
+@mixin btn-strong {
+  border-color: var(--brand-deep);
+  background: linear-gradient(180deg, var(--brand-hover), var(--brand-deep));
+  color: var(--surface);
+  font-weight: var(--w-label);
+
+  &:hover { border-color: var(--brand-press); background: linear-gradient(180deg, var(--brand), var(--brand-press)); }
+}
+
+@mixin btn-quiet {
+  border-color: transparent;
+  background: none;
+  color: var(--ink-body);
+
+  &:hover { background: var(--sunken); border-color: transparent; }
+}
+
+/// Outlined, not filled: a solid red button invites the click it should
+/// discourage.
+@mixin btn-danger {
+  border-color: var(--down-line);
+  background: linear-gradient(180deg, var(--surface), var(--down-bg));
+  color: var(--down-ink);
+
+  &:hover { border-color: var(--down); background: var(--down-bg); }
+}
+
+/// A leading glyph is optically inset: a Phosphor icon is drawn inside a
+/// square box it never fills, so equal physical padding leaves the left side
+/// looking looser than the right. Trimming 4px off the start evens it up.
+///
+/// The selector can only ask which ELEMENT comes first, and a label written as
+/// a bare string is a text node it cannot see -- so a trailing-icon button
+/// whose label is unwrapped would match this too. The two that existed have
+/// their labels in spans; keep it that way, or wrap the label.
+@mixin btn-leading-icon {
+  padding-left: 10px;
+}
+
+/// Glyph buttons come in two forms, and both are SQUARE -- the control height
+/// on both axes, no text padding. A glyph in a box with 13px of side padding
+/// is a text button missing its text.
+///
+///   `btn-icon`   framed: border and chrome, for a lone action that has to
+///                read as a control in its own right (a toolbar toggle).
+///   `btn-glyph`  bare: nothing at rest but the mark, a soft square on hover.
+///                For glyphs that live among content -- a star on a mail row,
+///                the actions in a rail -- where a border per glyph turns the
+///                list into a wall of little boxes.
+@mixin btn-square {
+  width: var(--control);
+  height: var(--control);
+  min-width: var(--control);
+  min-height: var(--control);
+  flex: none;
+  padding: 0;
+  gap: 0;
+  justify-content: center;
+}
+
+@mixin btn-icon {
+  @include btn-square;
+
+  border-color: var(--line);
+  background: var(--chrome);
+  color: var(--ink);
+
+  &:hover {
+    border-color: var(--line-hover);
+    background: linear-gradient(180deg, var(--surface), var(--sunken));
+  }
+
+  &:active { background: var(--press); }
+}
+
+@mixin btn-glyph {
+  @include btn-square;
+
+  //  Tighter than a framed control and with a larger mark inside it: a 14px
+  //  glyph centred in a 30px box leaves 8px of air on every side, so the hover
+  //  square reads as a panel behind the icon rather than as its hit area.
+  width: var(--glyph);
+  height: var(--glyph);
+  min-width: var(--glyph);
+  min-height: var(--glyph);
+
+  > .icon {
+    width: 1.15em;
+    height: 1.15em;
+  }
+
+  border-color: transparent;
+  background: none;
+  //  Body ink, not dim: these sit beside real content and were reading as
+  //  disabled at --ink-dim.
+  color: var(--ink-body);
+
+  &:hover {
+    border-color: transparent;
+    background: var(--sunken);
+    color: var(--ink);
+  }
+
+  &:active { background: var(--press); }
+}
+
+/// Compact: for buttons inside a card or a row, where the full control height
+/// would make the action taller than the thing it belongs to.
+@mixin btn-sm {
+  min-height: 24px;
+  padding: 1px 9px;
+  font-size: var(--t-meta);
+  gap: 4px;
+}
+
+/// The dismiss glyph: on a modal, a toast, a chip, a panel.
+///
+/// No chrome at rest -- an X that is always a button competes with the content
+/// it sits beside. The hover target is a soft square, not a circle: circles
+/// read as avatars and floating actions in this product, and the X is neither.
+@mixin btn-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+
+  > .icon { width: 15px; height: 15px; }
+
+  &:hover {
+    background: var(--sunken);
+    color: var(--ink);
+  }
+
+  &:active { background: var(--press); }
+
+  &:focus-visible {
+    outline: 2px solid var(--select-edge);
+    outline-offset: -2px;
+  }
+}
+
+/// Text controls. Shared by the `.f` class and the bare elements.
+@mixin field-base {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-height: var(--control);
+  //  Matches btn-base, so a field and the button beside it are the same
+  //  height to the pixel.
+  padding: 3px var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-row);
+
+  &::placeholder { color: var(--ink-faint); }
+
+  &:focus {
+    border-color: var(--accent);
+    outline: 2px solid var(--select-edge);
+    outline-offset: -2px;
+  }
+
+  &[readonly],
+  &[disabled] { background-color: var(--sunken); color: var(--ink-body); }
+}
+
+/// A dropdown is a field with a chevron.
+///
+/// Native `<select>` chrome is a different control on every platform -- a grey
+/// bevel on Windows, a rounded pill on macOS -- so a page of otherwise
+/// identical fields breaks the moment one of them is a dropdown. This strips
+/// that chrome and draws the product's own `chevron-down` in its place, so a
+/// dropdown reads as the same object as the text input beside it.
+///
+/// Include it AFTER the field rule: the chevron lands in `background-image`,
+/// which a later `background` shorthand would wipe.
+@mixin select-arrow {
+  appearance: none;
+  //  Room for the chevron, plus the gap it sits in.
+  padding-right: calc(var(--s3) + 12px);
+  //  `#788d9c` is --ink-dim; a data URI cannot read a custom property.
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23788d9c'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--s2) center;
+  background-size: 12px 12px;
+  cursor: pointer;
+
+  //  The chevron is ours, so the one the browser adds in IE/Edge legacy has to
+  //  go or it doubles.
+  &::-ms-expand { display: none; }
+}
+
+/// Sheet — the one overlay body. Three widths.
+@mixin sheet-base {
+  box-sizing: border-box;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  color: var(--ink-body);
+}
+
+/// A floating hint. The same surface as a sheet, lifted less: it is over the
+/// page for a moment, not a thing you interact with.
+@mixin tip-surface {
+  box-sizing: border-box;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--lift-sm);
+  color: var(--ink-body);
+  font-size: var(--t-meta);
+  line-height: 1.45;
+}
+
+/// The dimmed ground behind a sheet.
+@mixin sheet-backdrop {
+  background: rgb(var(--ink-rgb) / 0.32);
+}
+
+/// Folder tabs: the selected tab joins the panel it opens.
+@mixin tabstrip {
+  display: flex;
+  gap: 2px;
+  padding: 0 var(--s2);
+  border-bottom: 1px solid var(--line);
+  background: var(--ground);
+}
+
+@mixin tab-item {
+  min-height: 32px;
+  margin-bottom: -1px;
+  padding: 5px 13px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  background: none;
+  color: var(--ink-body);
+  font: inherit;
+  font-size: var(--t-row);
+  cursor: pointer;
+
+  &:hover { background: var(--select-soft); }
+}
+
+@mixin tab-selected {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+  font-weight: var(--w-state);
+}
+
+/// Empty state. Say why it is empty, then offer the action.
+@mixin empty-base {
+  padding: var(--s6) var(--s4);
+  text-align: center;
+  color: var(--ink-dim);
+  font-size: var(--t-row);
+}
+
+/// Avatar. The jdenticon renders inside; initials are the fallback.
+@mixin avatar-base {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--sunken);
+  font-size: var(--t-label);
+  font-weight: var(--w-state);
+  color: var(--ink-dim);
+  overflow: hidden;
+}
+
+/// Row — the list primitive.
+///
+/// Selection is the Qt idiom: a pale sky band across the whole row with a
+/// saturated left edge, not a grey hover. A row costs roughly a third of the
+/// vertical space of the card it replaces, which is the point on screens that
+/// list hundreds of threads, files or peers.
+@mixin row-base {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  min-height: 38px;
+  padding: 6px var(--s3);
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  border-left: 2px solid transparent;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover { background: var(--select-soft); }
+}
+
+@mixin row-selected {
+  background: var(--select);
+  border-left-color: var(--accent);
 }
 
 /// Overlay Mixin
@@ -58,43 +417,28 @@
 }
 
 /// Blockquote Mixin
+///
+/// The kind is carried by the left rule and its colour, so this no longer
+/// paints a glyph in ::before — that was a Font Awesome codepoint, and the
+/// font is gone. One less thing to keep in sync with an icon set.
 @mixin blockquote($type) {
   position: relative;
-  line-height: 1.2;
+  line-height: 1.4;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-body);
 
   @if ($type =='info') {
-    color: color.adjust($dark-color, $alpha: -0.2);
-    border: 1px solid color.adjust($primary-retro-color, $alpha: -0.2);
+    border-left-color: var(--brand);
   }
 
   @else if ($type =='warning') {
-    border: 1px solid color.adjust($golden-yellow-color, $alpha: -0.2);
+    border-left-color: var(--warn-ink);
   }
 
   @else if ($type =='danger') {
-    border: 1px solid color.adjust($red-color, $alpha: -0.2);
-  }
-
-  &::before {
-    font-family: 'Font Awesome 5 Free';
-    position: absolute;
-    top: 0.5rem;
-    left: 0.5rem;
-
-    @if ($type =='info') {
-      content: '\f05a';
-      color: $primary-color;
-    }
-
-    @else if ($type =='warning') {
-      content: '\f071';
-      color: $golden-yellow-color;
-    }
-
-    @else if ($type =='danger') {
-      content: '\f05a';
-      color: $red-color;
-    }
+    border-left-color: var(--down);
   }
 }
 
@@ -118,9 +462,166 @@
   }
 }
 
-// Font
-@mixin fontdef-woff($FontPath, $FontName, $FontVersion: '1.0.0', $FontType: 'Regular') {
-  src: url('#{$FontPath}/#{$FontName}-#{$FontType}.woff2') format('woff2'),
-  url('#{$FontPath}/#{$FontName}-#{$FontType}.woff') format('woff'),
-  url('#{$FontPath}/#{$FontName}-#{$FontType}.ttf') format('truetype');
+/// The second-level navigation rail.
+///
+/// The pattern is set by the mail folder pane (pages/_mail.scss) and these
+/// mixins reproduce its measurements exactly, so every screen that has a
+/// section list -- settings, files, boards, channels, forums -- reads as the
+/// same component rather than a near-miss of it.
+///
+/// Shape: a flat white column; an inset list of rounded rows; uppercase
+/// section labels; and a selected row that is a pale sky pill with a
+/// saturated left edge, which is the Qt idiom the product already uses.
+/// `$scrolls` folds the scrolling body into the rail itself, for the screens
+/// whose rows are direct children of the column. Mail splits the two across
+/// `.mail-folders-pane` and `.mail-nav-scroll`; do NOT apply `nav-rail-scroll`
+/// on top of this, since its `flex: 1` would let the rail grow past its width.
+@mixin nav-rail($scrolls: false) {
+  box-sizing: border-box;
+  width: 250px;
+  min-width: 230px;
+  max-width: 280px;
+  height: 100%;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--line-soft);
+
+  @if $scrolls {
+    padding: 0.5rem 0.75rem 1.5rem;
+    gap: 0.25rem;
+    overflow-y: auto;
+  }
+}
+
+/// The scrolling body of the rail. The side padding is what insets the rows,
+/// so a selected row reads as a pill inside the column instead of a band
+/// running edge to edge.
+@mixin nav-rail-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+@mixin nav-rail-section {
+  padding: 0.75rem 0.6rem 0.25rem;
+  color: var(--ink-faint);
+  font-size: var(--t-label);
+  font-weight: var(--w-label);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+@mixin nav-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-left: 3px solid transparent;
+  border-radius: var(--r-md);
+  color: var(--ink);
+  font-size: var(--t-row);
+  font-weight: var(--w-label);
+  text-decoration: none;
+  text-transform: none;
+  user-select: none;
+  transition: all 0.15s ease;
+
+  > .icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--ink);
+    transition: color 0.15s ease;
+  }
+
+  &:hover {
+    background: var(--ground);
+    color: var(--ink);
+  }
+}
+
+@mixin nav-rail-item-selected {
+  background: var(--select-soft);
+  border-left-color: var(--brand);
+  color: var(--brand-deep);
+  font-weight: var(--w-state);
+
+  > .icon { color: var(--brand); }
+}
+
+/// The right-aligned count on a rail row.
+@mixin nav-rail-count {
+  margin-left: auto;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--r-full);
+  background: var(--sunken);
+  color: var(--ink-dim);
+  font-size: var(--t-label);
+  font-weight: var(--w-state);
+}
+
+/// The entity list pane: the scrolling column of friends, identities or chat
+/// rooms that sits between the section rail and the detail view.
+///
+/// A different component from `nav-rail`, and deliberately wider: its rows
+/// carry an avatar, a name and a status line rather than a single label. The
+/// mail message list is the same idea at 400px, because its rows carry three
+/// lines instead of two.
+@mixin list-pane {
+  box-sizing: border-box;
+  width: 320px;
+  min-width: 300px;
+  max-width: 350px;
+  height: 100%;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--line-soft);
+  overflow: hidden;
+}
+
+/// The scrolling body of a list pane.
+@mixin list-pane-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+/// Controls that are buttons in the DOM but not chrome on the screen: tabs,
+/// segmented controls, emoji cells, vote pills, nav rows.
+///
+/// `<button>` is the right ELEMENT for all of them -- each one performs an
+/// action, so it has to be focusable and activated by Enter and Space, which a
+/// div never is. What they must not inherit is the border-and-gradient of a
+/// chrome button. This gives them the shared metrics -- the same glyph size,
+/// the same gap, the same minimum height -- on a transparent ground, so they
+/// line up with real buttons without pretending to be one.
+@mixin control-base {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: var(--control);
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ink-body);
+  font: inherit;
+  font-size: var(--t-row);
+  cursor: pointer;
+
+  > .icon {
+    width: 1em;
+    height: 1em;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--select-edge);
+    outline-offset: -2px;
+  }
 }

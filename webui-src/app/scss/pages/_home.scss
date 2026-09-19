@@ -16,17 +16,17 @@
       @include flex(column, $align: center);
 
       & .retrotext {
-        font-size: 36px;
-        font-weight: 600;
+        font-size: var(--t-title);
+        font-weight: var(--w-state);
         line-height: 1.125;
 
         &>span {
-          color: $primary-retro-color;
+          color: var(--brand);
         }
       }
 
       &>b {
-        font-size: 14px;
+        font-size: var(--t-row);
         line-height: 1;
       }
     }
@@ -47,28 +47,28 @@
       @include flex(column, $gap: 2rem);
       padding: 2rem;
       text-align: center;
-      border: 1.5px solid color.adjust($primary-retro-color, $alpha: -0.8);
-      border-radius: 6px;
-      box-shadow: 0px 0px 8px 2px color.adjust($dark-color, $alpha: -0.95);
+      border: 1.5px solid rgb(var(--brand-rgb) / 0.2);
+      border-radius: var(--r-md);
+      box-shadow: none;
 
       .rsId>p {
         margin-bottom: 0.5rem;
-        color: $primary-retro-color;
+        color: var(--brand);
       }
 
       .retroshareID {
         padding: 0.25rem;
         @include flex($align: center);
         justify-self: start;
-        font-size: 1.25rem;
-        border-radius: 4px;
-        background: color.adjust($dark-color, $alpha: -0.95);
+        font-size: var(--t-h2);
+        border-radius: var(--r-sm);
+        background: rgb(var(--ink-rgb) / 0.05);
 
         & .textArea {
           padding: 0;
           width: 100%;
           height: auto;
-          font-size: 1rem;
+          font-size: var(--t-h3);
           font-family: monospace;
           background: transparent;
           border: none;
@@ -78,7 +78,7 @@
         }
 
         & i {
-          color: $primary-retro-color;
+          color: var(--brand);
         }
 
         &>i {
@@ -87,34 +87,25 @@
         }
       }
 
+      //  The product's own button, so it matches the Add Friend button above
+      //  it rather than painting itself.
       .webhelp {
-        padding: 0.5rem;
-        background: whitesmoke;
-        @include flex($justify: center, $align: center, $gap: 0.5rem);
-        border-radius: 4px;
-        border: 1px solid color.adjust($dark-color, $alpha: -0.5);
-        width: fit-content;
-        cursor: pointer;
+        @include btn-base;
 
         &-container {
           display: grid;
           place-items: center;
         }
 
-        &:hover {
-          background: $light-color;
-          border: 1px solid $dark-color;
-        }
-
-        &>i {
-          font-size: 1.2rem;
-          color: green;
-        }
+        //  The one coloured glyph on the page, and the only thing here that
+        //  leaves the app. The sprite renders an `<svg class="icon">`, so an
+        //  `i` selector matches nothing here.
+        > .icon { color: var(--up-ink); }
       }
 
       .add-friend>h6,
       .webhelp-container>h6 {
-        font-weight: normal;
+        font-weight: var(--w-body);
         margin-bottom: 0.5rem;
       }
     }
@@ -141,10 +132,10 @@
 
       .retroshareText {
         .retrotext {
-          font-size: 1.6rem !important;
+          font-size: var(--t-title) !important;
         }
         & > b {
-          font-size: 0.75rem !important;
+          font-size: var(--t-label) !important;
         }
       }
     }
@@ -154,10 +145,10 @@
 
       &__heading {
         & > h1 {
-          font-size: 1.35rem !important;
+          font-size: var(--t-h2) !important;
           margin-bottom: 0.5rem !important;
         }
-        font-size: 0.85rem !important;
+        font-size: var(--t-row) !important;
       }
 
       &__content {
@@ -166,11 +157,11 @@
 
         .retroshareID {
           padding: 0.5rem !important;
-          font-size: 0.85rem !important;
+          font-size: var(--t-row) !important;
           max-width: 100% !important;
 
           .textArea {
-            font-size: 0.8rem !important;
+            font-size: var(--t-meta) !important;
             word-break: break-all !important;
             overflow-wrap: anywhere !important;
           }
@@ -185,27 +176,24 @@
   min-height: 0;
   max-height: calc(100dvh - 2rem);
   box-sizing: border-box;
-  overflow-y: auto;
 }
 
 .web-help-confirmation {
-  min-width: 0;
-
-  h3 {
-    margin: 0 3rem 0.75rem 0;
-    font-size: 1.5rem;
-  }
-
-  p {
-    margin: 0.75rem 0;
+  &__warning {
+    margin: var(--s3) 0 0;
+    font-size: var(--t-row);
     line-height: 1.5;
+    color: var(--ink-body);
   }
 
+  //  The link you are being asked about. A band with no edge floats; the
+  //  faintest brand line closes it without turning it into a card.
   &__url {
     padding: 0.65rem 0.75rem;
-    color: color.adjust($dark-color, $alpha: -0.2);
-    background: color.adjust($primary-retro-color, $alpha: -0.92);
-    border-radius: 4px;
+    color: rgb(var(--ink-rgb) / 0.8);
+    border: 1px solid rgb(var(--brand-rgb) / 0.18);
+    background: rgb(var(--brand-rgb) / 0.08);
+    border-radius: var(--r-sm);
     overflow-wrap: anywhere;
     word-break: break-word;
   }
@@ -215,48 +203,6 @@
   .modal-content.web-help-modal {
     width: calc(100% - 1rem);
     max-height: calc(100dvh - 1rem);
-    padding: 1rem;
-  }
-
-  .web-help-confirmation {
-    h3 {
-      font-size: 1.25rem;
-    }
-
-    button:last-child {
-      width: 100%;
-    }
-  }
-}
-
-.modal-content.copy-confirmation-modal {
-  width: min(28rem, calc(100% - 2rem));
-  min-height: 0;
-  box-sizing: border-box;
-
-  h3 {
-    margin: 0 3rem 0.75rem 0;
-    font-size: 1.5rem;
-  }
-
-  p {
-    line-height: 1.5;
-  }
-}
-
-@media (max-width: 600px) {
-  .modal-content.copy-confirmation-modal {
-    width: calc(100% - 1rem);
-    max-height: calc(100% - 1rem);
-    padding: 1rem;
-
-    h3 {
-      font-size: 1.25rem;
-    }
-
-    button:last-child {
-      width: 100%;
-    }
   }
 }
 
@@ -265,48 +211,21 @@
   min-width: 0;
   box-sizing: border-box;
 
-  &__heading {
-    @include flex($align: center, $gap: 1rem);
-    margin-bottom: 1.5rem;
-
-    > i {
-      display: grid;
-      place-items: center;
-      width: 3rem;
-      height: 3rem;
-      flex: 0 0 auto;
-      color: white;
-      background: $primary-retro-color;
-      border-radius: 50%;
-      font-size: 1.25rem;
-    }
-
-    h3,
-    p {
-      margin: 0;
-    }
-
-    p {
-      margin-top: 0.25rem;
-      color: color.adjust($dark-color, $alpha: -0.25);
-    }
-  }
-
   .cert-drop-zone {
     padding: 1.25rem;
-    border: 2px dashed color.adjust($primary-retro-color, $alpha: -0.55);
-    border-radius: 6px;
+    border: 2px dashed rgb(var(--brand-rgb) / 0.45);
+    border-radius: var(--r-md);
     transition: border-color 120ms ease, background-color 120ms ease;
 
     &--active {
-      border-color: $primary-retro-color;
-      background: color.adjust($primary-retro-color, $alpha: -0.92);
+      border-color: var(--brand);
+      background: rgb(var(--brand-rgb) / 0.08);
     }
 
     > label:first-child {
       display: block;
       margin-bottom: 0.5rem;
-      font-weight: 600;
+      font-weight: var(--w-label);
     }
 
     textarea {
@@ -325,20 +244,20 @@
     align-items: center;
     gap: 0.75rem;
     margin: 1rem 0;
-    color: color.adjust($dark-color, $alpha: -0.4);
+    color: rgb(var(--ink-rgb) / 0.6);
 
     &::before,
     &::after {
       content: '';
       height: 1px;
       flex: 1;
-      background: color.adjust($dark-color, $alpha: -0.85);
+      background: rgb(var(--ink-rgb) / 0.15);
     }
   }
 
   &__file {
     @include flex($align: center, $gap: 0.75rem);
-    color: color.adjust($dark-color, $alpha: -0.3);
+    color: rgb(var(--ink-rgb) / 0.7);
 
     input {
       display: none;
@@ -368,32 +287,15 @@
   max-height: calc(100% - 2rem);
   min-height: 0;
   box-sizing: border-box;
-  overflow: auto;
 }
 
 @media (max-width: 600px) {
   .modal-content.add-friend-modal {
     width: calc(100% - 1rem);
     max-height: calc(100% - 1rem);
-    padding: 1rem;
   }
 
   .add-friend-wizard {
-    &__heading {
-      align-items: flex-start;
-      padding-right: 2.25rem;
-
-      > i {
-        width: 2.5rem;
-        height: 2.5rem;
-        font-size: 1rem;
-      }
-
-      h3 {
-        font-size: 1.5rem;
-      }
-    }
-
     .cert-drop-zone {
       padding: 0.75rem;
 
@@ -428,43 +330,15 @@
   max-height: calc(100% - 2rem);
   min-height: 0;
   box-sizing: border-box;
-  overflow: auto;
 }
 
 .friend-confirmation {
   min-width: 0;
 
-  &__heading {
-    @include flex($align: center, $gap: 1rem);
-    padding-right: 2.5rem;
-    margin-bottom: 1.25rem;
-
-    > i {
-      display: grid;
-      place-items: center;
-      width: 3rem;
-      height: 3rem;
-      flex: 0 0 auto;
-      color: white;
-      background: $primary-retro-color;
-      border-radius: 50%;
-    }
-
-    h3,
-    p {
-      margin: 0;
-    }
-
-    p {
-      margin-top: 0.25rem;
-      color: color.adjust($dark-color, $alpha: -0.3);
-    }
-  }
-
   &__details {
     overflow: hidden;
-    border: 1px solid color.adjust($dark-color, $alpha: -0.85);
-    border-radius: 6px;
+    border: 1px solid rgb(var(--ink-rgb) / 0.15);
+    border-radius: var(--r-md);
   }
 
   &__row {
@@ -474,7 +348,7 @@
     padding: 0.75rem 1rem;
 
     + .friend-confirmation__row {
-      border-top: 1px solid color.adjust($dark-color, $alpha: -0.9);
+      border-top: 1px solid rgb(var(--ink-rgb) / 0.1);
     }
 
     code,
@@ -486,8 +360,8 @@
   }
 
   &__label {
-    color: color.adjust($dark-color, $alpha: -0.35);
-    font-weight: 600;
+    color: rgb(var(--ink-rgb) / 0.65);
+    font-weight: var(--w-label);
   }
 
   &__actions {
@@ -501,23 +375,9 @@
   .modal-content.friend-confirmation-modal {
     width: calc(100% - 1rem);
     max-height: calc(100% - 1rem);
-    padding: 1rem;
   }
 
   .friend-confirmation {
-    &__heading {
-      align-items: flex-start;
-
-      > i {
-        width: 2.5rem;
-        height: 2.5rem;
-      }
-
-      h3 {
-        font-size: 1.5rem;
-      }
-    }
-
     &__row {
       grid-template-columns: 1fr;
       gap: 0.25rem;

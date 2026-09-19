@@ -8,9 +8,10 @@ const {
   sendDirectChatMessage,
   loadAllDirectChatHistory,
 } = require('network/network_state');
-const { renderChatMessage, autoResizeTextarea, openChatImageViewer } = require('chat/chat_state');
-const chatEmoji = require('chat/chat_emoji');
+const { renderChatMessage, openChatImageViewer } = require('chat/chat_state');
+const { ChatComposer } = require('chat/chat_composer');
 const HistoryBrowserModal = require('people/people_history');
+const icon = require('icon');
 
 // Direct peer-to-peer chat images do NOT require 200KB compression limit
 function formatDirectChatImage(file, callback) {
@@ -100,19 +101,8 @@ function pollHashStatusForDirectChat(localpath, job) {
 }
 
 const ChatTab = () => {
-  let showAttachmentMenu = false;
-
-  function onDocClick(e) {
-    if (showAttachmentMenu && !e.target.closest('.mobile-chat-attachment')) {
-      showAttachmentMenu = false;
-      m.redraw();
-    }
-  }
-
   return {
-    oncreate: () => document.addEventListener('click', onDocClick, true),
     onremove: () => {
-      document.removeEventListener('click', onDocClick, true);
       cancelDirectChatHash();
     },
     view: () => {
@@ -125,7 +115,7 @@ const ChatTab = () => {
       if (!sslId) {
         return m('.network-chat-view', [
           m('.chat-warning', [
-            m('i.fas.fa-exclamation-triangle'),
+            icon('exclamation-triangle'),
             m('h4', 'No Location Found'),
             m('p', 'This friend has no known locations to start a direct chat with.'),
           ]),
@@ -135,16 +125,13 @@ const ChatTab = () => {
       if (!State.currentChatPeerId) {
         return m('.network-chat-view', [
           m('.chat-warning', [
-            m('i.fas.fa-comments'),
+            icon('comments'),
             m('h4', 'Direct Chat'),
             m('p', 'Click below to start a direct chat with ' + friend.name + '.'),
-            m(
-              'button',
+            m('button.is-primary',
               {
                 onclick: () => startDirectChat(sslId),
-              },
-              'Start Chat'
-            ),
+              }, [icon('comments'), 'Start Chat']),
           ]),
         ]);
       }
@@ -154,43 +141,24 @@ const ChatTab = () => {
           const activeLoc = friend.locations.find((loc) => loc.id === State.currentChatPeerId);
           const locName = activeLoc ? activeLoc.name : 'Unknown Location';
           const locOnline = activeLoc ? activeLoc.isOnline : false;
-          return m('.chat-header-bar', {
-            style: {
-              padding: '0.75rem 1rem',
-              backgroundColor: '#ffffff',
-              borderBottom: '1px solid #cbd5e1',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }
-          }, [
+          return m('.chat-header-bar', [
             m('.chat-header-info', [
-              m('.chat-header-name', { style: { fontWeight: '700', color: '#1e293b' } }, friend.name),
-              m('.chat-header-location', { style: { fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', marginTop: '0.25rem' } }, [
+              m('.chat-header-name', friend.name),
+              m('.chat-header-location', [
                 m('span', 'Location: ' + locName),
-                m('span.status-dot', {
-                  style: {
-                    display: 'inline-block',
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: locOnline ? '#10b981' : '#ef4444',
-                    marginLeft: '6px',
-                    marginRight: '4px'
-                  }
-                }),
-                m('span', { style: { color: locOnline ? '#10b981' : '#ef4444', fontWeight: '500' } }, locOnline ? 'Online' : 'Offline')
+                m('span.status-dot', { class: locOnline ? 'is-online' : 'is-offline' }),
+                m('span.chat-header-presence', { class: locOnline ? 'is-online' : 'is-offline' },
+                  locOnline ? 'Online' : 'Offline'),
               ])
             ]),
-            m('button.blue.history-btn', {
+            m('button.history-btn', {
               title: 'View all direct chat history with this friend',
-              style: 'padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem; border: none; cursor: pointer; background-color: #3b82f6; color: #ffffff; font-weight: 600;',
               onclick: () => {
                 State.showHistoryModal = true;
                 State.historySearchQuery = '';
                 loadAllDirectChatHistory();
               },
-            }, [m('i.fas.fa-history'), 'History'])
+            }, [icon('history'), 'History'])
           ]);
         })(),
         m(
@@ -218,180 +186,26 @@ const ChatTab = () => {
           name: friend.name,
           ownName: State.ownProfile.name || 'You',
         }),
-        State.attachedImage && m('.chat-attachment-preview', [
-          m('.chat-attachment-preview__item', [
-            m('img.chat-attachment-preview__thumb', {
-              src: State.attachedImage.dataUrl,
-              alt: 'Preview',
-              title: 'Click to view full image',
-              onclick: () => openChatImageViewer(State.attachedImage.dataUrl),
-            }),
-            m('button.chat-attachment-preview__remove', {
-              type: 'button',
-              title: 'Remove image',
-              onclick: () => {
-                State.attachedImage = null;
-              },
-            }, m('i.fas.fa-times')),
-          ]),
-          m('.chat-attachment-preview__info', [
-            m('span.chat-attachment-preview__name', State.attachedImage.name || 'Image attached'),
-            m('span.chat-attachment-preview__hint', 'Will be sent with your message'),
-          ]),
-        ]),
-
-        m('.chat-input-area', { style: 'display: flex; align-items: flex-end; gap: 0.5rem; padding: 0.75rem; background: #ffffff; border-top: 1px solid #cbd5e1;' }, [
-          m('button.chat-hub-action-btn.desktop-chat-attachment', {
-            title: 'Attach file link',
-            onclick: () => {
-              State.showAttachModal = true;
-              State.attachPath = '';
-              State.attachBrowseHint = false;
-              State.hashingError = '';
+        m(ChatComposer, {
+          value: State.chatInputMsg,
+          attachment: State.attachedImage,
+          onInput: (text) => { State.chatInputMsg = text; },
+          onSend: () => sendDirectChatMessage(),
+          onAttachFile: () => {
+            State.showAttachModal = true;
+            State.attachPath = '';
+            State.attachBrowseHint = false;
+            State.hashingError = '';
+          },
+          onImage: (file) => formatDirectChatImage(file, (imgTag, dataUrl) => {
+            if (imgTag && dataUrl) {
+              State.attachedImage = { imgTag, dataUrl, name: file.name || 'Image' };
               m.redraw();
             }
-          }, m('i.fas.fa-paperclip')),
-
-          m('.mobile-chat-attachment', [
-            m('button.chat-hub-action-btn', {
-              title: 'Add attachment',
-              onclick: (e) => {
-                e.stopPropagation();
-                showAttachmentMenu = !showAttachmentMenu;
-                State.showEmojiPicker = false;
-              },
-            }, m('i.fas.fa-paperclip')),
-            showAttachmentMenu && m('.mobile-chat-attachment__menu', [
-              m('button.mobile-chat-attachment__option', {
-                type: 'button',
-                onclick: () => {
-                  showAttachmentMenu = false;
-                  State.showAttachModal = true;
-                  State.attachPath = '';
-                  State.attachBrowseHint = false;
-                  State.hashingError = '';
-                },
-              }, [m('i.fas.fa-file'), ' File']),
-              m('label.mobile-chat-attachment__option', [
-                m('i.fas.fa-image'),
-                ' Picture',
-                m('input[type=file][accept=image/*]', {
-                  style: 'display: none;',
-                  onchange: (e) => {
-                    if (!e.target.files || !e.target.files[0]) return;
-                    const file = e.target.files[0];
-                    formatDirectChatImage(file, (imgTag, dataUrl) => {
-                      if (imgTag && dataUrl) {
-                        State.attachedImage = { imgTag, dataUrl, name: file.name || 'Image' };
-                        m.redraw();
-                      }
-                    });
-                    showAttachmentMenu = false;
-                    e.target.value = '';
-                  },
-                }),
-              ]),
-            ]),
-          ]),
-
-          m('.emoji-picker-wrapper', { style: 'position: relative;' }, [
-            m('button.chat-hub-action-btn', {
-              title: 'Insert emoji',
-              onclick: (e) => {
-                e.stopPropagation();
-                State.showEmojiPicker = !State.showEmojiPicker;
-              }
-            }, m('i.fas.fa-smile')),
-            State.showEmojiPicker && m(chatEmoji.EmojiPicker, {
-              onSelect: (emoji) => {
-                State.chatInputMsg = (State.chatInputMsg || '') + emoji;
-                State.showEmojiPicker = false;
-                m.redraw();
-              }
-            }),
-          ]),
-
-          m('label.chat-hub-action-btn.desktop-chat-attachment', {
-            title: 'Send image',
-            style: 'cursor: pointer;',
-          }, [
-            m('i.fas.fa-image'),
-            m('input[type=file][accept=image/*]', {
-              style: 'display: none;',
-              onchange: (e) => {
-                if (!e.target.files || !e.target.files[0]) return;
-                const file = e.target.files[0];
-                formatDirectChatImage(file, (imgTag, dataUrl) => {
-                  if (imgTag && dataUrl) {
-                    State.attachedImage = { imgTag, dataUrl, name: file.name || 'Image' };
-                    m.redraw();
-                  }
-                });
-                e.target.value = '';
-              }
-            })
-          ]),
-
-          m('textarea.chat-textarea', {
-            placeholder: State.attachedImage ? 'Add a caption... (optional)' : 'Type a message here...',
-            value: State.chatInputMsg,
-            rows: 1,
-            style: 'flex: 1; resize: none; border: 1px solid #cbd5e1; border-radius: 0.625rem; padding: 0.55rem 0.75rem; font-family: inherit; font-size: 0.9rem; line-height: 1.45; outline: none; min-height: 40px; max-height: 160px; height: 40px; box-sizing: border-box; overflow-y: hidden;',
-            oncreate: (vnode) => autoResizeTextarea(vnode.dom),
-            onupdate: (vnode) => autoResizeTextarea(vnode.dom),
-            oninput: (e) => {
-              State.chatInputMsg = e.target.value;
-              autoResizeTextarea(e.target);
-            },
-            onpaste: (e) => {
-              const items = (e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData))?.items;
-              if (!items) return;
-              for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                  e.preventDefault();
-                  const blob = items[i].getAsFile();
-                  formatDirectChatImage(blob, (imgTag, dataUrl) => {
-                    if (imgTag && dataUrl) {
-                      State.attachedImage = { imgTag, dataUrl, name: 'Pasted image' };
-                      m.redraw();
-                    }
-                  });
-                  break;
-                }
-              }
-            },
-            onkeydown: (e) => {
-              if (e.key === 'Enter' || e.code === 'Enter' || e.keyCode === 13) {
-                if (!e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
-                  e.preventDefault();
-                  sendDirectChatMessage();
-                } else if (e.ctrlKey || e.metaKey) {
-                  e.preventDefault();
-                  if (!document.execCommand || !document.execCommand('insertText', false, '\n')) {
-                    const start = e.target.selectionStart || 0;
-                    const end = e.target.selectionEnd || 0;
-                    const val = e.target.value;
-                    const newVal = val.substring(0, start) + '\n' + val.substring(end);
-                    State.chatInputMsg = newVal;
-                    e.target.value = newVal;
-                    e.target.selectionStart = e.target.selectionEnd = start + 1;
-                  } else {
-                    State.chatInputMsg = e.target.value;
-                  }
-                  autoResizeTextarea(e.target);
-                }
-              }
-            },
           }),
-          m(
-            'button.send-btn.blue',
-            {
-              style: 'height: 38px;',
-              onclick: () => sendDirectChatMessage(),
-            },
-            [m('i.fas.fa-paper-plane'), ' Send']
-          ),
-        ]),
+          onRemoveAttachment: () => { State.attachedImage = null; },
+          onViewAttachment: openChatImageViewer,
+        }),
 
         State.showAttachModal && m('.attach-modal-overlay', {
           onclick: (e) => {
@@ -403,12 +217,25 @@ const ChatTab = () => {
             }
           }
         }, [
-          m('.attach-modal', [
-            m('.attach-modal-header', [
-              m('i.fas.fa-paperclip.attach-modal-icon'),
-              m('h4', 'Attach File to Direct Chat'),
+          m('.modal-content.modal--titled', {
+            role: 'dialog',
+            'aria-modal': 'true',
+            'aria-label': 'Attach a file',
+          }, [
+            m('button.modal__close[type=button][aria-label=Close]', {
+              onclick: () => {
+                cancelDirectChatHash();
+                State.showAttachModal = false;
+                State.attachPath = '';
+                State.attachBrowseHint = false;
+                State.hashingError = '';
+              },
+            }, icon('times')),
+            m('.modal__head', [
+              m('h2.modal__title', 'Attach a file'),
+              m('p.modal__lead', 'Browse for a file or type its absolute path on this machine.'),
             ]),
-            m('p', 'Browse for a file or type the absolute path on your local system:'),
+            m('.modal__body', [
             m('input#direct-attach-file-picker[type=file]', {
               style: 'display:none',
               onchange: (e) => {
@@ -447,10 +274,10 @@ const ChatTab = () => {
                   const picker = document.getElementById('direct-attach-file-picker');
                   if (picker) picker.click();
                 },
-              }, [m('i.fas.fa-folder-open'), m('span', ' Browse…')]),
+              }, [icon('folder-open'), m('span', ' Browse…')]),
             ]),
             State.attachBrowseHint && m('.attach-path-hint', [
-              m('i.fas.fa-info-circle'),
+              icon('info-circle'),
               m('span', [
                 ' Your browser cannot expose the full file path. ',
                 m('strong', 'Edit the path above'),
@@ -462,12 +289,21 @@ const ChatTab = () => {
               ]),
             ]),
             State.isHashing && m('.hashing-spinner', [
-              m('i.fas.fa-spinner.fa-spin'),
+              icon('spinner', { spin: true }),
               m('span', ' Hashing file... Please wait.')
             ]),
             !State.attachBrowseHint && State.hashingError && m('p.error-text', State.hashingError),
-            m('.modal-buttons', [
-              m('button.btn.blue', {
+            m('.modal__foot', [
+              m('button[type=button]', {
+                onclick: () => {
+                  cancelDirectChatHash();
+                  State.showAttachModal = false;
+                  State.attachPath = '';
+                  State.attachBrowseHint = false;
+                  State.hashingError = '';
+                }
+              }, [icon('times'), 'Cancel']),
+              m('button.is-primary[type=button]', {
                 disabled: State.isHashing || !State.attachPath.trim() || State.attachBrowseHint,
                 onclick: () => {
                   const path = State.attachPath.trim();
@@ -500,17 +336,9 @@ const ChatTab = () => {
                     }
                   });
                 }
-              }, [m('i.fas.fa-link'), m('span', ' Attach')]),
-              m('button.btn.red', {
-                onclick: () => {
-                  cancelDirectChatHash();
-                  State.showAttachModal = false;
-                  State.attachPath = '';
-                  State.attachBrowseHint = false;
-                  State.hashingError = '';
-                }
-              }, 'Cancel')
-            ])
+              }, [icon('link'), 'Attach']),
+            ]),
+            ]),
           ])
         ]),
       ]);

@@ -42,7 +42,7 @@ html:focus-within {
 body {
   text-rendering: optimizeSpeed;
   line-height: 1.5;
-  font-family: 'Roboto', Arial, Helvetica, sans-serif !important;
+  font-family: var(--font-sans);
   letter-spacing: -0.025ch;
 }
 

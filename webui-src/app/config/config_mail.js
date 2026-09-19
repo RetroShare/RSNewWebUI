@@ -2,6 +2,8 @@ const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
 const util = require('config/config_util');
+const icon = require('icon');
+const toast = require('toast');
 
 const msgTagObj = {
   tagId: 100,
@@ -18,7 +20,7 @@ async function handleSubmit(tagId) {
     if (item.value.first === msgTagObj.tagName) tagNameAlreadyExists = true;
   });
   if (tagNameAlreadyExists) {
-    alert('Tag Name Already Exists');
+    toast.error('A tag with that name already exists');
   } else {
     rs.rsJsonApiRequest('/rsMail/setMessageTagType', {
       tagId: msgTagObj.tagId,
@@ -40,8 +42,6 @@ const MessageTagForm = () => {
           onsubmit: isCreateForm ? handleSubmit : () => handleSubmit(v.attrs.tagItem.key),
         },
         [
-          m('h3', isCreateForm ? 'Create New Tag Type' : 'Edit Tag Type'),
-          m('hr'),
           m('.input-field', [
             m('label[for=tagName]', 'Enter Tag Name'),
             m('input[type=text][id=tagName][placeholder="enter tag name"]', {
@@ -57,7 +57,10 @@ const MessageTagForm = () => {
             }),
           ]),
           // v.attrs.tagItem !== undefined && m('p', v.attrs.tagItem.value.first),
-          m('button[type=submit]', 'Submit'),
+          m('.modal__foot', [
+            m('button[type=button]', { onclick: () => widget.closePopupMessage() }, [icon('times'), 'Cancel']),
+            m('button[type=submit]', isCreateForm ? 'Create tag' : 'Save tag'),
+          ]),
         ]
       );
     },
@@ -76,9 +79,9 @@ const Mail = () => {
       );
     },
     view: () =>
-      m('.widget.mail', [
-        m('.widget__heading', m('h3', 'Mail Configuration')),
-        m('.widget__body', [
+      m('.panel.mail', [
+        m('.panel__head', m('h3', 'Mail Configuration')),
+        m('.panel__body', [
           m('.permission-flag', [
             m('p', 'Accept encrypted distant messages from: '),
             m(
@@ -117,20 +120,17 @@ const Mail = () => {
               ]
             ),
           ]),
-          m('.widget__heading', [
+          m('.panel__head', [
             m('h3', 'Mail Tags'),
-            m(
-              'button',
+            m('button.is-primary',
               {
                 onclick: () => {
                   // set form fields to default values
                   msgTagObj.tagName = '';
                   msgTagObj.tagColor = '';
-                  widget.popupMessage(m(MessageTagForm));
+                  widget.popupMessage(m(MessageTagForm), '', { title: 'New tag' });
                 },
-              },
-              'Create New Tag'
-            ),
+              }, [icon('plus'), 'Create New Tag']),
           ]),
           m(
             '.mail-tags',
@@ -147,21 +147,19 @@ const Mail = () => {
                       }),
                       m('p.tag-item__name', tag.value.first),
                       m('.tag-item__modify', [
-                        m(
-                          'button',
+                        m('button.is-icon',
                           {
                             onclick: () => {
                               msgTagObj.tagName = tag.value.first;
                               msgTagObj.tagColor = `#${tag.value.second
                                 .toString(16)
                                 .padStart(6, '0')}`;
-                              widget.popupMessage(m(MessageTagForm, { tagItem: tag }));
+                              widget.popupMessage(m(MessageTagForm, { tagItem: tag }), '', { title: 'Edit tag' });
                             },
                           },
-                          m('i.fas.fa-pen')
+                          icon('pen')
                         ),
-                        m(
-                          'button.red',
+                        m('button.red.is-icon',
                           {
                             onclick: () => {
                               rs.rsJsonApiRequest('/rsMail/removeMessageTagType', {
@@ -172,7 +170,7 @@ const Mail = () => {
                               });
                             },
                           },
-                          m('i.fas.fa-trash')
+                          icon('trash')
                         ),
                       ]),
                     ])

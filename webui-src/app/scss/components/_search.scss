@@ -1,0 +1,91 @@
+@use '../abstracts' as *;
+
+// -----------------------------------------------------------------------------
+// The search field.
+//
+// One object, everywhere: a lens on the left, the field, and a clear button
+// that appears once there is something to clear.
+//
+// The border is on the wrapper, not the input, so the lens sits *inside* the
+// box rather than floating over a padded field. That also means focus can be
+// shown on the whole control with :focus-within.
+// -----------------------------------------------------------------------------
+
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--control);
+  box-sizing: border-box;
+  padding: 0 var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+
+  &:hover {
+    border-color: var(--line-hover);
+  }
+
+  &:focus-within {
+    border-color: var(--brand);
+    box-shadow: var(--ring);
+  }
+
+  > .icon {
+    flex: none;
+    width: 15px;
+    height: 15px;
+    color: var(--ink-faint);
+    pointer-events: none;
+  }
+
+  //  The input carries no chrome of its own -- the wrapper is the control.
+  //  `input:focus` in the base sheet paints a border and an inset shadow on
+  //  every input, which would draw a second box inside this one.
+  &__input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: var(--t-row);
+    outline: none;
+
+    &::placeholder { color: var(--ink-faint); }
+
+    &:focus {
+      border: 0;
+      background: none;
+      box-shadow: none;
+    }
+
+    //  Chromium's own clear affordance, replaced by __clear below so the
+    //  control looks the same in every browser.
+    &::-webkit-search-cancel-button,
+    &::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+  }
+
+  &__clear {
+    flex: none;
+    margin-right: -2px;
+  }
+}
+
+//  Field plus action. The button is the affordance the filtering variant does
+//  not need, so it -- not the field -- carries the lens.
+.search-submit {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+
+  > .search-field { flex: 1 1 auto; }
+  > button { flex: none; }
+}

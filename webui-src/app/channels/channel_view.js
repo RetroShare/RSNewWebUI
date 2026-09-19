@@ -7,7 +7,9 @@ const peopleUtil = require('people/people_util');
 const sha1 = require('channels/sha1');
 const fileUtil = require('files/files_util');
 const fileDown = require('files/files_downloads');
+const icon = require('icon');
 const { CommentsSection } = require('comments');
+const toast = require('toast');
 
 const filesUploadHashes = {
   // figure out a better way later.
@@ -43,15 +45,12 @@ function channelPostCommentCount(postId, post) {
   return Number(count ?? meta.mComments ?? meta.mCommentCount ?? 0) || 0;
 }
 
+//  Shown in place of a post's image when it has none, or when it failed.
 const ChannelFallbackThumbnail = () => ({
-  view: (vnode) => m('.channel-post__placeholder', { style: {
-    display: vnode.attrs.hidden ? 'none' : 'flex', flex: '1 1 auto', minHeight: '0',
-    flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '.35rem',
-    color: '#64748b', background: 'linear-gradient(135deg, #f8fafc, #dbe5f1)',
-  } }, [
-    m('i.fas.fa-image[aria-hidden=true]', { style: { fontSize: '1.35rem', color: '#64748b' } }),
-    m('span', { style: { fontSize: '2rem', fontWeight: '700', color: '#2563eb' } }, (vnode.attrs.title || 'Post').trim().slice(0, 1).toUpperCase()),
-    m('small', { style: { fontSize: '.72rem', fontWeight: '600' } }, 'No image'),
+  view: (vnode) => m('.channel-post__placeholder', [
+    icon('image'),
+    m('span', (vnode.attrs.title || 'Post').trim().slice(0, 1).toUpperCase()),
+    m('small', 'No image'),
   ]),
 });
 
@@ -143,10 +142,6 @@ function createchannel() {
     },
     view: (vnode) =>
       m('.widget.create-channel-form', [
-        m('.create-channel-form__heading', [
-          m('h3', 'Create Channel'),
-          m('p', 'Set up the channel appearance and publishing options.'),
-        ]),
         m('input.create-channel-form__title[type=text][placeholder=Channel title]', {
           oninput: (e) => (title = e.target.value),
         }),
@@ -155,7 +150,7 @@ function createchannel() {
             thumbnailPreview
               ? m('img', { src: thumbnailPreview, alt: 'Channel thumbnail preview' })
               : m('.channel-thumbnail-preview__placeholder', [
-                m('i.fas.fa-image'),
+                icon('image'),
                 m('span', 'Channel logo'),
                 m('small', 'No image selected'),
               ]),
@@ -182,7 +177,7 @@ function createchannel() {
           }),
           m('label.create-channel-form__file-button[for=thumbnail]', {
             title: thumbnailFileName || 'Choose a channel thumbnail',
-          }, [m('i.fas.fa-upload'), thumbnailPreview ? ' Change image' : ' Choose image']),
+          }, [icon('upload'), thumbnailPreview ? ' Change image' : ' Choose image']),
           m('small', 'Square images work best.'),
         ]),
 
@@ -253,8 +248,7 @@ function createchannel() {
           oninput: (e) => (body = e.target.value),
           value: body,
         }),
-        m(
-          'button.create-channel-form__submit',
+        m('button.create-channel-form__submit.is-primary',
           {
             onclick: async () => {
               const res = await rs.rsJsonApiRequest('/rsgxschannels/createChannelV2', {
@@ -269,19 +263,16 @@ function createchannel() {
               if (res.body.retval) {
                 await util.updatedisplaychannels(res.body.channelId, undefined, false);
                 if (vnode.attrs.onCreated) await vnode.attrs.onCreated();
+                //  The form is done: close it before the toast, or a second
+                //  click would create the channel again.
+                widget.closePopupMessage();
                 m.redraw();
               }
               res.body.retval === false
-                ? widget.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                : widget.popupMessage([
-                    m('h3', 'Success'),
-                    m('hr'),
-                    m('p', 'Channel created successfully'),
-                  ]);
+                ? toast.error(res.body.errorMessage)
+                : toast.success('Channel created successfully');
             },
-          },
-          'Create'
-        ),
+          }, [icon('plus'), 'Create']),
       ]),
   };
 }
@@ -299,10 +290,6 @@ const AddPost = () => {
   return {
     view: (vnode) =>
       m('.widget.create-channel-post-form', [
-        m('.create-channel-post-form__heading', [
-          m('h3', 'Create Channel Post'),
-          m('p', 'Add a title, thumbnail, message, and optional attachments.'),
-        ]),
         m('input.create-channel-post-form__title[type=text][placeholder=Post title]', {
           value: ptitle,
           oninput: (e) => (ptitle = e.target.value),
@@ -312,7 +299,7 @@ const AddPost = () => {
             thumbnailPreview
               ? m('img', { src: thumbnailPreview, alt: 'Post thumbnail preview' })
               : m('.channel-post-thumbnail-preview__placeholder', [
-                m('i.fas.fa-image'),
+                icon('image'),
                 m('span', 'Post thumbnail'),
                 m('small', 'No image selected'),
               ]),
@@ -334,7 +321,7 @@ const AddPost = () => {
           }),
           m('label.create-channel-post-form__file-button[for=channel-post-thumbnail]', {
             title: thumbnailFileName || 'Choose a post thumbnail',
-          }, [m('i.fas.fa-upload'), thumbnailPreview ? ' Change image' : ' Choose image']),
+          }, [icon('upload'), thumbnailPreview ? ' Change image' : ' Choose image']),
           m('small', 'Square images work best.'),
         ]),
         m('.create-channel-post-form__attachments', [
@@ -384,12 +371,12 @@ const AddPost = () => {
           },
           }),
           m('label.create-channel-post-form__attachment-button[for=channel-post-files]', [
-            m('i.fas.fa-paperclip'), ` ${attachmentLabel}`,
+            icon('paperclip'), ` ${attachmentLabel}`,
           ]),
           !uploadFiles && m('small', 'Preparing attachments...'),
           attachmentItems.length > 0 && m('.create-channel-post-form__attachment-list',
             attachmentItems.map((file, index) => m('.create-channel-post-form__attachment-item', [
-              m('i.fas.fa-file'),
+              icon('file'),
               m('.create-channel-post-form__attachment-info', [
                 m('span', { title: file.name }, file.name),
                 m('small', rs.formatBytes(file.size)),
@@ -403,7 +390,7 @@ const AddPost = () => {
                     ? `${attachmentItems.length} file${attachmentItems.length === 1 ? '' : 's'} selected`
                     : 'Choose files';
                 },
-              }, m('i.fas.fa-times')),
+              }, icon('times')),
             ]))
           ),
         ]),
@@ -411,8 +398,7 @@ const AddPost = () => {
           oninput: (e) => (content = e.target.value),
           value: content,
         }),
-        m(
-          'button.create-channel-post-form__submit',
+        m('button.create-channel-post-form__submit.is-primary',
           {
             disabled: !uploadFiles || !ptitle.trim(),
             onclick: async () => {
@@ -425,20 +411,17 @@ const AddPost = () => {
                   files: pfiles, // does not work for now
                   thumbnail: { mData: { base64: pthumbnail } },
                 });
-                res.body.retval === false
-                  ? widget.popupMessage([m('h3', 'Error'), m('hr'), m('p', res.body.errorMessage)])
-                  : widget.popupMessage([
-                      m('h3', 'Success'),
-                      m('hr'),
-                      m('p', 'Post added successfully'),
-                    ]);
+                if (res.body.retval === false) {
+                  toast.error(res.body.errorMessage);
+                } else {
+                  widget.closePopupMessage();
+                  toast.success('Post added successfully');
+                }
                 util.updatedisplaychannels(vnode.attrs.chanId);
                 m.redraw();
               }
             },
-          },
-          uploadFiles ? 'Create Post' : 'Preparing…'
-        ),
+          }, [icon('plus'), uploadFiles ? 'Create Post' : 'Preparing…']),
       ]),
   };
 };
@@ -452,6 +435,7 @@ const CONTENT_CACHE_MS = 60000;
 const ChannelView = () => {
   let cname = '';
   let cimage = '';
+  let cdescription = '';
   let cauthor = '';
   let csubscribed = {};
   let mychannel = false;
@@ -459,6 +443,9 @@ const ChannelView = () => {
   let plist = {};
   let createDate = {};
   let lastActivity = {};
+  //  Posts whose thumbnail failed to load, so the card can draw the fallback
+  //  instead of both at once.
+  const brokenThumbnails = new Set();
   const toggleSubscription = async (attrs) => {
     const res = await rs.rsJsonApiRequest('/rsgxschannels/subscribeToChannel', {
       channelId: attrs.id, subscribe: !csubscribed,
@@ -470,26 +457,35 @@ const ChannelView = () => {
       m.redraw();
     }
   };
+  //  Read on every render, not once in oninit. The summaries arrive after this
+  //  component mounts -- reliably so on a phone, where the request is slower
+  //  than the route change -- and oninit never runs again, so a channel opened
+  //  from a link or a reload kept the empty values it was born with.
+  function readChannel(id) {
+    const c = Data.DisplayChannels[id];
+    if (!c) return;
+    cname = c.name;
+    cimage = c.image;
+    cdescription = c.description;
+    //  Same as forum_view: userMap stores objects, username() is the only
+    //  accessor that yields a string.
+    if (Number(c.author) === 0) {
+      cauthor = 'No Contact Author';
+    } else if (c.author) {
+      cauthor = rs.userList.username(c.author);
+    } else {
+      cauthor = 'Unknown';
+    }
+    csubscribed = c.isSubscribed;
+    mychannel = c.mychannel;
+    cposts = c.posts;
+    createDate = c.created;
+    lastActivity = c.activity;
+  }
+
   return {
     oninit: (v) => {
-      if (Data.DisplayChannels[v.attrs.id]) {
-        cname = Data.DisplayChannels[v.attrs.id].name;
-        cimage = Data.DisplayChannels[v.attrs.id].image;
-        //  Same as forum_view: userMap stores objects, username() is the only
-        //  accessor that yields a string.
-        if (Number(Data.DisplayChannels[v.attrs.id].author) === 0) {
-          cauthor = 'No Contact Author';
-        } else if (Data.DisplayChannels[v.attrs.id].author) {
-          cauthor = rs.userList.username(Data.DisplayChannels[v.attrs.id].author);
-        } else {
-          cauthor = 'Unknown';
-        }
-        csubscribed = Data.DisplayChannels[v.attrs.id].isSubscribed;
-        mychannel = Data.DisplayChannels[v.attrs.id].mychannel;
-        cposts = Data.DisplayChannels[v.attrs.id].posts;
-        createDate = Data.DisplayChannels[v.attrs.id].created;
-        lastActivity = Data.DisplayChannels[v.attrs.id].activity;
-      }
+      readChannel(v.attrs.id);
       if (Data.Posts[v.attrs.id]) {
         plist = Data.Posts[v.attrs.id];
       }
@@ -504,62 +500,53 @@ const ChannelView = () => {
       if (Object.keys(plist).length > 0 && Date.now() - lastLoad < CONTENT_CACHE_MS) return;
       contentLoadedAt[v.attrs.id] = Date.now();
       util.updatedisplaychannels(v.attrs.id).then(() => {
+        //  Again, because the first call ran before the channel's own details
+        //  had arrived and left the header blank.
+        readChannel(v.attrs.id);
         plist = Data.Posts[v.attrs.id] || {};
         m.redraw();
       });
     },
     view: (v) => [
-      m('.channel-detail-navigation', [
-      m(
-        'a.channel-back[title=Back][aria-label=Back]',
-        {
-          onclick: () =>
-            m.route.set('/channels/:tab', {
-              tab: m.route.param().tab,
-            }),
+      m(widget.PageHead, {
+        class: 'channel-detail-head',
+        back: {
+          label: 'Back to channels',
+          onclick: () => m.route.set('/channels/:tab', { tab: m.route.param().tab }),
         },
-        m('i.fas.fa-arrow-left')
-      ),
-        m('.channel-mobile-search', [
-          m(util.SearchBar, { category: 'posts', channelId: v.attrs.id }),
-        ]),
-        m('details.channel-mobile-actions', {
-          onkeydown: (event) => {
-            if (event.key === 'Escape') {
-              event.currentTarget.open = false;
-              event.currentTarget.querySelector('summary').focus();
-            }
-          },
-          onfocusout: (event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
-          },
-        }, [
-          m('summary[aria-label=Channel actions][title=Channel actions]', m('i.fas.fa-ellipsis-v')),
-          m('.channel-mobile-actions__items', m('button[type=button]', {
-            onclick: (event) => {
-              const menu = event.currentTarget.closest('details');
-              menu.open = false;
-              menu.querySelector('summary').focus();
-              return toggleSubscription(v.attrs);
-            },
-          }, csubscribed ? 'Unsubscribe' : 'Subscribe')),
-        ]),
-      ]),
-      m('.widget__heading', [
-        m('h3', cname),
+        title: cname,
+        actions: [
+          m('.channel-mobile-search', [
+            m(util.SearchBar, { category: 'posts', channelId: v.attrs.id }),
+          ]),
           mychannel && csubscribed && m('button.channel-mobile-create[type=button][title=Add Post][aria-label=Add Post]', {
-            onclick: () => widget.popupMessage(m(AddPost, { chanId: v.attrs.id }), 'create-channel-post-modal'),
-          }, m('i.fas.fa-plus')),
-
-        m(
-          'button',
-          {
-            class: csubscribed ? 'channel-subscription--subscribed' : '',
-            onclick: () => toggleSubscription(v.attrs),
-          },
-          csubscribed ? 'Subscribed' : 'Subscribe'
-        ),
-      ]),
+            onclick: () => widget.popupMessage(
+              m(AddPost, { chanId: v.attrs.id }),
+              'create-channel-post-modal',
+              {
+                title: 'Create Channel Post',
+                lead: 'Add a title, thumbnail, message, and optional attachments.',
+              }
+            ),
+          }, icon('plus')),
+          m('button.is-primary',
+            {
+              class: csubscribed ? 'channel-subscription--subscribed' : '',
+              onclick: () => toggleSubscription(v.attrs),
+            }, [icon('bookmark'), csubscribed ? 'Subscribed' : 'Subscribe']),
+          m(widget.Menu, {
+            class: 'channel-mobile-actions',
+            mark: 'ellipsis-v',
+            title: 'Channel actions',
+            items: [{
+              label: csubscribed ? 'Unsubscribe' : 'Subscribe',
+              icon: 'bookmark',
+              danger: csubscribed,
+              onclick: () => toggleSubscription(v.attrs),
+            }],
+          }),
+        ],
+      }),
       m('.widget__body', [
         m('.media-item', [
           m('.media-item__details', [
@@ -569,7 +556,7 @@ const ChannelView = () => {
                 alt: `${cname} channel thumbnail`,
               })
               : m('.channel-detail-default-thumbnail[role=img][aria-label=Default channel thumbnail]',
-                m('i.fas.fa-tv')
+                icon('tv')
               ),
             m('.media-item__details-info', [
               m('div', [m('b', 'Posts: '), m('span', cposts)]),
@@ -596,7 +583,7 @@ const ChannelView = () => {
           ]),
           m('.media-item__desc', [
             m('b', 'Description: '),
-            m('span', Data.DisplayChannels[v.attrs.id].description || 'No Description'),
+            m('span', cdescription || 'No Description'),
           ]),
         ]),
         m(
@@ -608,13 +595,16 @@ const ChannelView = () => {
             m('.posts__heading.channel-posts-heading', [
               m('h3', 'Posts'),
               mychannel &&
-                m(
-                  'button.channel-posts-heading__create[type=button][title=Add Post][aria-label=Add Post]',
+                m('button.channel-posts-heading__create.is-primary[type=button][title=Add Post][aria-label=Add Post]',
                   { onclick: () => widget.popupMessage(
                     m(AddPost, { chanId: v.attrs.id }),
-                    'create-channel-post-modal'
+                    'create-channel-post-modal',
+                    {
+                      title: 'Create Channel Post',
+                      lead: 'Add a title, thumbnail, message, and optional attachments.',
+                    }
                   ) },
-                  [m('i.fas.fa-edit'), m('span', 'Add Post')]
+                  [icon('edit'), m('span', 'Add Post')]
                 ),
             ]),
             m(
@@ -623,11 +613,12 @@ const ChannelView = () => {
                 channelPostPublishTime(plist[b].post) - channelPostPublishTime(plist[a].post)
               ).map((key) => {
                 const commentCount = channelPostCommentCount(key, plist[key].post);
-                //  Keyed: the newest-first sort shifts every card when a post
+                const thumbSrc = channelThumbnailSrc(plist[key].post);
+                //  Keyed: newest-first means every card shifts when a post
                 //  arrives, and an unkeyed list makes mithril reuse DOM by
                 //  position -- the imperative onerror display:none of one
                 //  post's broken thumbnail then sticks to whatever post
-                //  shifts into that slot.
+                //  shifts into that slot, blanking a valid image.
                 return m(
                   '.posts-container-card',
                   {
@@ -648,23 +639,20 @@ const ChannelView = () => {
                       title: `${commentCount} comment${commentCount === 1 ? '' : 's'}`,
                       'aria-label': `${commentCount} comment${commentCount === 1 ? '' : 's'}`,
                     }, [
-                      m('i.fas.fa-comment'),
+                      icon('comment'),
                       m('span', commentCount),
                     ]),
-                    channelThumbnailSrc(plist[key].post)
-                      ? [
-                          m('img', {
-                            src: channelThumbnailSrc(plist[key].post),
-                            alt: plist[key].post.mMeta.mMsgName || 'Post thumbnail',
-                            onerror: (e) => {
-                              e.target.style.display = 'none';
-                              if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-                            },
-                          }),
-                          m(ChannelFallbackThumbnail, { title: plist[key].post.mMeta.mMsgName, hidden: true }),
-                        ]
+                    thumbSrc && !brokenThumbnails.has(key)
+                      ? m('img.posts-container-card__image', {
+                        src: thumbSrc,
+                        alt: plist[key].post.mMeta.mMsgName || 'Post thumbnail',
+                        onerror: () => {
+                          brokenThumbnails.add(key);
+                          m.redraw();
+                        },
+                      })
                       : m(ChannelFallbackThumbnail, { title: plist[key].post.mMeta.mMsgName }),
-                    m('p', plist[key].post.mMeta.mMsgName),
+                    m('p.posts-container-card__title', plist[key].post.mMeta.mMsgName),
                   ]
                 );
               })
@@ -729,29 +717,22 @@ const PostView = () => {
       const hasEmbeddedImage = /<img\b|data:image\//i.test(String(message));
       const hasLongMessage = messageText.length > 280 || hasEmbeddedImage;
       return [
-      m(
-        'a.channel-back[title=Back][aria-label=Back]',
-        {
-          onclick: () =>
-            m.route.set('/channels/:tab/:mGroupId', {
-              tab: m.route.param().tab,
-              mGroupId: m.route.param().mGroupId,
-            }),
+      m(widget.PageHead, {
+        back: {
+          label: 'Back to channel',
+          onclick: () => m.route.set('/channels/:tab/:mGroupId', {
+            tab: m.route.param().tab,
+            mGroupId: m.route.param().mGroupId,
+          }),
         },
-        m('i.fas.fa-arrow-left')
-      ),
-      m('.widget__heading', m('h3', post.mMeta.mMsgName)),
+        title: post.mMeta.mMsgName,
+      }),
       m('.widget__body', [
         message ? m('.post-description', [
           m('.post-description__text', {
-            style: {
-              maxHeight: messageExpanded ? 'none' : '4.5em',
-              overflow: 'hidden',
-              lineHeight: '1.5',
-            },
+            class: messageExpanded ? '' : 'post-description__text--collapsed',
           }, m.trust(message)),
           hasLongMessage ? m('button.post-description__toggle[type=button]', {
-            style: { marginTop: '.35rem', padding: '0', border: '0', boxShadow: 'none', background: 'transparent', color: '#0f172a', fontSize: '.85rem', fontWeight: '700' },
             onclick: () => { messageExpanded = !messageExpanded; },
           }, messageExpanded ? 'Show less' : '…more') : null,
         ]) : null,
@@ -766,49 +747,34 @@ const PostView = () => {
                   m('td.channel-file__name[data-label=File name]', file.mName),
                   m('td.channel-file__size[data-label=Size]', rs.formatBytes(file.mSize.xint64)),
                   m('td.channel-file__action[data-label=Download]', [
-                    m(
-                      'button',
+                    m('button.is-primary',
                       {
                         style: { fontSize: '0.9em' },
-                        onclick: async () =>
-                          widget.popupMessage([
-                            m('p', 'Start Download?'),
-                            m(
-                              'button',
-                              {
-                                onclick: async () => {
-                                  if (filesInfo[file.mHash] && !filesInfo[file.mHash].retval) {
-                                    const res = await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
-                                      fileName: file.mName,
-                                      hash: file.mHash,
-                                      flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
-                                      size: {
-                                        xstr64: file.mSize.xstr64,
-                                      },
-                                    });
-                                    res.body.retval === false
-                                      ? widget.popupMessage([
-                                          m('h3', 'Error'),
-                                          m('hr'),
-                                          m('p', res.body.errorMessage),
-                                        ])
-                                      : widget.popupMessage([
-                                          m('h3', 'Success'),
-                                          m('hr'),
-                                          m('p', 'Download Started'),
-                                        ]);
-                                    m.redraw();
-                                  }
-                                },
+                        onclick: () => widget.confirmMessage({
+                          title: 'Start Download?',
+                          message: file.mName,
+                          confirmLabel: 'Start download',
+                          onConfirm: async () => {
+                            if (!filesInfo[file.mHash] || filesInfo[file.mHash].retval) return;
+                            const res = await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                              fileName: file.mName,
+                              hash: file.mHash,
+                              flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                              size: {
+                                xstr64: file.mSize.xstr64,
                               },
-                              'Start Download'
-                            ),
-                          ]),
+                            });
+                            res.body.retval === false
+                              ? toast.error(res.body.errorMessage)
+                              : toast.success('Download Started');
+                            m.redraw();
+                          },
+                        }),
                       },
                       filesInfo[file.mHash]
                         ? filesInfo[file.mHash].retval
                           ? 'Open File'
-                          : ['Download ', m('i.fas.fa-download')]
+                          : ['Download ', icon('download')]
                         : 'Please Wait...'
                     ),
                     fileDown.list[file.mHash] && m(fileUtil.File, {

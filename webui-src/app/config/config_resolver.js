@@ -1,5 +1,5 @@
 const m = require('mithril');
-const LibraryLayout = require('library_layout');
+const widget = require('widgets');
 
 const sections = {
   network: require('config/config_network'),
@@ -11,14 +11,40 @@ const sections = {
   mail: require('config/config_mail'),
 };
 
-const Layout = {
-  view: (vnode) => m(LibraryLayout, {
-    title: 'Configuration',
-    icon: 'cog',
-    tabs: Object.keys(sections),
-    baseRoute: '/config/',
-  }, vnode.children),
+const labels = {
+  network: 'Network',
+  node: 'Node',
+  services: 'Services',
+  files: 'Files',
+  people: 'Identities',
+  chat: 'Chat',
+  mail: 'Mail',
 };
+
+const icons = {
+  network: 'network-wired',
+  node: 'server',
+  services: 'layer-group',
+  files: 'folder',
+  people: 'users',
+  chat: 'comments',
+  mail: 'envelope',
+};
+
+const Layout = {
+  view: (vnode) => m('.config', [
+    m(widget.Sidebar, {
+      tabs: Object.keys(sections),
+      baseRoute: '/config/',
+      mobileDrawer: true,
+      title: 'Settings',
+      labels,
+      icons,
+    }),
+    m('.node-panel', vnode.children),
+  ]),
+};
+
 module.exports = {
   view: (vnode) => {
     const tab = vnode.attrs.tab;

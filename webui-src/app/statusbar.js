@@ -1,5 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const icon = require('icon');
 
 // RS_HIDDEN_TYPE constants (from config_util.js / retroshare/rspeers.h)
 const RS_HIDDEN_TYPE_NONE    = 0;
@@ -61,26 +62,28 @@ function formatBytes(rawBytes) {
   return parseFloat((bytes / Math.pow(k, safeI)).toFixed(1)) + ' ' + sizes[safeI];
 }
 
+//  `tone` is one of good / warn / bad / off -- the same four the status bar's
+//  own indicators report, painted by the stylesheet rather than here.
 function getMobileStatusSummary() {
   if (!rs.connectionState.status) {
-    return { color: '#ef4444', label: 'Disconnected from RetroShare Core' };
+    return { tone: 'bad', label: 'Disconnected from RetroShare Core' };
   }
   const isHiddenMode = State.hiddenType === RS_HIDDEN_TYPE_TOR ||
     State.hiddenType === RS_HIDDEN_TYPE_I2P;
   if (isHiddenMode) {
-    if (State.torChecking) return { color: '#eab308', label: 'Checking hidden service' };
-    if (State.torProxyOk === false) return { color: '#ef4444', label: 'Hidden service unavailable' };
+    if (State.torChecking) return { tone: 'warn', label: 'Checking hidden service' };
+    if (State.torProxyOk === false) return { tone: 'bad', label: 'Hidden service unavailable' };
     return {
-      color: State.torProxyOk ? '#22c55e' : '#eab308',
+      tone: State.torProxyOk ? 'good' : 'warn',
       label: `${State.hiddenType === RS_HIDDEN_TYPE_TOR ? 'Tor' : 'I2P'} connection`,
     };
   }
   if (State.natState === 8 || State.natState === 9) {
-    return { color: '#22c55e', label: State.natState === 9 ? 'Forwarded port' : 'Connected' };
+    return { tone: 'good', label: State.natState === 9 ? 'Forwarded port' : 'Connected' };
   }
-  if ([3, 4].includes(State.natState)) return { color: '#ef4444', label: 'Network problem' };
-  if (State.natState === 2) return { color: '#94a3b8', label: 'Offline' };
-  return { color: '#eab308', label: State.natState === 6 ? 'Behind firewall' : 'Limited connection' };
+  if ([3, 4].includes(State.natState)) return { tone: 'bad', label: 'Network problem' };
+  if (State.natState === 2) return { tone: 'off', label: 'Offline' };
+  return { tone: 'warn', label: State.natState === 6 ? 'Behind firewall' : 'Limited connection' };
 }
 
 /**
@@ -275,63 +278,68 @@ const StatusBar = {
       clearInterval(intervalId);
     }
   },
-  view() {
+  view({ attrs }) {
     const isHiddenMode = State.hiddenType === RS_HIDDEN_TYPE_TOR ||
                          State.hiddenType === RS_HIDDEN_TYPE_I2P;
 
+    //  Each indicator reports a state, not a colour -- the colour for `good`,
+    //  `warn`, `bad` and `off` lives once in the stylesheet, next to the
+    //  --up / --warn / --down tokens the rest of the product uses for exactly
+    //  these four meanings.
+
     // ── DHT Status (hidden when in hidden/darknet mode) ────────────────────
-    let dhtColor = '#94a3b8'; // grey (off)
+    let dhtTone = 'off';
     let dhtTooltip = 'DHT Off';
     if (State.dhtActive) {
       if (State.dhtOk) {
         if (State.dhtRsNetSize < 10) {
-          dhtColor = '#eab308'; // yellow (searching)
+          dhtTone = 'warn';
           dhtTooltip = 'DHT Searching for RetroShare Peers';
         } else {
-          dhtColor = '#22c55e'; // green (good)
+          dhtTone = 'good';
           dhtTooltip = 'DHT Good';
         }
       } else {
-        dhtColor = '#ef4444'; // red (error)
+        dhtTone = 'bad';
         dhtTooltip = 'No peer found in DHT';
       }
     }
 
     // ── NAT Status (hidden when in hidden/darknet mode) ────────────────────
-    let natColor = '#94a3b8';
+    let natTone = 'off';
     let natTooltip = 'Offline';
     switch (State.natState) {
       case 1: // BAD_UNKNOWN
-        natColor = '#eab308';
+        natTone = 'warn';
         natTooltip = 'Network Status Unknown';
         break;
       case 2: // BAD_OFFLINE
-        natColor = '#94a3b8';
+        natTone = 'off';
         natTooltip = 'Offline';
         break;
       case 3: // BAD_NATSYM
       case 4: // BAD_NODHT_NAT
-        natColor = '#ef4444';
+        natTone = 'bad';
         natTooltip = State.natState === 4 ? 'DHT Disabled and Firewalled' : 'Nasty Firewall';
         break;
       case 5: // WARNING_RESTART
-        natColor = '#eab308';
+        natTone = 'warn';
         natTooltip = 'Network Restarting';
         break;
       case 6: // WARNING_NATTED
-        natColor = '#eab308';
+        natTone = 'warn';
         natTooltip = 'Behind Firewall';
         break;
       case 7: // WARNING_NODHT
-        natColor = '#eab308';
+        natTone = 'warn';
         natTooltip = 'DHT Disabled';
         break;
       case 8: // GOOD
-        natColor = '#22c55e';
+        natTone = 'good';
         natTooltip = 'RetroShare Server';
         break;
       case 9: // ADV_FORWARD
-        natColor = '#22c55e';
+        natTone = 'good';
         natTooltip = 'Forwarded Port';
         break;
     }
@@ -339,28 +347,28 @@ const StatusBar = {
     // ── Tor / I2P status indicator ─────────────────────────────────────────
     // Only shown when peer is in RS_NETMODE_HIDDEN with a proxy type set.
     // Mirrors Qt TorStatus widget label + icon logic.
-    let torLabel, torColor, torIcon, torTooltip;
+    let torLabel, torTone, torIcon, torTooltip, torSpin = false;
     if (isHiddenMode) {
       torLabel = State.hiddenType === RS_HIDDEN_TYPE_TOR ? 'Tor:' : 'I2P:';
       if (State.torChecking) {
-        torColor = '#f59e0b';
-        torIcon  = 'fas fa-spinner fa-spin';
+        torTone = 'warn';
+        torIcon  = 'spinner'; torSpin = true;
         torTooltip = 'Checking proxy…';
       } else if (State.torProxyOk === null) {
-        torColor = '#94a3b8';
-        torIcon  = 'fas fa-shield-alt';
+        torTone = 'off';
+        torIcon  = 'shield-alt';
         torTooltip = State.hiddenType === RS_HIDDEN_TYPE_TOR
           ? 'No Tor configuration'
           : 'No I2P configuration';
       } else if (State.torProxyOk) {
-        torColor = '#22c55e';
-        torIcon  = 'fas fa-shield-alt';
+        torTone = 'good';
+        torIcon  = 'shield-alt';
         torTooltip = State.hiddenType === RS_HIDDEN_TYPE_TOR
           ? 'Tor proxy is OK'
           : 'I2P proxy is OK';
       } else {
-        torColor = '#ef4444';
-        torIcon  = 'fas fa-shield-alt';
+        torTone = 'bad';
+        torIcon  = 'shield-alt';
         torTooltip = State.hiddenType === RS_HIDDEN_TYPE_TOR
           ? 'Tor proxy is not available'
           : 'I2P proxy is not available';
@@ -370,67 +378,59 @@ const StatusBar = {
     return m('.statusbar', [
       m('.statusbar-left', [
         m('.statusbar-item', [
-          m('i.fas.fa-users', { style: 'margin-right: 0.35rem; color: #94a3b8;' }),
+          icon('users'),
           m('span.statusbar-label', 'Friends:\u00a0'),
           m('span.statusbar-value', `${State.onlineCount}/${State.friendCount}`),
         ]),
 
         // NAT — hidden when in hidden/darknet mode (same as Qt)
         !isHiddenMode && m('.statusbar-divider'),
-        !isHiddenMode && m('.statusbar-item.statusbar-item--nat', {
-          title: natTooltip,
-          style: 'cursor: help; margin-left: 0.6rem;',
-        }, [
-          m('span.statusbar-label', { style: 'margin-right: 0.35rem;' }, 'NAT:'),
-          m('.status-bullet', {
-            style: { backgroundColor: natColor, marginLeft: '0.15rem', marginRight: '0.45rem' },
-          }),
+        !isHiddenMode && m('.statusbar-item.statusbar-item--nat', { title: natTooltip }, [
+          m('span.statusbar-label', 'NAT:'),
+          m('.status-bullet', { class: `is-${natTone}` }),
         ]),
 
         // DHT — hidden when in hidden/darknet mode (same as Qt)
         !isHiddenMode && m('.statusbar-divider'),
-        !isHiddenMode && m('.statusbar-item.statusbar-item--dht', {
-          title: dhtTooltip,
-          style: 'cursor: help; margin-left: 0.6rem;',
-        }, [
-          m('span.statusbar-label', { style: 'margin-right: 0.35rem;' }, 'DHT:'),
-          m('.status-bullet', {
-            style: { backgroundColor: dhtColor, marginLeft: '0.15rem', marginRight: '0.35rem' },
-          }),
-          State.dhtActive && State.dhtOk && m('span.statusbar-extra-info', { style: 'margin-left: 0.35rem;' }, `${formatUnit(State.dhtRsNetSize)} (${formatUnit(State.dhtNetSize)})`),
+        !isHiddenMode && m('.statusbar-item.statusbar-item--dht', { title: dhtTooltip }, [
+          m('span.statusbar-label', 'DHT:'),
+          m('.status-bullet', { class: `is-${dhtTone}` }),
+          State.dhtActive && State.dhtOk && m('span.statusbar-extra-info', `${formatUnit(State.dhtRsNetSize)} (${formatUnit(State.dhtNetSize)})`),
         ]),
 
         // Tor / I2P — only shown when in hidden/darknet mode (same as Qt)
         isHiddenMode && m('.statusbar-divider'),
-        isHiddenMode && m('.statusbar-item.statusbar-item--tor', {
-          title: torTooltip,
-          style: 'cursor: help;',
-        }, [
-          m('span.tor-label', { style: 'margin-right: 0.4rem; font-weight: 600;' }, torLabel),
-          m('i.' + torIcon, { style: { color: torColor, fontSize: '1rem', transition: 'color 0.3s' } }),
+        isHiddenMode && m('.statusbar-item.statusbar-item--tor', { title: torTooltip }, [
+          m('span.tor-label', torLabel),
+          icon(torIcon, { spin: torSpin, class: `statusbar-tone is-${torTone}` }),
         ]),
       ]),
 
       // RatesStatus — Bandwidth speeds & total cumulative transfer (Down | Up)
       m('.statusbar-right', [
-        m('.statusbar-item', {
+        m('.statusbar-item.statusbar-item--down', {
           title: `Downloaded: ${formatBytes(State.totalIn)}`,
-          style: 'cursor: help;'
         }, [
-          m('i.fas.fa-arrow-down', { style: 'color: #22c55e; margin-right: 0.25rem;' }),
+          icon('arrow-down'),
           m('span.statusbar-label', 'Down:\u00a0'),
           m('span.statusbar-value', `${State.rateIn.toFixed(1)} kB/s`),
-          m('span.statusbar-total-bytes', { style: 'color: #64748b; font-size: 0.8rem; margin-left: 0.25rem;' }, `(${formatBytes(State.totalIn)})`),
+          m('span.statusbar-total-bytes', `(${formatBytes(State.totalIn)})`),
         ]),
         m('.statusbar-divider'),
-        m('.statusbar-item', {
+        m('.statusbar-item.statusbar-item--up', {
           title: `Uploaded: ${formatBytes(State.totalOut)}`,
-          style: 'cursor: help;'
         }, [
-          m('i.fas.fa-arrow-up', { style: 'color: #3b82f6; margin-right: 0.25rem;' }),
+          icon('arrow-up'),
           m('span.statusbar-label', 'Up:\u00a0'),
           m('span.statusbar-value', `${State.rateOut.toFixed(1)} kB/s`),
-          m('span.statusbar-total-bytes', { style: 'color: #64748b; font-size: 0.8rem; margin-left: 0.25rem;' }, `(${formatBytes(State.totalOut)})`),
+          m('span.statusbar-total-bytes', `(${formatBytes(State.totalOut)})`),
+        ]),
+        m('.statusbar-divider'),
+        m('.statusbar-version', { title: 'WebUI version' }, [
+          m('span.status-dot', {
+            class: rs.connectionState.status ? 'status-dot--live' : 'status-dot--off',
+          }),
+          attrs.version,
         ]),
       ]),
     ]);

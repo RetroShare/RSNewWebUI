@@ -1,0 +1,165 @@
+// -----------------------------------------------------------------------------
+// Design tokens — the single source of truth for the web UI.
+//
+// These are CSS custom properties rather than Sass variables on purpose: a
+// theme (dark mode, high contrast) then costs one `:root` override at runtime
+// instead of a rebuild.
+//
+// Every colour comes from RetroShare's own assets. Nothing here was invented:
+//   · retroshare-gui/src/gui/qss/stylesheet/Standard_Light.qss  (the Qt theme)
+//   · data/retroshare.svg, icons/svg/retroshare-symbol_gradients.svg  (the logo)
+// The source is cited beside each group so any value can be checked.
+//
+// Colours needing an alpha variant are declared as space separated channels
+// (`--x-rgb`) with the opaque form derived from them, so the number is written
+// once:  rgb(var(--ink-rgb) / 0.1)
+//
+// Light is the default and the only theme currently specified. Dark is a second
+// `:root` block against Standard_Dark.qss, which already exists in the Qt tree.
+//
+// See docs/design-system.html for the rules these encode.
+// -----------------------------------------------------------------------------
+
+:root {
+  /* == Ground and structure ================================ Standard_Light */
+  --ground: #fafafa;      /* app background */
+  --surface: #ffffff;     /* panels, rows, sheets */
+  --sunken: #f0f2f3;      /* wells, inactive tabs, disabled fields */
+  --line: #c9cdd0;        /* structural rule — 102 uses in the Qt theme */
+  --line-soft: #e8e8e8;   /* row separators */
+  --line-hover: #a8b0b6;  /* control border on hover */
+  --line-strong: #9aa3a9; /* sheet border */
+  --press: #e9ecee;       /* control background, pressed */
+
+  /* Chrome gets a 6% vertical gradient, the Qt convention. It separates
+     chrome from content without a blur, replacing 62 box-shadows. */
+  --chrome: linear-gradient(180deg, #ffffff, #f4f6f7);
+
+  /* == Ink. Deep navy-black, not grey-black. =============== Standard_Light */
+  --ink: #19232d;         /* headings, primary text */
+  --ink-body: #3d4a55;    /* body text */
+  --ink-dim: #788d9c;     /* secondary, labels, metadata */
+  --ink-faint: #acb1b6;   /* disabled, placeholder */
+
+  /* == Brand. The logo gradient and its primary. ===================== logo */
+  --brand: #118fcc;       /* data/retroshare.svg */
+  //  Also the ink of a selected row's label. On the old band that was 3.3:1
+  //  and on the stronger one it would have been 2.8:1; this reads 4.6:1 there
+  //  and 6.1:1 on white.
+  --brand-deep: #0a6899;  /* gradient dark stop, and selected-row ink */
+  --brand-pale: #abe3ff;  /* gradient light stop */
+  --brand-hover: #1a9ad6;
+  --brand-press: #0b7cb2;
+  --accent: #0099cc;      /* the one accent shared by both Qt themes */
+
+  /* == Reach ===============================================================
+     The brand gradient turned into an information scale. In a friend-to-friend
+     network the first thing you need to know about anything on screen is how
+     far it travelled to get here, so saturation falls with distance.
+     This is why --up / --down below are reserved: a peer three hops away can
+     still be your fastest transfer, so the two facts must not share a hue. */
+  --reach-0: #0e8ecb;     /* direct */
+  --reach-1: #57b6e3;     /* one hop */
+  --reach-1-ink: #2f7d9b; /* one hop, as readable text */
+  --reach-2: #9fcbff;     /* two or more hops */
+  --reach-2-ink: #5d7486; /* two or more hops, as readable text */
+  --reach-off: #acb1b6;   /* offline */
+
+  /* == Selection. The Qt idiom: a sky band across the whole row.
+     Pale, but not so pale that the row it marks is a guess. The first set
+     measured 1.14:1 against the surface behind it, which is below the point
+     where a tint is reliably visible at all -- reported from the PR as hard
+     to see. These sit at 1.31:1 for a selected row and 1.54:1 for the
+     stronger state, with the edge near the 3:1 asked of a UI boundary. */
+  --select: #a9d7ed;
+  --select-soft: #c9e5f4;
+  --select-edge: #4aa8e0;
+  --select-faint: #e4f1fa;
+
+  /* == Status. Transfer direction and failure only — never chrome. ======== */
+  --up: #32cd32;          /* uploading (fills, dots) */
+  --up-ink: #217a21;      /* the same state as readable text */
+  --up-bg: #eff8ef;
+  --up-line: #8cc98c;
+  --down: #cd3232;        /* failed, stalled (fills, dots) */
+  --down-ink: #c23636;
+  --down-bg: #fbefef;
+  --down-line: #d79a9a;   /* border tone for danger surfaces */
+  --warn: #dcdc41;
+  --warn-ink: #8a6d1f;
+  --warn-bg: #fdf8e3;
+  --warn-line: #d8cf8a;   /* border tone for warning surfaces, like --down-line */
+
+  /* A starred thing. The warn band is the surface it sits on, but a star is
+     not a warning -- it is gold, and it needs to read as gold at 14px on
+     white, which --warn (#dcdc41) does not. */
+  --star: #e0a92b;
+
+  /* == Channels, for the alpha derivations in the page stylesheets ======== */
+  --ink-rgb: 25 35 45;
+  --ground-rgb: 250 250 250;
+  --brand-rgb: 17 143 204;
+  --select-rgb: 169 215 237;
+  --down-rgb: 205 50 50;
+  --warn-rgb: 220 220 65;
+
+  /* == Type ================================================================
+     Eight steps. Nothing else is legal.
+     The floor for anything carrying a sentence, a name or a value you have to
+     read is --t-meta. --t-micro exists for unread counts, tags and status
+     pills only, where shape and colour do the work and the number is a
+     glance. */
+  --t-title: 30px;   /* page title, 700 */
+  --t-h2: 21px;      /* section heading, 700 */
+  --t-h3: 16px;      /* toolbar and sheet titles, 700 */
+  --t-body: 15px;    /* body, inputs, reading */
+  --t-row: 14px;     /* dense rows, list items, buttons */
+  --t-meta: 13px;    /* secondary metadata, hints */
+  --t-label: 12px;   /* field labels, timestamps */
+  --t-micro: 11px;   /* counts, tags, status pills — nothing else */
+
+  --font-sans: 'Archivo', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* == Weight. Three steps. ================================================
+     Bold is a signal, not a texture: if most of a screen is bold then none of
+     it is emphasised. --w-label is the workhorse for anything that needs to
+     read as distinct from its neighbour (a field label above its input, a
+     column head above its rows, a name above its timestamp) -- separation,
+     not emphasis. --w-state is reserved for what you must be able to spot
+     without reading: unread, counts, the selected row, a key figure.
+     Nothing in the product is 700 except the `.bold` escape hatch. */
+  --w-body: 400;
+  --w-label: 500;
+  --w-state: 600;
+
+  /* == Space. A 4px grid, six stops. Nothing between them. ================ */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+
+  /* == Radius. A desktop utility earns a small budget. ==================== */
+  --r-sm: 2px;       /* controls, rows, inputs */
+  --r-md: 4px;       /* sheets */
+  --r-full: 999px;   /* counts, dots, avatars */
+
+  /* == Sizing ============================================================= */
+  --touch: 44px;         /* minimum touch target under the `touch` mixin */
+  --control: 30px;       /* minimum control height on pointer devices */
+  --glyph: 26px;         /* square side of a bare glyph button */
+  --rail: 52px;          /* sidebar, collapsed */
+  --rail-open: 208px;    /* sidebar, expanded */
+  --measure: 68ch;       /* reading column */
+  --popover-wide: 24rem; /* identity cards with label/value rows */
+
+  /* == Depth ==============================================================
+     Chrome is separated by a hairline and the 6% gradient above, so the only
+     shadow in the product lifts a sheet off the page. --ring is the focus
+     affordance, which is not depth but is spelled the same way. */
+  --lift: 0 12px 32px rgb(var(--ink-rgb) / 0.18);
+  --lift-sm: 0 4px 12px rgb(var(--ink-rgb) / 0.12);  /* tooltips, popovers */
+  --ring: 0 0 0 3px rgb(var(--brand-rgb) / 0.22);
+}

@@ -1,10 +1,12 @@
+@use '../abstracts' as *;
+
 /* Shared Threaded Comments and Composer component */
 
 .comments,
 .board-comments {
   margin-top: 1.5rem;
   max-width: 900px;
-  color: #0f172a;
+  color: var(--ink);
 }
 
 .comments__heading,
@@ -14,9 +16,9 @@
   gap: 1rem;
   margin-bottom: 1.25rem;
 
-  h3 { margin: 0; font-size: 1.15rem; }
-  span { color: #64748b; font-size: .8rem; font-weight: 600; }
-  i { margin-right: .35rem; }
+  h3 { margin: 0; font-size: var(--t-h3); }
+  span { color: var(--ink-dim); font-size: var(--t-meta); font-weight: var(--w-label); }
+  .icon { margin-right: .35rem; }
 }
 
 .comments__voter,
@@ -25,16 +27,12 @@
   align-items: center;
   gap: .4rem;
   margin-left: auto;
-  color: #64748b;
-  font-size: .75rem;
-  font-weight: 600;
+  color: var(--ink-dim);
+  font-size: var(--t-label);
+  font-weight: var(--w-label);
   white-space: nowrap;
 
-  select {
-    max-width: 180px;
-    padding: .25rem .4rem;
-    font-size: .78rem;
-  }
+  select { max-width: 180px; }
 }
 
 .comment-composer,
@@ -53,11 +51,11 @@
   height: 38px;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
-  color: #fff;
-  font-size: .78rem;
-  font-weight: 700;
+  border-radius: var(--r-full);
+  background: linear-gradient(135deg, var(--brand-deep), var(--ink-body));
+  color: var(--surface);
+  font-size: var(--t-meta);
+  font-weight: var(--w-state);
 
   > .avatar,
   > .jdenticon-avatar,
@@ -82,7 +80,7 @@
 .board-comment-composer__identity {
   max-width: 240px;
   margin-bottom: .45rem;
-  font-size: .8rem;
+  font-size: var(--t-meta);
 }
 
 .comment-composer__input,
@@ -92,17 +90,17 @@
   padding: .45rem 0;
   resize: vertical;
   border: 0;
-  border-bottom: 1px solid #94a3b8;
+  border-bottom: 1px solid var(--ink-faint);
   border-radius: 0;
   background: transparent;
-  color: #0f172a;
+  color: var(--ink);
   font: inherit;
   line-height: 1.4;
   box-sizing: border-box;
 
   &:focus {
     outline: 0;
-    border-bottom: 2px solid #2563eb;
+    border-bottom: 2px solid var(--brand-deep);
   }
 
   &:disabled {
@@ -126,12 +124,8 @@
   justify-content: flex-end;
 
   button {
-    border: 0;
-    background: transparent;
-    color: #475569;
-    cursor: pointer;
-    font-size: .78rem;
-    font-weight: 700;
+    @include btn-base;
+    @include btn-quiet;
   }
 }
 
@@ -141,20 +135,11 @@
   margin-top: .35rem;
 
   button {
-    padding: .25rem .2rem;
-    color: #0f172a;
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-    font-size: .78rem;
-    font-weight: 700;
-
-    &:hover {
-      color: #2563eb;
-    }
+    @include btn-base;
+    @include btn-quiet;
   }
 
-  i {
+  .icon {
     margin-right: .2rem;
   }
 }
@@ -162,20 +147,20 @@
 .comment-composer__submit,
 .board-comment-composer__submit {
   padding: .45rem .85rem !important;
-  border-radius: 999px !important;
-  background: #2563eb !important;
-  color: #fff !important;
+  border-radius: var(--r-full) !important;
+  background: var(--brand-deep) !important;
+  color: var(--surface) !important;
 
   &:disabled {
-    background: #dbe3ef !important;
-    color: #94a3b8 !important;
+    background: var(--line-soft) !important;
+    color: var(--ink-faint) !important;
     cursor: not-allowed;
   }
 }
 
 .comment-composer__cancel:hover,
 .board-comment-composer__cancel:hover {
-  color: #2563eb;
+  color: var(--brand-deep);
 }
 
 .comment-composer__replying,
@@ -184,17 +169,14 @@
   align-items: center;
   gap: .25rem;
   margin-bottom: .35rem;
-  color: #64748b;
-  font-size: .8rem;
+  color: var(--ink-dim);
+  font-size: var(--t-meta);
 
   button {
+    @include btn-base;
+    @include btn-quiet;
+
     margin-left: .3rem;
-    border: 0;
-    background: transparent;
-    color: #475569;
-    cursor: pointer;
-    font-size: .78rem;
-    font-weight: 700;
   }
 }
 
@@ -203,17 +185,17 @@
 .comment-composer__error,
 .board-comment-composer__error {
   margin: .4rem 0 0;
-  font-size: .78rem;
+  font-size: var(--t-meta);
 }
 
 .comment-composer__hint,
 .board-comment-composer__hint {
-  color: #64748b;
+  color: var(--ink-dim);
 }
 
 .comment-composer__error,
 .board-comment-composer__error {
-  color: #dc2626;
+  color: var(--down-ink);
 }
 
 .comment-composer__emoji,
@@ -222,24 +204,21 @@
   margin-right: auto;
 }
 
-.comment-emoji-popover,
-.board-comment-emoji-popover {
-  position: absolute;
-  z-index: 20;
-  top: 38px;
-  left: 0;
-  width: 250px;
-  max-height: 180px;
-  overflow-y: auto;
-  padding: .5rem;
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: .2rem;
-  background: #fff;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, .16);
+//  The emoji switch: a bare button, which btn-glyph is the product's word for.
+.comment-emoji-toggle {
+  @include btn-base;
+  @include btn-glyph;
+
+  border: 0;
+  background: none;
+  box-shadow: none;
+  border-radius: var(--r-full);
+  color: var(--ink-dim);
+
+  &:hover { background: var(--sunken); color: var(--ink-body); }
+  &.is-open { background: var(--select-soft); color: var(--brand-deep); }
 }
+
 
 .comments__list,
 .board-comments__list {
@@ -269,10 +248,10 @@
   display: flex;
   align-items: baseline;
   gap: .55rem;
-  font-size: .8rem;
+  font-size: var(--t-meta);
 
-  b { color: #1e293b; }
-  span { color: #64748b; font-size: .75rem; }
+  b { color: var(--ink); }
+  span { color: var(--ink-dim); font-size: var(--t-label); }
 }
 
 .comment__text,
@@ -290,17 +269,17 @@
   padding: .25rem .35rem;
   border: 0;
   background: transparent;
-  color: #2563eb;
+  color: var(--brand-deep);
   cursor: pointer;
-  font-size: .78rem;
-  font-weight: 700;
+  font-size: var(--t-meta);
+  font-weight: var(--w-label);
 
   &:hover {
-    background: #eff6ff;
-    border-radius: 4px;
+    background: var(--select-faint);
+    border-radius: var(--r-sm);
   }
 
-  i {
+  .icon {
     margin-left: .15rem;
   }
 
@@ -311,8 +290,8 @@
     bottom: .8rem;
     width: 1.5rem;
     height: 2.2rem;
-    border-left: 1px solid #e2e8f0;
-    border-bottom: 1px solid #e2e8f0;
+    border-left: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
     border-radius: 0 0 0 .75rem;
     pointer-events: none;
   }
@@ -322,7 +301,7 @@
 .board-comment__replies {
   margin-top: .2rem;
   padding-left: 1rem;
-  border-left: 2px solid #e2e8f0;
+  border-left: 2px solid var(--line-soft);
 }
 
 .comments__status,
@@ -330,11 +309,11 @@
 .comments__empty,
 .board-comments__empty {
   margin: 2rem 0;
-  color: #64748b;
+  color: var(--ink-dim);
   text-align: center;
 
-  i {
-    font-size: 1.5rem;
+  .icon {
+    width: 24px; height: 24px;
   }
 }
 
@@ -369,7 +348,7 @@
     flex-basis: 32px;
     width: 32px;
     height: 32px;
-    font-size: .68rem;
+    font-size: var(--t-label);
   }
 
   .comment__replies,

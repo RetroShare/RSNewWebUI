@@ -3,6 +3,13 @@ General site-wide rules
 ******************************/
 @use '../abstracts' as *;
 
+/* The platform attribute. The UA sheet hides it, but any author `display`
+   rule on the same element wins over the UA sheet regardless of specificity,
+   so a component that sets display:flex on itself would show up anyway. */
+[hidden] {
+  display: none !important;
+}
+
 #main {
   height: 100vh;
   /* Mobile browsers count the collapsible URL bar in 100vh, which pushes the
@@ -23,30 +30,59 @@ General site-wide rules
   @include flex;
   height: 100%;
   width: 100%;
-  background-color: $light-color;
-  animation: fadein 0.3s;
+  background-color: var(--ground);
   overflow: auto;
 }
 
 input[type='text'],
 input[type='password'],
 input[type='number'],
-textarea {
+textarea,
+select {
   box-sizing: border-box;
-  background: white;
+  background: var(--surface);
   max-width: 100%;
-  font-size: 1rem;
-  font-weight: 400;
-  border: 1px solid #ccc;
-  border-radius: 0.25rem;
-  padding: 0.25rem 0.5rem;
+  min-height: var(--control);
+  /* Buttons and the search box are --t-row at 3px, which lands on exactly
+     --control. A field is a control like any of them. */
+  font-size: var(--t-row);
+  font-weight: var(--w-body);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 3px var(--s2);
   /* Disable chromium's focused element hinting*/
   outline: transparent;
 }
-input {
+
+/* A dropdown is a field, so it is the rule above plus a chevron. Every
+   `<select>` in the product lands here; the pages no longer each describe
+   their own. */
+select {
+  @include select-arrow;
+}
+
+/* A dropdown has no placeholder attribute, so the convention is an option
+   with an empty value. While that one is the selection, nothing has been
+   chosen yet -- so it gets the placeholder colour rather than reading as a
+   value the user picked.
+
+   The high specificity (0,2,2) is deliberate: this has to beat the page rules
+   that set a select's colour, and it sets nothing but `color`. */
+select:has(> option[value='']:checked) {
+  color: var(--ink-faint);
+}
+
+/* The list itself is the browser's, and its rows are real options again. */
+select > option {
+  color: var(--ink);
+}
+
+input,
+select {
   &:focus {
-    border: 1px solid #3ba4d7;
-    box-shadow: inset 0 0 5px #ccc;
+    border: 1px solid var(--brand);
+    box-shadow: inset 0 0 5px var(--line);
   }
   &.stretched {
     width: 90%;
@@ -54,9 +90,6 @@ input {
   &.small {
     max-width: 70%;
     padding: 0.1rem;
-  }
-  &.searchbar {
-    width: 40%;
   }
 }
 
@@ -66,10 +99,10 @@ a {
     width: max-content;
     height: max-content;
     padding: 0.475rem 0.75rem;
-    border-radius: 50%;
+    border-radius: var(--r-full);
     transition: 100ms;
     &:hover {
-      background: $light-color;
+      background: var(--ground);
     }
   }
 }
@@ -80,24 +113,24 @@ table {
   width: 100%;
   border-collapse: collapse;
   text-align: center;
-  color: #333;
-  font-size: 1.125rem;
+  color: var(--ink);
+  font-size: var(--t-h3);
   & th {
-    font-size: 1.125rem;
+    font-size: var(--t-h3);
     color: black;
-    border-bottom: 2px solid #eee;
+    border-bottom: 2px solid var(--line-soft);
   }
   & tr {
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--line-soft);
   }
 }
 
 h3 {
-  color: #444;
+  color: var(--ink);
 }
 hr {
   margin-left: 0;
-  color: #aaa;
+  color: var(--ink-faint);
 }
 
 .grid-2col {
@@ -114,36 +147,10 @@ hr {
   color: red;
 }
 
-.tooltip {
-  color: #333;
-  position: relative;
-  display: inline-block;
-  margin: 0 0.25rem;
-}
-.tooltiptext {
-  visibility: hidden;
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  min-width: 250px;
-  margin-left: -120px;
-  z-index: 1;
-  color: #ccc;
-  background-color: #333;
-  font-size: 0.875rem;
-  text-align: center;
-  padding: 0.25rem;
-  border-radius: 0.5rem;
-}
-.tooltip:hover .tooltiptext {
-  visibility: visible;
-  animation: fadein 0.5s;
-}
-
 blockquote {
-  color: $dark-color;
-  padding: 0.75rem 1rem 0.75rem 2rem;
-  border-radius: 0.25rem;
+  color: var(--ink);
+  padding: 0.75rem 1rem;
+  border-radius: var(--r-sm);
   &.info {
     @include blockquote('info');
   }
@@ -161,10 +168,6 @@ Animations
     opacity: 1;
   }
 }
-.fadein {
-  animation: fadein 0.5s;
-}
-
 @keyframes swipe-from-left {
   from {
     margin-left: 100%;

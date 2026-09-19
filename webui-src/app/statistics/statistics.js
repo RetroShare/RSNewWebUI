@@ -2,8 +2,11 @@ const m = require('mithril');
 const rs = require('rswebui');
 const NetworkData = require('network/network_data');
 const Bandwidth = require('statistics/bandwidth');
+const icon = require('icon');
+const widget = require('widgets');
 
-const COLORS = ['#0788cb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#ec4899', '#84cc16', '#64748b', '#f97316'];
+//  The one series palette, defined in statistics/bandwidth.
+const COLORS = Bandwidth.COLORS;
 const SERVICE_NAMES = {
   0x0001: 'File index', 0x0011: 'Discovery', 0x0012: 'Chat', 0x0013: 'Messages',
   0x0014: 'Turtle routing', 0x0015: 'Tunnel', 0x0016: 'Heartbeat', 0x0017: 'File transfer',
@@ -133,7 +136,7 @@ function TrafficPanel() {
       const rows = vnode.attrs.rows;
       return m('section.traffic-panel', [
         m('.traffic-panel__heading', [
-          m('i.fas.' + (vnode.attrs.icon || 'fa-chart-pie')),
+          icon(vnode.attrs.icon || 'chart-pie', { size: 19 }),
           m('div', [m('h3', vnode.attrs.title), m('p', vnode.attrs.description)]),
         ]),
         rows.length
@@ -145,7 +148,7 @@ function TrafficPanel() {
                 m('td', m('strong', formatBytes(row.total))), m('td', row.count.toLocaleString()),
               ]))),
             ]))]
-          : m('.traffic-empty', [m('i.fas.fa-chart-pie'), m('p', 'No traffic has been recorded in the current tracking window.')]),
+          : m('.traffic-empty', [icon('chart-pie'), m('p', 'No traffic has been recorded in the current tracking window.')]),
       ]);
     },
   };
@@ -153,8 +156,8 @@ function TrafficPanel() {
 
 // Navigation sections — Traffic and Bandwidth are implemented
 const NAV_SECTIONS = [
-  { id: 'traffic', label: 'Traffic', icon: 'fa-chart-pie', description: 'Live traffic distribution reported by RetroShare Core.' },
-  { id: 'bandwidth', label: 'Bandwidth', icon: 'fa-tachometer-alt', description: 'Real-time bandwidth rates and peer throughput.' },
+  { id: 'traffic', label: 'Traffic', icon: 'chart-pie', description: 'Live traffic distribution reported by RetroShare Core.' },
+  { id: 'bandwidth', label: 'Bandwidth', icon: 'tachometer-alt', description: 'Real-time bandwidth rates and peer throughput.' },
 ];
 
 function PlaceholderSection() {
@@ -162,7 +165,7 @@ function PlaceholderSection() {
     view(vnode) {
       const section = vnode.attrs.section;
       return m('.statistics-placeholder', [
-        m('i.fas.' + section.icon),
+        icon(section.icon, { size: 19 }),
         m('h3', section.label),
         m('p', 'Coming soon — this section is not yet implemented.'),
       ]);
@@ -276,10 +279,10 @@ module.exports = {
     let sectionContent;
     if (activeSection.id === 'traffic') {
       sectionContent = [
-        vnode.state.error && m('.statistics-error', [m('i.fas.fa-exclamation-triangle'), vnode.state.error]),
+        vnode.state.error && m('.statistics-error', [icon('exclamation-triangle'), vnode.state.error]),
         m('.statistics-grid', [
-          m(TrafficPanel, { title: 'By service', icon: 'fa-layer-group', description: 'Which RetroShare services use the most bandwidth.', column: 'Service', rows: serviceRows }),
-          m(TrafficPanel, { title: 'By friend', icon: 'fa-user-friends', description: 'Traffic exchanged with each friend location.', column: 'Friend', rows: friendRows }),
+          m(TrafficPanel, { title: 'By service', icon: 'layer-group', description: 'Which RetroShare services use the most bandwidth.', column: 'Service', rows: serviceRows }),
+          m(TrafficPanel, { title: 'By friend', icon: 'user-friends', description: 'Traffic exchanged with each friend location.', column: 'Friend', rows: friendRows }),
         ]),
         m('p.statistics-note', vnode.state.cumulativeServices
           ? 'Cumulative values are retained by the Core and refresh every 5 seconds.'
@@ -292,54 +295,51 @@ module.exports = {
     }
 
     return m('.statistics-container', [
-      // ── Left pane: header card + navigation ──
-      m('.statistics-left-pane', [
-        m('.statistics-header-card', [
-          m('.statistics-header-card__title', [
-            m('i.fas.fa-chart-pie'),
-            m('div', [m('h1', 'Statistics'), m('p', 'Traffic & routing stats')]),
-          ]),
-        ]),
-        m('nav.statistics-nav', NAV_SECTIONS.map((section) =>
-          m('button.statistics-nav-item[type=button]', {
-            class: activeSection.id === section.id ? 'active' : '',
-            onclick: () => switchSection(section.id),
-            title: section.description,
-          }, [m('i.fas.' + section.icon), m('span', section.label)])
-        )),
-      ]),
+      //  The same rail Boards, Channels, Forums, Files and Config use.
+      m(widget.Sidebar, {
+        title: 'Statistics',
+        tabs: NAV_SECTIONS.map((section) => section.id),
+        labels: Object.fromEntries(NAV_SECTIONS.map((s) => [s.id, s.label])),
+        icons: Object.fromEntries(NAV_SECTIONS.map((s) => [s.id, s.icon])),
+        titles: Object.fromEntries(NAV_SECTIONS.map((s) => [s.id, s.description])),
+        active: activeSection.id,
+        onSelect: switchSection,
+      }),
 
       // ── Mobile tab bar (visible only on small screens) ──
       m('.statistics-mobile-tabs', [
-        m('.statistics-mobile-tabs__list', NAV_SECTIONS.map((section) =>
-          m('button.statistics-mobile-tab[type=button]', {
-            class: activeSection.id === section.id ? 'active' : '',
-            onclick: () => switchSection(section.id),
-          }, [m('i.fas.' + section.icon), m('span', section.label)])
-        )),
+        m(widget.Segmented, {
+          class: 'statistics-mobile-tabs__list',
+          ariaLabel: 'Statistics section',
+          value: activeSection.id,
+          options: NAV_SECTIONS.map((section) => ({
+            id: section.id,
+            label: section.label,
+            icon: section.icon,
+          })),
+          onSelect: switchSection,
+        }),
         m('button.statistics-mobile-refresh[type=button]', {
           disabled: isLoading,
           onclick: handleRefresh,
           title: 'Refresh',
-        }, m('i.fas.fa-sync-alt')),
+        }, icon('sync-alt')),
       ]),
 
       // ── Right pane: section content ──
       m('.statistics-right-pane', [
-        m('.statistics-content-header', [
-          m('.statistics-content-header__title', [
-            m('h2', activeSection.label),
-            m('p', activeSection.description),
-          ]),
-          m('button.statistics-refresh-btn[type=button]', {
+        m(widget.PageHead, {
+          title: activeSection.label,
+          lead: activeSection.description,
+          actions: m('button.statistics-refresh-btn[type=button]', {
             disabled: isLoading,
             onclick: handleRefresh,
             title: 'Refresh statistics',
           }, [
-            m('i.fas.fa-sync-alt'),
+            icon('sync-alt'),
             m('span.btn-text', 'Refresh'),
           ]),
-        ]),
+        }),
         sectionContent,
       ]),
     ]);

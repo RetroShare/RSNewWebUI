@@ -4,11 +4,11 @@
 .statusbar {
   @include flex($justify: space-between, $align: center);
   height: 28px;
-  background-color: $dark-color;
-  border-top: 1px solid #2e2e38;
+  background: var(--chrome);
+  border-top: 1px solid var(--line);
   padding: 0 1rem;
-  font-size: 0.8rem;
-  color: #94a3b8;
+  font-size: var(--t-label);
+  color: var(--ink-dim);
   z-index: 100;
   box-sizing: border-box;
   user-select: none;
@@ -22,23 +22,75 @@
     @include flex($align: center, $gap: 0.75rem);
   }
 
+  //  Every item is a read-only reading, so the pointer says "explain this",
+  //  not "click this" -- set once rather than on each item inline.
   &-item {
     @include flex($align: center, $gap: 0.3rem);
+    cursor: help;
+
+    > .icon { color: var(--ink-faint); }
   }
+
+  //  The two transfer readings borrow the product's own direction colours:
+  //  incoming is the up/good green, outgoing the brand blue.
+  &-item--down > .icon { color: var(--up-ink); }
+  &-item--up > .icon { color: var(--brand); }
+
+  &-total-bytes {
+    color: var(--ink-dim);
+    font-size: var(--t-micro);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &-item--tor .tor-label { font-weight: var(--w-state); }
 
   &-divider {
     width: 1px;
     height: 14px;
-    background-color: #2e2e38;
+    background-color: var(--line);
+  }
+
+  &-version {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    cursor: default;
   }
 }
 
-.status-bullet {
+/* == Status tones =========================================================
+   Four states, one set of colours, used by the bar's bullets, the Tor glyph
+   and the mobile header's dot. These were eight hex literals spread through
+   statusbar.js -- the same green written three times and the same grey
+   written four, none of them the product's own. */
+
+.status-bullet,
+.mobile-status-trigger__dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--r-full);
   display: inline-block;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+  flex: none;
+  box-shadow: none;
+  background: var(--reach-off);
+}
+
+.status-bullet,
+.status-dot,
+.mobile-status-trigger__dot,
+.statusbar-tone {
+  &.is-good { background: var(--up); color: var(--up-ink); }
+  &.is-warn { background: var(--warn); color: var(--warn-ink); }
+  &.is-bad { background: var(--down); color: var(--down-ink); }
+  &.is-off { background: var(--reach-off); color: var(--ink-faint); }
+}
+
+//  The Tor indicator is a glyph, not a dot: it takes the tone as its ink and
+//  leaves the fill alone.
+.statusbar-tone {
+  width: 14px;
+  height: 14px;
+  background: none !important;
 }
 
 @media (max-width: 700px) {

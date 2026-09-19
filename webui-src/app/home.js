@@ -2,6 +2,8 @@ const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
 const NetworkData = require('network/network_data');
+const icon = require('icon');
+const toast = require('toast');
 
 const logo = () => {
   return {
@@ -20,58 +22,48 @@ const logo = () => {
   };
 };
 
-const webhelpConfirm = () => {
-  return {
-    view: () => m('.web-help-confirmation', [
-      m('h3', 'Confirmation'),
-      m('hr'),
-      m('p', 'Do you want this link to be handled by your system?'),
-      m('.web-help-confirmation__url', 'https://retrosharedocs.readthedocs.io/en/latest/'),
-      m('p', 'Make sure this link has not been forged to drag you to a malicious website.'),
-      m(
-        'button',
-        {
-          onclick: () => {
-            window.open('https://retrosharedocs.readthedocs.io/en/latest/');
-            //  The documentation opens in another tab; leaving this one behind
-            //  it means coming back to a dialog that has nothing left to ask.
-            widget.closePopupMessage();
-          },
+const DOCS_URL = 'https://retrosharedocs.readthedocs.io/en/latest/';
+
+//  The head names the question, so the body is the URL you are agreeing to
+//  open and the reason to read it before agreeing.
+const webhelpConfirm = {
+  view: () => [
+    m('.web-help-confirmation__url', DOCS_URL),
+    m('p.web-help-confirmation__warning',
+      'Make sure this link has not been forged to drag you to a malicious website.'),
+    m('.modal__foot', [
+      m('button[type=button]', { onclick: () => widget.closePopupMessage() }, 'Cancel'),
+      m('button.is-primary[type=button]', {
+        onclick: () => {
+          window.open(DOCS_URL);
+          //  The documentation opens in another tab; leaving this one behind
+          //  it means coming back to a dialog that has nothing left to ask.
+          widget.closePopupMessage();
         },
-        'Ok'
-      ),
+      }, 'Open link'),
     ]),
-  };
+  ],
 };
 
 const webhelp = () => {
   return {
     view() {
+      //  A button, like the Add Friend one beside it -- this was a div with an
+      //  onclick, which no keyboard could reach and which had to draw its own
+      //  chrome instead of the product's.
       return m(
-        '.webhelp',
+        'button.webhelp[type=button]',
         {
           onclick: () => {
-            widget.popupMessage(m(webhelpConfirm), 'web-help-modal');
+            widget.popupMessage(m(webhelpConfirm), 'web-help-modal', {
+              title: 'Open Web Help',
+              lead: 'Do you want this link to be handled by your system?',
+            });
           },
         },
-        [m('i.fas.fa-globe-europe'), m('p', 'Open Web Help')]
+        [icon('globe-europe'), 'Open Web Help']
       );
     },
-  };
-};
-
-const ConfirmCopied = () => {
-  return {
-    view: () => [
-      m('h3', 'Copied to Clipboard'),
-      m('hr'),
-      m('p[style="margin: 12px 0 4px"]', 'Your Retroshare ID has been copied to Clipboard.'),
-      m(
-        'p[style="margin: 4px 0 12px"]',
-        'Now, you can paste and send it to your friend via email or some other way.'
-      ),
-      m('button', { onclick: widget.closePopupMessage }, 'Ok'),
-    ],
   };
 };
 
@@ -105,15 +97,10 @@ const retroshareId = () => {
     } else {
       copied = copyIdFallback();
     }
-    widget.popupMessage(
-      copied
-        ? m(ConfirmCopied)
-        : [
-            m('h3', 'Copy failed'),
-            m('hr'),
-            m('p', 'Your browser refused the copy. Select the ID above and copy it by hand.'),
-          ],
-      'copy-confirmation-modal'
+    toast.result(
+      copied,
+      'RetroShare ID copied. Send it to your friend however you like.',
+      'Your browser refused the copy. Select the ID above and copy it by hand.'
     );
   }
 
@@ -150,7 +137,7 @@ const retroshareId = () => {
           },
           v.attrs.ownCert
         ),
-        m('i.fas.fa-copy', {
+        icon('copy', {
           role: 'button',
           tabindex: 0,
           title: 'Copy RetroShare ID',
@@ -163,7 +150,7 @@ const retroshareId = () => {
             }
           },
         }),
-        m('i.fas.fa-share-alt', {
+        icon('share-alt', {
           role: 'button',
           tabindex: 0,
           title: 'Share RetroShare ID',
@@ -182,7 +169,7 @@ const retroshareId = () => {
 };
 
 function invalidCertPrompt() {
-  widget.popupMessage([m('h3', 'Invalid RetroShare ID'), m('hr'), m('p', 'Check the ID and try again.')]);
+  toast.error('Check the ID and try again.');
 }
 
 async function refreshFriendLists(expectedGpgId) {
@@ -205,32 +192,21 @@ async function refreshFriendLists(expectedGpgId) {
 
 function confirmAddPrompt(details, cert, long) {
   const finishButton = long
-    ? m(
-        'button',
+    ? m('button.is-primary',
         {
           onclick: async () => {
             const res = await rs.rsJsonApiRequest('/rsPeers/loadCertificateFromString', { cert });
             if (res.body.retval) {
               NetworkData.rememberPendingFriend(details);
               await refreshFriendLists(details.gpg_id || details.pgpId);
-              widget.popupMessage([
-                m('h3', 'Successful'),
-                m('hr'),
-                m('p', 'Successfully added friend.'),
-              ]);
+              widget.closePopupMessage();
+              toast.success('Successfully added friend.');
             } else {
-              widget.popupMessage([
-                m('h3', 'Error'),
-                m('hr'),
-                m('p', 'An error occoured during adding. Friend not added.'),
-              ]);
+              toast.error('An error occoured during adding. Friend not added.');
             }
           },
-        },
-        'Finish'
-      )
-    : m(
-        'button',
+        }, [icon('check'), 'Finish'])
+    : m('button.is-primary',
         {
           onclick: async () => {
             const res = await rs.rsJsonApiRequest('/rsPeers/addSslOnlyFriend', {
@@ -241,29 +217,16 @@ function confirmAddPrompt(details, cert, long) {
             if (res.body.retval) {
               NetworkData.rememberPendingFriend(details);
               await refreshFriendLists(details.gpg_id || details.pgpId);
-              widget.popupMessage([
-                m('h3', 'Successful'),
-                m('hr'),
-                m('p', 'Successfully added friend.'),
-              ]);
+              widget.closePopupMessage();
+              toast.success('Successfully added friend.');
             } else {
-              widget.popupMessage([
-                m('h3', 'Error'),
-                m('hr'),
-                m('p', 'An error occoured during adding. Friend not added.'),
-              ]);
+              toast.error('An error occoured during adding. Friend not added.');
             }
           },
-        },
-        'Finish'
-      );
+        }, [icon('check'), 'Finish']);
 
   widget.popupMessage(
     m('.friend-confirmation', [
-      m('.friend-confirmation__heading', [
-        m('i.fas.fa-user-plus'),
-        m('div', [m('h3', 'Make friend'), m('p', 'Confirm this is the person you want to add.')]),
-      ]),
       m('.friend-confirmation__details', [
         m('.friend-confirmation__row', [
           m('span.friend-confirmation__label', 'Name'),
@@ -284,7 +247,11 @@ function confirmAddPrompt(details, cert, long) {
       ]),
       m('.friend-confirmation__actions', finishButton),
     ]),
-    'friend-confirmation-modal'
+    'friend-confirmation-modal',
+    {
+      title: 'Make Friend',
+      lead: 'Confirm this is the person you want to add.',
+    }
   );
 }
 
@@ -327,14 +294,7 @@ const AddFriend = () => {
 
   return {
     view: (vnode) =>
-      m('.widget.add-friend-wizard', [
-        m('.add-friend-wizard__heading', [
-          m('i.fas.fa-user-plus'),
-          m('div', [
-            m('h3', 'Add friend'),
-            m('p', 'Paste your friend\'s RetroShare ID to connect.'),
-          ]),
-        ]),
+      m('.add-friend-wizard', [
         m(
           '.cert-drop-zone',
           {
@@ -367,20 +327,19 @@ const AddFriend = () => {
             ),
             m('.add-friend-wizard__divider', [m('span', 'or')]),
             m('.add-friend-wizard__file', [
-              m('label.button[for=friend-id-file]', [m('i.fas.fa-folder-open'), ' Choose ID file']),
+              m('label.button[for=friend-id-file]', [icon('folder-open'), ' Choose ID file']),
               m('input#friend-id-file[type=file][name=certificate][accept="text/*,.rsc,.txt"]', {
                 onchange: (e) => loadFileContents(e.target.files),
               }),
               m('span', fileName || 'You can also drop a text file here.'),
             ]),
             m('.add-friend-wizard__actions', [
-              m(
-                'button',
+              m('button.is-primary',
                 {
                   disabled: !certificate.trim(),
                   onclick: () => addFriendFromCert(certificate),
                 },
-                [m('i.fas.fa-user-plus'), ' Add friend']
+                [icon('user-plus'), ' Add friend']
               ),
             ]),
           ]
@@ -422,15 +381,15 @@ const Certificate = () => {
             ]),
             m('.add-friend', [
               m('h6', 'Did you receive a Retroshare ID from your friend ?'),
-              m(
-                'button',
+              m('button.is-primary',
                 {
                   onclick: () => {
-                    widget.popupMessage(m(AddFriend), 'add-friend-modal');
+                    widget.popupMessage(m(AddFriend), 'add-friend-modal', {
+                      title: 'Add a Friend',
+                      lead: 'Paste your friend\'s RetroShare ID to connect.',
+                    });
                   },
-                },
-                'Add Friend'
-              ),
+                }, [icon('user-plus'), 'Add Friend']),
             ]),
             m('.webhelp-container', [m('h6', 'Do you need help with Retoshare ?'), m(webhelp)]),
           ]),

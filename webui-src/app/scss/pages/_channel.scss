@@ -22,33 +22,11 @@
 }
 
 /* subject */
-table.channels {
-  & th:nth-child(1) {
-    width: 50%;
-    text-align: start;
-  }
-  /* subject */
-  & td:nth-child(1) {
-    text-align: start;
-    /* Truncate text with '...' */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  & tr:hover {
-    background-color: $light-color;
-    cursor: pointer;
-  }
-  & tr.hidden {
-    display: none;
-  }
-}
-
 /* subject */
 table {
   padding: 0.5rem;
   &.comments {
-    border: 1px solid #eee;
+    border: 1px solid var(--line-soft);
     & th {
       height: 40px;
       &:nth-child(1) {
@@ -87,20 +65,21 @@ table {
   align-items: center;
   justify-content: center;
   gap: .35rem;
-  color: #64748b;
-  background: linear-gradient(135deg, #f8fafc, #dbe5f1);
+  color: var(--ink-dim);
+  background: linear-gradient(135deg, var(--ground), var(--select-soft));
 }
-.channel-post__placeholder i { font-size: 1.35rem; color: #64748b; }
-.channel-post__placeholder span { font-size: 2rem; font-weight: 700; color: #2563eb; }
-.channel-post__placeholder small { font-size: .72rem; font-weight: 600; }
+//  `i` never matched: the sprite renders an <svg class="icon">.
+.channel-post__placeholder > .icon { width: 22px; height: 22px; color: var(--ink-dim); }
+.channel-post__placeholder span { font-size: var(--t-title); font-weight: var(--w-label); color: var(--brand-deep); }
+.channel-post__placeholder small { font-size: var(--t-label); font-weight: var(--w-label); }
 
 /* Compact YouTube-style post description with an opt-in expansion control. */
 .post-description {
   margin: 1rem 0;
   padding: .85rem 1rem;
-  border-radius: 10px;
-  background: #f1f5f9;
-  color: #1e293b;
+  border-radius: var(--r-md);
+  background: var(--sunken);
+  color: var(--ink);
 }
 .post-description__text { overflow-wrap: anywhere; line-height: 1.5; }
 .post-description__text > :first-child { margin-top: 0; }
@@ -117,26 +96,22 @@ table {
   border: 0 !important;
   box-shadow: none !important;
   background: transparent !important;
-  color: #0f172a !important;
-  font-size: .85rem !important;
-  font-weight: 700 !important;
+  color: var(--ink) !important;
+  font-size: var(--t-row) !important;
+  font-weight: var(--w-label) !important;
 }
-.post-description__toggle:hover { color: #2563eb !important; text-decoration: underline; }
+.post-description__toggle:hover { color: var(--brand-deep) !important; text-decoration: underline; }
 
 .create-channel-form {
   display: grid !important;
   grid-template-columns: 11rem minmax(0, 1fr);
   gap: 1rem 1.5rem !important;
-
-  &__heading,
   &__title,
   &__description,
   &__submit {
     grid-column: 1 / -1;
   }
 
-  &__heading h3 { margin: 0; color: #1e293b; }
-  &__heading p { margin: .25rem 0 0; color: #64748b; font-size: .9rem; }
   &__title { width: 100%; }
 
   &__thumbnail {
@@ -146,16 +121,16 @@ table {
     align-items: center;
     gap: .5rem;
     padding: .75rem;
-    border: 1px solid #e2e8f0;
-    border-radius: .65rem;
-    background: #f8fafc;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--r-md);
+    background: var(--ground);
   }
 
   &__thumbnail-label,
   &__field label {
-    color: #475569;
-    font-size: .85rem;
-    font-weight: 700;
+    color: var(--ink-body);
+    font-size: var(--t-row);
+    font-weight: var(--w-label);
   }
 
   &__file-input {
@@ -167,29 +142,11 @@ table {
     pointer-events: none;
   }
   &__file-button {
-    padding: .4rem .65rem;
-    border: 1px solid #0284c7;
-    border-radius: .35rem;
-    background: #0284c7;
-    color: #fff;
-    font-size: .8rem;
-    font-weight: 600;
-    cursor: pointer;
+    @include btn-base;
   }
-  &__thumbnail small { color: #64748b; text-align: center; }
+  &__thumbnail small { color: var(--ink-dim); text-align: center; }
   &__field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
-  &__field .config-style-select {
-    width: 100%;
-    max-width: 320px;
-    min-width: 0;
-    box-sizing: border-box;
-    padding: .4rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 4px;
-    background-color: #fff;
-    color: #1e293b;
-    font-size: .95rem;
-  }
+  &__field .config-style-select { width: 100%; max-width: 320px; min-width: 0; }
   &__description { width: 100%; min-height: 7rem; resize: vertical; }
   &__submit { justify-self: end; }
 }
@@ -198,17 +155,15 @@ table {
   width: min(760px, calc(100% - 2rem));
   max-height: calc(100% - 2rem);
   box-sizing: border-box;
-  overflow-x: hidden;
-  overflow-y: auto;
 }
 
 .channel-thumbnail-preview {
   width: 9rem;
   height: 9rem;
   overflow: hidden;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--ground);
 
   img {
     width: 100%;
@@ -225,13 +180,13 @@ table {
     align-items: center;
     justify-content: center;
     gap: .35rem;
-    background: linear-gradient(135deg, #eef2ff, #dbeafe);
-    color: #64748b;
+    background: linear-gradient(135deg, var(--select-soft), var(--select-soft));
+    color: var(--ink-dim);
   }
 
-  &__placeholder i { color: #3ba4d7; font-size: 2rem; }
-  &__placeholder span { color: #334155; font-weight: 700; }
-  &__placeholder small { font-size: .72rem; }
+  &__placeholder i { color: var(--brand); font-size: var(--t-title); }
+  &__placeholder span { color: var(--ink); font-weight: var(--w-label); }
+  &__placeholder small { font-size: var(--t-label); }
 }
 
 .channel-detail-default-thumbnail {
@@ -241,88 +196,84 @@ table {
   justify-content: center;
   width: 6rem;
   height: 6rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
-  background: linear-gradient(135deg, #eef6fb, #dbeafe);
-  color: #3ba4d7;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: linear-gradient(135deg, var(--select-faint), var(--select-soft));
+  color: var(--brand);
   box-sizing: border-box;
 
-  i { font-size: 2.75rem; }
+  .icon { width: 44px; height: 44px; }
 }
 
 .create-channel-post-form {
   display: grid !important;
   grid-template-columns: 11rem minmax(0, 1fr);
   gap: 1rem 1.5rem !important;
-
-  &__heading,
   &__title,
   &__description,
   &__submit { grid-column: 1 / -1; }
-  &__heading h3 { margin: 0; color: #1e293b; }
-  &__heading p { margin: .25rem 0 0; color: #64748b; font-size: .9rem; }
   &__title,
   &__description { width: 100%; box-sizing: border-box; }
   &__thumbnail {
     grid-row: span 2; display: flex; flex-direction: column; align-items: center;
-    gap: .5rem; padding: .75rem; border: 1px solid #e2e8f0;
-    border-radius: .65rem; background: #f8fafc;
+    gap: .5rem; padding: .75rem; border: 1px solid var(--line-soft);
+    border-radius: var(--r-md); background: var(--ground);
   }
   &__thumbnail-label,
-  &__attachments > label:first-child { color: #475569; font-size: .85rem; font-weight: 700; }
+  &__attachments > label:first-child { color: var(--ink-body); font-size: var(--t-row); font-weight: var(--w-label); }
   &__file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
   &__file-button,
   &__attachment-button {
     display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
-    padding: .4rem .65rem; border: 1px solid #0284c7; border-radius: .35rem;
-    background: #0284c7; color: #fff; font-size: .8rem; font-weight: 600; cursor: pointer;
+    padding: .4rem .65rem; border: 1px solid var(--brand); border-radius: var(--r-sm);
+    background: var(--brand); color: var(--surface); font-size: var(--t-meta); font-weight: var(--w-label); cursor: pointer;
   }
   &__thumbnail small,
-  &__attachments small { color: #64748b; text-align: center; }
+  &__attachments small { color: var(--ink-dim); text-align: center; }
   &__attachments {
     display: flex; flex-direction: column; align-items: flex-start;
     align-self: start; gap: .5rem; min-width: 0;
-    padding: .8rem; border: 1px solid #e2e8f0; border-radius: .5rem; background: #f8fafc;
+    padding: .8rem; border: 1px solid var(--line-soft); border-radius: var(--r-md); background: var(--ground);
   }
   &__attachment-list {
     width: 100%; max-height: 9rem; overflow-y: auto; box-sizing: border-box;
-    border: 1px solid #cbd5e1; border-radius: .35rem; background: #fff;
+    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface);
   }
   &__attachment-item {
     display: flex; align-items: center; gap: .55rem; padding: .45rem .55rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--line-soft);
   }
   &__attachment-item:last-child { border-bottom: 0; }
-  &__attachment-item > i { flex: 0 0 auto; color: #64748b; }
+  &__attachment-item > i { flex: 0 0 auto; color: var(--ink-dim); }
   &__attachment-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-  &__attachment-info span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #334155; }
+  &__attachment-info span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
   &__attachment-info small { text-align: left; }
   &__attachment-remove {
     flex: 0 0 auto; padding: .25rem .4rem; border: 0; box-shadow: none;
-    background: transparent; color: #dc2626;
+    background: transparent; color: var(--down-ink);
   }
-  &__attachment-remove:hover { background: #fee2e2; }
+  &__attachment-remove:hover { background: var(--down-bg); }
   &__description { min-height: 9rem; resize: vertical; }
   &__submit { justify-self: end; }
 }
 
 .channel-post-thumbnail-preview {
   width: 9rem; height: 9rem; overflow: hidden;
-  border: 1px solid #cbd5e1; border-radius: .5rem; background: #f8fafc;
+  border: 1px solid var(--line); border-radius: var(--r-md); background: var(--ground);
   img { width: 100%; height: 100%; display: block; object-fit: cover; }
   &__placeholder {
     width: 100%; height: 100%; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: .35rem;
-    background: linear-gradient(135deg, #eef2ff, #dbeafe); color: #64748b;
+    background: linear-gradient(135deg, var(--select-soft), var(--select-soft)); color: var(--ink-dim);
   }
-  &__placeholder i { color: #3ba4d7; font-size: 2rem; }
-  &__placeholder span { color: #334155; font-weight: 700; text-align: center; }
-  &__placeholder small { font-size: .72rem; }
+  &__placeholder i { color: var(--brand); font-size: var(--t-title); }
+  &__placeholder span { color: var(--ink); font-weight: var(--w-label); text-align: center; }
+  &__placeholder small { font-size: var(--t-label); }
 }
 
 .modal-content.create-channel-post-modal {
   width: min(760px, calc(100% - 2rem)); max-height: calc(100% - 2rem);
-  box-sizing: border-box; overflow-x: hidden; overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .posts > .posts__heading.channel-posts-heading {
@@ -342,7 +293,6 @@ table {
   .modal-content.create-channel-modal {
     width: calc(100% - 1rem);
     max-height: calc(100% - 1rem);
-    padding: 1rem;
   }
 
   .create-channel-form {
@@ -351,8 +301,6 @@ table {
     padding: 0;
     overflow: visible;
     grid-template-columns: 1fr;
-
-    &__heading,
     &__title,
     &__thumbnail,
     &__field,
@@ -372,11 +320,10 @@ table {
   }
 
   .modal-content.create-channel-post-modal {
-    width: calc(100% - 1rem); max-height: calc(100% - 1rem); padding: 1rem;
+    width: calc(100% - 1rem); max-height: calc(100% - 1rem);
   }
   .create-channel-post-form {
     width: 100%; min-width: 0; padding: 0; grid-template-columns: minmax(0, 1fr);
-    &__heading,
     &__title,
     &__thumbnail,
     &__attachments,
@@ -397,13 +344,46 @@ table {
 .posts-container-card {
   position: relative;
   display: flex;
+  //  Stated, not inherited: the title belongs under the picture, and the card
+  //  used to draw the image and its fallback as siblings side by side.
+  flex-direction: column;
   align-self: start;
   height: 240px;
   min-height: 0;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  background: var(--surface);
   overflow: hidden;
+  box-sizing: border-box;
+
+  &:hover {
+    border-color: var(--line-hover);
+  }
 }
-.posts-container-card > img,
-.posts-container-card > .channel-post__placeholder { min-height: 0; }
+
+/* The picture takes the space the title does not. `cover` because a channel
+ * thumbnail is any shape, and a letterboxed grid reads as broken. */
+.posts-container-card__image,
+.posts-container-card > .channel-post__placeholder {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  object-fit: cover;
+}
+
+/* One line, always the same height, so every card in the row ends level. */
+.posts-container-card__title {
+  flex: none;
+  margin: 0;
+  padding: var(--s2);
+  overflow: hidden;
+  border-top: 1px solid var(--line-soft);
+  color: var(--ink);
+  font-size: var(--t-meta);
+  font-weight: var(--w-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .channel-post-comment-badge {
   position: absolute;
@@ -417,18 +397,18 @@ table {
   min-height: 1.75rem;
   padding: 0.25rem 0.45rem;
   box-sizing: border-box;
-  color: #0f172a;
+  color: var(--ink);
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(148, 163, 184, 0.7);
-  border-radius: 999px;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.22);
-  font-size: 0.75rem;
-  font-weight: 700;
+  border-radius: var(--r-full);
+  box-shadow: none;
+  font-size: var(--t-label);
+  font-weight: var(--w-state);
   pointer-events: none;
 }
 
 .channel-post-comment-badge i {
-  color: #3ba4d7;
+  color: var(--brand);
 }
 
 @media (max-width: 700px) {
@@ -455,9 +435,9 @@ table {
   table.channel-files tr {
     margin: 0 0 .7rem;
     padding: .7rem;
-    border: 1px solid #dbe3ef;
-    border-radius: 8px;
-    background: #fff;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--r-md);
+    background: var(--surface);
   }
 
   table.channel-files td {
@@ -470,21 +450,21 @@ table {
   table.channel-files td::before {
     display: block;
     margin-bottom: .1rem;
-    color: #64748b;
+    color: var(--ink-dim);
     content: attr(data-label);
-    font-size: .72rem;
-    font-weight: 700;
+    font-size: var(--t-label);
+    font-weight: var(--w-label);
     text-transform: uppercase;
   }
 
   table.channel-files .channel-file__name {
     overflow-wrap: anywhere;
-    color: #0f172a;
-    font-weight: 600;
+    color: var(--ink);
+    font-weight: var(--w-label);
     line-height: 1.35;
   }
 
-  table.channel-files .channel-file__size { color: #475569; }
+  table.channel-files .channel-file__size { color: var(--ink-body); }
   table.channel-files .channel-file__action { padding-top: .5rem; }
   table.channel-files .channel-file__action > button { min-width: 116px; }
   table.channel-files .channel-file__action .file-view { margin-top: .6rem; }
@@ -505,31 +485,22 @@ table {
 }
 
 
-.channel-detail-navigation { display: flex; align-items: center; }
-.channel-mobile-search, .channel-mobile-actions, .channel-mobile-create { display: none; }
+.channel-mobile-search, .channel-mobile-create { display: none; }
+.channel-mobile-actions.menu { display: none; }
 
 @media (max-width: 700px) {
   .tab-content:has(.channels-detail-widget) { position: relative; }
   .widget.channels-detail-widget {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 36px auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
     row-gap: 4px;
-    > .top-heading { display: none; }
     > .widget__body { min-height: 0; }
     .channel-subscription--subscribed,
     .posts > .channel-posts-heading { display: none; }
     .posts { margin-top: 9px; min-height: 0; }
     .posts-container { padding: .5rem; }
   }
-  .channel-detail-navigation { justify-content: space-between; gap: .5rem; }
-  a.channel-back[title='Back'] {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 36px; height: 36px; padding: 0; flex-shrink: 0;
-    border-radius: 50%; background: #e8f4fc; color: #0788cb; font-size: 1.15rem;
-  }
-  a.channel-back[title='Back']:hover { background: #d5ebfa; }
-  .channel-back .fa-arrow-left::before { content: "\f053"; }
   .channel-mobile-search {
     display: flex; align-items: center; justify-content: flex-end;
     gap: .5rem; min-width: 0; flex: 1;
@@ -537,40 +508,10 @@ table {
   }
   .channel-mobile-create {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 32px; height: 32px; padding: 0; font-size: .85rem;
+    width: 32px; height: 32px; padding: 0; font-size: var(--t-row);
   }
-  .channel-mobile-actions {
-    display: block; position: absolute; top: 0; right: .5rem; z-index: 1001;
-    summary {
-      display: flex; align-items: center; justify-content: center;
-      width: 44px; height: 44px; cursor: pointer; list-style: none;
-    }
-    summary::-webkit-details-marker { display: none; }
-    summary:focus-visible { outline: 2px solid #0788cb; }
-    &__items {
-      position: absolute; right: 0; top: 100%; min-width: 10rem;
-      padding: .35rem; background: #fff; border: 1px solid #cbd5e1;
-      border-radius: .375rem; box-shadow: 0 4px 12px rgba(15, 23, 42, .15);
-    }
-    &__items button {
-      width: 100%; min-height: 44px; text-align: left;
-      background: #fff; color: #334155; box-shadow: none;
-    }
-    &__items button:hover { background: #f1f5f9; }
-  }
+  //  The overflow menu carries Unsubscribe on a phone, so the header does not.
+  .channel-mobile-actions.menu { display: inline-flex; }
 }
 
 
-.channels-heading-create { display: none; }
-@media (max-width: 700px) {
-  .channels-create-button { display: none; }
-  .channels-heading-create {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    font-size: .85rem;
-  }
-}

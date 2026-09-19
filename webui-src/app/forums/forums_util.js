@@ -1,6 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const widget = require('widgets');
+const icon = require('icon');
 
 const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this group
 const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in forums are shared with specific friends.
@@ -8,7 +9,14 @@ const GROUP_SUBSCRIBE_SUBSCRIBED = 0x04; // means: you are subscribed to a group
 const GROUP_SUBSCRIBE_NOT_SUBSCRIBED = 0x08;
 const GROUP_MY_FORUM = GROUP_SUBSCRIBE_ADMIN + GROUP_SUBSCRIBE_SUBSCRIBED + GROUP_SUBSCRIBE_PUBLISH;
 
-const THREAD_UNREAD = 0x00000003;
+//  rsgxsflags.h: GXS_MSG_STATUS_GUI_UNREAD. It is one bit among several in
+//  mMsgStatus, so it has to be tested, not compared -- `status === 3` was true
+//  for almost no post, which left the Unread column permanently empty.
+const GXS_MSG_STATUS_GUI_UNREAD = 0x00000002;
+
+function isUnread(msgStatus) {
+  return (msgStatus & GXS_MSG_STATUS_GUI_UNREAD) !== 0;
+}
 
 const Data = {
   DisplayForums: {},
@@ -24,27 +32,30 @@ const Data = {
 const bodyRequestsInFlight = new Set();
 const FAILED_BODY_RETRY_MS = 5 * 60 * 1000;
 
-function getTimestampValue(ts) {
-  if (!ts) return 0;
-  if (typeof ts === 'object') {
-    if (ts.xint64 !== undefined) return ts.xint64;
-    if (ts.xstr64 !== undefined) return Number(ts.xstr64);
-    return 0;
-  }
-  return ts;
+//  Both live in rswebui now; forums, channels and the views all format the
+//  same core timestamps.
+const { getTimestampValue, formatTimestamp } = rs;
+
+/**
+ * How long this forum keeps posts and how far back it syncs them. Two calls,
+ * so they run beside the hierarchy rather than holding it up.
+ */
+async function loadRetentionPeriods(keyid) {
+  const [sync, storage] = await Promise.all([
+    rs.rsJsonApiRequest('/rsgxsforums/getSyncPeriod', { groupId: keyid }),
+    rs.rsJsonApiRequest('/rsgxsforums/getStoragePeriod', { groupId: keyid }),
+  ]);
+  const entry = Data.DisplayForums[keyid];
+  if (!entry) return;
+  if (sync && sync.body) entry.syncPeriod = sync.body.retval;
+  if (storage && storage.body) entry.storagePeriod = storage.body.retval;
+  m.redraw();
 }
 
-function formatTimestamp(ts) {
-  const val = getTimestampValue(ts);
-  if (!val || val === 0) return '???';
-  try {
-    const localDate = new Date(val * 1000);
-    const offset = localDate.getTimezoneOffset() * 60000;
-    return new Date(localDate.getTime() - offset).toISOString().replace('T', ' ').slice(0, 16);
-  } catch (e) {
-    return 'Invalid Date';
-  }
-}
+//  The list filter. Module level, like the flags it sets on Data.DisplayForums:
+//  the search field is unmounted on a forum's own page and recreated on the
+//  way back, and must come back showing the filter that is still applied.
+let forumsSearchString = '';
 
 async function updatedisplayforums(keyid) {
   if (Data.loading.has(keyid)) return;
@@ -56,21 +67,33 @@ async function updatedisplayforums(keyid) {
     });
     if (res1 && res1.body && res1.body.retval && res1.body.forumsInfo && res1.body.forumsInfo.length > 0) {
       const forumInfo = res1.body.forumsInfo[0];
+      const meta = forumInfo.mMeta;
+      const subscribed =
+        meta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED ||
+        meta.mSubscribeFlags === GROUP_MY_FORUM;
       Data.DisplayForums[keyid] = {
         // struct for a forum
-        name: forumInfo.mMeta.mGroupName,
-        author: forumInfo.mMeta.mAuthorId,
+        name: meta.mGroupName,
+        author: meta.mAuthorId,
         isSearched: true,
         description: forumInfo.mDescription,
-        isSubscribed:
-          forumInfo.mMeta.mSubscribeFlags === GROUP_SUBSCRIBE_SUBSCRIBED ||
-          forumInfo.mMeta.mSubscribeFlags === GROUP_MY_FORUM,
-        activity: forumInfo.mMeta.mLastPost,
-        created: forumInfo.mMeta.mPublishTs,
+        isSubscribed: subscribed,
+        activity: meta.mLastPost,
+        created: meta.mPublishTs,
+        //  The rest of what the details panel shows.
+        subscribers: meta.mPop,
+        visibleMsgCount: meta.mVisibleMsgCount,
+        circleType: meta.mCircleType,
+        circleId: meta.mCircleId,
+        signFlags: meta.mSignFlags,
+        lastSeen: meta.mLastSeen,
       };
       if (Data.Threads[keyid] === undefined) {
         Data.Threads[keyid] = {};
       }
+
+      //  Only a forum you carry has a sync and storage window of its own.
+      if (subscribed) loadRetentionPeriods(keyid);
 
       const res2 = await rs.rsJsonApiRequest('/rsgxsforums/getForumPostsHierarchy', {
         group: forumInfo,
@@ -111,8 +134,12 @@ async function updatedisplayforums(keyid) {
                 Data.ParentThreadMap[meta.mParentId][meta.mMsgId] = meta;
               }
 
+              //  This runs again on every refresh. Without carrying the body
+              //  over, an open post loses it and flashes back to "Loading
+              //  content..." while it is fetched a second time.
+              const cached = Data.Threads[keyid][entry.mMsgId];
               const threadStruct = {
-                thread: { mMeta: meta, mMsg: null },
+                thread: { mMeta: meta, mMsg: cached ? cached.thread.mMsg : null },
                 replies,
                 showReplies: false,
               };
@@ -202,15 +229,16 @@ async function loadPostContent(forumId, msgId) {
 
 const DisplayForumsFromList = () => {
   return {
-    view: (v) =>
-      m(
-        'tr',
+    //  Everything here comes from the summary that arrived with the list. It
+    //  used to ask the core about each forum one by one, which meant one
+    //  request per row before the list could draw.
+    view: (v) => {
+      const summary = v.attrs.details || {};
+      return m(
+        'tr.group-row',
         {
           key: v.attrs.id,
-          class:
-            Data.DisplayForums[v.attrs.id] && Data.DisplayForums[v.attrs.id].isSearched
-              ? ''
-              : 'hidden',
+          class: summary.isSearched === false ? 'hidden' : '',
           onclick: () => {
             m.route.set('/forums/:tab/:mGroupId', {
               tab: v.attrs.category,
@@ -218,77 +246,81 @@ const DisplayForumsFromList = () => {
             });
           },
         },
-        [m('td', Data.DisplayForums[v.attrs.id] ? Data.DisplayForums[v.attrs.id].name : '')]
-      ),
-  };
-};
-
-const ForumSummary = () => {
-  let keyid = {};
-  return {
-    oninit: (v) => {
-      keyid = v.attrs.details.mGroupId;
-      updatedisplayforums(keyid);
+        [
+          m('td.group-row__name', m('.group-row__inner', [
+            m('.group-row__mark', icon('bullhorn')),
+            m('.group-row__text', [
+              m('span.group-row__title', summary.mGroupName || ''),
+              summary.description
+                ? m('span.group-row__desc', summary.description)
+                : null,
+            ]),
+          ])),
+          m('td.group-row__posts', summary.mVisibleMsgCount || 0),
+          m('td.group-row__activity', formatTimestamp(summary.mLastPost)),
+        ]
+      );
     },
-    view: (v) => { },
   };
 };
 
 const ForumTable = () => {
   return {
-    view: (v) => m('table.forums', [m('tr', [m('th', 'Forum Name')]), v.children]),
+    view: (v) => m('table.group-table.forums', [
+      m('thead', m('tr', [
+        m('th.group-row__name', 'Forum'),
+        m('th.group-row__posts', 'Posts'),
+        m('th.group-row__activity', 'Last post'),
+      ])),
+      v.children,
+    ]),
   };
 };
+//  The wrapper is the scroller: a <table> cannot scroll itself, and in the
+//  split view the thread list has to scroll without moving the reading pane.
 const ThreadsTable = () => {
   return {
-    oninit: (v) => { },
-    view: (v) =>
-      m('table.threads', [
-        v.children,
-      ]),
-  };
-};
-const ThreadsReplyTable = () => {
-  return {
-    oninit: (v) => { },
-    view: (v) =>
-      m('table.threadreply', [
-        v.children,
-      ]),
+    view: (v) => m('.threads-scroll', m('table.threads', [v.children])),
   };
 };
 
+//  Flags the summaries the list is already holding. Every tab's array is built
+//  by filtering the same objects, so one pass covers all of them.
+function filterForums(list, query) {
+  (list || []).forEach((forum) => {
+    forum.isSearched = !query || (forum.mGroupName || '').toLowerCase().includes(query);
+  });
+}
+
 const SearchBar = () => {
-  let searchString = '';
   return {
-    view: (v) =>
-      m('input[type=text][id=searchforum][placeholder=Search Subject].searchbar', {
-        value: searchString,
-        oninput: (e) => {
-          searchString = e.target.value.toLowerCase();
-          for (const hash in Data.DisplayForums) {
-            if (Data.DisplayForums[hash].name.toLowerCase().indexOf(searchString) > -1) {
-              Data.DisplayForums[hash].isSearched = true;
-            } else {
-              Data.DisplayForums[hash].isSearched = false;
-            }
-          }
+    view: (v) => {
+      filterForums(v.attrs.list, forumsSearchString);
+      return m(widget.SearchField, {
+        placeholder: 'Search forums',
+        value: forumsSearchString,
+        onclear: () => {
+          forumsSearchString = '';
+          filterForums(v.attrs.list, '');
         },
-      }),
+        oninput: (e) => {
+          forumsSearchString = e.target.value;
+          filterForums(v.attrs.list, forumsSearchString.toLowerCase());
+        },
+      });
+    },
   };
 };
-function popupmessage(message, modalClass = '') {
-  widget.popupMessage(message, modalClass);
+function popupmessage(message, modalClass = '', options = {}) {
+  widget.popupMessage(message, modalClass, options);
 }
 
 module.exports = {
   Data,
   SearchBar,
-  ForumSummary,
   DisplayForumsFromList,
   ForumTable,
   ThreadsTable,
-  ThreadsReplyTable,
   popupmessage,
   updatedisplayforums,
   loadPostContent,
@@ -299,5 +331,5 @@ module.exports = {
   GROUP_SUBSCRIBE_PUBLISH,
   GROUP_SUBSCRIBE_SUBSCRIBED,
   GROUP_MY_FORUM,
-  THREAD_UNREAD,
+  isUnread,
 };

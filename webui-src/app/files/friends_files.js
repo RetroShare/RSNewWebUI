@@ -3,6 +3,32 @@ const rs = require('rswebui');
 const util = require('files/files_util');
 const widget = require('widgets');
 const fileDown = require('files/files_downloads');
+const icon = require('icon');
+const toast = require('toast');
+
+//  The transfer figures as one line of text, for the info tooltip. The full
+//  File card cannot live inside a table cell, but the numbers it shows can.
+function transferSummary(info, transferred) {
+  const total = info.size.xint64;
+  return [
+    `${rs.formatBytes(transferred)} of ${rs.formatBytes(total)}`,
+    `${rs.formatBytes(info.tfRate * 1024)}/s`,
+    `${info.peers.length} peer${info.peers.length === 1 ? '' : 's'}`,
+  ].join('  ·  ');
+}
+
+function transferStatus(info) {
+  const transferred = info.transfered.xint64;
+  const total = Number(info.size.xint64) || 0;
+  const pct = total ? Math.min(100, (transferred / total) * 100) : 0;
+  return m('span.friends-files__progress', [
+    m('span.friends-files__progress-pct', `${pct.toFixed(0)}%`),
+    icon('info-circle', {
+      class: 'friends-files__progress-info',
+      title: transferSummary(info, transferred),
+    }),
+  ]);
+}
 
 function displayfiles() {
   const childrenList = []; // stores children details
@@ -37,12 +63,20 @@ function displayfiles() {
     },
     view: (v) => [
       m('tr', [
-        parStruct && parStruct.details.children && Object.keys(parStruct.details.children).length
-          ? m(
-              'td',
-              m('i.fas.fa-angle-right', {
-                class: 'fa-rotate-' + (parStruct.showChild ? '90' : '0'),
-                style: 'margin-top:12px',
+        //  Twist, type icon and name in one cell, indented by padding: the
+        //  chevron has to step right with the name, and the old
+        //  `position: relative; left:` moved only the text.
+        m(
+          'td.file-tree__name',
+          { style: { paddingLeft: `calc(var(--s2) + ${v.attrs.replyDepth} * 1.25rem)` } },
+          //  The flex row is inside the cell, not the cell itself: `display:
+          //  flex` on a td drops it out of the table box model, and this
+          //  table is `table-layout: fixed`.
+          m('.file-tree__row', [
+            parStruct && parStruct.details.children && Object.keys(parStruct.details.children).length
+              ? icon('angle-right', {
+                class: parStruct.showChild ? 'file-tree__twist icon--rot-90' : 'file-tree__twist',
+                title: parStruct.showChild ? 'Collapse' : 'Expand',
                 onclick: async () => {
                   if (!loaded) {
                     // Retrieve the directory entries before displaying the nested rows.
@@ -62,91 +96,65 @@ function displayfiles() {
                   m.redraw();
                 },
               })
-            )
-          : m('td', ''),
-        m(
-          'td',
-          {
-            style: {
-              position: 'relative',
-              '--replyDepth': v.attrs.replyDepth,
-              left: `calc(30px*${v.attrs.replyDepth})`,
-            },
-          },
-          [
-            m('i.fas', {
-              class: isId
-                ? 'fa-user-friends friends-files__friend-icon'
-                : !isFile
-                  ? parStruct.showChild
-                    ? 'fa-folder-open friends-files__folder-icon'
-                    : 'fa-folder friends-files__folder-icon'
-                  : 'fa-file friends-files__file-icon',
-              title: isId ? 'Friend' : isFile ? 'File' : 'Folder',
-              style: 'margin-right:0.45rem',
-            }),
-            isId
-              ? (nameOfId || parStruct.details.name) +
-                ' (' +
-                parStruct.details.name.slice(0, 8) +
-                '...)'
-              : parStruct.details.name,
-          ]
+              : m('span.file-tree__twist.is-empty'),
+            icon(
+              //  `users`, which has the duotone the friend row asks for
+              //  (`user-friends` maps to the same glyph but has no -duo).
+              isId ? 'users' : !isFile ? (parStruct.showChild ? 'folder-open' : 'folder') : 'file',
+              {
+                // A friend node is the one icon here that carries reach, so it
+                // is the one that ships duotone.
+                duo: isId,
+                class: isId
+                  ? 'friends-files__friend-icon'
+                  : !isFile
+                    ? 'friends-files__folder-icon'
+                    : 'friends-files__file-icon',
+                title: isId ? 'Friend' : isFile ? 'File' : 'Folder',
+              }
+            ),
+            m('span.file-tree__label',
+              isId
+                ? `${nameOfId || parStruct.details.name} (${parStruct.details.name.slice(0, 8)}…)`
+                : parStruct.details.name),
+          ])
         ),
         m('td', rs.formatBytes(parStruct.details.size.xint64)),
         isFile &&
           m(
             'td',
-            // using the file from files_util to display download.
+            //  The whole File card does not belong in a table cell. The row
+            //  says how far along it is; the figures live in the info tooltip.
             fileDown.list[parStruct.details.hash]
-              ? m(util.File, {
-                  info: fileDown.list[parStruct.details.hash],
-                  direction: 'down',
-                  transferred: fileDown.list[parStruct.details.hash].transfered.xint64,
-                  parts: [],
-                })
-              : m(
-                  'button',
+              ? transferStatus(fileDown.list[parStruct.details.hash])
+              : haveFile
+                ? m('span.friends-files__have', [icon('check'), 'Downloaded'])
+                : m('button.is-primary',
                   {
                     style: { fontSize: '0.9em' },
-                    onclick: async () => {
-                      widget.popupMessage([
-                        m('p', 'Start Download?'),
-                        m(
-                          'button',
-                          {
-                            onclick: async () => {
-                              if (!haveFile) {
-                                const res = await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
-                                  fileName: parStruct.details.name,
-                                  hash: parStruct.details.hash,
-                                  flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
-                                  size: {
-                                    xstr64: parStruct.details.size.xstr64,
-                                  },
-                                });
-                                res.body.retval === false
-                                  ? widget.popupMessage([
-                                      m('h3', 'Error'),
-                                      m('hr'),
-                                      m('p', res.body.errorMessage),
-                                    ])
-                                  : widget.popupMessage([
-                                      m('h3', 'Success'),
-                                      m('hr'),
-                                      m('p', 'Download Started'),
-                                    ]);
-                                m.redraw();
-                              }
-                            },
+                    onclick: () => widget.confirmMessage({
+                      title: 'Start Download?',
+                      message: parStruct.details.name,
+                      confirmLabel: 'Start download',
+                      onConfirm: async () => {
+                        if (haveFile) return;
+                        const res = await rs.rsJsonApiRequest('/rsFiles/FileRequest', {
+                          fileName: parStruct.details.name,
+                          hash: parStruct.details.hash,
+                          flags: util.RS_FILE_REQ_ANONYMOUS_ROUTING,
+                          size: {
+                            xstr64: parStruct.details.size.xstr64,
                           },
-                          'Start Download'
-                        ),
-                      ]);
-                    },
+                        });
+                        res.body.retval === false
+                          ? toast.error(res.body.errorMessage)
+                          : toast.success('Download Started');
+                        m.redraw();
+                      },
+                    }),
                   },
 
-                  haveFile ? 'Open File' : ['Download', m('i.fas.fa-download')]
+                  [m('span', 'Download'), icon('download')]
                 )
           ),
       ]),
@@ -189,7 +197,10 @@ const Layout = () => {
       m.redraw();
     },
     view: () => [
-      m('.widget__heading', [m('h3', 'Friends Files')]),
+      m(widget.PageHead, {
+        title: 'Friends\' Files',
+        lead: 'Browse what the friends you are connected to are sharing.',
+      }),
       m('.widget__body', [
         m(
           util.FriendsFilesTable,

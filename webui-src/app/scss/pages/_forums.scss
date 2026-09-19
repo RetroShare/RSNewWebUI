@@ -1,3 +1,5 @@
+@use '../abstracts' as *;
+
 .forums-node-panel {
   position: relative;
   bottom: 200px;
@@ -5,16 +7,24 @@
   animation: fadein 0.5s;
 }
 
-.forum-thread-view {
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
+/* The line shown when a forum has no threads, or a search matched none. */
+.forum-threads__empty {
+  padding: var(--s5);
+  color: var(--ink-dim);
+  font-size: var(--t-row);
+  text-align: center;
 }
 
 .forum-post-content {
+  width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  padding: var(--s4);
+  border-radius: var(--r-sm);
+  background: var(--ground);
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
+  word-break: break-word;
 
   img,
   video,
@@ -36,92 +46,147 @@
   }
 }
 
-/* subject */
-table.forums th:nth-child(1) {
-  width: 50%;
-  text-align: start;
-}
-/* subject */
-table.forums td:nth-child(1) {
-  text-align: start;
-  /* Truncate text with '...' */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-table.forums tr:hover {
-  background-color: #eef3f6;
-  cursor: pointer;
-}
-
-table.forums tr.hidden {
-  display: none;
-}
-
-#searchforum {
-  position: relative;
-  margin-left: 250px;
-  /* top: 50px; */
-}
+/* The forum list is the shared group table -- see components/_group-table. */
 
 #forumdetails {
   position: relative;
   padding: 10px;
 }
 
-.forum-detail-navigation {
-  display: flex;
-  align-items: center;
-}
-
-.forum-mobile-search,
-.forum-mobile-actions,
-.forum-mobile-create,
-.forums-heading-create {
+//  Both belong to the phone header only; the wide header has room for the
+//  real Subscribe and New Thread buttons.
+.forum-mobile-actions.menu,
+.forum-mobile-create {
   display: none;
 }
 
-.forum-detail-heading {
-  margin-top: .75rem;
+/* Everything the core knows about the forum, in a dropdown off the Details
+ * button. Label on the left, value on the right, like the desktop client. */
+.forum-details {
+  position: relative;
 
-  h3 { margin: 0; }
+  &__toggle {
+    @include btn-base;
+
+    display: inline-flex;
+    //  A <button> gets border-box from the browser and a <summary> does not,
+    //  so without this the same min-height came out 8px taller.
+    box-sizing: border-box;
+    list-style: none;
+    user-select: none;
+    cursor: pointer;
+  }
+
+  &__toggle::-webkit-details-marker { display: none; }
+
+  &[open] &__toggle {
+    border-color: var(--select-edge);
+    background: var(--select-soft);
+    color: var(--brand-deep);
+  }
+
+  &__panel {
+    @include tip-surface;
+
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + var(--s1));
+    right: 0;
+    width: min(26rem, calc(100vw - var(--s5)));
+    padding: var(--s3);
+    text-align: left;
+    white-space: normal;
+  }
+
+  &__name {
+    margin: 0 0 var(--s3);
+    color: var(--ink);
+    font-size: var(--t-h3);
+  }
+
+  &__fields {
+    display: grid;
+    /* The label column takes its width from the longest label, and the value
+     * column takes the rest. */
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--s2) var(--s3);
+    margin: 0;
+  }
+
+  &__field {
+    display: contents;
+
+    dt {
+      color: var(--ink-dim);
+      font-size: var(--t-meta);
+    }
+
+    dd {
+      margin: 0;
+      color: var(--ink);
+      font-size: var(--t-meta);
+      overflow-wrap: anywhere;
+    }
+  }
 }
 
-.forum-detail-default-thumbnail {
+// -----------------------------------------------------------------------------
+// The split: threads on top, the post you picked below. Reading a second thread
+// is one click, where it used to be two page changes.
+// -----------------------------------------------------------------------------
+.widget.forums-detail-widget {
   display: flex;
-  flex: 0 0 6rem;
-  align-items: center;
-  justify-content: center;
-  width: 6rem;
-  height: 6rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
-  background: linear-gradient(135deg, #eef6fb, #dbeafe);
-  color: #3ba4d7;
+  flex-direction: column;
   box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
 
-  i { font-size: 2.75rem; }
+/* Row one is the forum: where you came from, what it is, what you can do to it.
+ * The rule under it separates that from the threads. */
+.page-head.forum-detail-head {
+  margin-bottom: var(--s3);
+  padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--line-soft);
+
+  //  One line. A forum description can run for a paragraph.
+  .page-head__lead {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .forum-threads {
-  margin-top: 1rem;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
 
+  /* Row two is the threads: the label, then the filter beside it, then the one
+   * action, hard right. */
   &__heading {
+    flex: none;
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    gap: 1rem;
-    padding-bottom: .35rem;
-    border-bottom: 1px solid #d7dee8;
+    gap: var(--s3);
+    padding-bottom: var(--s2);
   }
 
-  &__heading h3 { margin: 0; }
+  &__search {
+    flex: 0 1 18rem;
+    min-width: 0;
+  }
+
+  &__create {
+    margin-left: auto;
+  }
 
   &__create {
     display: inline-flex;
     align-items: center;
-    gap: .35rem;
+    gap: var(--s1);
   }
 }
 
@@ -133,86 +198,276 @@ table.forums tr.hidden {
   background: gray;
 }
 
+/* The thread list scrolls inside the top half; the reading pane below stays
+ * put. Without a selection it takes the whole pane. */
+.threads-scroll {
+  flex: 45 1 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+
+/* The post you picked. It gets the larger share: reading is the job here, the
+ * list above is only how you got to it. */
+.forum-reader {
+  display: flex;
+  flex: 55 1 0;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: var(--s3);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--line);
+
+  &__bar {
+    display: flex;
+    flex: none;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--s2) var(--s3);
+    padding-bottom: var(--s2);
+  }
+
+  &__nav {
+    display: flex;
+    gap: var(--s1);
+  }
+
+  &__date {
+    color: var(--ink);
+    font-size: var(--t-meta);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__author {
+    color: var(--ink-dim);
+    font-size: var(--t-meta);
+  }
+
+  //  Pushed to the far end of the bar, where the page header keeps its actions.
+  &__actions {
+    display: flex;
+    gap: var(--s2);
+    margin-left: auto;
+  }
+
+  &__title {
+    flex: none;
+    margin: 0 0 var(--s2);
+    color: var(--ink);
+    font-size: var(--t-h3);
+  }
+
+  &__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  &__empty {
+    color: var(--ink-dim);
+  }
+}
+
+/* Replies sit indented under their parent, not as separate threads. */
 table.threads {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+
+  //  Sticky because the list scrolls under it now.
+  .forum-thread-head th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: var(--s2);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-dim);
+    font-size: var(--t-label);
+    font-weight: var(--w-label);
+    text-align: left;
+  }
+
+  //  "Title" sits over the titles, not over the chevrons: the same cell
+  //  padding, plus the toggle's box and the gap after it.
+  th.forum-thread-row__cell {
+    padding-left: calc(var(--s2) + var(--s5) + var(--s2));
+  }
 
   tr.forum-thread-row {
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--line-soft);
     cursor: pointer;
     transition: background-color .15s ease;
 
     &:hover {
-      background-color: #f8fafc;
+      background-color: var(--ground);
     }
 
-    &.forum-thread-row--unread {
-      background-color: #f0f9ff;
+    //  Weight carries unread, not a band across the row. The band is what
+    //  marks the row you are reading, and two blues fought each other.
+    &.forum-thread-row--unread .forum-thread-row__title {
+      font-weight: var(--w-state);
+      color: var(--ink);
+    }
+
+    //  Last, so the row you are reading wins over the unread tint.
+    &.forum-thread-row--selected,
+    &.forum-thread-row--selected:hover {
+      background-color: var(--select);
 
       .forum-thread-row__title {
-        font-weight: 700;
-        color: #0369a1;
+        color: var(--brand-deep);
+        font-weight: var(--w-state);
       }
     }
   }
 
+  //  A dense list. --s1 top and bottom keeps a 14px line comfortable without
+  //  turning 98 threads into a page and a half of scrolling.
+  //
+  //  text-align because the base table stylesheet centres cells, which left
+  //  every value out of line with the header above it.
+  td {
+    padding: var(--s1) var(--s2);
+    font-size: var(--t-row);
+    text-align: left;
+    vertical-align: middle;
+    word-wrap: break-word;
+  }
+
   .forum-thread-row__cell {
-    padding: .65rem .5rem;
-    text-align: left !important;
+    min-width: 0;
+    text-align: left;
+  }
+
+  //  The flex box, inside the cell. --depth is set per row; one step of indent
+  //  per level of answer.
+  .forum-thread-row__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    min-width: 0;
+    padding-left: calc(var(--depth, 0) * var(--s5));
+  }
+
+  /* The spacer is exactly the chevron's box, so a thread with answers and one
+   * without start their titles at the same place. */
+  .forum-thread-row__toggle,
+  .forum-thread-row__toggle-spacer {
+    flex: 0 0 var(--s5);
+    width: var(--s5);
+    height: var(--s5);
+  }
+
+  button.forum-thread-row__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: var(--ink-dim);
+    box-shadow: none;
+    cursor: pointer;
+
+    &:hover {
+      background: transparent;
+      color: var(--ink);
+      box-shadow: none;
+    }
   }
 
   .forum-thread-row__title {
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: .25rem;
-    word-break: break-word;
-    line-height: 1.3;
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: hidden;
+    color: var(--ink);
+    font: inherit;
+    font-weight: var(--w-label);
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
   }
 
-  .forum-thread-row__meta {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: .35rem;
-    font-size: .82rem;
-    color: #64748b;
+  /* What a collapsed branch is hiding. */
+  .forum-thread-row__replies {
+    flex: none;
+    color: var(--ink-dim);
+    font-size: var(--t-label);
   }
 
-  .forum-thread-row__author {
-    font-style: normal;
-    color: #475569;
-    font-weight: 500;
+  .forum-thread-row__unread {
+    width: 4.5rem;
   }
 
-  .forum-thread-row__bullet {
-    color: #cbd5e1;
-    font-size: .75rem;
+  .forum-thread-row__badge {
+    display: inline-block;
+    min-width: var(--s5);
+    padding: 0 var(--s2);
+    border-radius: var(--r-full);
+    background: var(--select);
+    color: var(--brand-deep);
+    font-size: var(--t-micro);
+    font-weight: var(--w-state);
+    line-height: calc(var(--s4) + var(--s1));
+    text-align: center;
   }
 
   .forum-thread-row__date {
-    color: #94a3b8;
+    width: 11rem;
+    color: var(--ink-dim);
+    font-size: var(--t-meta);
+    white-space: nowrap;
   }
 
-  td {
-    word-wrap: break-word;
+  .forum-thread-row__author {
+    width: 12rem;
+    color: var(--ink-body);
+  }
+
+  .forum-thread-row__by {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    min-width: 0;
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    //  The avatar is a fixed mark beside the name, never a thing that shrinks
+    //  when the name is long.
+    > .jdenticon-avatar,
+    > .defaultAvatar,
+    > img.avatar {
+      flex: 0 0 20px;
+      margin-right: 0;
+    }
   }
 }
 
 @media (max-width: 700px) {
-  .tab-content:has(.forums-detail-widget),
-  .tab-content:has(.forums-thread-widget) {
+  .tab-content:has(.forums-detail-widget) {
     position: relative;
   }
 
   .widget.forums-detail-widget {
-    display: flex;
-    flex-direction: column;
     row-gap: 4px;
-
-    > .top-heading {
-      display: none;
-    }
 
     .forum-subscription--subscribed,
     .forum-threads > .forum-threads__heading {
@@ -225,274 +480,146 @@ table.threads {
     }
   }
 
-  .widget.forums-thread-widget {
-    > .top-heading {
+  /* No room for two panes. The list is the page, and picking a post replaces
+   * it; the back arrow in the header brings the list back. */
+  .forums-detail-widget.has-selection {
+    .forum-threads__heading,
+    .threads-scroll {
       display: none;
     }
-  }
 
-  .forum-detail-navigation {
-    justify-content: space-between;
-    gap: .5rem;
-  }
-
-  a.forum-back[title='Back'] {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    flex-shrink: 0;
-    border-radius: 50%;
-    background: #e8f4fc;
-    color: #0788cb;
-    font-size: 1.15rem;
-    text-decoration: none;
-    cursor: pointer;
-
-    &:hover {
-      background: #d5ebfa;
-    }
-
-    .fa-arrow-left::before {
-      content: "\f053";
+    .forum-reader {
+      flex: 1 1 auto;
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
     }
   }
 
-  .forum-mobile-search {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    flex: 1;
-    margin-right: 44px;
-
-    input {
-      min-width: 0;
-      width: 100%;
-      height: 36px;
-      padding: 0 .75rem;
-      border: 1px solid #cbd5e1;
-      border-radius: .375rem;
-      font-size: .85rem;
-      background: #fff;
-      box-sizing: border-box;
-
-      &:focus {
-        border-color: #0788cb;
-        outline: none;
-      }
-    }
+  .forum-threads__search {
+    flex: 1 1 auto;
   }
+
+  //  The overflow menu carries Unsubscribe on a phone, so the header does not.
+  .forum-mobile-actions.menu { display: inline-flex; }
 
   .forum-mobile-create {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: var(--control);
+    height: var(--control);
+    min-width: var(--control);
+    min-height: var(--control);
     padding: 0;
-    font-size: .85rem;
-    border-radius: .375rem;
+    font-size: var(--t-row);
+    border-radius: var(--r-md);
     border: 0;
-    background: #0788cb;
-    color: #fff;
+    background: var(--brand-deep);
+    color: var(--surface);
     cursor: pointer;
 
     &:hover {
-      background: #0672aa;
+      background: var(--brand-press);
     }
   }
 
-  .forum-mobile-actions {
-    display: block;
-    position: absolute;
-    top: 0;
-    right: .5rem;
-    z-index: 1001;
-
-    summary {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 44px;
-      height: 44px;
-      cursor: pointer;
-      list-style: none;
-    }
-
-    summary::-webkit-details-marker {
-      display: none;
-    }
-
-    summary:focus-visible {
-      outline: 2px solid #0788cb;
-    }
-
-    &__items {
-      position: absolute;
-      right: 0;
-      top: 100%;
-      min-width: 10rem;
-      padding: .35rem;
-      background: #fff;
-      border: 1px solid #cbd5e1;
-      border-radius: .375rem;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, .15);
-    }
-
-    &__items button {
-      width: 100%;
-      min-height: 44px;
-      text-align: left;
-      background: #fff;
-      color: #334155;
-      box-shadow: none;
-      border: 0;
-      padding: 0 .75rem;
-      border-radius: .25rem;
-      cursor: pointer;
-    }
-
-    &__items button:hover {
-      background: #f1f5f9;
-    }
-  }
-
-  .forum-detail-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: .5rem;
-    margin-top: .25rem;
-    margin-bottom: .25rem;
-    padding-bottom: .25rem;
-    border-bottom: 1px solid #e2e8f0;
-
-    h3 {
-      font-size: 1.2rem;
-      margin: 0;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
-
-
+  /* Four columns do not fit a phone. Two lines instead: title and unread
+   * count, then author and date. Indent step shrinks to keep titles readable. */
   table.threads {
-    .forum-thread-row__cell {
-      padding: .4rem .25rem;
-      text-align: left !important;
+    table-layout: auto;
+
+    thead { display: none; }
+
+    tr.forum-thread-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      padding: var(--s1) 0;
+    }
+
+    td {
+      padding: var(--s1) var(--s2);
+    }
+
+    .forum-thread-row__inner {
+      padding-left: calc(var(--depth, 0) * var(--s3));
+      gap: var(--s1);
     }
 
     .forum-thread-row__title {
-      font-size: .92rem;
-      margin-bottom: .15rem;
+      font-size: var(--t-body);
     }
 
-    .forum-thread-row__meta {
-      font-size: .76rem;
-      gap: .25rem;
+    .forum-thread-row__toggle,
+    .forum-thread-row__toggle-spacer {
+      flex-basis: var(--control);
+      width: var(--control);
+      height: var(--control);
+    }
+
+    .forum-thread-row__unread,
+    .forum-thread-row__date,
+    .forum-thread-row__author {
+      width: auto;
+    }
+
+    .forum-thread-row__author {
+      grid-column: 1;
+      grid-row: 2;
+      padding-left: calc(var(--s2) + var(--control));
+      font-size: var(--t-label);
+    }
+
+    .forum-thread-row__date {
+      grid-column: 2;
+      grid-row: 2;
+      font-size: var(--t-label);
+      text-align: right;
     }
   }
 
-  #searchforum {
-    margin-left: 0;
-    width: 100%;
-  }
-
-  .forums-create-button {
-    display: none;
-  }
-
-  .forums-heading-create {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    font-size: .85rem;
-    border-radius: .375rem;
-    border: 0;
-    background: #0788cb;
-    color: #fff;
-    cursor: pointer;
-  }
 }
-table.threadreply th:nth-child(2) {
-  width: 50%;
-}
-table.threadreply th:nth-child(1) {
-  width: 2%;
-}
-table.threadreply td:nth-child(2) {
-  width: 50%;
-  text-align: start;
-}
-table.threadreply td {
-  word-wrap: break-word;
-}
-table.threadreply tr:hover {
-  background-color: #eef3f6;
-  cursor: pointer;
-}
-
 /* Create Forum uses the same compact form language as Create Channel. */
 .create-forum-form {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem 1.5rem !important;
-
-  &__heading,
   &__title,
   &__moderators,
   &__description,
   &__submit { grid-column: 1 / -1; }
-  &__heading h3 { margin: 0; color: #1e293b; }
-  &__heading p { margin: .25rem 0 0; color: #64748b; font-size: .9rem; }
   &__title,
   &__description { width: 100%; box-sizing: border-box; }
   &__description { min-height: 7rem; resize: vertical; }
   &__field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
   &__field label,
-  &__moderators-heading label { color: #475569; font-size: .85rem; font-weight: 700; }
-  &__field .config-style-select {
-    width: 100%; min-width: 0; box-sizing: border-box; padding: .4rem;
-    border: 1px solid #cbd5e1; border-radius: 4px; background: #fff;
-    color: #1e293b; font-size: .95rem;
-  }
+  &__moderators-heading label { color: var(--ink-body); font-size: var(--t-row); font-weight: var(--w-label); }
+  &__field .config-style-select { width: 100%; min-width: 0; }
   &__moderators { min-width: 0; }
   &__moderators-heading { display: flex; justify-content: space-between; margin-bottom: .4rem; }
-  &__moderators-heading span { color: #64748b; font-size: .8rem; }
+  &__moderators-heading span { color: var(--ink-dim); font-size: var(--t-meta); }
   &__moderators-toggle { display: inline-flex; align-items: center; gap: .45rem; cursor: pointer; }
   &__moderators-toggle input { margin: 0; }
   &__moderator-controls { display: flex; flex-direction: column; gap: .4rem; }
-  &__moderator-controls > .config-style-select {
-    width: 100%; box-sizing: border-box; padding: .4rem;
-    border: 1px solid #cbd5e1; border-radius: 4px; background: #fff;
-  }
-  &__search { position: relative; }
-  &__search i { position: absolute; left: .65rem; top: 50%; transform: translateY(-50%); color: #94a3b8; }
-  &__search input { width: 100%; box-sizing: border-box; padding-left: 2rem; }
+  &__moderator-controls > .config-style-select { width: 100%; }
   &__moderator-list {
     max-height: 13rem; overflow-y: auto;
-    border: 1px solid #cbd5e1; border-radius: 4px; background: #fff;
+    border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface);
   }
   &__moderator {
     display: flex; align-items: center; gap: .65rem; padding: .45rem .65rem;
-    border-bottom: 1px solid #e2e8f0; cursor: pointer;
+    border-bottom: 1px solid var(--line-soft); cursor: pointer;
   }
   &__moderator:last-child { border-bottom: 0; }
-  &__moderator:hover { background: #f1f5f9; }
+  &__moderator:hover { background: var(--sunken); }
   &__moderator > span { display: flex; flex-direction: column; min-width: 0; }
   &__moderator > .jdenticon-avatar,
   &__moderator > .defaultAvatar,
   &__moderator > img.avatar { flex: 0 0 30px; margin-right: 0; }
-  &__moderator b { color: #1e293b; font-size: .9rem; }
-  &__moderator small { color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  &__empty { padding: 1rem; color: #64748b; text-align: center; }
+  &__moderator b { color: var(--ink); font-size: var(--t-row); }
+  &__moderator small { color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  &__empty { padding: 1rem; color: var(--ink-dim); text-align: center; }
   &__submit { justify-self: end; }
 }
 
@@ -500,15 +627,12 @@ table.threadreply tr:hover {
   width: min(720px, calc(100% - 2rem));
   max-height: calc(100% - 2rem);
   box-sizing: border-box;
-  overflow-x: hidden;
-  overflow-y: auto;
 }
 
 @media (max-width: 600px) {
-  .modal-content.create-forum-modal { width: calc(100% - 1rem); max-height: calc(100% - 1rem); padding: 1rem; }
+  .modal-content.create-forum-modal { width: calc(100% - 1rem); max-height: calc(100% - 1rem); }
   .create-forum-form {
     grid-template-columns: minmax(0, 1fr);
-    &__heading,
     &__title,
     &__field,
     &__moderators,
@@ -525,58 +649,47 @@ table.threadreply tr:hover {
   box-sizing: border-box;
   gap: .85rem;
 
-  &__heading { padding-right: 5.5rem; }
-  &__heading-copy { min-width: 0; }
-  &__heading h3 { margin: 0; color: #1e293b; }
-  &__heading p { margin: .25rem 0 0; color: #64748b; font-size: .9rem; }
-  &__fullscreen { position: absolute; z-index: 2; top: 1.25rem; right: 4.25rem; display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; margin: 0; padding: 0; border: 0; border-radius: 4px; background: #f1f5f9; color: #475569; box-shadow: none; }
-  &__fullscreen:hover { background: #e0f2fe; color: #0284c7; }
-  &__reply { padding: .6rem .75rem; border-radius: 4px; background: #f1f5f9; color: #475569; }
+  &__fullscreen { position: absolute; z-index: 2; top: var(--s3); right: calc(var(--s3) + var(--glyph) + var(--s1)); }
+  &__reply { padding: .6rem .75rem; border-radius: var(--r-sm); background: var(--sunken); color: var(--ink-body); }
   &__title { width: 100%; box-sizing: border-box; }
   &__field { display: flex; flex-direction: column; gap: .35rem; }
-  &__field label { color: #475569; font-size: .85rem; font-weight: 700; }
-  &__field select { width: 100%; box-sizing: border-box; padding: .45rem; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; }
+  &__field label { color: var(--ink-body); font-size: var(--t-row); font-weight: var(--w-label); }
+  &__field select { width: 100%; }
   &__editor { position: relative; }
   &__editor textarea { display: block; width: 100%; min-height: 8rem; padding: .75rem; border-radius: 4px 4px 0 0; box-sizing: border-box; resize: vertical; }
-  &__toolbar { position: relative; display: flex; gap: .25rem; padding: .4rem .5rem; border: 1px solid #cbd5e1; border-top: 0; border-radius: 0 0 4px 4px; background: #f8fafc; }
+  &__toolbar { position: relative; display: flex; gap: .25rem; padding: .4rem .5rem; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 4px 4px; background: var(--ground); }
   &__toolbar > input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
-  &__tool { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #0284c7; cursor: pointer; box-shadow: none; box-sizing: border-box; }
+  &__tool { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; padding: 0; border: 0; border-radius: var(--r-full); background: transparent; color: var(--brand); cursor: pointer; box-shadow: none; box-sizing: border-box; }
   &__tool:hover,
-  &__tool.active { background: #e0f2fe; }
-  &__emoji-picker { position: absolute; left: 2.75rem; bottom: 3rem; z-index: 10; width: min(22rem, calc(100vw - 4rem)); padding: .5rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; box-shadow: 0 10px 25px rgba(15, 23, 42, .18); }
-  &__emoji-categories { display: flex; gap: .15rem; overflow-x: auto; padding-bottom: .35rem; border-bottom: 1px solid #e2e8f0; }
+  &__tool.active { background: var(--select-soft); }
   //  color too: the global `button` rule paints its text white for a coloured
   //  background, and this panel is white. Without this the emojis are there and
   //  clickable, just invisible.
-  &__emoji-categories button,
-  &__emoji-grid button { border: 0; background: transparent; box-shadow: none; cursor: pointer; color: #0f172a; }
-  &__emoji-categories button { flex: 0 0 2rem; padding: .3rem; border-radius: 4px; }
-  &__emoji-categories button.active { background: #e0f2fe; }
-  &__emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); max-height: 12rem; overflow-y: auto; padding-top: .4rem; }
-  &__emoji-grid button { padding: .3rem; font-size: 1.15rem; }
-  &__file-panel { display: flex; flex-direction: column; gap: .35rem; padding: .65rem; border: 1px solid #cbd5e1; border-top: 0; background: #f8fafc; }
+  //  Anchors the shared emoji picker, which positions itself above its host.
+  &__emoji { position: relative; display: inline-flex; }
+  &__file-panel { display: flex; flex-direction: column; gap: .35rem; padding: .65rem; border: 1px solid var(--line); border-top: 0; background: var(--ground); }
   &__file-panel > div { display: flex; gap: .4rem; min-width: 0; }
   &__file-panel input { flex: 1 1 auto; min-width: 0; box-sizing: border-box; }
-  &__file-panel label { display: flex; flex: 0 0 2.4rem; align-items: center; justify-content: center; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; color: #0284c7; cursor: pointer; }
+  &__file-panel label { display: flex; flex: 0 0 2.4rem; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); color: var(--brand); cursor: pointer; }
   &__file-panel button { flex: 0 0 auto; }
-  &__file-panel small { color: #64748b; }
-  &__file-panel small.error-text { color: #dc2626; }
-  &__inline-images { display: flex; flex-direction: column; gap: .65rem; padding: .75rem; border: 1px solid #cbd5e1; border-top: 0; background: #fff; }
+  &__file-panel small { color: var(--ink-dim); }
+  &__file-panel small.error-text { color: var(--down-ink); }
+  &__inline-images { display: flex; flex-direction: column; gap: .65rem; padding: .75rem; border: 1px solid var(--line); border-top: 0; background: var(--surface); }
   &__inline-image { position: relative; align-self: flex-start; max-width: 100%; }
-  &__inline-image img { display: block; max-width: 100%; max-height: 12rem; border-radius: 6px; object-fit: contain; }
-  &__inline-image button { position: absolute; top: .4rem; right: .4rem; display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: 50%; background: rgba(15, 23, 42, .78); color: #fff; box-shadow: none; }
-  &__attachments { padding: .65rem; border: 1px solid #d7dee8; border-radius: 6px; background: #f8fafc; }
-  &__attachments-heading { display: flex; align-items: center; gap: .4rem; margin-bottom: .5rem; color: #475569; font-size: .85rem; font-weight: 700; }
+  &__inline-image img { display: block; max-width: 100%; max-height: 12rem; border-radius: var(--r-md); object-fit: contain; }
+  &__inline-image button { position: absolute; top: .4rem; right: .4rem; display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: var(--r-full); background: rgba(15, 23, 42, .78); color: var(--surface); box-shadow: none; }
+  &__attachments { padding: .65rem; border: 1px solid var(--line-soft); border-radius: var(--r-md); background: var(--ground); }
+  &__attachments-heading { display: flex; align-items: center; gap: .4rem; margin-bottom: .5rem; color: var(--ink-body); font-size: var(--t-row); font-weight: var(--w-label); }
   &__attachment-list { display: flex; flex-wrap: wrap; gap: .5rem; max-height: 6rem; overflow-y: auto; }
-  &__attachment { display: flex; align-items: center; gap: .5rem; max-width: 18rem; padding: .35rem .5rem; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; }
-  &__attachment > img { width: 2rem; height: 2rem; border-radius: 4px; object-fit: cover; }
-  &__attachment > i { width: 2rem; color: #3b82f6; text-align: center; }
+  &__attachment { display: flex; align-items: center; gap: .5rem; max-width: 18rem; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+  &__attachment > img { width: 2rem; height: 2rem; border-radius: var(--r-sm); object-fit: cover; }
+  &__attachment > i { width: 2rem; color: var(--brand); text-align: center; }
   &__attachment > span { display: flex; flex-direction: column; min-width: 0; }
-  &__attachment b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .82rem; }
-  &__attachment small { color: #64748b; }
-  &__attachment button { margin-left: auto; padding: .25rem; border: 0; background: transparent; color: #ef4444; box-shadow: none; }
-  &__capacity { color: #64748b; font-size: .78rem; text-align: right; }
-  &__capacity.is-over-limit { color: #dc2626; font-weight: 700; }
+  &__attachment b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t-meta); }
+  &__attachment small { color: var(--ink-dim); }
+  &__attachment button { margin-left: auto; padding: .25rem; border: 0; background: transparent; color: var(--down); box-shadow: none; }
+  &__capacity { color: var(--ink-dim); font-size: var(--t-meta); text-align: right; }
+  &__capacity.is-over-limit { color: var(--down-ink); font-weight: var(--w-label); }
   &__actions { display: flex; justify-content: flex-end; }
 }
 
@@ -585,25 +698,22 @@ table.threadreply tr:hover {
   height: fit-content;
   max-height: calc(100% - 2rem);
   min-height: 0;
-  padding: 1.25rem;
   box-sizing: border-box;
   overflow: hidden;
 
-  > .forum-thread-composer {
+  //  .modal__body is the scroller and owns the padding; the composer only
+  //  has to stop stretching past what it needs.
+  .modal__body > .forum-thread-composer {
     flex: 0 1 auto;
     height: auto;
-    max-height: calc(100vh - 4.5rem);
     min-height: 0;
-    padding-right: .25rem;
-    overflow-x: hidden;
-    overflow-y: auto;
   }
 }
 
 .modal-content.create-forum-thread-modal:not(.is-fullscreen) {
   height: fit-content !important;
 
-  > .forum-thread-composer {
+  .modal__body > .forum-thread-composer {
     flex-grow: 0;
     flex-shrink: 1;
     align-self: stretch;
@@ -618,7 +728,7 @@ table.threadreply tr:hover {
   min-height: 0;
   overflow: hidden;
 
-  > .forum-thread-composer {
+  .modal__body > .forum-thread-composer {
     width: 100%;
     height: auto;
     max-height: 100%;
@@ -652,33 +762,17 @@ table.threadreply tr:hover {
     width: calc(100% - 1rem);
     height: auto;
     max-height: calc(100% - 1rem);
-    padding: 1rem;
-    overflow-y: auto;
   }
-  .modal-content.create-forum-thread-modal > .forum-thread-composer {
+  .modal-content.create-forum-thread-modal .modal__body > .forum-thread-composer {
     width: 100%;
     height: auto;
-    max-height: calc(100vh - 3rem);
     padding: 0;
-    overflow-y: visible;
   }
   .forum-thread-composer__fullscreen { display: none; }
   .forum-thread-composer__editor textarea { min-height: 7rem; }
-  .forum-thread-composer__emoji-picker { left: 0; width: calc(100vw - 3rem); box-sizing: border-box; }
-  .forum-thread-composer__emoji-grid { grid-template-columns: repeat(6, 1fr); }
   .forum-thread-composer__file-panel > div { flex-wrap: wrap; }
   .forum-thread-composer__file-panel input { flex-basis: calc(100% - 3rem); }
   .forum-thread-composer__file-panel button { flex: 1 1 100%; }
   .forum-thread-composer__attachment { max-width: 100%; flex: 1 1 100%; }
   .forum-thread-composer__actions button { width: 100%; }
-}
-
-/* The shared media-item hides its description at phone widths (_media.scss,
- * !important) -- right for channel/board media grids, wrong for the forum
- * header, whose description was visible on phone before the shared component
- * replaced the old detail card. */
-@media (max-width: 768px) {
-  .forum-detail-heading + .media-item .media-item__desc {
-    display: block !important;
-  }
 }

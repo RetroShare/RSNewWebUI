@@ -408,6 +408,9 @@ const userList = {
   },
   username: (id) => {
     if (!id) return '';
+    //  GXS writes an all zero id when a post carries no signature. There is no
+    //  identity to fetch, so every caller was printing the zeros.
+    if (/^0+$/.test(id)) return '[Unknown]';
     const entry = userList.userMap[id];
     const name = typeof entry === 'object' ? entry.name : entry;
 
@@ -537,6 +540,30 @@ function logon(loginHeader, displayAuthError, displayErrorMessage, successful) {
   });
 }
 
+//  The core sends times either as a plain number of seconds or wrapped in an
+//  xint64/xstr64 object, depending on the call.
+function getTimestampValue(ts) {
+  if (!ts) return 0;
+  if (typeof ts === 'object') {
+    if (ts.xint64 !== undefined) return ts.xint64;
+    if (ts.xstr64 !== undefined) return Number(ts.xstr64);
+    return 0;
+  }
+  return ts;
+}
+
+function formatTimestamp(ts) {
+  const val = getTimestampValue(ts);
+  if (!val || val === 0) return '???';
+  try {
+    const localDate = new Date(val * 1000);
+    const offset = localDate.getTimezoneOffset() * 60000;
+    return new Date(localDate.getTime() - offset).toISOString().replace('T', ' ').slice(0, 16);
+  } catch (e) {
+    return 'Invalid Date';
+  }
+}
+
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -600,6 +627,8 @@ module.exports = {
   userList,
   loginKey,
   formatBytes,
+  formatTimestamp,
+  getTimestampValue,
   logout,
   cleanRetroshareId,
 };

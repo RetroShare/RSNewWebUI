@@ -1,110 +1,228 @@
 @use 'sass:color';
 @use '../abstracts/' as *;
 
+//  One transfer. Name and its one control on a row, the bar under it, then
+//  the figures -- rather than a stack of full-width blocks with a 32px bar in
+//  the middle of it.
 .file-view {
   width: 100%;
-  padding: 1rem;
-  margin-top: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+  padding: var(--s3);
+  margin-top: var(--s3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
   animation: fadein 0.5s;
+
   &__heading {
-    @include flex($justify: space-between);
-    margin-bottom: 0.5rem;
+    @include flex($justify: space-between, $align: center, $gap: var(--s3));
+    margin-bottom: var(--s3);
+
+    h6 {
+      margin: 0;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: var(--t-row);
+      font-weight: var(--w-label);
+      color: var(--ink);
+    }
+
     &-chunk {
-      @include flex($gap: 1rem);
+      @include flex($align: center, $gap: var(--s2));
+      flex: none;
+
+      label {
+        color: var(--ink-dim);
+        font-size: var(--t-meta);
+        white-space: nowrap;
+      }
     }
   }
+
   &__body {
-    @include flex(column, $gap: 1rem);
+    @include flex(column, $gap: var(--s3));
+
     &-details {
-      @include flex($align: center);
+      @include flex($align: center, $gap: var(--s3));
+
       &-stat {
         width: 100%;
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        & span > i {
-          margin-right: 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--s2) var(--s4);
+        color: var(--ink-dim);
+        font-size: var(--t-meta);
+        font-variant-numeric: tabular-nums;
+
+        //  This said `span > i`, which has matched nothing since the icons
+        //  became `<svg class="icon">` -- the glyphs sat flush against their
+        //  numbers.
+        span {
+          display: inline-flex;
+          align-items: center;
+          gap: var(--s1);
+          white-space: nowrap;
+        }
+
+        .icon {
+          width: 14px;
+          height: 14px;
+          color: var(--ink-faint);
         }
       }
+
       &-action {
-        @include flex($gap: 1rem);
-        height: 100%;
-        & button,
-        & button.red {
-          padding: 0.25rem 0.75rem;
-        }
+        @include flex($gap: var(--s2));
+        flex: none;
       }
     }
   }
 }
 
-table.myfiles td {
-  word-wrap: break-word;
-}
-table.myfiles th:nth-child(1) {
-  width: 2%;
-}
-table.myfiles th:nth-child(2) {
-  width: 50%;
-}
-table.myfiles td:nth-child(2) {
-  text-align: start;
-}
-table.friendsfiles td {
-  word-wrap: break-word;
-}
-table.friendsfiles th:nth-child(1) {
-  width: 1.5rem;
-  padding-left: 0.25rem;
-  padding-right: 0;
-}
-table.friendsfiles th:nth-child(2) {
-  width: 50%;
+//  My Files and Friends' Files are the same object: a directory tree with a
+//  size beside it. They read the way the mail table does -- quiet uppercase
+//  headers, a hairline under each row, the number right-aligned -- rather
+//  than inheriting the base `table` rule, whose centred 18px black headings
+//  are what made these two pages look unfinished.
+table.myfiles,
+table.friendsfiles {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: var(--t-row);
   text-align: left;
-  padding-left: 0.25rem;
+
+  th {
+    padding: var(--s2);
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-dim);
+    font-size: var(--t-label);
+    font-weight: var(--w-label);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: var(--s2);
+    border-bottom: 1px solid var(--line-soft);
+    color: var(--ink);
+    vertical-align: middle;
+    word-wrap: break-word;
+  }
+
+  tr:hover td { background: var(--ground); }
+
+  //  A size is a number in a column of numbers.
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 140px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-dim);
+    white-space: nowrap;
+  }
+
+  //  Name, twist and type icon on one baseline. The indent is padding on the
+  //  cell, so the chevron steps right with the row rather than staying put in
+  //  a column of its own; the flex row sits inside the cell so the cell keeps
+  //  its table-cell display and this fixed layout still allocates widths.
+  td.file-tree__name { min-width: 0; }
+
+  .file-tree__row {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    min-width: 0;
+  }
+
+  .file-tree__twist {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: color 0.15s ease;
+
+    &:hover { color: var(--ink); }
+
+    //  A leaf keeps the space so every name in a level starts at one edge.
+    &.is-empty { cursor: default; }
+  }
+
+  .file-tree__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .files-folder-icon,
+  .files-file-icon,
+  .friends-files__folder-icon,
+  .friends-files__file-icon {
+    flex: none;
+  }
 }
-table.friendsfiles th:nth-child(4) {
-  width: 40%;
+
+//  Friends' Files carries a third column for the download control.
+table.friendsfiles {
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 150px;
+    text-align: center;
+  }
 }
-table.friendsfiles td:nth-child(2) {
-  text-align: start;
-  padding-left: 0.25rem;
+
+//  The state of a friend's file, in the width of a table cell. A transfer in
+//  progress is a percentage plus an info icon; the figures the File card
+//  would have shown are that icon's tooltip.
+.friends-files__have,
+.friends-files__progress {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  color: var(--ink-dim);
+  font-size: var(--t-meta);
+  white-space: nowrap;
+
+  .icon { width: 14px; height: 14px; }
 }
-table.friendsfiles td:nth-child(1) {
-  width: 1.5rem;
-  padding-left: 0.25rem;
-  padding-right: 0;
-}
+
+.friends-files__have .icon { color: var(--up-ink); }
+
+.friends-files__progress-pct { font-variant-numeric: tabular-nums; }
+.friends-files__progress-info { color: var(--ink-faint); cursor: help; }
 
 // File Search
 .file-search-container {
   margin-top: 1rem;
   padding: 8px;
   @include flex($gap: 8px);
-  border: 1px solid color.adjust($dark-color, $alpha: -0.8);
-  border-radius: 6px;
+  border: 1px solid rgb(var(--ink-rgb) / 0.2);
+  border-radius: var(--r-md);
   height: 100%;
   overflow: auto;
 
   &__keywords {
     flex-basis: 15%;
     padding-right: 0.25rem;
-    border-right: 1px solid color.adjust($dark-color, $alpha: -0.9);
+    border-right: 1px solid rgb(var(--ink-rgb) / 0.1);
 
     & .keywords-container {
       @include flex(column);
-      border-top: 2.5px solid color.adjust($dark-color, $alpha: -0.92);
+      border-top: 2.5px solid rgb(var(--ink-rgb) / 0.08);
       margin-top: 0.125rem;
       padding-top: 0.25rem;
 
       & a {
-        font-size: 1.2rem;
+        font-size: var(--t-h3);
         text-decoration: none;
-        color: $dark-color;
+        color: var(--ink);
 
         &.selected {
-          color: $primary-color;
+          color: var(--brand);
         }
       }
     }
@@ -120,8 +238,8 @@ table.friendsfiles td:nth-child(1) {
         & tr {
           display: flex;
           & th {
-            font-size: 1.25rem;
-            font-weight: bold;
+            font-size: var(--t-h2);
+            font-weight: var(--w-label);
             text-align: left;
 
             &:nth-child(1) {
@@ -172,15 +290,13 @@ table.friendsfiles td:nth-child(1) {
   }
 }
 
-.search-form {
-  display: flex;
-  width: 40%;
-  input {
-    width: 100%;
-  }
-  button {
-    margin-left: 0.5rem;
-  }
+//  The submitting variant: the page header sizes it, the same way it sizes
+//  the filtering one. `width: 40%` of a `flex: 0 1 auto` actions box resolved
+//  against a shrink-to-fit parent and collapsed the field to a white square.
+.page-head__actions > .search-submit {
+  flex: none;
+  width: 320px;
+  max-width: 100%;
 }
 
 /* File search results use div rows, not table rows.  Give those rows their
@@ -189,8 +305,8 @@ table.friendsfiles td:nth-child(1) {
   align-items: stretch;
   min-height: 16rem;
   padding: 1rem;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  background: var(--surface);
+  box-shadow: none;
 
   &__keywords {
     flex: 0 0 13rem;
@@ -205,7 +321,7 @@ table.friendsfiles td:nth-child(1) {
 
     .keywords-header h5 {
       margin: 0;
-      font-size: 1rem;
+      font-size: var(--t-h3);
     }
 
     .clear-btn {
@@ -214,8 +330,8 @@ table.friendsfiles td:nth-child(1) {
 
     .keywords-container a {
       padding: 0.45rem 0.55rem;
-      border-radius: 0.35rem;
-      font-size: 0.95rem;
+      border-radius: var(--r-sm);
+      font-size: var(--t-body);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -223,7 +339,7 @@ table.friendsfiles td:nth-child(1) {
       &:hover,
       &.selected {
         background: rgba(0, 154, 235, 0.1);
-        color: $primary-color;
+        color: var(--brand);
       }
     }
   }
@@ -235,15 +351,15 @@ table.friendsfiles td:nth-child(1) {
 
     > h5 {
       margin: 0;
-      color: #64748b;
+      color: var(--ink-dim);
     }
   }
 }
 
 .results-container {
   width: 100%;
-  border: 1px solid #dbe3ec;
-  border-radius: 0.5rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
   overflow: hidden;
 }
 
@@ -255,11 +371,11 @@ table.friendsfiles td:nth-child(1) {
 }
 
 .results-header {
-  background: #f1f5f9;
-  border-bottom: 1px solid #dbe3ec;
-  color: #475569;
-  font-size: 0.78rem;
-  font-weight: 700;
+  background: var(--sunken);
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink-body);
+  font-size: var(--t-meta);
+  font-weight: var(--w-label);
   letter-spacing: 0.02em;
   text-transform: uppercase;
 
@@ -270,7 +386,7 @@ table.friendsfiles td:nth-child(1) {
 
 .results-list .file-item {
   padding: 0.75rem 0.85rem;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--sunken);
   transition: background-color 0.15s ease;
 
   &:last-child {
@@ -278,7 +394,7 @@ table.friendsfiles td:nth-child(1) {
   }
 
   &:hover {
-    background: #f8fafc;
+    background: var(--ground);
   }
 }
 
@@ -290,12 +406,12 @@ table.friendsfiles td:nth-child(1) {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  color: #0f172a;
-  font-weight: 600;
+  color: var(--ink);
+  font-weight: var(--w-label);
 
-  i {
-    color: #0284c7;
-    font-size: 1.1rem;
+  .icon {
+    color: var(--brand);
+    width: 18px; height: 18px;
   }
 
   span {
@@ -306,15 +422,15 @@ table.friendsfiles td:nth-child(1) {
 }
 
 .results-cell.size-col {
-  color: #475569;
+  color: var(--ink-body);
   white-space: nowrap;
 }
 
 .results-cell.hash-col {
   overflow: hidden;
-  color: #64748b;
+  color: var(--ink-dim);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 0.78rem;
+  font-size: var(--t-meta);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -353,8 +469,8 @@ table.friendsfiles td:nth-child(1) {
   }
 
   label {
-    color: #334155;
-    font-weight: 600;
+    color: var(--ink);
+    font-weight: var(--w-label);
   }
 
   input[type='text'] {
@@ -392,6 +508,30 @@ table.friendsfiles td:nth-child(1) {
   }
 }
 
+/* The tree glyphs, and the row toggles under them. */
+.friends-files__friend-icon,
+.friends-files__folder-icon,
+.friends-files__file-icon {
+  margin-right: 0.45rem;
+  color: var(--ink-dim);
+}
+
+.friends-files__load,
+.my-files__load { margin-top: var(--s3); }
+
+/* A folder in the file tree. Amber was the one colour in a monochrome tree. */
+.files-folder-icon {
+  margin-right: 0.45rem;
+  color: var(--ink-dim);
+}
+
+/* A row that cannot be edited -- the shared-directory table paints this by
+   hand because a <td> takes no :disabled. */
+.share-manager .is-disabled {
+  color: var(--ink-faint);
+  cursor: default;
+}
+
 .share-manager {
   @include flex(column, $justify: space-between);
   min-height: 0;
@@ -399,24 +539,17 @@ table.friendsfiles td:nth-child(1) {
   &__table {
     margin: 1rem 0 auto;
     thead {
-      font-weight: bold;
+      font-weight: var(--w-label);
       text-align: left;
       td:nth-child(1),
       td:nth-child(2) {
         padding-left: 0.5rem;
       }
-      td:nth-child(3),
-      td:nth-child(4) {
-        & .tooltip {
-          font-weight: normal;
-          font-size: 1rem;
-        }
-      }
     }
     tbody {
       text-align: left;
       td:nth-child(4) {
-        font-size: 1rem;
+        font-size: var(--t-h3);
       }
     }
     td {
@@ -446,7 +579,7 @@ table.friendsfiles td:nth-child(1) {
 
   &__empty td {
     padding: 2rem 1rem;
-    color: #64748b;
+    color: var(--ink-dim);
     text-align: center;
   }
   &__form {
@@ -468,11 +601,11 @@ table.friendsfiles td:nth-child(1) {
         color: grey;
         margin-right: 0.25rem;
         padding: 0.25rem 0.25rem 0.125rem;
-        border: 1px solid #6d6d6d;
-        border-radius: 0.5rem;
+        border: 1px solid var(--ink-body);
+        border-radius: var(--r-md);
       }
       &:checked + label.share-flags-label {
-        color: $primary-retro-color;
+        color: var(--brand);
       }
     }
   }
@@ -500,7 +633,6 @@ table.friendsfiles td:nth-child(1) {
     > .close-btn {
       top: 0.75rem;
       right: 0.75rem;
-      padding: 0.55rem 0.75rem;
     }
   }
 
@@ -511,7 +643,7 @@ table.friendsfiles td:nth-child(1) {
       min-height: 2.5rem;
 
       h3 {
-        font-size: 1.4rem;
+        font-size: var(--t-h2);
       }
     }
 
@@ -534,7 +666,7 @@ table.friendsfiles td:nth-child(1) {
       height: 100%;
       min-width: 0;
       overflow: hidden;
-      border-radius: 0.75rem;
+      border-radius: var(--r-md);
       background: white;
 
       & > .widget {
@@ -546,7 +678,6 @@ table.friendsfiles td:nth-child(1) {
       & .close-btn {
         top: 0.85rem;
         right: 0.85rem;
-        padding: 0.55rem 0.75rem;
       }
 
       .widget__heading {
@@ -556,7 +687,7 @@ table.friendsfiles td:nth-child(1) {
 
       .widget__heading h3 {
         overflow: hidden;
-        font-size: 1.45rem;
+        font-size: var(--t-h2);
         text-overflow: ellipsis;
         white-space: nowrap;
       }
@@ -572,7 +703,7 @@ table.friendsfiles td:nth-child(1) {
       flex: 0 0 auto;
       margin: 0.75rem 0 0;
       padding: 0.75rem 0.75rem 0.75rem 2rem;
-      font-size: 0.9rem;
+      font-size: var(--t-row);
       line-height: 1.35;
     }
 
@@ -588,7 +719,7 @@ table.friendsfiles td:nth-child(1) {
       flex: 0 0 auto;
       gap: 0.75rem;
       padding-top: 0.75rem;
-      border-top: 1px solid #e2e8f0;
+      border-top: 1px solid var(--line-soft);
 
       button {
         flex: 1 1 0 !important;
@@ -632,8 +763,8 @@ table.friendsfiles td:nth-child(1) {
   }
 
   .share-manager__table tr {
-    border: 1px solid #ccc;
-    border-radius: 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
     margin-bottom: 1rem;
     padding: 0.5rem;
     background: white;
@@ -648,9 +779,9 @@ table.friendsfiles td:nth-child(1) {
   .share-manager__table tr:not(.share-manager__empty) td::before {
     display: block;
     margin-bottom: 0.2rem;
-    color: #64748b;
-    font-size: 0.72rem;
-    font-weight: 700;
+    color: var(--ink-dim);
+    font-size: var(--t-label);
+    font-weight: var(--w-label);
     letter-spacing: 0.04em;
     text-transform: uppercase;
   }
@@ -701,64 +832,27 @@ table.friendsfiles td:nth-child(1) {
 
   table.myfiles tr,
   table.friendsfiles tr {
-    border: 1px solid #ccc;
-    border-radius: 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
     margin-bottom: 1rem;
     padding: 0.5rem;
     background: white;
   }
 
-  /* Friends Files is a hierarchy, so keep its controls and details together
-     as a compact list row instead of stacking every table cell as a card. */
-  table.friendsfiles tr {
-    display: grid;
-    grid-template-columns: 1.25rem minmax(0, 1fr) auto;
-    align-items: center;
-    column-gap: 0.35rem;
-    margin-bottom: 0.5rem;
-    padding: 0.65rem 0.5rem;
-  }
-
-  table.friendsfiles td {
-    display: block;
-    width: auto !important;
-    margin: 0;
-    padding: 0 !important;
-    border: 0 !important;
-  }
-
-  table.friendsfiles td:nth-child(1) {
-    grid-column: 1;
-  }
-
-  table.friendsfiles td:nth-child(2) {
-    grid-column: 2;
-    left: 0 !important;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  table.friendsfiles td:nth-child(3) {
-    grid-column: 3;
-    white-space: nowrap;
-  }
-
-  table.friendsfiles td:nth-child(4) {
-    grid-column: 2 / -1;
-    margin-top: 0.4rem;
-  }
-
+  /* Both trees are a hierarchy, so keep each entry as one compact list row
+     instead of stacking every cell as a card. Two cells now, not three: the
+     chevron rides inside the name. */
+  table.friendsfiles tr,
   table.myfiles tr {
     display: grid;
-    grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    column-gap: 0.35rem;
+    column-gap: 0.5rem;
     margin-bottom: 0.5rem;
     padding: 0.65rem 0.5rem;
   }
 
+  table.friendsfiles td,
   table.myfiles td {
     display: block;
     width: auto !important;
@@ -767,22 +861,22 @@ table.friendsfiles td:nth-child(1) {
     border: 0 !important;
   }
 
-  table.myfiles td:nth-child(1) {
+  table.friendsfiles td.file-tree__name,
+  table.myfiles td.file-tree__name {
     grid-column: 1;
+    min-width: 0;
   }
 
+  table.friendsfiles td:nth-child(2),
   table.myfiles td:nth-child(2) {
     grid-column: 2;
-    left: 0 !important;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  table.myfiles td:nth-child(3) {
-    grid-column: 3;
-    white-space: nowrap;
+  /* The download control gets its own line under the entry. */
+  table.friendsfiles td:nth-child(3) {
+    grid-column: 1 / -1;
+    margin-top: 0.4rem !important;
   }
 
   .my-files__configure-shares {
@@ -824,7 +918,7 @@ table.friendsfiles td:nth-child(1) {
   }
 
   .results-container tr {
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--line-soft);
     padding: 1rem 0;
   }
 
@@ -833,10 +927,9 @@ table.friendsfiles td:nth-child(1) {
     word-break: break-all;
   }
 
-  .search-form {
+  .page-head__actions > .search-submit {
+    flex: 1 1 100%;
     width: auto;
-    flex: 1;
-    max-width: 18rem;
   }
 
   .file-search-container {
@@ -873,7 +966,7 @@ table.friendsfiles td:nth-child(1) {
 
   .results-cell.size-col {
     grid-area: size;
-    font-size: 0.82rem;
+    font-size: var(--t-meta);
   }
 
   .results-cell.hash-col {
@@ -888,5 +981,58 @@ table.friendsfiles td:nth-child(1) {
 
   .download-btn-v65 {
     padding: 0.4rem 0.6rem;
+  }
+}
+
+// ==========================================================================
+// Transfers: section headings, toolbar and row actions.
+//
+// The page heading was running at --t-title with the section headings just
+// under it, so "Downloads (1 files)" competed with "File Transfers" for the
+// same rank. Sections step down; actions sit on the line they belong to.
+// ==========================================================================
+
+.widget__heading {
+  h3 {
+    margin: 0;
+    font-size: var(--t-h2);
+    font-weight: var(--w-label);
+    letter-spacing: -0.015em;
+  }
+
+  //  A filter over one list does not need half a screen.
+  .search-field {
+    flex: 0 1 260px;
+    max-width: 40vw;
+  }
+}
+
+.widget__body-heading {
+  gap: var(--s3);
+  margin: var(--s4) 0 var(--s2);
+
+  h3 {
+    margin: 0;
+    font-size: var(--t-h3);
+    font-weight: var(--w-label);
+    color: var(--ink-body);
+  }
+
+  //  Wraps under the heading on a narrow screen rather than running off the
+  //  side: two buttons with nowrap labels cannot fit beside a title at 320px.
+  .action {
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: auto;
+    align-items: center;
+    gap: var(--s2);
+  }
+}
+
+.file-view {
+  &__body-details-action {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
   }
 }

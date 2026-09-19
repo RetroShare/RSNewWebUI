@@ -1,38 +1,166 @@
 // -----------------------------------------------------------------------------
-// This file contains all application-wide button styles.
+// Buttons.
+//
+// The product had one button: a filled accent pill, applied to every <button>
+// in the app. A screen with six actions therefore read as six calls to action,
+// and every page that wanted an ordinary control had to fight the rule off --
+// which is where most of the `!important` in the page sheets came from.
+//
+// Five roles, and the element default is the ordinary one:
+//
+//   default   neutral chrome          the large majority
+//   primary   filled brand            create / add / edit / send / submit
+//   danger    outlined red            delete / remove / leave
+//   icon      square, glyph only      toolbars
+//   close     bare glyph until hover  dismiss
 // -----------------------------------------------------------------------------
-@use "../abstracts" as *;
+
+@use '../abstracts' as *;
 
 button {
-  @include button($primary-color);
-  white-space: nowrap !important;
-  flex-shrink: 0 !important;
-}
-button.red {
-  @include button($red-color);
-  white-space: nowrap !important;
-  flex-shrink: 0 !important;
+  @include btn-base;
+
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-// Control buttons, close buttons, and icon buttons must not inherit 3D inset box shadows
-button.close-btn,
-.close-btn,
-.modal-close,
-.history-modal .close-btn,
-.rightbar-close,
-button.icon-btn,
-button.btn-icon,
-button.mail-tool-btn,
-button.mail-filter-pill,
-button.mail-view-back-btn,
-button.mail-action-btn,
-button.spam-btn,
-button.mail-compose-btn,
-button[class*="close"] {
-  box-shadow: none !important;
+/* A glyph does not fill its square viewBox, so an icon set flush against the
+   same 13px as the text on the other side reads as more space on the left.
+   Take 3px back off that edge and the button looks optically centred.
 
-  &:active {
-    box-shadow: none !important;
+   `:first-child` counts ELEMENT children, so a bare string before an icon is
+   invisible to it and a trailing icon would match. Audited first: 121 buttons
+   lead with an icon, 65 do not, and none of the 65 puts a bare string before
+   one -- the labels that used to are wrapped in spans.
+
+   Note the `:where()`. `:has()` carries the specificity of its most specific
+   argument, so the obvious spelling -- `button:has(> .icon:first-child)` --
+   reaches (0,2,1) and quietly outranks 36 rules across the app that set a
+   button's padding, including the ones that set it to 0: the emoji grid, the
+   chat send button, the status sheet, and every row in the sidebar footer.
+   Every square role would have lost its `padding: 0` too, and the glyph would
+   stop being centred.
+
+   `:where()` contributes nothing, so this lands at (0,0,1) -- exactly as weak
+   as the `button` rule above, which is the only thing it is meant to adjust.
+   Anything that states its own padding, by any class at all, wins. */
+button:has(> :where(.icon:first-child)) {
+  @include btn-leading-icon;
+}
+
+/* == Roles =================================================================
+   These are utilities: the call site states what an action IS, and that has
+   to beat whatever the page it happens to sit in says about chrome.
+
+   A page selector like `.network-detail-view .detail-header .detail-actions
+   button` reaches (0,3,1); a role class is (0,1,1) and loses, which is how
+   "Start Chat" stayed grey no matter how many times it was marked primary.
+   Raising the roles' specificity only restarts the race one notch higher, so
+   the chrome-defining declarations are marked instead. Deliberately narrow:
+   only the four properties that carry the role, never layout.
+   ========================================================================== */
+
+@mixin role-primary {
+  border-color: var(--brand-deep) !important;
+  background: linear-gradient(180deg, var(--brand-hover), var(--brand-deep)) !important;
+  color: var(--surface) !important;
+  font-weight: var(--w-label);
+
+  &:hover {
+    border-color: var(--brand-press) !important;
+    background: linear-gradient(180deg, var(--brand), var(--brand-press)) !important;
   }
 }
 
+@mixin role-danger {
+  border-color: var(--down-line) !important;
+  background: linear-gradient(180deg, var(--surface), var(--down-bg)) !important;
+  color: var(--down-ink) !important;
+
+  &:hover {
+    border-color: var(--down) !important;
+    background: var(--down-bg) !important;
+  }
+}
+
+@mixin role-quiet {
+  border-color: transparent !important;
+  background: none !important;
+  color: var(--ink-body) !important;
+
+  &:hover { background: var(--sunken) !important; }
+}
+
+/* Primary: anything that brings a thing into existence, commits an edit, or
+   sends something. A form's submit is one by definition. */
+
+button[type='submit']:not(.is-glyph):not(.is-icon),
+button.is-primary,
+.b--primary,
+.board-toolbar__create-post,
+.board-posts-heading__create,
+.create-board-post__submit,
+.channel-mobile-create,
+.create-forum-form__submit,
+.create-identity-form__submit,
+.signed-identity-form__submit,
+.comment-composer__submit,
+.chat-create-room-btn,
+.attach-browse-btn {
+  @include role-primary;
+}
+
+/* Danger: outlined, never filled -- a solid red button invites the click it
+   exists to discourage. `.red` is the product's historical name for it. */
+
+button.red:not(.close-btn):not(.modal__close):not(.is-glyph),
+button.is-danger,
+.b--danger,
+.debug-btn--danger {
+  @include role-danger;
+}
+
+.is-quiet { @include role-quiet; }
+
+/* == Glyph buttons ========================================================
+   Two forms, both square. `.is-icon` is framed -- a lone control that has to
+   read as a button. `.is-glyph` is bare -- a mark that lives among content,
+   where a border per glyph turns a list into a wall of little boxes.
+   Both are utilities, so they override a page's chrome. */
+
+button.is-icon,
+.b--icon {
+  @include btn-icon;
+
+  border-color: var(--line) !important;
+  background: var(--chrome) !important;
+}
+
+button.is-glyph,
+.b--glyph {
+  @include btn-glyph;
+
+  border-color: transparent !important;
+  background: none !important;
+  color: var(--ink-body) !important;
+
+  &:hover { background: var(--sunken) !important; color: var(--ink) !important; }
+}
+
+/* == Compact ==============================================================
+   For a button inside a card or a row, where the full control height would
+   make the action taller than the thing it belongs to. */
+
+button.is-sm,
+.b--sm {
+  @include btn-sm;
+}
+
+/* == Close ================================================================
+   Every dismiss glyph in the product: modals, toasts, chips, panels. */
+
+.close-btn,
+.modal__close,
+button.is-close {
+  @include btn-close;
+}

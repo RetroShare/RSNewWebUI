@@ -2,6 +2,8 @@ const m = require('mithril');
 const rs = require('rswebui');
 const util = require('mail/mail_util');
 const compose = require('mail/mail_compose');
+const icon = require('icon');
+const widget = require('widgets');
 
 const Messages = {
   all: [],
@@ -54,7 +56,11 @@ const Messages = {
         }
       }
     });
-    if (util.MessageCache && util.MessageCache[msgId] && util.MessageCache[msgId].msgflags !== undefined) {
+    if (
+      util.MessageCache &&
+      util.MessageCache[msgId] &&
+      util.MessageCache[msgId].msgflags !== undefined
+    ) {
       if (util.MessageCache[msgId].msgflags & (util.RS_MSG_NEW | util.RS_MSG_UNREAD_BY_USER)) {
         util.MessageCache[msgId].msgflags &= ~(util.RS_MSG_NEW | util.RS_MSG_UNREAD_BY_USER);
         changed = true;
@@ -78,12 +84,10 @@ const Messages = {
         Messages.outbox = Messages.all.filter(
           (msg) => (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_OUTBOX
         );
+        //  The core keeps the DRAFT bit on a draft moved to Trash, so it has
+        //  to be excluded here or it is listed in both folders.
         Messages.drafts = Messages.all.filter(
-          (msg) =>
-            (msg.msgflags & util.RS_MSG_BOXMASK) === util.RS_MSG_DRAFTBOX ||
-            (msg.msgflags & 0x05) === 0x05 ||
-            (msg.msgflags & 0x04) !== 0 ||
-            (msg.msgflags & 0x08) !== 0
+          (msg) => util.isDraftMessage(msg.msgflags) && !(msg.msgflags & util.RS_MSG_TRASH)
         );
         Messages.trash = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_TRASH);
         Messages.starred = Messages.all.filter((msg) => msg.msgflags & util.RS_MSG_STAR);
@@ -126,7 +130,11 @@ util.onMessageUpdated((msgId, flag, isSet) => {
       }
     }
   });
-  if (util.MessageCache && util.MessageCache[msgId] && util.MessageCache[msgId].msgflags !== undefined) {
+  if (
+    util.MessageCache &&
+    util.MessageCache[msgId] &&
+    util.MessageCache[msgId].msgflags !== undefined
+  ) {
     if (isSet) {
       util.MessageCache[msgId].msgflags |= flag;
     } else {
@@ -144,32 +152,39 @@ util.onMessageUpdated((msgId, flag, isSet) => {
 });
 
 const folderConfigs = [
-  { id: 'inbox', title: 'Inbox', icon: 'fa-inbox' },
-  { id: 'sent', title: 'Sent', icon: 'fa-envelope-open' },
-  { id: 'drafts', title: 'Drafts', icon: 'fa-edit' },
-  { id: 'outbox', title: 'Outbox', icon: 'fa-envelope-open-text' },
-  { id: 'starred', title: 'Starred', icon: 'fa-star' },
-  { id: 'trash', title: 'Trash', icon: 'fa-trash-alt' },
-  { id: 'spam', title: 'Spam', icon: 'fa-fire' },
-  { id: 'attachment', title: 'Attachments', icon: 'fa-paperclip' },
-  { id: 'system', title: 'System', icon: 'fa-bell' },
+  { id: 'inbox', title: 'Inbox', icon: 'inbox' },
+  { id: 'sent', title: 'Sent', icon: 'envelope-open' },
+  { id: 'drafts', title: 'Drafts', icon: 'edit' },
+  { id: 'outbox', title: 'Outbox', icon: 'envelope-open-text' },
+  { id: 'starred', title: 'Starred', icon: 'star' },
+  { id: 'trash', title: 'Trash', icon: 'trash-alt' },
+  { id: 'spam', title: 'Spam', icon: 'fire' },
+  { id: 'attachment', title: 'Attachments', icon: 'paperclip' },
+  { id: 'system', title: 'System', icon: 'bell' },
 ];
 
+//  The five tag categories. Their colours are the core's, so they are read
+//  from the one place that knows them rather than written a second time here.
 const categoryConfigs = [
-  { id: 'important', title: 'Important', color: '#ef4444', tagId: 1 },
-  { id: 'work', title: 'Work', color: '#f97316', tagId: 2 },
-  { id: 'personal', title: 'Personal', color: '#22c55e', tagId: 3 },
-  { id: 'todo', title: 'Todo', color: '#3b82f6', tagId: 4 },
-  { id: 'later', title: 'Later', color: '#a855f7', tagId: 5 },
+  { id: 'important', title: 'Important', tagId: 1 },
+  { id: 'work', title: 'Work', tagId: 2 },
+  { id: 'personal', title: 'Personal', tagId: 3 },
+  { id: 'todo', title: 'Todo', tagId: 4 },
+  { id: 'later', title: 'Later', tagId: 5 },
 ];
+
+//  Unread is a flag on *received* mail. Sent, Outbox and Drafts are mail you
+//  wrote, and the unread filter below explicitly skips anything in Trash or
+//  Spam -- so in these five folders the switcher can only ever return zero.
+const UNREAD_FILTER_FOLDERS_EXCLUDED = ['sent', 'outbox', 'drafts', 'trash', 'spam'];
 
 const tagFilterOptions = [
-  { label: '🏷️ Filter by Tag...', val: '' },
-  { label: '🔴 Important', val: '1' },
-  { label: '🟠 Work', val: '2' },
-  { label: '🟢 Personal', val: '3' },
-  { label: '🔵 Todo', val: '4' },
-  { label: '🟣 Later', val: '5' },
+  { label: 'Filter by tag', val: '' },
+  { label: 'Important', val: '1' },
+  { label: 'Work', val: '2' },
+  { label: 'Personal', val: '3' },
+  { label: 'Todo', val: '4' },
+  { label: 'Later', val: '5' },
 ];
 
 const MailComponent = () => {
@@ -216,12 +231,17 @@ const MailComponent = () => {
       const activeTab = vnode.attrs.tab || 'inbox';
       const activeMsgId = vnode.attrs.msgId || null;
 
-      const currentFolder =
-        folderConfigs.find((f) => f.id === activeTab) ||
-        categoryConfigs.find((c) => c.id === activeTab) ||
-        { title: activeTab.charAt(0).toUpperCase() + activeTab.slice(1), icon: 'fa-envelope' };
+      const currentFolder = folderConfigs.find((f) => f.id === activeTab) ||
+        categoryConfigs.find((c) => c.id === activeTab) || {
+          title: activeTab.charAt(0).toUpperCase() + activeTab.slice(1),
+          icon: 'envelope',
+        };
 
       let list = Messages[activeTab] || [];
+
+      const canFilterUnread = !UNREAD_FILTER_FOLDERS_EXCLUDED.includes(activeTab);
+      //  Leaving it set while it is hidden would silently empty the folder.
+      if (!canFilterUnread) filterUnreadOnly = false;
 
       // Filter by Unread
       if (filterUnreadOnly) {
@@ -278,14 +298,14 @@ const MailComponent = () => {
         m('.mail-folders-pane', { class: mobileNavOpen ? 'mail-folders-pane--open' : '' }, [
           m('.mail-folders-header', [
             m(
-              'button.mail-compose-btn[type=button]',
+              'button.mail-compose-btn.is-primary[type=button]',
               {
                 onclick: () => {
                   mobileNavOpen = false;
                   setShowCompose(true);
                 },
               },
-              [m('i.fas.fa-edit'), m('span', 'New mail')]
+              [icon('edit'), m('span', 'New email')]
             ),
           ]),
 
@@ -308,15 +328,13 @@ const MailComponent = () => {
                     },
                   },
                   [
-                    m('i.fas', {
-                      class: folder.icon,
-                    }),
+                    icon(folder.icon, { size: 19 }),
                     m('span.mail-nav-label', folder.title),
                     unread > 0
                       ? m('span.mail-nav-badge.mail-nav-badge--unread', unread)
                       : count > 0
-                      ? m('span.mail-nav-badge', count)
-                      : null,
+                        ? m('span.mail-nav-badge', count)
+                        : null,
                   ]
                 );
               })
@@ -339,7 +357,7 @@ const MailComponent = () => {
                     },
                   },
                   [
-                    m('span.mail-category-dot', { style: `background-color: ${cat.color};` }),
+                    m('span.mail-category-dot', { style: { backgroundColor: util.getTagDetails(cat.tagId).color } }),
                     m('span.mail-nav-label', cat.title),
                     count > 0 && m('span.mail-nav-badge', count),
                   ]
@@ -371,94 +389,63 @@ const MailComponent = () => {
                       mobileNavOpen = !mobileNavOpen;
                     },
                   },
-                  m('i.fas.fa-bars')
+                  icon('bars')
                 ),
                 m('.mail-folder-title-row', [
-                  m('i.fas', {
-                    class: currentFolder.icon || 'fa-envelope',
-                  }),
+                  icon(currentFolder.icon || 'envelope', { size: 22 }),
                   m('h2.mail-folder-heading', currentFolder.title),
                   m('span.mail-folder-count', `(${sortedList.length})`),
                 ]),
-                m('.mail-view-toggle', [
-                  m(
-                    'button.mail-toggle-btn[type=button]',
-                    {
-                      class: viewMode === 'cards' ? 'active' : '',
-                      title: 'Card view',
-                      onclick: () => {
-                        viewMode = 'cards';
-                        localStorage.setItem('rs_mail_view_mode', 'cards');
-                        deselectMessage();
-                      },
-                    },
-                    m('i.fas.fa-th-large')
-                  ),
-                  m(
-                    'button.mail-toggle-btn[type=button]',
-                    {
-                      class: viewMode === 'table' ? 'active' : '',
-                      title: 'Table view',
-                      onclick: () => {
-                        viewMode = 'table';
-                        localStorage.setItem('rs_mail_view_mode', 'table');
-                        deselectMessage();
-                      },
-                    },
-                    m('i.fas.fa-bars')
-                  ),
-                ]),
+                m(widget.Segmented, {
+                  class: 'mail-view-toggle',
+                  ariaLabel: 'Message list layout',
+                  value: viewMode,
+                  options: [
+                    { id: 'cards', icon: 'th-large', title: 'Card view' },
+                    { id: 'table', icon: 'bars', title: 'Table view' },
+                  ],
+                  onSelect: (mode) => {
+                    viewMode = mode;
+                    localStorage.setItem('rs_mail_view_mode', mode);
+                    deselectMessage();
+                  },
+                }),
               ]),
 
               // Search bar
-              m('.mail-search-wrapper', [
-                m('i.fas.fa-search.mail-search-icon'),
-                m('input.mail-search-input[type=text][placeholder=Search subject...]', {
-                  value: searchQuery,
-                  oninput: (e) => {
-                    searchQuery = e.target.value;
-                  },
-                }),
-                searchQuery &&
-                  m(
-                    'button.mail-search-clear[type=button][title=Clear search]',
-                    {
-                      onclick: () => {
-                        searchQuery = '';
-                      },
-                    },
-                    m('i.fas.fa-times')
-                  ),
-              ]),
+              m(widget.SearchField, {
+                class: 'mail-search-wrapper',
+                placeholder: 'Search subject',
+                value: searchQuery,
+                oninput: (e) => {
+                  searchQuery = e.target.value;
+                },
+                onclear: () => {
+                  searchQuery = '';
+                },
+              }),
 
               // Filter subheader
               m('.mail-filter-row', [
-                m('.mail-filter-tabs', [
-                  m(
-                    'button.mail-filter-pill[type=button]',
+                canFilterUnread && m(widget.Segmented, {
+                  class: 'mail-filter-tabs',
+                  ariaLabel: 'Filter messages',
+                  value: filterUnreadOnly ? 'unread' : 'all',
+                  options: [
+                    { id: 'all', label: 'All' },
                     {
-                      class: !filterUnreadOnly ? 'active' : '',
-                      onclick: () => {
-                        filterUnreadOnly = false;
-                      },
+                      id: 'unread',
+                      label: 'Unread',
+                      badge:
+                        activeTab === 'inbox' && Messages.unreadCount() > 0
+                          ? Messages.unreadCount()
+                          : undefined,
                     },
-                    'All'
-                  ),
-                  m(
-                    'button.mail-filter-pill[type=button]',
-                    {
-                      class: filterUnreadOnly ? 'active' : '',
-                      onclick: () => {
-                        filterUnreadOnly = true;
-                      },
-                    },
-                    [
-                      'Unread',
-                      activeTab === 'inbox' && Messages.unreadCount() > 0 &&
-                        m('span.mail-unread-pill-count', Messages.unreadCount()),
-                    ]
-                  ),
-                ]),
+                  ],
+                  onSelect: (id) => {
+                    filterUnreadOnly = id === 'unread';
+                  },
+                }),
                 m(
                   'select.mail-tag-select',
                   {
@@ -475,61 +462,80 @@ const MailComponent = () => {
             m('.mail-list-body', [
               sortedList.length === 0
                 ? m('.mail-empty-state', [
-                    m('i.fas.fa-inbox.mail-empty-icon'),
+                    icon('inbox', { class: 'mail-empty-icon' }),
                     m('h4', 'No messages'),
-                    m('p', searchQuery || filterUnreadOnly || selectedTagFilter ? 'No emails match your filter criteria.' : 'This folder is currently empty.'),
+                    m(
+                      'p',
+                      searchQuery || filterUnreadOnly || selectedTagFilter
+                        ? 'No emails match your filter criteria.'
+                        : 'This folder is currently empty.'
+                    ),
                   ])
                 : viewMode === 'cards'
-                ? (() => {
-                    if (cardPageTab !== activeTab) {
-                      cardPageTab = activeTab;
-                      cardPage = 0;
-                    }
-                    const totalCardPages = Math.ceil(sortedList.length / CARD_PAGE_SIZE) || 1;
-                    if (cardPage >= totalCardPages) cardPage = totalCardPages - 1;
-                    const pageStart = cardPage * CARD_PAGE_SIZE;
-                    const pagedCards = sortedList.slice(pageStart, pageStart + CARD_PAGE_SIZE);
-                    return [
+                  ? (() => {
+                      if (cardPageTab !== activeTab) {
+                        cardPageTab = activeTab;
+                        cardPage = 0;
+                      }
+                      const totalCardPages = Math.ceil(sortedList.length / CARD_PAGE_SIZE) || 1;
+                      if (cardPage >= totalCardPages) cardPage = totalCardPages - 1;
+                      const pageStart = cardPage * CARD_PAGE_SIZE;
+                      const pagedCards = sortedList.slice(pageStart, pageStart + CARD_PAGE_SIZE);
+                      return [
+                        m(
+                          '.mail-cards-container',
+                          pagedCards.map((msg) =>
+                            m(util.MessageCard, {
+                              key: msg.msgId,
+                              msg,
+                              isSelected: msg.msgId === activeMsgId,
+                              category: activeTab,
+                              onSelect: (id) => selectMessage(id),
+                            })
+                          )
+                        ),
+                        sortedList.length > CARD_PAGE_SIZE &&
+                          m('.mail-cards-pagination', [
+                            m(
+                              'button.is-icon[type=button]',
+                              {
+                                disabled: cardPage === 0,
+                                onclick: () => {
+                                  cardPage -= 1;
+                                },
+                              },
+                              icon('chevron-left')
+                            ),
+                            m('span', `${cardPage + 1} / ${totalCardPages}`),
+                            m(
+                              'button.is-icon[type=button]',
+                              {
+                                disabled: cardPage >= totalCardPages - 1,
+                                onclick: () => {
+                                  cardPage += 1;
+                                },
+                              },
+                              icon('chevron-right')
+                            ),
+                          ]),
+                      ];
+                    })()
+                  : m(
+                      util.Table,
+                      { category: activeTab },
                       m(
-                        '.mail-cards-container',
-                        pagedCards.map((msg) =>
-                          m(util.MessageCard, {
+                        'tbody',
+                        sortedList.map((msg) =>
+                          m(util.MessageSummary, {
                             key: msg.msgId,
-                            msg,
-                            isSelected: msg.msgId === activeMsgId,
+                            details: msg,
                             category: activeTab,
+                            isSelected: msg.msgId === activeMsgId,
                             onSelect: (id) => selectMessage(id),
                           })
                         )
-                      ),
-                      sortedList.length > CARD_PAGE_SIZE && m('.mail-cards-pagination', [
-                        m('button[type=button]', {
-                          disabled: cardPage === 0,
-                          onclick: () => { cardPage -= 1; },
-                        }, m('i.fas.fa-chevron-left')),
-                        m('span', `${cardPage + 1} / ${totalCardPages}`),
-                        m('button[type=button]', {
-                          disabled: cardPage >= totalCardPages - 1,
-                          onclick: () => { cardPage += 1; },
-                        }, m('i.fas.fa-chevron-right')),
-                      ]),
-                    ];
-                  })()
-                : m(
-                    util.Table,
-                    m(
-                      'tbody',
-                      sortedList.map((msg) =>
-                        m(util.MessageSummary, {
-                          key: msg.msgId,
-                          details: msg,
-                          category: activeTab,
-                          isSelected: msg.msgId === activeMsgId,
-                          onSelect: (id) => selectMessage(id),
-                        })
                       )
-                    )
-                  ),
+                    ),
             ]),
           ]
         ),
@@ -571,7 +577,7 @@ const MailComponent = () => {
             title: 'Compose Mail',
             onclick: () => setShowCompose(true),
           },
-          m('i.fas.fa-pen')
+          icon('pen')
         ),
 
         // Compose Modal Overlay
@@ -581,7 +587,9 @@ const MailComponent = () => {
             m(
               '.composePopup',
               m(compose, { msgType: 'compose', setShowCompose }),
-              m('button.red.close-btn', { onclick: () => setShowCompose(false) }, m('i.fas.fa-times'))
+              m('button.red.close-btn', {
+                onclick: () => compose.requestClose(() => setShowCompose(false)),
+              }, icon('times'))
             )
           ),
       ]);

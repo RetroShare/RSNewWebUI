@@ -1,0 +1,123 @@
+@use '../abstracts' as *;
+
+// -----------------------------------------------------------------------------
+// The page header.
+//
+// One row at the top of a content panel: what this screen is on the left, what
+// you can do to it on the right. Optionally a sentence under the title, and an
+// optional mark before it.
+//
+// It replaces five different arrangements. Files put the title and its search
+// on one row; Forums, Boards and Channels split them into two and put the
+// *actions* row above the title; Config had no page title at all; Statistics
+// and Debug each hand-rolled a richer header with a mark and a description.
+// Those are all the same object with different parts present.
+//
+// No rule underneath. The header is followed by the content it names, and
+// space says that more quietly than a line does.
+// -----------------------------------------------------------------------------
+
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s4);
+  flex: none;
+  margin-bottom: var(--s4);
+  //  Wrap on the space there is, not on the width of the window. Every one of
+  //  these sits to the right of a 250px rail, so the header runs out of room
+  //  hundreds of pixels before a viewport breakpoint would say so -- which is
+  //  how Debug's three buttons and the Channels search both ended up hanging
+  //  off the side at 900px.
+  flex-wrap: wrap;
+
+  &__group {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s3);
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  //  Sits on the title's cap height, not the block's middle, so a two line
+  //  header does not push it down.
+  &__group > .back-button {
+    margin-top: -3px;
+  }
+
+  //  The mark is a quiet identifier, not an illustration: it matches the
+  //  title's cap height rather than sitting in a coloured tile.
+  &__mark {
+    flex: none;
+    margin-top: 2px;
+    color: var(--ink-dim);
+
+    > .icon { width: 22px; height: 22px; }
+  }
+
+  &__text {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--t-h2);
+    font-weight: var(--w-body);
+    line-height: 1.2;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+
+  &__lead {
+    margin: var(--s1) 0 0;
+    font-size: var(--t-row);
+    line-height: 1.45;
+    color: var(--ink-dim);
+    overflow-wrap: anywhere;
+  }
+
+  //  Actions keep the title's baseline rather than centring against a block
+  //  that may be one line or two.
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    min-width: 0;
+
+    //  A filter field in a header is a fixed-width control, not something
+    //  that grows to whatever the row leaves. Sized once, here, so Boards,
+    //  Channels and Forums cannot drift apart again.
+    > .search-field {
+      flex: none;
+      width: 240px;
+      max-width: 100%;
+    }
+  }
+}
+
+@media (max-width: 700px) {
+  .page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s3);
+
+    &__actions {
+      flex-wrap: wrap;
+
+      > .search-field { flex: 1 1 100%; width: auto; }
+    }
+  }
+
+  .group-list-head .page-head__actions {
+    flex-wrap: nowrap;
+
+    > .search-field {
+      order: -1;
+      flex: 1 1 auto;
+      width: auto;
+    }
+  }
+}

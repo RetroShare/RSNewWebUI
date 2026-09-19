@@ -1,0 +1,124 @@
+@use '../abstracts' as *;
+
+// -----------------------------------------------------------------------------
+// The group list.
+//
+// Forums and Channels list the same thing: a group you can open, how much is
+// in it, and when it last moved. One table for both.
+// -----------------------------------------------------------------------------
+
+.group-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  thead tr {
+    border-bottom: 1px solid var(--line);
+  }
+
+  th {
+    padding: var(--s2);
+    color: var(--ink-dim);
+    //  The same size as the rows it names. At --t-label it read as a caption
+    //  rather than as the head of the column.
+    font-size: var(--t-row);
+    font-weight: var(--w-label);
+    text-align: left;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--line-soft);
+    cursor: pointer;
+    transition: background-color .15s ease;
+  }
+
+  tbody tr:hover {
+    background-color: var(--ground);
+  }
+
+  tr.hidden {
+    display: none;
+  }
+
+  //  The base table stylesheet centres cells. A list of names reads down its
+  //  left edge.
+  td {
+    padding: var(--s3) var(--s2);
+    font-size: var(--t-row);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  //  The flex box is inside the cell, never the cell itself: a flex `td` drops
+  //  out of the table's columns and the header stops lining up with the rows.
+  .group-row__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    min-width: 0;
+  }
+
+  .group-row__mark {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--glyph);
+    height: var(--glyph);
+    border-radius: var(--r-sm);
+    //  Same tint as a selected rail item. --select-faint sat at 1.05:1 against
+    //  the row and read as nothing.
+    background: var(--select-soft);
+    color: var(--brand-deep);
+  }
+
+  .group-row__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .group-row__title {
+    overflow: hidden;
+    color: var(--ink);
+    font-weight: var(--w-label);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* One line of it. The full text is on the group's own page. */
+  .group-row__desc {
+    overflow: hidden;
+    color: var(--ink-dim);
+    font-size: var(--t-meta);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  //  Same ink as Last post beside it: both are facts about the group, not the
+  //  group's name.
+  .group-row__posts {
+    width: 6rem;
+    color: var(--ink-dim);
+    font-size: var(--t-meta);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .group-row__activity {
+    width: 12rem;
+    color: var(--ink-dim);
+    font-size: var(--t-meta);
+    white-space: nowrap;
+  }
+}
+
+/* Two columns is all a phone fits. The count goes; the date stays, since it is
+ * what tells you whether the group is alive. */
+@media (max-width: 700px) {
+  .group-table {
+    table-layout: auto;
+
+    .group-row__posts { display: none; }
+    .group-row__activity { width: auto; font-size: var(--t-label); }
+  }
+}
