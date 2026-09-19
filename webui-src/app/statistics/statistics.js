@@ -2,6 +2,7 @@ const m = require('mithril');
 const rs = require('rswebui');
 const NetworkData = require('network/network_data');
 const Bandwidth = require('statistics/bandwidth');
+const Turtle = require('statistics/turtle');
 const icon = require('icon');
 const widget = require('widgets');
 
@@ -154,10 +155,11 @@ function TrafficPanel() {
   };
 }
 
-// Navigation sections — Traffic and Bandwidth are implemented
+// Navigation sections — Traffic, Bandwidth, and Turtle Router are implemented
 const NAV_SECTIONS = [
   { id: 'traffic', label: 'Traffic', icon: 'chart-pie', description: 'Live traffic distribution reported by RetroShare Core.' },
   { id: 'bandwidth', label: 'Bandwidth', icon: 'tachometer-alt', description: 'Real-time bandwidth rates and peer throughput.' },
+  { id: 'turtle', label: 'Turtle Router', icon: 'shield-alt', description: 'Anonymous multi-hop turtle tunnels, requests and traffic.' },
 ];
 
 function PlaceholderSection() {
@@ -243,6 +245,8 @@ module.exports = {
       vnode.state.activeSection = id;
       if (id === 'traffic') {
         vnode.state.load();
+      } else if (id === 'turtle') {
+        Turtle.load();
       }
     };
 
@@ -266,9 +270,12 @@ module.exports = {
 
     // Refresh handler based on active section
     const isBandwidth = activeSection.id === 'bandwidth';
-    const isLoading = isBandwidth ? Bandwidth.loading : vnode.state.loading;
+    const isTurtle = activeSection.id === 'turtle';
+    const isLoading = isTurtle ? Turtle.loading : (isBandwidth ? Bandwidth.loading : vnode.state.loading);
     const handleRefresh = () => {
-      if (isBandwidth) {
+      if (isTurtle) {
+        Turtle.load();
+      } else if (isBandwidth) {
         Bandwidth.load();
       } else {
         vnode.state.load();
@@ -290,6 +297,8 @@ module.exports = {
       ];
     } else if (activeSection.id === 'bandwidth') {
       sectionContent = m(Bandwidth);
+    } else if (activeSection.id === 'turtle') {
+      sectionContent = m(Turtle);
     } else {
       sectionContent = m(PlaceholderSection, { section: activeSection });
     }
