@@ -1,0 +1,56 @@
+# ------------------------------------------------------------------------ *\
+# mk/build-app.cmake
+# This file is part of RetroShare-WebUI
+#
+# Copyright (C) 2026      David Bears <dbear4q@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# ------------------------------------------------------------------------ */
+
+cmake_minimum_required(VERSION 3.0...4.4)
+
+unset(SOURCES)
+set(i 0)
+set(active FALSE)
+while(i LESS CMAKE_ARGC)
+	if(active)
+		list(APPEND SOURCES ${CMAKE_ARGV${i}})
+	elseif(CMAKE_ARGV${i} STREQUAL --)
+		set(active TRUE)
+	endif()
+	math(EXPR i "${i} + 1")
+endwhile()
+
+file(READ ${TEMPLATE} template.js)
+set(app.js "${template.js}")
+
+foreach(source IN LISTS SOURCES)
+	if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
+		cmake_path(RELATIVE_PATH source
+			BASE_DIRECTORY ${BASEDIR}
+			OUTPUT_VARIABLE name
+		)
+	else()
+		file(RELATIVE_PATH name ${BASEDIR} ${source})
+	endif()
+	string(REGEX REPLACE "\\.js\$" "" name ${name})
+	file(READ ${source} source.js)
+	string(APPEND app.js
+		"require.register(\"${name}\", function(exports, require, module) {\n"
+		"${source.js}"
+		"});\n"
+	)
+endforeach()
+
+file(WRITE ${OUTPUT} "${app.js}")
