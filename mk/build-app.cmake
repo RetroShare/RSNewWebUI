@@ -36,10 +36,14 @@ file(READ ${TEMPLATE} template.js)
 set(app.js "${template.js}")
 
 foreach(source IN LISTS SOURCES)
-	cmake_path(RELATIVE_PATH source
-		BASE_DIRECTORY ${BASEDIR}
-		OUTPUT_VARIABLE name
-	)
+	if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
+		cmake_path(RELATIVE_PATH source
+			BASE_DIRECTORY ${BASEDIR}
+			OUTPUT_VARIABLE name
+		)
+	else()
+		file(RELATIVE_PATH name ${BASEDIR} ${source})
+	endif()
 	string(REGEX REPLACE "\\.js\$" "" name ${name})
 	file(READ ${source} source.js)
 	string(APPEND app.js

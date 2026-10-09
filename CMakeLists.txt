@@ -40,39 +40,71 @@ add_custom_target(${PROJECT_NAME} ALL)
 
 # copy files verbatim from source to build
 function(cp src dst)
+	if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
+		cmake_path(IS_RELATIVE dst isrel)
+		if(NOT isrel)
+			message(SEND_ERROR "copy destination name must be relative: ${dst}")
+		endif()
+	endif()
 	string(REPLACE / _ tgt WebUI_${dst})
-	cmake_path(GET dst PARENT_PATH install_dst)
-	set(dst_rel ${dst})
-	set(src_rel ${src})
-	cmake_path(ABSOLUTE_PATH src BASE_DIRECTORY ${WEBUI_SRC_DIR})
-	cmake_path(ABSOLUTE_PATH dst BASE_DIRECTORY ${WEBUI_BUILD_DIR})
+	if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
+		cmake_path(ABSOLUTE_PATH src
+			BASE_DIRECTORY ${WEBUI_SRC_DIR}
+			OUTPUT_VARIABLE src_source
+		)
+		cmake_path(ABSOLUTE_PATH dst
+			BASE_DIRECTORY ${WEBUI_BUILD_DIR}
+			OUTPUT_VARIABLE dst_build
+		)
+		cmake_path(ABSOLUTE_PATH dst
+			BASE_DIRECTORY ${WEBUI_INSTALL_DIR}
+			OUTPUT_VARIABLE dst_install
+		)
+		cmake_path(GET dst_install PARENT_PATH dst_install_dir)
+	else()
+		get_filename_component(src_source ${src} ABSOLUTE
+			BASE_DIR ${WEBUI_SRC_DIR}
+		)
+		get_filename_component(dst_build ${dst} ABSOLUTE
+			BASE_DIR ${WEBUI_BUILD_DIR}
+		)
+		get_filename_component(dst_install ${dst} ABSOLUTE
+			BASE_DIR ${WEBUI_INSTALL_DIR}
+		)
+		get_filename_component(dst_install_dir ${dst_install} DIRECTORY)
+	endif()
 	if(CMAKE_VERSION VERSION_GREATER_EQUAL 4.2)
 		set(_if_newer _if_newer)
 	else()
 		set(_if_newer)
 	endif()
-	if(IS_DIRECTORY ${src})
+	if(IS_DIRECTORY ${src_source})
 		set(cmd copy_directory${_if_newer})
-		file(GLOB_RECURSE files CONFIGURE_DEPENDS FOLLOW_SYMLINKS RELATIVE ${src} ${src}/*)
-		list(TRANSFORM files PREPEND ${src}/ OUTPUT_VARIABLE dep)
-		list(TRANSFORM files PREPEND ${dst}/ OUTPUT_VARIABLE out)
+		file(GLOB_RECURSE files
+			CONFIGURE_DEPENDS
+			FOLLOW_SYMLINKS
+			RELATIVE ${src_source}
+			${src_source}/*
+		)
+		list(TRANSFORM files PREPEND ${src_source}/ OUTPUT_VARIABLE depends)
+		list(TRANSFORM files PREPEND ${dst_build}/ OUTPUT_VARIABLE output)
 		set(install_type DIRECTORY)
 	else()
 		set(cmd copy${_if_newer})
-		set(dep ${src})
-		set(out ${dst})
+		set(depends ${src_source})
+		set(output ${dst_build})
 		set(install_type FILES)
 	endif()
 	add_custom_command(
-		OUTPUT ${out}
-		COMMAND ${CMAKE_COMMAND} -E ${cmd} ${src} ${dst}
-		DEPENDS ${dep}
-		COMMENT "Generating ${dst_rel}"
+		OUTPUT ${output}
+		COMMAND ${CMAKE_COMMAND} -E ${cmd} ${src_source} ${dst_build}
+		DEPENDS ${depends}
+		COMMENT "Generating ${dst}"
 	)
-	add_custom_target(${tgt} DEPENDS ${out})
+	add_custom_target(${tgt} DEPENDS ${output})
 	add_dependencies(${PROJECT_NAME} ${tgt})
-	install(${install_type} ${dst}
-		DESTINATION ${WEBUI_INSTALL_DIR}/${install_dst}
+	install(${install_type} ${dst_build}
+		DESTINATION ${dst_install_dir}
 	)
 endfunction()
 cp(index.html index.html)
