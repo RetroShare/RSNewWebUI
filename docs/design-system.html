@@ -1,0 +1,1201 @@
+<title>RetroShare Design System</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+  /* =====================================================================
+     Every colour is taken from RetroShare's own assets; the source file is
+     cited beside each group. This page is a specimen sheet for a
+     light-default product, so it commits to light and paints explicitly.
+     ===================================================================== */
+  :root {
+    /* -- Ground and structure. Standard_Light.qss ---------------------- */
+    --ground:      #fafafa;
+    --surface:     #ffffff;
+    --sunken:      #f0f2f3;
+    --line:        #c9cdd0;   /* 102 uses in the Qt theme */
+    --line-soft:   #e8e8e8;
+
+    /* -- Ink. Deep navy-black, not grey-black. ------------------------- */
+    --ink:         #19232d;
+    --ink-body:    #3d4a55;
+    --ink-dim:     #788d9c;
+    --ink-faint:   #acb1b6;
+
+    /* -- Brand. The logo gradient and its primary. --------------------- */
+    --brand:       #118fcc;
+    --brand-deep:  #0e8ecb;
+    --brand-pale:  #abe3ff;
+    --accent:      #0099cc;
+
+    /* -- Reach: the brand gradient as an information scale. ------------ */
+    --reach-0:     #0e8ecb;
+    --reach-1:     #57b6e3;
+    --reach-2:     #9fcbff;
+    --reach-off:   #acb1b6;
+
+    /* -- Selection. The Qt idiom: a pale sky band across the row. ------ */
+    --select:      #cde8ff;
+    --select-soft: #e6f2fd;
+    --select-edge: #73c7ff;
+
+    /* -- Status. Transfer and failure only, never chrome. -------------- */
+    --up:          #32cd32;
+    --down:        #cd3232;
+    --warn:        #dcdc41;
+
+    /* -- Type. Eight steps. Nothing else is legal. --------------------- */
+    --t-title: 30px;   /* page title, 700 */
+    --t-h2:    21px;   /* section heading, 700 */
+    --t-h3:    16px;   /* toolbar and sheet titles, 700 */
+    --t-body:  15px;   /* body, inputs, reading */
+    --t-row:   14px;   /* dense rows, list items, buttons */
+    --t-meta:  13px;   /* secondary metadata, hints */
+    --t-label: 12px;   /* field labels, timestamps */
+    --t-micro: 11px;   /* counts, tags, status pills — nothing else */
+
+    --sans: "Archivo", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --mono: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
+
+    --r-sm: 2px; --r-md: 4px; --r-full: 999px;
+
+    --touch: 44px;      /* minimum touch target, already $touch-target */
+    --rail: 52px;       /* sidebar, collapsed */
+    --rail-open: 208px; /* sidebar, expanded */
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--t-body);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .num, code, kbd { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  code { font-size: .92em; color: #4a5a67; }
+
+  /* ---------------------------------------------------------- page frame */
+
+  .wrap { max-width: 1060px; margin: 0 auto; padding: var(--s5) var(--s4) 88px; }
+
+  header.top { display: flex; gap: var(--s4); align-items: flex-start; padding-block: var(--s4) var(--s5); border-bottom: 2px solid var(--ink); }
+  header.top .mark { flex: none; }
+  header.top h1 { margin: 0 0 var(--s2); font-size: var(--t-title); font-weight: 700; letter-spacing: -.03em; text-wrap: balance; }
+  header.top p { max-width: 60ch; margin: 0; color: var(--ink-body); font-size: var(--t-h3); font-weight: 400; line-height: 1.5; }
+  header.top .stamp { margin-top: var(--s3); font-family: var(--mono); font-size: var(--t-label); color: var(--ink-dim); }
+
+  section { padding-block: var(--s6); border-bottom: 1px solid var(--line); }
+  section:last-of-type { border-bottom: 0; }
+
+  h2 { margin: 0 0 var(--s2); font-size: var(--t-h2); font-weight: 700; letter-spacing: -.02em; }
+  h3 { margin: var(--s5) 0 var(--s2); font-size: var(--t-meta); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-dim); }
+  .lede { max-width: 68ch; margin: 0 0 var(--s4); color: var(--ink-body); }
+  p { margin: 0 0 var(--s3); max-width: 68ch; color: var(--ink-body); }
+  p b, li b { color: var(--ink); }
+
+  .rule { max-width: 68ch; margin: var(--s4) 0; padding: var(--s3) var(--s4); border: 1px solid var(--line); border-left: 3px solid var(--brand); background: var(--surface); }
+  .rule b { display: block; margin-bottom: 2px; font-weight: 600; color: var(--ink); }
+  .rule span { color: var(--ink-body); font-size: var(--t-row); }
+
+  /* ------------------------------------------------------------- audit */
+
+  .audit { display: grid; grid-template-columns: repeat(auto-fit, minmax(152px, 1fr)); gap: 1px; margin-top: var(--s4); background: var(--line); border: 1px solid var(--line); }
+  .audit div { padding: var(--s3); background: var(--surface); }
+  .audit b { display: block; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 25px; font-weight: 500; letter-spacing: -.03em; color: var(--down); }
+  .audit span { font-size: var(--t-meta); color: var(--ink-dim); }
+
+  /* ------------------------------------------------------------ palette */
+
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .sw { display: flex; gap: var(--s3); align-items: center; padding: var(--s2) var(--s3); background: var(--surface); }
+  .sw i { width: 36px; height: 36px; flex: none; border: 1px solid rgba(25, 35, 45, .14); }
+  .sw div { min-width: 0; }
+  .sw b { display: block; font-size: var(--t-row); font-weight: 600; }
+  .sw code { display: block; font-size: var(--t-label); color: var(--ink-dim); }
+  .sw em { display: block; font-size: var(--t-label); font-style: normal; color: var(--ink-faint); }
+  .src { margin-top: var(--s2); font-family: var(--mono); font-size: var(--t-label); color: var(--ink-dim); line-height: 1.6; }
+
+  /* ------------------------------------------------------------ specimen */
+
+  .spec { margin-top: var(--s2); border: 1px solid var(--line); background: var(--surface); }
+  .spec__stage { padding: var(--s4); display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
+  .spec__stage--col { flex-direction: column; align-items: stretch; }
+  .spec__stage--flush { padding: 0; display: block; }
+  .spec__note { padding: var(--s2) var(--s3); border-top: 1px solid var(--line-soft); background: var(--ground); font-size: var(--t-meta); color: var(--ink-dim); }
+
+  /* =====================================================================
+     COMPONENTS — live CSS, not pictures of it.
+     ===================================================================== */
+
+  .b {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 30px; padding: 4px 11px;
+    border: 1px solid var(--line); border-radius: var(--r-sm);
+    background: linear-gradient(180deg, #ffffff, #f2f4f5);
+    color: var(--ink); font: inherit; font-size: var(--t-row);
+    cursor: pointer;
+  }
+  .b:hover { border-color: #a8b0b6; background: linear-gradient(180deg, #ffffff, #eaedef); }
+  .b:active { background: #e9ecee; }
+  .b[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+  .b--strong { border-color: var(--brand-deep); background: linear-gradient(180deg, #1a9ad6, var(--brand-deep)); color: #fff; font-weight: 500; }
+  .b--strong:hover { border-color: #0b7cb2; background: linear-gradient(180deg, #1490c9, #0b7cb2); }
+  .b--quiet { border-color: transparent; background: none; color: var(--ink-body); }
+  .b--quiet:hover { background: var(--sunken); border-color: transparent; }
+  .b--danger { border-color: #c08c8c; background: linear-gradient(180deg, #fff, #fbf0f0); color: #a82a2a; }
+  .b--danger:hover { border-color: var(--down); background: #f9e8e8; }
+  .b--icon { padding: 4px; width: 30px; justify-content: center; }
+  .b svg { width: 16px; height: 16px; flex: none; }
+
+  .f {
+    width: 100%; min-height: 30px; padding: 4px 8px;
+    border: 1px solid var(--line); border-radius: var(--r-sm);
+    background: var(--surface); color: var(--ink);
+    font: inherit; font-size: var(--t-body);
+  }
+  .f::placeholder { color: var(--ink-faint); }
+  .f:focus { border-color: var(--accent); outline: 2px solid var(--select-edge); outline-offset: -2px; }
+  .f[readonly] { background: var(--sunken); color: var(--ink-body); }
+  .f--mono { font-family: var(--mono); font-size: var(--t-row); }
+  .fieldrow { display: grid; grid-template-columns: 156px minmax(0, 1fr); gap: var(--s3); align-items: center; }
+  .fieldrow > label { font-size: var(--t-row); color: var(--ink-body); }
+  .hint { margin: 4px 0 0; font-size: var(--t-meta); color: var(--ink-dim); }
+  .check { display: inline-flex; align-items: center; gap: var(--s2); font-size: var(--t-body); cursor: pointer; }
+  .check input { accent-color: var(--brand); width: 15px; height: 15px; }
+
+  /* -- the row ------------------------------------------------------- */
+  .row {
+    display: flex; align-items: center; gap: var(--s3);
+    width: 100%; min-height: 38px; padding: 6px var(--s3);
+    border: 0; border-bottom: 1px solid var(--line-soft);
+    border-left: 2px solid transparent;
+    background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+  }
+  .row:hover { background: var(--select-soft); }
+  .row[aria-current="true"] { background: var(--select); border-left-color: var(--accent); }
+  .row__main { min-width: 0; flex: 1; }
+  .row__title { font-size: var(--t-row); font-weight: 600; letter-spacing: -.005em; color: var(--ink); }
+  .row--read .row__title { font-weight: 400; color: var(--ink-body); }
+  .row__sub { display: flex; align-items: center; gap: 6px; margin-top: 1px; font-size: var(--t-meta); color: var(--ink-dim); }
+  .row__meta { flex: none; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: var(--t-label); color: var(--ink-dim); }
+
+  /* -- reach --------------------------------------------------------- */
+  .dot { width: 8px; height: 8px; border-radius: var(--r-full); flex: none; }
+  .dot--0 { background: var(--reach-0); }
+  .dot--1 { background: var(--reach-1); }
+  .dot--2 { background: var(--reach-2); }
+  .dot--off { background: var(--reach-off); }
+  .reach { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-row); }
+  .reach--0 { color: var(--brand-deep); }
+  .reach--1 { color: #2f7d9b; }
+  .reach--2 { color: #5d7486; }
+  .reach--off { color: var(--ink-dim); }
+
+  /* -- count and tag: the two places --t-micro is legal --------------- */
+  .count {
+    display: inline-block; min-width: 18px; padding: 0 5px;
+    border-radius: var(--r-full); background: var(--ink-dim); color: #fff;
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: var(--t-micro); font-weight: 500; line-height: 18px; text-align: center;
+  }
+  .tag { display: inline-block; padding: 1px 7px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--sunken); font-size: var(--t-micro); font-weight: 500; color: var(--ink-body); }
+  .tag--reach { border-color: var(--select-edge); background: var(--select-soft); color: var(--brand-deep); }
+  .tag--up { border-color: #8cc98c; background: #eff8ef; color: #217a21; }
+  .tag--down { border-color: #d79a9a; background: #fbefef; color: #a82a2a; }
+
+  .av { width: 28px; height: 28px; flex: none; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--sunken); display: grid; place-items: center; font-size: var(--t-label); font-weight: 600; color: var(--ink-dim); }
+  .av--lg { width: 40px; height: 40px; font-size: var(--t-row); }
+
+  /* -- tabs ---------------------------------------------------------- */
+  .tabs { display: flex; gap: 2px; padding: 0 var(--s2); border-bottom: 1px solid var(--line); background: var(--ground); }
+  .tab {
+    min-height: 32px; padding: 5px 13px;
+    border: 1px solid transparent; border-bottom: 0; border-radius: var(--r-sm) var(--r-sm) 0 0;
+    background: none; color: var(--ink-body); font: inherit; font-size: var(--t-row); cursor: pointer;
+    margin-bottom: -1px;
+  }
+  .tab:hover { background: var(--select-soft); }
+  .tab[aria-selected="true"] { background: var(--surface); border-color: var(--line); color: var(--ink); font-weight: 600; }
+
+  .toolbar { display: flex; align-items: center; gap: var(--s2); min-height: 42px; padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line); background: linear-gradient(180deg, #ffffff, #f4f6f7); }
+  .toolbar__title { font-size: var(--t-h3); font-weight: 700; letter-spacing: -.01em; }
+  .toolbar__meta { font-family: var(--mono); font-size: var(--t-meta); color: var(--ink-dim); }
+  .toolbar__gap { margin-left: auto; }
+
+  .meterbar { height: 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--sunken); overflow: hidden; }
+  .meterbar i { display: block; height: 100%; background: linear-gradient(180deg, var(--reach-1), var(--brand-deep)); }
+
+  .empty { padding: var(--s6) var(--s4); text-align: center; }
+  .empty b { display: block; font-size: var(--t-h3); font-weight: 600; }
+  .empty span { display: block; max-width: 46ch; margin: var(--s1) auto var(--s3); font-size: var(--t-row); color: var(--ink-dim); }
+
+  .sheet { width: 100%; max-width: 430px; border: 1px solid #9aa3a9; border-radius: var(--r-md); background: var(--surface); box-shadow: 0 12px 32px rgba(25, 35, 45, .18); }
+  .sheet__head { padding: var(--s2) var(--s4); border-bottom: 1px solid var(--line); background: linear-gradient(180deg, #ffffff, #f2f4f5); border-radius: var(--r-md) var(--r-md) 0 0; }
+  .sheet__head b { font-size: var(--t-h3); font-weight: 700; }
+  .sheet__body { padding: var(--s4); display: flex; flex-direction: column; gap: var(--s3); }
+  .sheet__foot { padding: var(--s2) var(--s4); border-top: 1px solid var(--line); background: var(--ground); display: flex; gap: var(--s2); justify-content: flex-end; border-radius: 0 0 var(--r-md) var(--r-md); }
+
+  .prose { max-width: 68ch; font-size: var(--t-body); line-height: 1.65; color: var(--ink-body); }
+  .prose h4 { margin: 0 0 var(--s2); font-size: var(--t-h2); font-weight: 700; line-height: 1.28; letter-spacing: -.02em; color: var(--ink); }
+  .prose p { margin: 0 0 var(--s3); max-width: none; }
+
+  /* =========================================================== icons */
+
+  .iconwall { display: grid; grid-template-columns: repeat(auto-fill, minmax(94px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .ic { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: var(--s3) var(--s2); background: var(--surface); }
+  .ic svg { width: 22px; height: 22px; color: var(--ink); }
+  .ic span { font-size: var(--t-label); color: var(--ink-dim); }
+
+  .sizes { display: flex; align-items: flex-end; gap: var(--s5); }
+  .sizes > div { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .sizes span { font-family: var(--mono); font-size: var(--t-label); color: var(--ink-dim); }
+  .sizes svg { color: var(--ink); }
+
+  /* Duotone: the stroke stays ink, the fill layer carries the reach. */
+  .duo .duo-fill { opacity: .22; }
+  .duo--0 .duo-fill { fill: var(--reach-0); }
+  .duo--1 .duo-fill { fill: var(--reach-1); }
+  .duo--2 .duo-fill { fill: var(--reach-2); }
+  .duo--off .duo-fill { fill: var(--reach-off); }
+
+  /* ========================================================= sidebar */
+
+  .sbdemo { display: flex; min-height: 330px; border: 1px solid var(--line); background: var(--ground); overflow: hidden; }
+  .sb {
+    display: flex; flex-direction: column;
+    width: var(--rail-open); flex: none;
+    border-right: 1px solid var(--line);
+    background: linear-gradient(180deg, #ffffff, #f6f8f9);
+    transition: width 160ms ease;
+  }
+  .sb[data-collapsed="true"] { width: var(--rail); }
+  @media (prefers-reduced-motion: reduce) { .sb { transition: none; } }
+
+  .sb__id { display: flex; align-items: center; gap: var(--s2); height: 46px; padding: 0 var(--s2); border-bottom: 1px solid var(--line-soft); }
+  .sb__id svg { width: 26px; height: 26px; flex: none; }
+  .sb__id b { font-size: var(--t-row); font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
+  .sb[data-collapsed="true"] .sb__id { justify-content: center; }
+  .sb[data-collapsed="true"] .sb__id b { display: none; }
+
+  .sb__nav { display: flex; flex-direction: column; gap: 1px; padding: var(--s2) 6px; overflow-y: auto; flex: 1; }
+
+  .sbitem {
+    position: relative;
+    display: flex; align-items: center; gap: var(--s2);
+    min-height: 34px; padding: 0 8px;
+    border: 0; border-radius: var(--r-sm);
+    background: none; color: var(--ink-body); font: inherit; font-size: var(--t-row);
+    text-align: left; cursor: pointer; white-space: nowrap;
+  }
+  .sbitem svg { width: 19px; height: 19px; flex: none; }
+  .sbitem:hover { background: var(--select-soft); color: var(--ink); }
+  .sbitem[aria-current="true"] { background: var(--select); color: var(--ink); font-weight: 600; box-shadow: inset 2px 0 0 var(--accent); }
+  .sbitem__label { flex: 1; min-width: 0; overflow: hidden; }
+  .sbitem .count { flex: none; }
+  .sb[data-collapsed="true"] .sbitem { justify-content: center; padding: 0; }
+  .sb[data-collapsed="true"] .sbitem__label { display: none; }
+  /* Collapsed, the count reparents to a corner dot so it survives. */
+  .sb[data-collapsed="true"] .count {
+    position: absolute; top: 2px; right: 5px;
+    min-width: 15px; padding: 0 3px; line-height: 15px;
+    font-size: 10px; background: var(--down);
+  }
+
+  /* Rail mode has no labels, so every item needs a name on hover/focus. */
+  .sbtip {
+    position: absolute; left: calc(100% + 6px); top: 50%; transform: translateY(-50%);
+    z-index: 3; display: none; width: max-content;
+    padding: 3px 8px; border: 1px solid var(--line); border-radius: var(--r-sm);
+    background: var(--ink); color: #fff; font-size: var(--t-label);
+  }
+  .sb[data-collapsed="true"] .sbitem:hover .sbtip,
+  .sb[data-collapsed="true"] .sbitem:focus-visible .sbtip { display: block; }
+
+  .sb__foot { border-top: 1px solid var(--line-soft); padding: 6px; }
+  .sb__toggle {
+    display: flex; align-items: center; gap: var(--s2);
+    width: 100%; min-height: 32px; padding: 0 8px;
+    border: 0; border-radius: var(--r-sm); background: none;
+    color: var(--ink-dim); font: inherit; font-size: var(--t-meta);
+    cursor: pointer; white-space: nowrap;
+  }
+  .sb__toggle:hover { background: var(--sunken); color: var(--ink); }
+  .sb__toggle svg { width: 18px; height: 18px; flex: none; transition: transform 160ms ease; }
+  .sb[data-collapsed="true"] .sb__toggle { justify-content: center; padding: 0; }
+  .sb[data-collapsed="true"] .sb__toggle svg { transform: rotate(180deg); }
+  .sb[data-collapsed="true"] .sb__toggle span { display: none; }
+
+  .sbstage { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .sbstage__body { flex: 1; padding: var(--s4); font-size: var(--t-meta); color: var(--ink-dim); }
+
+  /* ------------------------------------------------------------ layouts */
+
+  .frames { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--s3); }
+  .frame { border: 1px solid var(--line); background: var(--surface); }
+  .frame__d { display: grid; height: 152px; gap: 1px; background: var(--line); padding: 1px; }
+  .frame__d span { background: var(--ground); display: grid; place-items: center; font-size: var(--t-label); color: var(--ink-dim); text-align: center; padding: 2px; }
+  .frame__d span.hot { background: var(--select); color: var(--brand-deep); font-weight: 600; }
+  .frame__d span.rail { background: #eef1f3; }
+  .frame__cap { padding: var(--s2) var(--s3); border-top: 1px solid var(--line); }
+  .frame__cap b { display: block; font-size: var(--t-row); font-weight: 600; }
+  .frame__cap span { font-size: var(--t-meta); color: var(--ink-dim); }
+
+  .f-shell { grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 24px; }
+  .f-shell > :nth-child(1) { grid-row: 1 / 3; }
+  .f-shell > :nth-child(3) { grid-column: 1 / 3; }
+  .f-list  { grid-template-columns: 40px 80px minmax(0, 1fr); grid-template-rows: 20px minmax(0, 1fr) 24px; }
+  .f-list  > :nth-child(1) { grid-row: 1 / 3; }
+  .f-list  > :nth-child(2) { grid-column: 2 / 4; }
+  .f-list  > :nth-child(5) { grid-column: 1 / 4; }
+  .f-table { grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: 20px minmax(0, 1fr) 24px; }
+  .f-table > :nth-child(1) { grid-row: 1 / 3; }
+  .f-table > :nth-child(4) { grid-column: 1 / 3; }
+  .f-cfg   { grid-template-columns: 40px 74px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 24px; }
+  .f-cfg   > :nth-child(4) { grid-column: 1 / 4; }
+
+  /* ----------------------------------------------------- breakpoints */
+
+  .bp { width: 100%; border-collapse: collapse; font-size: var(--t-meta); background: var(--surface); }
+  .bp th { padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line); text-align: left; font-size: var(--t-label); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-dim); white-space: nowrap; }
+  .bp td { padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line-soft); vertical-align: top; color: var(--ink-body); }
+  .bp td:first-child { font-family: var(--mono); font-size: var(--t-label); color: var(--brand-deep); font-weight: 500; white-space: nowrap; }
+
+  /* ------------------------------------------------------------- bridge */
+
+  .bridge { display: flex; align-items: stretch; gap: var(--s4); height: 68px; padding: 0 var(--s3); border: 1px solid var(--line); background: linear-gradient(180deg, #ffffff, #f4f6f7); }
+  .bstat { display: flex; flex-direction: column; justify-content: center; flex: none; }
+  .bstat b { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: var(--t-h3); font-weight: 500; letter-spacing: -.02em; }
+  .bstat b small { font-size: var(--t-label); color: var(--ink-dim); }
+  .bstat span { font-size: var(--t-label); color: var(--ink-dim); }
+  .strip { flex: 1; min-width: 0; display: flex; align-items: flex-end; gap: 3px; padding: var(--s3) 0; overflow: hidden; }
+  .mtr { flex: 1 1 0; min-width: 3px; max-width: 11px; height: 100%; display: flex; align-items: flex-end; }
+  .mtr i { display: block; width: 100%; border-radius: 1px; transition: height 900ms cubic-bezier(.4, 0, .3, 1); }
+  .mtr--0 i { background: var(--reach-0); }
+  .mtr--1 i { background: var(--reach-1); }
+  .mtr--2 i { background: var(--reach-2); }
+  .mtr--off i { background: #d8dcde; height: 2px !important; }
+  @media (prefers-reduced-motion: reduce) { .mtr i { transition: none; } }
+
+  /* ---------------------------------------------------------- migration */
+
+  .map { width: 100%; border-collapse: collapse; font-size: var(--t-meta); background: var(--surface); }
+  .map th { padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line); text-align: left; font-size: var(--t-label); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-dim); }
+  .map td { padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line-soft); vertical-align: top; color: var(--ink-body); }
+  .map td:first-child { font-family: var(--mono); font-size: var(--t-label); }
+  .map td:nth-child(2) { font-family: var(--mono); font-size: var(--t-label); color: var(--brand-deep); white-space: nowrap; font-weight: 500; }
+  .scroll { overflow-x: auto; border: 1px solid var(--line); }
+
+  .steps { max-width: 68ch; margin: 0; padding: 0; list-style: none; counter-reset: s; }
+  .steps li { position: relative; padding: 0 0 var(--s3) 30px; counter-increment: s; color: var(--ink-body); }
+  .steps li::before {
+    content: counter(s);
+    position: absolute; left: 0; top: 3px;
+    width: 19px; height: 19px; border-radius: var(--r-full);
+    background: var(--brand); color: #fff;
+    font-family: var(--mono); font-size: var(--t-micro); line-height: 19px; text-align: center;
+  }
+  .steps li.done::before { background: var(--ink-faint); }
+  .steps b { font-weight: 600; color: var(--ink); }
+
+  /* ---------------------------------------------------------- responsive */
+
+  @media (max-width: 700px) {
+    .wrap { padding: var(--s4) var(--s4) 56px; }
+    header.top { flex-direction: column; gap: var(--s3); }
+    header.top h1 { font-size: 25px; }
+    header.top p { font-size: var(--t-body); }
+    .fieldrow { grid-template-columns: minmax(0, 1fr); gap: var(--s1); }
+    .bridge { gap: var(--s3); }
+    .bstat--rate { display: none; }
+    .sbdemo { min-height: 280px; }
+    .sizes { gap: var(--s4); }
+  }
+</style>
+
+<!-- ===================== icon sprite ======================= -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <g id="i-home"><path class="duo-fill" d="M4 10.5 12 4l8 6.5V20H4z"/><path d="M4 10.5 12 4l8 6.5V20H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.5 20v-5.5h5V20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></g>
+    <g id="i-network"><circle class="duo-fill" cx="12" cy="5.5" r="2.6"/><circle class="duo-fill" cx="5.5" cy="18" r="2.6"/><circle class="duo-fill" cx="18.5" cy="18" r="2.6"/><path d="M10.8 7.8 6.7 15.7M13.2 7.8l4.1 7.9M8.1 18h7.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="5.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="5.5" cy="18" r="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="18.5" cy="18" r="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/></g>
+    <g id="i-people"><circle class="duo-fill" cx="9.5" cy="8.5" r="3.2"/><circle cx="9.5" cy="8.5" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.6 19c.6-3.1 3-5 5.9-5s5.3 1.9 5.9 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M16 5.6a3.2 3.2 0 0 1 0 5.8M17.5 14.4c1.7.7 2.7 2.3 3 4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+    <g id="i-chat"><path class="duo-fill" d="M4 6.5h16v10H12l-4.5 3.5v-3.5H4z"/><path d="M4 6.5h16v10H12l-4.5 3.5v-3.5H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></g>
+    <g id="i-mail"><path class="duo-fill" d="M3.5 6h17v12h-17z"/><path d="M3.5 6h17v12h-17z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m3.5 7 8.5 6 8.5-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></g>
+    <g id="i-files"><path class="duo-fill" d="M3.5 6.5h6l2 2.5h9v10h-17z"/><path d="M3.5 6.5h6l2 2.5h9v10h-17z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></g>
+    <g id="i-channels"><rect class="duo-fill" x="3.5" y="8.5" width="17" height="11" rx="2"/><rect x="3.5" y="8.5" width="17" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m8.5 8.5 3.5-4 3.5 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g id="i-forums"><path class="duo-fill" d="M3.5 5h12v9h-7l-5 3.5z"/><path d="M3.5 5h12v9h-7l-5 3.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.5 14v2.5h7l5 3.5V9h-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></g>
+    <g id="i-boards"><circle class="duo-fill" cx="12" cy="12" r="8.3"/><circle cx="12" cy="12" r="8.3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.7 12h16.6M12 3.7c2 2.3 3 5.1 3 8.3s-1 6-3 8.3c-2-2.3-3-5.1-3-8.3s1-6 3-8.3z" fill="none" stroke="currentColor" stroke-width="1.7"/></g>
+    <g id="i-stats"><path class="duo-fill" d="M12 3.7A8.3 8.3 0 0 1 20.3 12H12z"/><circle cx="12" cy="12" r="8.3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 3.7V12h8.3" fill="none" stroke="currentColor" stroke-width="1.7"/></g>
+    <g id="i-config"><path class="duo-fill" d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="0"/><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="9" cy="7" r="2.3" fill="var(--surface)" stroke="currentColor" stroke-width="1.7"/><circle cx="15.5" cy="12" r="2.3" fill="var(--surface)" stroke="currentColor" stroke-width="1.7"/><circle cx="7.5" cy="17" r="2.3" fill="var(--surface)" stroke="currentColor" stroke-width="1.7"/></g>
+    <g id="i-debug"><rect class="duo-fill" x="7.5" y="7" width="9" height="11" rx="4.5"/><rect x="7.5" y="7" width="9" height="11" rx="4.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M9.5 5.5 11 7.4M14.5 5.5 13 7.4M7.5 10.5H4.5M16.5 10.5h3M7.5 15H4.5M16.5 15h3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+    <g id="i-chevron"><path d="M14.5 6.5 9 12l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g id="i-plus"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></g>
+    <g id="i-search"><circle class="duo-fill" cx="11" cy="11" r="6"/><circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m15.4 15.4 4.1 4.1" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></g>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+  <header class="top">
+    <svg class="mark" width="54" height="54" viewBox="0 0 100 100" aria-label="RetroShare">
+      <defs>
+        <linearGradient id="rsg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#abe3ff"/><stop offset="1" stop-color="#0e8ecb"/>
+        </linearGradient>
+      </defs>
+      <g fill="none" stroke="url(#rsg)" stroke-width="7" stroke-linecap="round">
+        <path d="M50 27 A23 23 0 0 1 70 62"/><path d="M70 62 A23 23 0 0 1 30 62"/><path d="M30 62 A23 23 0 0 1 50 27"/>
+      </g>
+      <g fill="url(#rsg)">
+        <circle cx="50" cy="20" r="11"/><circle cx="76" cy="68" r="11"/><circle cx="24" cy="68" r="11"/>
+      </g>
+    </svg>
+    <div>
+      <h1>RetroShare Design System</h1>
+      <p>One palette, type scale, icon set and component library for the web UI —
+      built from RetroShare's own brand assets and the official Qt light theme.</p>
+      <div class="stamp">Draft 3 · light default · measured against RSNewWebUI @ improvements_v2 (PR #121)</div>
+    </div>
+  </header>
+
+  <!-- ============================================================ audit -->
+  <section>
+    <h2>What we have today</h2>
+    <p class="lede">Counted across <code>webui-src/app/scss</code> and
+    <code>webui-src/app/**/*.js</code>, excluding vendor and font files.</p>
+
+    <div class="audit">
+      <div><b>71</b><span>distinct font sizes</span></div>
+      <div><b>62</b><span>distinct box-shadows</span></div>
+      <div><b>39</b><span>distinct border-radii</span></div>
+      <div><b>11</b><span>font-weight spellings</span></div>
+      <div><b>916</b><span>uses of <code>!important</code></span></div>
+      <div><b>831</b><span>distinct class selectors</span></div>
+      <div><b>118</b><span>Font Awesome icons in use</span></div>
+      <div><b>57</b><span>classes named <code>*card*</code></span></div>
+      <div><b>48</b><span>classes named <code>*btn*</code></span></div>
+      <div><b>13</b><span>modal implementations</span></div>
+      <div><b>4</b><span>competing breakpoints</span></div>
+      <div><b>14.3k</b><span>lines of authored CSS</span></div>
+    </div>
+
+    <p style="margin-top:var(--s4)"><b>There is no component layer.</b>
+    <code>components/</code> holds 1,250 lines; <code>pages/</code> holds 12,000.
+    Mail, boards, channels and forums each built their own card, button, avatar and
+    empty state. The only shared JS modules are <code>Sidebar</code>,
+    <code>SidebarQuickView</code>, <code>popupMessage</code>, <code>Dialog</code> and
+    the comment tree.</p>
+
+    <p><b>The naming has no convention.</b> Overlays are spelled four ways at once:
+    <code>-modal</code>, <code>-dialog</code>, <code>-popup</code>, and camelCase
+    <code>composePopup</code> / <code>shareManagerPopup</code>.</p>
+
+    <p><b>The brand went missing.</b> The web UI's blues — <code>#019dff</code>,
+    <code>#0284c7</code>, <code>#3ba4d7</code>, <code>#007bff</code>,
+    <code>#0788cb</code> — are four unrelated blues plus Tailwind's sky ramp, none of
+    which is RetroShare's. Only <code>$primary-retro-color: #118fcc</code> was the
+    real thing, used fourteen times against Tailwind slate's nine hundred. The
+    sidebar's own connection dot is hardcoded <code>#2ecc71</code> /
+    <code>#e74c3c</code> inline in <code>main.js</code> — a third palette again.</p>
+
+    <p><b>Four ideas of "small".</b> <code>_responsive.scss</code> defines
+    <code>$bp-mobile: 700px</code>, <code>$bp-narrow: 899px</code> and
+    <code>$bp-short: 500px</code>, while the page stylesheets independently stack at
+    768px and 899px. Same product, four thresholds.</p>
+  </section>
+
+  <!-- ============================================================ colour -->
+  <section>
+    <h2>Palette</h2>
+    <p class="lede">Every value below already exists in the RetroShare source tree.
+    The job was not to invent a palette but to pick which existing values become the
+    system. Source cited under each group.</p>
+
+    <h3>Ground and structure</h3>
+    <div class="swatches" id="swGround"></div>
+    <div class="src">retroshare-gui/src/gui/qss/stylesheet/Standard_Light.qss</div>
+
+    <h3>Ink</h3>
+    <div class="swatches" id="swInk"></div>
+    <div class="src">Standard_Light.qss — <code>#19232d</code> is a deep navy-black, not a grey-black, and <code>#788d9c</code> is a blue-grey. The coolness is the house character.</div>
+
+    <h3>Brand</h3>
+    <div class="swatches" id="swBrand"></div>
+    <div class="src">data/retroshare.svg · icons/svg/retroshare-symbol_gradients.svg · <code>#0099cc</code> is the one accent shared by both default.qss and Standard_Light.qss</div>
+
+    <h3>Selection</h3>
+    <div class="swatches" id="swSelect"></div>
+    <div class="src">Standard_Light.qss — the pale sky selection band is the most recognisable thing about the desktop app. A signature, not an artefact.</div>
+
+    <h3>Status</h3>
+    <div class="swatches" id="swStatus"></div>
+    <div class="src">Standard_Light.qss — reserved for transfer direction and failure. Never for chrome.</div>
+  </section>
+
+  <!-- ============================================================= reach -->
+  <section>
+    <h2>Reach: the gradient as an information scale</h2>
+    <p class="lede">The logo is a gradient from pale sky to brand blue. In a
+    friend-to-friend network the most important fact about anything on screen is how
+    far it travelled to reach you — so that gradient becomes the scale. Saturation
+    falls with distance.</p>
+
+    <div class="spec">
+      <div class="spec__stage">
+        <span class="reach reach--0"><i class="dot dot--0"></i>Direct</span>
+        <span class="reach reach--1"><i class="dot dot--1"></i>One hop</span>
+        <span class="reach reach--2"><i class="dot dot--2"></i>Two or more hops</span>
+        <span class="reach reach--off"><i class="dot dot--off"></i>Offline · last seen 3d</span>
+      </div>
+      <div class="spec__note">Four steps of one hue, taken from the logo gradient. Not a traffic light — distance is a continuum, not a severity.</div>
+    </div>
+
+    <p style="margin-top:var(--s4)">This is why green and red stay reserved. If
+    <code>#32cd32</code> means "connected" it cannot also mean "uploading", and the
+    two facts are independent — a peer three hops away can be your fastest transfer.
+    Hue carries distance; green and red carry transfer direction only.</p>
+  </section>
+
+  <!-- ============================================================== type -->
+  <section>
+    <h2>Type</h2>
+    <p class="lede">Archivo for the interface, DM Mono for peer IDs, hashes, rates
+    and every number that changes. Replaces Roboto.</p>
+
+    <div class="spec">
+      <div class="spec__stage spec__stage--col">
+        <div><div style="font-size:var(--t-label);color:var(--ink-dim)">Archivo · interface, labels, lists</div>
+          <div style="font-size:var(--t-h2);font-weight:700;letter-spacing:-.02em">Friend nodes reaching you</div></div>
+        <div><div style="font-size:var(--t-label);color:var(--ink-dim)">DM Mono · peer IDs, hashes, rates, every live number</div>
+          <div class="num" style="font-size:var(--t-h3)">A41F 2C9E 7B03 D5A8 · 248.6 kB/s · 14/28</div></div>
+      </div>
+      <div class="spec__note">Every changing number uses <code>font-variant-numeric: tabular-nums</code>. Today's rates jitter as digits change width.</div>
+    </div>
+
+    <h3>Scale — eight steps, replacing 71</h3>
+    <div class="spec">
+      <div class="spec__stage spec__stage--col" style="gap:var(--s2)" id="typeScale"></div>
+      <div class="spec__note">Weights: 400 body, 600 emphasis, 700 headings. Today there are eleven spellings, including the invalid <code>font-weight: medium</code> in <code>_navbar.scss</code>.</div>
+    </div>
+
+    <div class="rule">
+      <b>The floor is 13px, and 11px is not a general-purpose size</b>
+      <span>Anything carrying a sentence, a name or a value you have to read sits at
+      13px or above. <code>--t-micro</code> exists for three things only — unread
+      counts, tags and status pills — where the shape and colour do the work and the
+      number is a glance, not a read. The current UI runs body text at 0.7rem
+      (11.2px) and metadata at 0.75rem in dense screens, which is why it feels
+      cramped rather than dense.</span>
+    </div>
+  </section>
+
+  <!-- ====================================================== space/radius -->
+  <section>
+    <h2>Space, radius, elevation</h2>
+    <p class="lede">Budgets, not suggestions. A value outside these is a bug.</p>
+
+    <h3>Space — 4px grid, six stops</h3>
+    <div class="spec"><div class="spec__stage" id="spaceScale"></div>
+      <div class="spec__note">Layout uses <code>gap</code> on flex and grid parents, never per-element margins.</div></div>
+
+    <h3>Radius — two values, plus pills</h3>
+    <div class="spec">
+      <div class="spec__stage">
+        <div style="padding:var(--s2) var(--s3);border:1px solid var(--line);border-radius:var(--r-sm);background:var(--sunken);font-size:var(--t-row)">2px · controls, rows, inputs</div>
+        <div style="padding:var(--s2) var(--s3);border:1px solid var(--line);border-radius:var(--r-md);background:var(--sunken);font-size:var(--t-row)">4px · sheets</div>
+        <div style="padding:var(--s2) var(--s3);border:1px solid var(--line);border-radius:var(--r-full);background:var(--sunken);font-size:var(--t-row)">full · counts, dots</div>
+      </div>
+      <div class="spec__note">Replaces 39 values. 8px everywhere is what makes the current UI read as a phone app scaled up.</div>
+    </div>
+
+    <h3>Elevation — hairlines and a one-stop gradient, not shadows</h3>
+    <div class="spec">
+      <div class="spec__stage">
+        <div style="padding:var(--s2) var(--s3);background:var(--ground);border:1px solid var(--line);font-size:var(--t-row)">ground</div>
+        <div style="padding:var(--s2) var(--s3);background:var(--surface);border:1px solid var(--line);font-size:var(--t-row)">surface</div>
+        <div style="padding:var(--s2) var(--s3);background:var(--sunken);border:1px solid var(--line);font-size:var(--t-row)">sunken</div>
+        <div style="padding:var(--s2) var(--s3);background:linear-gradient(180deg,#fff,#f4f6f7);border:1px solid var(--line);font-size:var(--t-row)">chrome</div>
+      </div>
+      <div class="spec__note">One shadow survives, on sheets. The other 61 go. Toolbars and buttons get a 6% vertical gradient instead — the Qt convention, separating chrome from content without a blur.</div>
+    </div>
+  </section>
+
+  <!-- ============================================================= icons -->
+  <section>
+    <h2>Icons</h2>
+    <p class="lede">118 distinct Font Awesome glyphs are in use today, across eight
+    <code>fa-user-*</code> variants, eight <code>fa-file-*</code> variants and four
+    ways of saying "comment". Consolidated, the real vocabulary is about eighty
+    concepts.</p>
+
+    <div class="rule">
+      <b>Recommendation: Phosphor, regular weight as default, duotone for state</b>
+      <span>MIT licensed, 1,248 icons in six weights, drawn on a 16px grid — which
+      matters at the 19px we render nav icons at. Phosphor is the one free set that
+      ships duotone as a native weight, and that is not a decorative preference: the
+      duotone layer is a separate path with its own fill, so it can carry the reach
+      colour while the stroke stays ink. One icon then encodes both what a thing is
+      and how far away it is, with no separate dot.</span>
+    </div>
+
+    <p>Against the alternatives: <b>Lucide</b> and <b>Tabler</b> are excellent and
+    slightly larger, but both are stroke-only, so state would need a second element;
+    Lucide is also drawn for 24px and thins out under 20. <b>Remix</b> has line/fill
+    pairs but no true duotone and a heavier, rounder voice that fights the Qt
+    lineage. Font Awesome's own duotone is Pro-only, so it is not on the table.</p>
+
+    <h3>The nav set, drawn in the proposed style</h3>
+    <div class="iconwall" id="iconwall"></div>
+    <div class="src">Sketches indicating the weight and geometry — the shipped set comes from Phosphor.</div>
+
+    <h3>Duotone carries reach</h3>
+    <div class="spec">
+      <div class="spec__stage">
+        <span class="reach reach--0"><svg class="duo duo--0" width="22" height="22" viewBox="0 0 24 24"><use href="#i-people"/></svg>Direct</span>
+        <span class="reach reach--1"><svg class="duo duo--1" width="22" height="22" viewBox="0 0 24 24"><use href="#i-people"/></svg>One hop</span>
+        <span class="reach reach--2"><svg class="duo duo--2" width="22" height="22" viewBox="0 0 24 24"><use href="#i-people"/></svg>Two or more</span>
+        <span class="reach reach--off"><svg class="duo duo--off" width="22" height="22" viewBox="0 0 24 24"><use href="#i-people"/></svg>Offline</span>
+      </div>
+      <div class="spec__note">Duotone is reserved for the roughly ten icons that carry connection state. Everywhere else the regular weight is used, or the fill layer is simply left off — duotone on every icon is noise.</div>
+    </div>
+
+    <h3>Sizes</h3>
+    <div class="spec">
+      <div class="spec__stage sizes">
+        <div><svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-search"/></svg><span>16 · inline, buttons</span></div>
+        <div><svg width="19" height="19" viewBox="0 0 24 24"><use href="#i-search"/></svg><span>19 · sidebar, rows</span></div>
+        <div><svg width="22" height="22" viewBox="0 0 24 24"><use href="#i-search"/></svg><span>22 · toolbars</span></div>
+        <div><svg width="28" height="28" viewBox="0 0 24 24"><use href="#i-search"/></svg><span>28 · empty states</span></div>
+      </div>
+      <div class="spec__note">Four sizes on a 24px viewBox. Delivered as one inline <code>&lt;symbol&gt;</code> sprite of ~80 icons (roughly 12KB gzipped) rather than a webfont — Font Awesome ships 1,400 glyphs to use 118, and a font cannot do duotone.</div>
+    </div>
+  </section>
+
+  <!-- ========================================================= elements -->
+  <section>
+    <h2>Elements</h2>
+    <p class="lede">Everything below is live — the proposed CSS, not a picture of it.</p>
+
+    <h3>Buttons</h3>
+    <div class="spec">
+      <div class="spec__stage">
+        <button class="b b--strong" type="button"><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg>New thread</button>
+        <button class="b" type="button">Subscribe</button>
+        <button class="b b--quiet" type="button">Cancel</button>
+        <button class="b b--danger" type="button">Delete forum</button>
+        <button class="b b--icon" type="button" aria-label="Search"><svg viewBox="0 0 24 24"><use href="#i-search"/></svg></button>
+        <button class="b" type="button" aria-disabled="true">Unavailable</button>
+      </div>
+      <div class="spec__note">The confirming action carries the brand blue — the one place the brand appears in ordinary chrome. Destruction is outlined, not filled: a red button invites the click it should discourage. Minimum height 30px on pointer, 44px on touch.</div>
+    </div>
+
+    <h3>Form controls</h3>
+    <div class="spec">
+      <div class="spec__stage spec__stage--col">
+        <div class="fieldrow">
+          <label for="d-name">Forum name</label>
+          <div><input class="f" id="d-name" type="text" value="RetroShare Development"></div>
+        </div>
+        <div class="fieldrow">
+          <label for="d-key">Signing key</label>
+          <div><input class="f f--mono" id="d-key" type="text" value="A41F2C9E7B03D5A8" readonly>
+            <p class="hint">Posts you sign are verifiable by anyone holding your key.</p></div>
+        </div>
+        <div class="fieldrow">
+          <label for="d-vis">Visibility</label>
+          <div><select class="f" id="d-vis"><option>Public — anyone on the network</option><option>Restricted to my friend nodes</option></select></div>
+        </div>
+        <div class="fieldrow">
+          <span></span>
+          <label class="check" for="d-anon"><input id="d-anon" type="checkbox" checked> Allow unsigned posts</label>
+        </div>
+      </div>
+      <div class="spec__note">Labels sit in a fixed 156px column so every settings page aligns. The pair stacks below 700px.</div>
+    </div>
+
+    <h3>Counts, tags, avatars, transfer</h3>
+    <div class="spec">
+      <div class="spec__stage">
+        <span style="font-size:var(--t-row);color:var(--ink-body)">Chat <span class="count">7</span></span>
+        <span style="font-size:var(--t-row);color:var(--ink-body)">Channels <span class="count">12</span></span>
+        <span class="tag tag--reach">2 hops</span>
+        <span class="tag tag--up">seeding</span>
+        <span class="tag tag--down">stalled</span>
+        <span class="tag">unsigned</span>
+        <span class="av">cs</span>
+        <span class="av av--lg">jo</span>
+        <div style="width:180px">
+          <div style="display:flex;justify-content:space-between;font-size:var(--t-label);color:var(--ink-dim);margin-bottom:4px">
+            <span>retroshare-0.6.7.tar.gz</span><span class="num">68%</span></div>
+          <div class="meterbar"><i style="width:68%"></i></div>
+        </div>
+      </div>
+      <div class="spec__note">An unread count is not a state, so it is never red on its own. <code>unsigned</code> is a property, not a reach, so it stays neutral.</div>
+    </div>
+
+    <h3>Tabs</h3>
+    <div class="spec">
+      <div class="spec__stage spec__stage--flush">
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" aria-selected="true" type="button">My forums</button>
+          <button class="tab" role="tab" aria-selected="false" type="button">Subscribed</button>
+          <button class="tab" role="tab" aria-selected="false" type="button">Popular</button>
+          <button class="tab" role="tab" aria-selected="false" type="button">Other</button>
+        </div>
+        <div style="padding:var(--s4);font-size:var(--t-row);color:var(--ink-dim)">Folder tabs, not underlines — the selected tab joins the panel it opens.</div>
+      </div>
+      <div class="spec__note">Replaces 29 tab classes.</div>
+    </div>
+  </section>
+
+  <!-- ======================================================= components -->
+  <section>
+    <h2>Components</h2>
+
+    <h3>Row — replaces all 57 <code>*card*</code> classes</h3>
+    <div class="spec">
+      <div class="spec__stage spec__stage--flush" id="rowDemo"></div>
+      <div class="spec__note">One primitive covers forum threads, mail, files, channels and peers. Selection is a full-width pale sky band with a saturated left edge — the desktop app's idiom, which the web UI currently replaces with a grey hover.</div>
+    </div>
+
+    <h3>Toolbar</h3>
+    <div class="spec">
+      <div class="spec__stage spec__stage--flush">
+        <div class="toolbar">
+          <span class="toolbar__title">RetroShare Development</span>
+          <span class="toolbar__meta">142 threads · 9 unread</span>
+          <span class="toolbar__gap"></span>
+          <button class="b b--quiet" type="button">Mark all read</button>
+          <button class="b b--strong" type="button"><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg>New thread</button>
+        </div>
+      </div>
+      <div class="spec__note">Every screen gets the same header: title, mono meta, actions right. Replaces 17 per-page toolbars.</div>
+    </div>
+
+    <h3>Reading column</h3>
+    <div class="spec">
+      <div class="spec__stage spec__stage--col">
+        <div class="prose">
+          <h4>Turtle router drops search results above 12 hops</h4>
+          <div style="display:flex;align-items:center;gap:8px;font-size:var(--t-meta);color:var(--ink-dim);margin-bottom:var(--s3)">
+            <i class="dot dot--2"></i><span>marek</span>
+            <span class="num" style="font-size:var(--t-label)">via jolavillette · 2 hops · 4h ago</span>
+          </div>
+          <p>Running a search across a long path and the tail of the result set never
+          lands. The tunnel stays up and the transfer works fine once I pick a result
+          from a shorter path, so this is not a reachability problem.</p>
+          <p>The depth counter is compared before the decrement, so anything arriving
+          at depth 12 is dropped instead of forwarded one last time.</p>
+        </div>
+      </div>
+      <div class="spec__note">68ch measure at 15px. The byline carries the route — who relayed this to you — which today is shown nowhere in a post.</div>
+    </div>
+
+    <h3>Empty state — replaces all 11</h3>
+    <div class="spec">
+      <div class="spec__stage spec__stage--flush">
+        <div class="empty">
+          <b>No forums yet</b>
+          <span>Forums appear as your friend nodes share them. You can also start one
+          that spreads outward from your node.</span>
+          <button class="b b--strong" type="button">Create a forum</button>
+        </div>
+      </div>
+      <div class="spec__note">Say why it is empty, then offer the action.</div>
+    </div>
+
+    <h3>Sheet — one overlay, replaces 13</h3>
+    <div class="spec">
+      <div class="spec__stage" style="background:var(--ground);justify-content:center;padding:var(--s5)">
+        <div class="sheet">
+          <div class="sheet__head"><b>Add a friend</b></div>
+          <div class="sheet__body">
+            <div>
+              <label for="d-inv" style="display:block;font-size:var(--t-row);color:var(--ink-body);margin-bottom:4px">Their invitation</label>
+              <textarea class="f f--mono" id="d-inv" rows="3" placeholder="Paste the certificate they sent you"></textarea>
+              <p class="hint">Nothing reaches you from someone you have not added here.</p>
+            </div>
+            <label class="check" for="d-sign"><input id="d-sign" type="checkbox" checked> Sign their key with mine</label>
+          </div>
+          <div class="sheet__foot">
+            <button class="b b--quiet" type="button">Cancel</button>
+            <button class="b b--strong" type="button">Add friend</button>
+          </div>
+        </div>
+      </div>
+      <div class="spec__note">Widths: <code>430</code> confirm, <code>560</code> form, <code>860</code> browser. Below 700px every sheet becomes a full-height bottom drawer. The confirm names what happens — "Add friend", never "Submit".</div>
+    </div>
+  </section>
+
+  <!-- =========================================================== sidebar -->
+  <section>
+    <h2>Sidebar</h2>
+    <p class="lede">The collapse already exists and I skipped it in the last draft.
+    Here is what it does today and what I would change. Toggle the live one below.</p>
+
+    <div class="sbdemo">
+      <nav class="sb" id="sb" data-collapsed="false" aria-label="Main"></nav>
+      <div class="sbstage">
+        <div class="toolbar">
+          <span class="toolbar__title">Forums</span>
+          <span class="toolbar__meta" id="sbState">expanded · 208px</span>
+        </div>
+        <div class="sbstage__body">Content reflows; nothing else about the layout changes.</div>
+      </div>
+    </div>
+
+    <h3>What changes</h3>
+    <table class="bp" style="margin-top:var(--s2);border:1px solid var(--line)">
+      <thead><tr><th>Today</th><th>Proposed</th></tr></thead>
+      <tbody>
+        <tr><td style="font-family:var(--sans);font-size:var(--t-meta);color:var(--ink-body);white-space:normal">Defaults to collapsed, always</td><td>Expanded above 1280px, collapsed below. A first run currently hides all twelve destination names behind unlabelled icons.</td></tr>
+        <tr><td style="font-family:var(--sans);font-size:var(--t-meta);color:var(--ink-body);white-space:normal"><code>isCollapsed</code> is a closure variable</td><td>Persist to <code>localStorage</code>. Today the choice is lost on every reload.</td></tr>
+        <tr><td style="font-family:var(--sans);font-size:var(--t-meta);color:var(--ink-body);white-space:normal">Toggle appears only on <code>.nav-menu:hover</code></td><td>Always visible, pinned in the footer. Hover-only is unreachable on touch and undiscoverable on desktop.</td></tr>
+        <tr><td style="font-family:var(--sans);font-size:var(--t-meta);color:var(--ink-body);white-space:normal">2.5rem / 10rem (40 / 160px)</td><td>52 / 208px. 40px cannot hold a 19px icon with a 44px touch target around it.</td></tr>
+        <tr><td style="font-family:var(--sans);font-size:var(--t-meta);color:var(--ink-body);white-space:normal">No labels when collapsed, no tooltips</td><td>Tooltip on hover <em>and</em> focus, so the rail is keyboard-navigable.</td></tr>
+        <tr><td style="font-family:var(--sans);font-size:var(--t-meta);color:var(--ink-body);white-space:normal">Badge reparents to a corner dot</td><td>Keep — it already works, and it is the right call.</td></tr>
+        <tr><td style="font-family:var(--sans);font-size:var(--t-meta);color:var(--ink-body);white-space:normal">Status dot, version and logout inline-styled</td><td>Into the footer as components; the connection dot uses the reach scale instead of <code>#2ecc71</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="rule">
+      <b>The rail is not a phone pattern</b>
+      <span>Below 700px the sidebar stops being a sidebar entirely — it becomes the
+      bottom tab bar that <code>main.js</code> already models, with the five
+      <code>mobile: 'primary'</code> items and a More sheet for the other seven.
+      Collapse does not apply there, and the toggle is hidden.</span>
+    </div>
+  </section>
+
+  <!-- ========================================================== layouts -->
+  <section>
+    <h2>Layouts</h2>
+    <p class="lede">Four frames cover all twelve screens. The sidebar and the
+    presence bridge are constant; only the middle changes.</p>
+
+    <div class="frames">
+      <div class="frame">
+        <div class="frame__d f-shell"><span class="rail">sidebar</span><span>content</span><span class="hot">presence bridge</span></div>
+        <div class="frame__cap"><b>Shell</b><span>Home, Statistics, Debug</span></div>
+      </div>
+      <div class="frame">
+        <div class="frame__d f-list"><span class="rail">sidebar</span><span>toolbar</span><span>list</span><span>reader · 68ch</span><span class="hot">presence bridge</span></div>
+        <div class="frame__cap"><b>List + reader</b><span>Forums, Mail, Channels, Boards, Chat</span></div>
+      </div>
+      <div class="frame">
+        <div class="frame__d f-table"><span class="rail">sidebar</span><span>toolbar</span><span>rows</span><span class="hot">presence bridge</span></div>
+        <div class="frame__cap"><b>Table</b><span>Network, People, Files</span></div>
+      </div>
+      <div class="frame">
+        <div class="frame__d f-cfg"><span class="rail">sidebar</span><span>sections</span><span>fields</span><span class="hot">presence bridge</span></div>
+        <div class="frame__cap"><b>Settings</b><span>Config</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== responsive -->
+  <section>
+    <h2>Responsive</h2>
+    <p class="lede">Three thresholds, reconciled from the four in the tree today.
+    <code>$bp-mobile: 700px</code> and the landscape compound already in
+    <code>_responsive.scss</code> are kept as-is; 768px and 899px collapse into one
+    tablet stop, and a wide stop is added for the sidebar default.</p>
+
+    <div class="scroll">
+      <table class="bp">
+        <thead><tr><th>Stop</th><th>Sidebar</th><th>List + reader</th><th>Table</th><th>Bridge</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>≥ 1280px<br><span style="color:var(--ink-dim)">wide</span></td>
+            <td>Expanded by default, 208px</td>
+            <td>Both panes, reader at 68ch</td>
+            <td>All columns</td>
+            <td>Meters + friend count + both rates</td>
+          </tr>
+          <tr>
+            <td>900–1279px<br><span style="color:var(--ink-dim)">desktop</span></td>
+            <td>Collapsed by default, 52px</td>
+            <td>Both panes, list narrows to 260px</td>
+            <td>All columns</td>
+            <td>Meters + friend count + both rates</td>
+          </tr>
+          <tr>
+            <td>700–899px<br><span style="color:var(--ink-dim)">tablet</span></td>
+            <td>Rail only, no expand</td>
+            <td>One pane at a time, back control in the toolbar</td>
+            <td>Drops last-seen and up-rate</td>
+            <td>Meters + friend count</td>
+          </tr>
+          <tr>
+            <td>&lt; 700px<br><span style="color:var(--ink-dim)">phone</span></td>
+            <td>Bottom tab bar: 5 primary + More</td>
+            <td>One pane, sheets become bottom drawers</td>
+            <td>Name + one value</td>
+            <td>Meters + friend count, 52px tall</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top:var(--s4)">The phone row is the one already built. PR #121's
+    <code>_responsive.scss</code> carries a genuine phone layer including the
+    landscape-short compound <code>(max-width: 899px) and (max-height: 500px)</code>,
+    a <code>touch</code> mixin for <code>(hover: none)</code>, and
+    <code>$touch-target: 2.75rem</code>. None of that is lost in a repaint —
+    it is layout and behaviour, not colour.</p>
+
+    <div class="rule">
+      <b>Touch targets are a floor, not a suggestion</b>
+      <span>Under the <code>touch</code> mixin every control goes to 44px minimum,
+      including sidebar items, tabs, row hit areas and the sheet's close. Buttons
+      stay 30px on pointer devices so density survives where density is wanted.</span>
+    </div>
+  </section>
+
+  <!-- =========================================================== bridge -->
+  <section>
+    <h2>Presence bridge</h2>
+    <p class="lede">One meter per friend node: height is live throughput, colour is
+    how that peer reaches you on the reach scale. Offline nodes keep their slot, so
+    the shape of your mesh stays constant and you notice when it changes.</p>
+
+    <div class="bridge">
+      <div class="bstat"><span>Friends</span><b id="bFriends">14<small>/28</small></b></div>
+      <div class="strip" id="strip"></div>
+      <div class="bstat bstat--rate"><span>Down</span><b id="bDown">248.6<small> kB/s</small></b></div>
+      <div class="bstat bstat--rate"><span>Up</span><b id="bUp">61.2<small> kB/s</small></b></div>
+    </div>
+
+    <p style="margin-top:var(--s4)">It replaces <code>.statusbar</code>, which shows
+    the same data — friend count, NAT, DHT, rates — as cramped label/value pairs in a
+    24px footer. No backend work: <code>statusbar.js</code> already polls every field
+    it needs.</p>
+  </section>
+
+  <!-- ======================================================== migration -->
+  <section>
+    <h2>Migration</h2>
+    <p class="lede">The first two steps are done and sitting uncommitted in the
+    working tree.</p>
+
+    <ol class="steps">
+      <li class="done"><b>Token layer</b> — done. 1,197 hex literals and 34
+      <code>color.adjust()</code> calls moved to CSS custom properties in
+      <code>abstracts/_tokens.scss</code>. Verified pixel-identical against the
+      previous build.</li>
+      <li class="done"><b>Remove the bevel and the route fades</b> — done. Also
+      deleted the 20-line override block that existed only to undo the bevel.</li>
+      <li><b>Repaint to the brand palette</b> — edit <code>_tokens.scss</code> alone,
+      adding the type scale beside the colours.</li>
+      <li><b>Swap the icon set</b> — build the Phosphor sprite, map the 118 glyphs
+      onto ~80 symbols, drop Font Awesome and its webfonts.</li>
+      <li><b>Build the component layer</b> — the elements and components above, in
+      <code>components/</code>. Roughly 500 lines of new CSS.</li>
+      <li><b>Rework the sidebar</b> — persistence, the always-visible toggle,
+      tooltips, and the width change.</li>
+      <li><b>Convert one screen end to end</b> — Forums. It exercises the row, the
+      reading column, tabs, the toolbar, the sheet and the empty state.</li>
+      <li><b>Delete as the rest follow</b> — each converted page should remove more
+      lines than it adds. If it does not, the component set is wrong.</li>
+    </ol>
+
+    <h3>What maps to what</h3>
+    <div class="scroll">
+      <table class="map">
+        <thead><tr><th>Today</th><th>Becomes</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>.board-card, .mail-card-item, .identity-card, .location-card <span style="color:var(--ink-faint)">(+53)</span></td><td>.row</td><td>Card layout survives only on Boards, where posts genuinely are independent objects with images.</td></tr>
+          <tr><td>.mail-action-btn, .chat-hub-send-btn, .debug-btn, .spam-btn <span style="color:var(--ink-faint)">(+44)</span></td><td>.b</td><td>Variants: --strong, --quiet, --danger, --icon.</td></tr>
+          <tr><td>.add-friend-modal, .composePopup, .board-notes-dialog <span style="color:var(--ink-faint)">(+10)</span></td><td>.sheet</td><td>One overlay, three widths. Settles the four naming conventions.</td></tr>
+          <tr><td>.user-avatar, .friend-avatar, .comment-avatar, .jdenticon-avatar <span style="color:var(--ink-faint)">(+8)</span></td><td>.av</td><td>Two sizes.</td></tr>
+          <tr><td>.mail-empty-state, .board-grid__empty, .debug-empty <span style="color:var(--ink-faint)">(+8)</span></td><td>.empty</td><td>Each screen supplies its own words and action.</td></tr>
+          <tr><td>.tab-btn, .board-toolbar__toggle-btn, .mail-filter-pill <span style="color:var(--ink-faint)">(+26)</span></td><td>.tabs / .tab</td><td>Folder tabs.</td></tr>
+          <tr><td>.nav-menu, .toggle-nav, .nav-unread-badge</td><td>.sb</td><td>Plus persistence and an always-visible toggle.</td></tr>
+          <tr><td>.statusbar</td><td>.bridge</td><td>Same data, already polled.</td></tr>
+          <tr><td>Tailwind slate + sky <span style="color:var(--ink-faint)">(~900 uses)</span></td><td>brand tokens</td><td>Retired. Not RetroShare's colours.</td></tr>
+          <tr><td>Font Awesome 5 <span style="color:var(--ink-faint)">(1,400 glyphs, 118 used)</span></td><td>~80 Phosphor symbols</td><td>One inline sprite, ~12KB gzipped.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="rule">
+      <b>Dark theme</b>
+      <span>Light is the default and this system is specified in light. Dark is a
+      second <code>:root</code> block against <code>Standard_Dark.qss</code>, which
+      already exists in the Qt tree and gives us its values for free — worth doing
+      after one screen has shipped in light, not before.</span>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  const el = (t, c, x) => { const n = document.createElement(t); if (c) n.className = c; if (x !== undefined) n.textContent = x; return n; };
+  const svg = (id, cls) => {
+    const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('viewBox', '0 0 24 24');
+    if (cls) s.setAttribute('class', cls);
+    const u = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    u.setAttribute('href', '#' + id);
+    s.append(u);
+    return s;
+  };
+
+  // ---------------------------------------------------------- swatches
+  const SW = {
+    swGround: [['--ground', '#fafafa', 'App background'], ['--surface', '#ffffff', 'Panels, rows, sheets'], ['--sunken', '#f0f2f3', 'Wells, inactive tabs'], ['--line', '#c9cdd0', 'Structural rule'], ['--line-soft', '#e8e8e8', 'Row separators']],
+    swInk: [['--ink', '#19232d', 'Headings, primary'], ['--ink-body', '#3d4a55', 'Body text'], ['--ink-dim', '#788d9c', 'Secondary, labels'], ['--ink-faint', '#acb1b6', 'Disabled']],
+    swBrand: [['--brand', '#118fcc', 'Logo primary'], ['--brand-deep', '#0e8ecb', 'Gradient dark stop'], ['--brand-pale', '#abe3ff', 'Gradient light stop'], ['--accent', '#0099cc', 'Focus, active edge']],
+    swSelect: [['--select', '#cde8ff', 'Selected row'], ['--select-soft', '#e6f2fd', 'Hover'], ['--select-edge', '#73c7ff', 'Focus ring']],
+    swStatus: [['--up', '#32cd32', 'Uploading'], ['--down', '#cd3232', 'Failed, stalled'], ['--warn', '#dcdc41', 'Degraded']],
+  };
+  for (const [id, list] of Object.entries(SW)) {
+    const host = document.getElementById(id);
+    list.forEach(([name, hex, use]) => {
+      const s = el('div', 'sw');
+      const chip = el('i'); chip.style.background = hex;
+      const d = el('div');
+      d.append(el('b', null, name), el('code', null, hex), el('em', null, use));
+      s.append(chip, d);
+      host.append(s);
+    });
+  }
+
+  // ------------------------------------------------------- type scale
+  [
+    ['--t-title', 30, 700, 'Page title'],
+    ['--t-h2', 21, 700, 'Section heading'],
+    ['--t-h3', 16, 700, 'Toolbar and sheet titles'],
+    ['--t-body', 15, 400, 'Body, inputs, reading'],
+    ['--t-row', 14, 400, 'Dense rows, list items'],
+    ['--t-meta', 13, 400, 'Secondary metadata, hints'],
+    ['--t-label', 12, 400, 'Field labels, timestamps'],
+    ['--t-micro', 11, 500, 'Counts, tags, status only'],
+  ].forEach(([name, px, w, use]) => {
+    const r = el('div');
+    r.style.cssText = 'display:flex;align-items:baseline;gap:16px;flex-wrap:wrap';
+    const k = el('span', 'num', `${name.replace('--t-', '')} · ${px}`);
+    k.style.cssText = 'flex:none;width:104px;font-size:var(--t-label);color:var(--ink-dim)';
+    const v = el('span', null, use);
+    v.style.cssText = `font-size:${px}px;font-weight:${w};letter-spacing:${px > 18 ? '-.02em' : '0'}`;
+    r.append(k, v);
+    document.getElementById('typeScale').append(r);
+  });
+
+  // ----------------------------------------------------- space scale
+  [['s1', 4], ['s2', 8], ['s3', 12], ['s4', 16], ['s5', 24], ['s6', 32]].forEach(([n, px]) => {
+    const d = el('div');
+    d.style.cssText = 'display:flex;flex-direction:column;gap:5px;align-items:flex-start';
+    const bar = el('div');
+    bar.style.cssText = `width:${px}px;height:22px;background:var(--brand);`;
+    const lab = el('span', 'num', `${n} · ${px}`);
+    lab.style.cssText = 'font-size:var(--t-label);color:var(--ink-dim)';
+    d.append(bar, lab);
+    document.getElementById('spaceScale').append(d);
+  });
+
+  // ------------------------------------------------------------ icons
+  const NAV = [
+    ['i-home', 'Home', 0], ['i-network', 'Network', 0], ['i-people', 'People', 2],
+    ['i-chat', 'Chat', 7], ['i-mail', 'Mail', 3], ['i-files', 'Files', 0],
+    ['i-channels', 'Channels', 12], ['i-forums', 'Forums', 9], ['i-boards', 'Boards', 0],
+    ['i-stats', 'Statistics', 0], ['i-config', 'Config', 0], ['i-debug', 'Debug', 0],
+  ];
+  const wall = document.getElementById('iconwall');
+  NAV.forEach(([id, label]) => {
+    const d = el('div', 'ic');
+    d.append(svg(id), el('span', null, label));
+    wall.append(d);
+  });
+
+  // ---------------------------------------------------------- sidebar
+  const sb = document.getElementById('sb');
+  const idBar = el('div', 'sb__id');
+  const logo = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  logo.setAttribute('viewBox', '0 0 100 100');
+  logo.innerHTML = '<g fill="none" stroke="#0e8ecb" stroke-width="7" stroke-linecap="round"><path d="M50 27 A23 23 0 0 1 70 62"/><path d="M70 62 A23 23 0 0 1 30 62"/><path d="M30 62 A23 23 0 0 1 50 27"/></g><g fill="#0e8ecb"><circle cx="50" cy="20" r="11"/><circle cx="76" cy="68" r="11"/><circle cx="24" cy="68" r="11"/></g>';
+  idBar.append(logo, el('b', null, 'RetroShare'));
+
+  const nav = el('div', 'sb__nav');
+  NAV.forEach(([id, label, count], i) => {
+    const b = el('button', 'sbitem');
+    b.type = 'button';
+    if (i === 7) b.setAttribute('aria-current', 'true');
+    b.append(svg(id), el('span', 'sbitem__label', label));
+    if (count) b.append(el('b', 'count', count));
+    b.append(el('span', 'sbtip', label));
+    nav.append(b);
+  });
+
+  const foot = el('div', 'sb__foot');
+  const toggle = el('button', 'sb__toggle');
+  toggle.type = 'button';
+  toggle.append(svg('i-chevron'), el('span', null, 'Collapse'));
+  foot.append(toggle);
+
+  sb.append(idBar, nav, foot);
+
+  toggle.addEventListener('click', () => {
+    const now = sb.dataset.collapsed === 'true';
+    sb.dataset.collapsed = String(!now);
+    toggle.setAttribute('aria-expanded', String(now));
+    toggle.querySelector('span').textContent = now ? 'Collapse' : 'Expand';
+    document.getElementById('sbState').textContent = now ? 'expanded · 208px' : 'collapsed · 52px';
+  });
+  toggle.setAttribute('aria-expanded', 'true');
+
+  // ------------------------------------------------------- row demo
+  [
+    ['Turtle router drops search results above 12 hops', 'marek · via jolavillette', '2', '4h', false, true],
+    ['GXS group key rotation on v0.6.7', 'csoler · direct', '0', '6h', false, false],
+    ['Build fails on Qt 6.9 with jsonapi enabled', 'sehraf · direct', '0', '9h', false, false],
+    ['Proposal: drop the DHT bootstrap fallback', 'G10h4ck · offline, arrived 1d ago', 'off', '1d', true, false],
+    ['Channel post ordering after the perf rework', 'jolavillette · one hop', '1', '1d', true, false],
+  ].forEach(([title, sub, reach, age, read, current]) => {
+    const b = el('button', 'row' + (read ? ' row--read' : ''));
+    b.type = 'button';
+    if (current) b.setAttribute('aria-current', 'true');
+    const main = el('div', 'row__main');
+    const s = el('div', 'row__sub');
+    s.append(el('i', 'dot dot--' + reach), el('span', null, sub));
+    main.append(el('div', 'row__title', title), s);
+    b.append(main, el('span', 'row__meta', age));
+    document.getElementById('rowDemo').append(b);
+  });
+
+  // ----------------------------------------------------- the bridge
+  const PEERS = [
+    ['0', 84], ['0', 61], ['2', 12], ['off', 0], ['1', 22], ['0', 38],
+    ['1', 9], ['off', 0], ['0', 47], ['2', 6], ['off', 0], ['1', 15],
+    ['0', 71], ['off', 0], ['2', 18], ['1', 4], ['off', 0], ['0', 29],
+    ['1', 33], ['off', 0], ['0', 52], ['off', 0], ['2', 7], ['off', 0],
+    ['1', 11], ['off', 0], ['0', 26], ['off', 0],
+  ];
+  const meters = PEERS.map(([reach, rate]) => {
+    const d = el('div', 'mtr mtr--' + reach);
+    const fill = el('i');
+    fill.style.height = reach === 'off' ? '2px' : Math.max(8, rate) + '%';
+    d.append(fill);
+    document.getElementById('strip').append(d);
+    return { reach, rate, fill };
+  });
+
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    setInterval(() => {
+      let sum = 0;
+      meters.forEach((m) => {
+        if (m.reach === 'off') return;
+        m.rate = Math.max(3, Math.min(96, m.rate + (Math.random() - 0.5) * 14));
+        m.fill.style.height = Math.max(8, m.rate) + '%';
+        sum += m.rate;
+      });
+      document.getElementById('bDown').innerHTML = (sum / 2.4).toFixed(1) + '<small> kB/s</small>';
+      document.getElementById('bUp').innerHTML = (sum / 9.8).toFixed(1) + '<small> kB/s</small>';
+    }, 1400);
+  }
+</script>
