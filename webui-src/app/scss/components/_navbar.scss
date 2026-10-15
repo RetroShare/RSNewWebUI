@@ -272,9 +272,13 @@
 
   .sidebar__section-title { @include nav-rail-section; }
 
-  & a {
+  & a,
+  & > button {
     @include nav-rail-item;
 
+    width: 100%;
+    min-height: var(--control);
+    justify-content: flex-start;
     cursor: pointer;
   }
 
@@ -290,6 +294,14 @@
   }
 
   .sidebar__count { @include nav-rail-count; }
+}
+
+.sidebar > button {
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+
+  &:not(.selected-sidebar-link) { background: none; }
 }
 
 /*  The mail folder pane's glyphs and its Quick View swatches. The glyph takes
@@ -310,9 +322,8 @@
   background: var(--reach-off);
 }
 
-.sidebar-mobile-toggle,
-.sidebar-drawer__title,
-.sidebar-drawer__backdrop { display: none !important; }
+.sidebar-drawer__toolbar { display: none; }
+.sidebar-drawer { display: contents; }
 
 .sidebarquickview {
   &>h6 {
@@ -373,8 +384,8 @@
     overflow-x: auto !important;
     overflow-y: hidden !important;
     white-space: nowrap !important;
-    border-bottom: 1px solid rgba(20, 20, 27, 0.1) !important;
-    background: white !important;
+    border-bottom: 1px solid var(--line-soft) !important;
+    background: var(--surface) !important;
     z-index: 50 !important;
     flex-shrink: 0 !important;
     height: auto !important;
@@ -404,114 +415,84 @@
      is a tab strip, and the drawer carries its own title. */
   .sidebar__section-title { display: none !important; }
 
-  /* Boards, Channels and Forums use a drawer instead of the horizontal tabs. */
-  .tab-content:has(> .sidebar-drawer) {
-    position: relative;
+  .sidebar-drawer {
+    display: block;
+    flex: none;
+    min-width: 0;
+    width: 100%;
+
+    > .sidebar--desktop { display: none !important; }
   }
 
-  .sidebar-drawer {
-    position: absolute;
-    top: var(--s4);
-    right: var(--s4);
-    width: var(--control);
-    height: var(--control);
-    z-index: 1000;
+  .sidebar-drawer__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+    padding: var(--s2) var(--s3);
+    border-bottom: var(--stroke) solid var(--line-soft);
+    background: var(--surface);
+  }
+
+  .sidebar-drawer__current {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--ink-dim);
+    font-size: var(--t-meta);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .sidebar-mobile-toggle {
-    display: inline-flex !important;
-    width: var(--control);
-    height: var(--control);
-    min-width: var(--control);
-    min-height: var(--control);
-    padding: 0;
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    border-radius: var(--r-md);
-    background: var(--surface);
+    @include btn-base;
+    @include btn-quiet;
+  }
+
+  dialog.section-drawer-overlay {
+    background: var(--overlay);
     color: var(--ink);
-    cursor: pointer;
-    font-size: var(--t-h3);
+
+    &[open] { display: flex; }
   }
 
-  .tab-content:has(> .sidebar-drawer) .page-head__group {
-    padding-right: calc(var(--control) + var(--s2));
+  .section-drawer {
+    width: min(var(--drawer-width), calc(100% - var(--s6)));
+    height: 100%;
+    padding: max(var(--s4), env(safe-area-inset-top)) var(--s3) max(var(--s4), env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-right: var(--stroke) solid var(--line);
+    background: var(--surface);
   }
 
-  .sidebar-mobile-toggle:hover { background: var(--sunken); }
-
-  .sidebar-drawer .sidebar {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    display: flex !important;
-    flex-direction: column !important;
-    width: min(82vw, 300px) !important;
-    height: 100dvh !important;
-    padding: 1rem 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    transform: translateX(-105%);
-    transition: transform 180ms ease;
-    border: 0 !important;
-    border-right: 1px solid var(--line-soft) !important;
-    background: var(--surface) !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    box-shadow: none;
-    white-space: normal !important;
-    // Override the generic mobile sidebar's z-index: 50 !important.
-    z-index: 1002 !important;
-  }
-
-  .sidebar-drawer .sidebar.sidebar--mobile-open { transform: translateX(0); }
-  .sidebar-drawer .sidebar a {
-    display: flex !important;
+  .section-drawer__heading {
+    display: flex;
     align-items: center;
-    min-height: var(--control);
-    padding: 0 var(--s4) !important;
-    border: 0 !important;
-    border-left: 4px solid transparent !important;
-    color: var(--ink) !important;
-    font-size: var(--t-body);
+    justify-content: space-between;
+    gap: var(--s2);
+    padding-bottom: var(--s3);
+    margin-bottom: var(--s2);
+    border-bottom: var(--stroke) solid var(--line-soft);
   }
 
-  .sidebar-drawer .sidebar .selected-sidebar-link {
-    border-left-color: var(--brand) !important;
-    border-bottom: 0 !important;
-    background: var(--select-faint);
-    color: var(--ink) !important;
-  }
+  .section-drawer__links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
 
-  .sidebar-drawer__title {
-    display: block !important;
-    margin: 0 1.25rem .65rem;
-    padding-bottom: .75rem;
-    border-bottom: 1px solid var(--line-soft);
-    color: var(--ink-dim);
-    font-size: var(--t-label);
-    font-weight: var(--w-label);
-    letter-spacing: .06em;
-    text-transform: uppercase;
-  }
+    > a,
+    > button {
+      @include nav-rail-item;
 
-  .sidebar-drawer__backdrop {
-    display: block !important;
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, .35);
-    /* Rendered only while open; tapping outside closes the drawer. */
-    pointer-events: auto;
-    z-index: 1001;
-  }
-}
+      background: none;
+      border-top: 0;
+      border-right: 0;
+      border-bottom: 0;
+      text-align: left;
+    }
 
-@media (min-width: 701px) {
-  .sidebar-drawer { display: contents; }
-  .sidebar-mobile-toggle,
-  .sidebar-drawer__title,
-  .sidebar-drawer__backdrop { display: none !important; }
+    > .selected-sidebar-link { @include nav-rail-item-selected; }
+  }
 }
 
 .mobile-app-header,
@@ -537,6 +518,12 @@
     background: var(--chrome);
     border-bottom: 1px solid var(--line);
     flex-shrink: 0;
+
+    &__actions {
+      display: flex;
+      align-items: center;
+      gap: var(--s1);
+    }
 
     &__brand {
       display: flex;
@@ -624,6 +611,7 @@
       //  A fixed line box, so a descender or a different label element cannot
       //  push the text past the bar's bottom edge.
       span {
+        flex: none;
         overflow: hidden;
         max-width: 100%;
         font-size: var(--t-label);
@@ -631,6 +619,8 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+
+      .nav-menu__label { text-align: center; }
 
       .nav-unread-badge {
         position: absolute;
@@ -645,7 +635,7 @@
         border: 2px solid var(--surface);
         border-radius: var(--r-full);
         background: var(--down);
-        color: var(--surface);
+        color: var(--on-brand);
         font-size: var(--t-label);
         font-weight: var(--w-state);
         line-height: 1;
@@ -660,7 +650,7 @@
     inset: 0;
     display: flex;
     align-items: flex-end;
-    background: rgba(15, 23, 42, 0.45);
+    background: var(--overlay);
     z-index: 1100;
   }
 
@@ -810,8 +800,12 @@ dialog.accessible-dialog {
   margin: 0;
   padding: 0;
   border: 0;
-  width: 100%;
-  height: 100%;
+  position: fixed;
+  inset: auto;
+  top: var(--dialog-top, 0);
+  left: var(--dialog-left, 0);
+  width: var(--dialog-width, 100%);
+  height: var(--dialog-height, 100dvh);
   max-width: none;
   max-height: none;
   box-sizing: border-box;

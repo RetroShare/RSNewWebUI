@@ -4,7 +4,7 @@
   height: 100%;
   padding: 1rem;
   @include flex(column, $gap: 0.5rem);
-  background-color: white;
+  background-color: var(--surface);
   border-radius: var(--r-md);
   overflow: auto;
   //  No rule under the title. A 2px --ink-dim line was the heaviest stroke

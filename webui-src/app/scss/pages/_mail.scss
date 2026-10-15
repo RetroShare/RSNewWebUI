@@ -18,7 +18,7 @@
 .mail-drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: var(--overlay);
   backdrop-filter: blur(2px);
   z-index: 1150;
   animation: fadeIn 0.2s ease;
@@ -1597,7 +1597,7 @@ input.star-check {
             flex-direction: column;
             overflow: auto;
             display: none;
-            background: white;
+            background: var(--surface);
             border: 1px solid var(--line);
             border-radius: var(--r-md);
             box-shadow: var(--lift);
@@ -1610,7 +1610,7 @@ input.star-check {
               list-style: none;
               padding: 0.5rem 0.75rem;
               cursor: pointer;
-              background: white;
+              background: var(--surface);
               border-bottom: 1px solid var(--sunken);
               font-size: var(--t-row);
 

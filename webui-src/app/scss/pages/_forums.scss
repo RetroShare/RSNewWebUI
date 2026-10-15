@@ -195,7 +195,7 @@
 }
 #toggleunsub {
   position: relative;
-  background: gray;
+  background: var(--sunken);
 }
 
 /* The thread list scrolls inside the top half; the reading pane below stays
@@ -470,12 +470,12 @@ table.threads {
     row-gap: 4px;
 
     .forum-subscription--subscribed,
-    .forum-threads > .forum-threads__heading {
+    .forum-threads__create {
       display: none;
     }
 
     .forum-threads {
-      margin-top: 6px;
+      margin-top: 0;
       min-height: 0;
     }
   }
@@ -515,12 +515,12 @@ table.threads {
     font-size: var(--t-row);
     border-radius: var(--r-md);
     border: 0;
-    background: var(--brand-deep);
-    color: var(--surface);
+    background: var(--action-top);
+    color: var(--on-brand);
     cursor: pointer;
 
     &:hover {
-      background: var(--brand-press);
+      background: var(--action-bottom);
     }
   }
 
@@ -677,7 +677,7 @@ table.threads {
   &__inline-images { display: flex; flex-direction: column; gap: .65rem; padding: .75rem; border: 1px solid var(--line); border-top: 0; background: var(--surface); }
   &__inline-image { position: relative; align-self: flex-start; max-width: 100%; }
   &__inline-image img { display: block; max-width: 100%; max-height: 12rem; border-radius: var(--r-md); object-fit: contain; }
-  &__inline-image button { position: absolute; top: .4rem; right: .4rem; display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: var(--r-full); background: rgba(15, 23, 42, .78); color: var(--surface); box-shadow: none; }
+  &__inline-image button { position: absolute; top: .4rem; right: .4rem; display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: var(--r-full); background: var(--overlay-strong); color: var(--on-media); box-shadow: none; }
   &__attachments { padding: .65rem; border: 1px solid var(--line-soft); border-radius: var(--r-md); background: var(--ground); }
   &__attachments-heading { display: flex; align-items: center; gap: .4rem; margin-bottom: .5rem; color: var(--ink-body); font-size: var(--t-row); font-weight: var(--w-label); }
   &__attachment-list { display: flex; flex-wrap: wrap; gap: .5rem; max-height: 6rem; overflow-y: auto; }

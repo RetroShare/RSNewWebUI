@@ -3,7 +3,7 @@
 /* Status Bar Styles */
 .statusbar {
   @include flex($justify: space-between, $align: center);
-  height: 28px;
+  height: var(--statusbar-height);
   background: var(--chrome);
   border-top: 1px solid var(--line);
   padding: 0 1rem;
@@ -55,6 +55,14 @@
     align-items: center;
     gap: var(--s2);
     cursor: default;
+  }
+
+  .appearance-control > .menu__button {
+    width: var(--statusbar-height);
+    height: var(--statusbar-height);
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
   }
 }
 

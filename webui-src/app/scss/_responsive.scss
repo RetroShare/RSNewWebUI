@@ -30,6 +30,54 @@
    ========================================================================= */
 
 @include mobile {
+  .board-detail-head,
+  .channel-detail-head,
+  .forum-detail-head {
+    margin-bottom: 0;
+    gap: var(--s2);
+
+    .page-head__actions { gap: var(--s1); }
+  }
+
+  .board-detail-head {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+
+    .page-head__group { flex: 1; padding-right: 0; }
+    .page-head__actions { flex: none; }
+  }
+
+  .board-toolbar__view-toggle .segmented__item {
+    width: calc(var(--control) - var(--s1));
+    padding-inline: 0;
+  }
+
+  .board-card--compact {
+    display: grid;
+    grid-template-columns: var(--group-logo) minmax(0, 1fr);
+    gap: var(--s2);
+
+    .board-card__image-container {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      width: var(--group-logo);
+      height: var(--group-logo);
+    }
+
+    .board-card__content { display: contents; }
+    .board-card__title,
+    .board-card__meta { grid-column: 2; margin: 0; }
+    .board-card__footer { grid-column: 1 / -1; flex-wrap: wrap; gap: var(--s1); }
+  }
+
+  .forum-detail-head .page-head__actions { position: relative; }
+  .forum-details { position: static; }
+  .forum-details__panel { max-width: 100%; }
+
+  .forum-threads__search { flex: 1; }
+  .forum-thread-row__inner { max-width: 100%; }
+
   /* Network friend details, identity details, location cards */
   .network-detail-view {
     gap: 1rem;

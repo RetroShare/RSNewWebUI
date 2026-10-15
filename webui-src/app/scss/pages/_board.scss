@@ -16,7 +16,7 @@
      follows the bar; the vh line stays as a fallback for older engines. */
   height: 100vh;
   height: 100dvh;
-  background-color: rgba(15, 23, 42, 0.75);
+  background-color: var(--overlay-strong);
   backdrop-filter: blur(4px);
   z-index: 999999;
   display: none;
@@ -95,9 +95,9 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--s2);
   width: 100%;
-  padding: 0.5rem 0.85rem;
+  padding: var(--s2);
   background-color: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
@@ -118,8 +118,10 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.65rem;
-  flex-shrink: 0;
+  gap: var(--s2);
+  flex-shrink: 1;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .board-toolbar__count-badge {
@@ -229,18 +231,22 @@
   display: inline-flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0;
   background-color: var(--surface);
-  padding: 2px 4px;
+  padding: 0;
   border-radius: var(--r-md);
-  border: 1px solid var(--line);
+  border: 0;
+  box-shadow: inset 0 0 0 var(--stroke) var(--line);
+  min-height: var(--control);
 }
 
 .board-pagination__btn {
   @include btn-base;
 
-  width: 26px;
-  min-width: 26px;
+  @include btn-square;
+
+  border-color: transparent;
+  background: transparent;
   margin: 0;
 }
 
@@ -376,10 +382,12 @@
 .board-card__vote-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.2rem 0.55rem;
+  gap: 0;
+  padding: 0;
   background-color: var(--sunken);
-  border: 1px solid var(--line);
+  border: 0;
+  box-shadow: inset 0 0 0 var(--stroke) var(--line);
+  min-height: var(--control);
   border-radius: var(--r-md);
   box-sizing: border-box;
 }
@@ -387,11 +395,12 @@
 button.board-card__vote-btn,
 .board-card__vote-pill .board-card__vote-btn {
   @include control-base;
+  @include btn-square;
 
   background: transparent;
   border: none;
   box-shadow: none;
-  padding: 0.1rem 0.2rem;
+  padding: 0;
   margin: 0;
   cursor: pointer;
   display: flex;
@@ -535,6 +544,7 @@ button.board-card__vote-btn,
 /* Footer: Comment button matching Qt GUI */
 .board-card--compact .board-card__footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
   padding: 0;
@@ -727,7 +737,7 @@ button.board-card__vote-btn,
   position: fixed;
   inset: 0;
   z-index: 999999;
-  background-color: rgba(0, 0, 0, 0.85);
+  background-color: var(--media-overlay);
   align-items: center;
   justify-content: center;
 }
@@ -780,7 +790,7 @@ button.board-card__vote-btn,
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  background-color: var(--ink);
+  background-color: var(--media-ground);
   flex: 1;
   min-height: 380px;
   max-height: 68vh;
@@ -794,7 +804,7 @@ button.board-card__vote-btn,
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.25);
+  background-color: var(--media-control);
 }
 
 /* Image wrapper fills remaining space */
@@ -1036,8 +1046,8 @@ button.board-card__vote-btn,
 // Keep this after the card variants at the same specificity as their padding.
 @media (max-width: 560px) {
   .board-card .board-card__notes-btn {
-    width: 30px;
-    height: 30px;
+    width: var(--control);
+    height: var(--control);
     justify-content: center;
     padding: 0;
   }
@@ -1054,8 +1064,8 @@ button.board-card__vote-btn,
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: var(--control);
+    height: var(--control);
     font-size: var(--t-row);
     padding: 0;
   }
@@ -1071,8 +1081,8 @@ button.board-card__vote-btn,
   .widget.boards-detail-widget {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr);
-    row-gap: 4px;
+    grid-template-rows: auto minmax(0, 1fr);
+    row-gap: var(--s2);
 
     > .board-detail-head { grid-area: 1 / 1; }
     > .widget__body { grid-area: 2 / 1; min-height: 0; }

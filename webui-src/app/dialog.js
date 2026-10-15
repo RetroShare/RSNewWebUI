@@ -1,25 +1,29 @@
 const m = require('mithril');
 
-// Mount only while open. Native modal dialogs make the rest of the page inert
-// and provide dialog semantics; callers own the open state and sheet content.
 const Dialog = () => {
   let opener;
   let onclose = () => { };
   let desktopQuery;
   let onLayoutChange;
+  let root;
+  const fitViewport = () => {
+    const viewport = window.visualViewport;
+    root.style.setProperty('--dialog-top', `${viewport?.offsetTop || 0}px`);
+    root.style.setProperty('--dialog-left', `${viewport?.offsetLeft || 0}px`);
+    root.style.setProperty('--dialog-width', `${viewport?.width || window.innerWidth}px`);
+    root.style.setProperty('--dialog-height', `${viewport?.height || window.innerHeight}px`);
+  };
   return {
-    oncreate: ({ dom }) => {
+    oncreate: ({ dom, attrs }) => {
+      root = dom;
       opener = document.activeElement;
+      fitViewport();
       dom.showModal();
-      //  The sheets are phone chrome: above 700px their CSS hides the dialog,
-      //  but showModal() keeps the whole page inert regardless -- rotating to
-      //  landscape with a sheet open left the UI untappable with no visible
-      //  way out. Crossing into the desktop layout closes the sheet instead.
-      //  The SAME condition the stylesheet uses to show the sheet
-      //  (max-width: 700px), so JS and CSS agree at every width -- a
-      //  min-width: 701px mirror leaves a fractional crack (700 < w < 701,
-      //  common at desktop zoom levels) where the sheet is hidden but still
-      //  modal.
+      window.addEventListener('resize', fitViewport);
+      window.visualViewport?.addEventListener('resize', fitViewport);
+      window.visualViewport?.addEventListener('scroll', fitViewport);
+      if (attrs.mobileOnly === false) return;
+      // Close hidden phone sheets so the page does not stay locked.
       desktopQuery = window.matchMedia('(max-width: 700px)');
       onLayoutChange = (event) => {
         if (!event.matches) {
@@ -31,6 +35,9 @@ const Dialog = () => {
       else desktopQuery.addListener(onLayoutChange);
     },
     onremove: ({ dom }) => {
+      window.removeEventListener('resize', fitViewport);
+      window.visualViewport?.removeEventListener('resize', fitViewport);
+      window.visualViewport?.removeEventListener('scroll', fitViewport);
       if (desktopQuery && onLayoutChange) {
         if (desktopQuery.removeEventListener) desktopQuery.removeEventListener('change', onLayoutChange);
         else desktopQuery.removeListener(onLayoutChange);
@@ -41,36 +48,36 @@ const Dialog = () => {
     view: ({ attrs, children }) => {
       onclose = attrs.onclose;
       return m('dialog.accessible-dialog', {
-      class: attrs.overlayClass,
-      'aria-label': attrs.label,
-      'aria-modal': 'true',
-      oncancel: (event) => {
-        event.preventDefault();
-        attrs.onclose();
-      },
-      onclick: (event) => {
-        if (event.target === event.currentTarget) attrs.onclose();
-      },
-      onkeydown: (event) => {
-        if (event.key !== 'Tab') return;
-        const dialog = event.currentTarget;
-        const controls = Array.from(dialog.querySelectorAll(
-          'a[href], button, input, select, textarea, [tabindex], [contenteditable="true"]'
-        )).filter((element) => element.tabIndex >= 0 &&
-          !element.matches(':disabled') && !element.closest('[inert]') &&
-          element.getClientRects().length > 0 && getComputedStyle(element).visibility !== 'hidden');
-        const first = controls[0];
-        const last = controls[controls.length - 1];
-        if (!first) {
+        class: attrs.overlayClass,
+        'aria-label': attrs.label,
+        'aria-modal': 'true',
+        oncancel: (event) => {
           event.preventDefault();
-        } else if (event.shiftKey && (document.activeElement === first || !controls.includes(document.activeElement))) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && (document.activeElement === last || !controls.includes(document.activeElement))) {
-          event.preventDefault();
-          first.focus();
-        }
-      },
+          attrs.onclose();
+        },
+        onclick: (event) => {
+          if (attrs.dismissOnBackdrop !== false && event.target === event.currentTarget) attrs.onclose();
+        },
+        onkeydown: (event) => {
+          if (event.key !== 'Tab') return;
+          const dialog = event.currentTarget;
+          const controls = Array.from(dialog.querySelectorAll(
+            'a[href], button, input, select, textarea, [tabindex], [contenteditable="true"]'
+          )).filter((element) => element.tabIndex >= 0 &&
+            !element.matches(':disabled') && !element.closest('[inert]') &&
+            element.getClientRects().length > 0 && getComputedStyle(element).visibility !== 'hidden');
+          const first = controls[0];
+          const last = controls[controls.length - 1];
+          if (!first) {
+            event.preventDefault();
+          } else if (event.shiftKey && (document.activeElement === first || !controls.includes(document.activeElement))) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && (document.activeElement === last || !controls.includes(document.activeElement))) {
+            event.preventDefault();
+            first.focus();
+          }
+        },
       }, m('div', { class: attrs.sheetClass }, children));
     },
   };

@@ -10,6 +10,7 @@ const fileDown = require('files/files_downloads');
 const icon = require('icon');
 const { CommentsSection } = require('comments');
 const toast = require('toast');
+const prepareGroupThumbnail = require('group_thumbnail');
 
 const filesUploadHashes = {
   // figure out a better way later.
@@ -124,6 +125,10 @@ function createchannel() {
   let thumbnail;
   let thumbnailPreview = '';
   let thumbnailFileName = '';
+  let thumbnailLoading = false;
+  let thumbnailError = '';
+  let thumbnailSelection = 0;
+  let submitting = false;
   let selectedGroup = messageGroups[0];
   let selectedGroupCode = messageGroupsCode[0];
   let selectedCircle;
@@ -158,27 +163,35 @@ function createchannel() {
           m('span.create-channel-form__thumbnail-label', 'Thumbnail'),
           m('input.create-channel-form__file-input[type=file][name=files][id=thumbnail][accept=image/*]', {
             onchange: async (e) => {
+              const selection = ++thumbnailSelection;
               const file = e.target.files[0];
-              if (!file) {
-                thumbnail = undefined;
-                thumbnailPreview = '';
-                thumbnailFileName = '';
-                return;
+              thumbnail = undefined;
+              thumbnailPreview = '';
+              thumbnailFileName = file ? file.name : '';
+              thumbnailError = '';
+              thumbnailLoading = Boolean(file);
+              if (!file) return;
+              try {
+                const preview = await prepareGroupThumbnail(file);
+                if (selection !== thumbnailSelection) return;
+                thumbnailPreview = preview;
+                thumbnail = preview.substring(preview.indexOf(',') + 1);
+              } catch (_error) {
+                if (selection !== thumbnailSelection) return;
+                thumbnailError = 'Unable to load thumbnail. Choose another image.';
+              } finally {
+                if (selection === thumbnailSelection) {
+                  thumbnailLoading = false;
+                  m.redraw();
+                }
               }
-              thumbnailFileName = file.name;
-              const reader = new FileReader();
-              reader.onloadend = function () {
-                thumbnailPreview = reader.result;
-                thumbnail = thumbnailPreview.substring(thumbnailPreview.indexOf(',') + 1);
-                m.redraw();
-              };
-              reader.readAsDataURL(file);
             },
           }),
           m('label.create-channel-form__file-button[for=thumbnail]', {
             title: thumbnailFileName || 'Choose a channel thumbnail',
           }, [icon('upload'), thumbnailPreview ? ' Change image' : ' Choose image']),
-          m('small', 'Square images work best.'),
+          m('small[role=status]', thumbnailLoading ? 'Preparing thumbnail…' : 'Images are center-cropped to a 64 × 64 pixel square.'),
+          thumbnailError && m('small.create-channel-form__image-error[role=alert]', thumbnailError),
         ]),
 
         m('.create-channel-form__field.create-channel-form__identity', [
@@ -250,27 +263,38 @@ function createchannel() {
         }),
         m('button.create-channel-form__submit.is-primary',
           {
+            disabled: thumbnailLoading || Boolean(thumbnailError) || submitting,
             onclick: async () => {
-              const res = await rs.rsJsonApiRequest('/rsgxschannels/createChannelV2', {
-                name: title,
-                description: body,
-                thumbnail: { mData: { base64: thumbnail } },
-                ...(Number(identity) !== 0 && { authorId: identity }), // checks if some identity has to be assigned
-                circleType: selectedGroupCode,
-                ...(selectedGroupCode === util.EXTERNAL &&
-                  selectedCircle && { circleId: selectedCircle.mGroupId }), // checks if the selectedGroup code is EXTERNAL
-              });
-              if (res.body.retval) {
-                await util.updatedisplaychannels(res.body.channelId, undefined, false);
-                if (vnode.attrs.onCreated) await vnode.attrs.onCreated();
-                //  The form is done: close it before the toast, or a second
-                //  click would create the channel again.
+              if (thumbnailLoading || thumbnailError || submitting) return;
+              submitting = true;
+              try {
+                const res = await rs.rsJsonApiRequest('/rsgxschannels/createChannelV2', {
+                  name: title,
+                  description: body,
+                  thumbnail: { mData: { base64: thumbnail } },
+                  ...(Number(identity) !== 0 && { authorId: identity }),
+                  circleType: selectedGroupCode,
+                  ...(selectedGroupCode === util.EXTERNAL &&
+                    selectedCircle && { circleId: selectedCircle.mGroupId }),
+                });
+                if (!res.body.retval) {
+                  toast.error(res.body.errorMessage || 'Unable to create channel.');
+                  return;
+                }
                 widget.closePopupMessage();
+                toast.success('Channel created successfully');
+                try {
+                  await util.updatedisplaychannels(res.body.channelId, undefined, false);
+                  if (vnode.attrs.onCreated) await vnode.attrs.onCreated();
+                } catch (_error) {
+                  toast.error('Channel created, but the list could not refresh.');
+                }
+              } catch (_error) {
+                toast.error('Unable to create channel. Please try again.');
+              } finally {
+                submitting = false;
                 m.redraw();
               }
-              res.body.retval === false
-                ? toast.error(res.body.errorMessage)
-                : toast.success('Channel created successfully');
             },
           }, [icon('plus'), 'Create']),
       ]),
@@ -620,18 +644,14 @@ const ChannelView = () => {
                 //  post's broken thumbnail then sticks to whatever post
                 //  shifts into that slot, blanking a valid image.
                 return m(
-                  '.posts-container-card',
+                  m.route.Link,
                   {
                     key,
+                    class: 'posts-container-card',
+                    href: `/channels/${m.route.param().tab}/${v.attrs.id}/${key}`,
+                    'aria-label': plist[key].post.mMeta.mMsgName || 'Open post',
                     style: {
                       display: plist[key].isSearched ? 'flex' : 'none', // for search
-                    },
-                    onclick: () => {
-                      m.route.set('/channels/:tab/:mGroupId/:mMsgId', {
-                        tab: m.route.param().tab,
-                        mGroupId: v.attrs.id,
-                        mMsgId: key,
-                      });
                     },
                   },
                   [

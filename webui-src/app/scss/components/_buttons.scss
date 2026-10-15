@@ -61,14 +61,14 @@ button:has(> :where(.icon:first-child)) {
    ========================================================================== */
 
 @mixin role-primary {
-  border-color: var(--brand-deep) !important;
-  background: linear-gradient(180deg, var(--brand-hover), var(--brand-deep)) !important;
-  color: var(--surface) !important;
+  border-color: var(--action-border) !important;
+  background: linear-gradient(180deg, var(--action-top), var(--action-bottom)) !important;
+  color: var(--on-brand) !important;
   font-weight: var(--w-label);
 
   &:hover {
-    border-color: var(--brand-press) !important;
-    background: linear-gradient(180deg, var(--brand), var(--brand-press)) !important;
+    border-color: var(--action-border) !important;
+    background: var(--action-bottom) !important;
   }
 }
 

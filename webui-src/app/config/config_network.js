@@ -84,6 +84,7 @@ const SetNwMode = () => {
         m(
           'select.nw-input',
           {
+            'aria-label': isHiddenMode ? 'Discovery' : 'Network mode',
             value: selectedMode,
             onchange: (e) => {
               const idx = e.target.selectedIndex;
@@ -158,6 +159,7 @@ const SetLimits = () => {
           'Download limit(KB/s):'
         ]),
         m('input[type=number][name=download].nw-input', {
+          'aria-label': 'Download limit (KB/s)',
           value: dlim,
           oninput: (e) => (dlim = Number(e.target.value)),
           onchange: setMaxRates,
@@ -174,6 +176,7 @@ const SetLimits = () => {
           'Upload limit(KB/s):'
         ]),
         m('input[type=number][name=upload].nw-input', {
+          'aria-label': 'Upload limit (KB/s)',
           value: ulim,
           oninput: (e) => (ulim = Number(e.target.value)),
           onchange: setMaxRates,
@@ -205,6 +208,7 @@ const SetOpMode = () => {
         m(
           'select.nw-input',
           {
+            'aria-label': 'Operating mode',
             oninput: (e) => (opmode = e.target.value),
             value: opmode,
             onchange: setmode,
@@ -332,6 +336,7 @@ const NetworkConfigForm = () => {
           m('label.nw-label', 'NAT'),
           m('.nat-control-group', [
             m('select.nw-input', {
+              'aria-label': 'NAT mode',
               value: netMode,
               onchange: (e) => saveNetMode(e.target.value),
             }, [
@@ -351,6 +356,7 @@ const NetworkConfigForm = () => {
           m('label.nw-label', 'Local Address'),
           m('.addr-control-group', [
             m('input[type=text].nw-input', {
+              'aria-label': 'Local address',
               value: localAddr,
               oninput: (e) => (localAddr = e.target.value),
               onchange: saveLocalAddress,
@@ -358,6 +364,7 @@ const NetworkConfigForm = () => {
             m('.port-group', [
               m('span.nw-port-label', 'Port:'),
               m('input[type=number].nw-port', {
+                'aria-label': 'Local port',
                 value: localPort,
                 oninput: (e) => (localPort = parseInt(e.target.value) || 0),
                 onchange: saveLocalAddress,
@@ -375,6 +382,7 @@ const NetworkConfigForm = () => {
           m('label.nw-label', 'External Address'),
           m('.addr-control-group', [
             m('input[type=text].nw-input', {
+              'aria-label': 'External address',
               value: isHiddenMode ? 'Hidden' : extAddr,
               disabled: isHiddenMode,
               oninput: (e) => (extAddr = e.target.value),
@@ -383,6 +391,7 @@ const NetworkConfigForm = () => {
             !isHiddenMode && m('.port-group', [
               m('span.nw-port-label', 'Port:'),
               m('input[type=number].nw-port', {
+                'aria-label': 'External port',
                 value: extPort,
                 oninput: (e) => (extPort = parseInt(e.target.value) || 0),
                 onchange: saveExtAddress,
@@ -399,6 +408,7 @@ const NetworkConfigForm = () => {
         !isHiddenMode && m('.nw-config-row', [
           m('label.nw-label', 'Dynamic DNS'),
           m('input[type=text].nw-input', {
+            'aria-label': 'Dynamic DNS',
               value: dyndns,
             oninput: (e) => (dyndns = e.target.value),
             onchange: saveDynDNS,
@@ -520,11 +530,13 @@ const SetSocksProxy = () => {
             m('label.nw-label', labelText),
             m('.proxy-control-group', [
               m('input[type=text].nw-input.nw-input--wide', {
+                'aria-label': `${labelText} address`,
                 value: socksProxyObj[proxyItem].addr || '',
                 oninput: (e) => (socksProxyObj[proxyItem].addr = e.target.value),
                 onchange: () => handleProxyChange(proxyItem),
               }),
               m('input[type=number].nw-port', {
+                'aria-label': `${labelText} port`,
                 value: socksProxyObj[proxyItem].port || 0,
                 oninput: (e) => (socksProxyObj[proxyItem].port = parseInt(e.target.value) || 0),
                 onchange: () => handleProxyChange(proxyItem),
@@ -560,10 +572,12 @@ const displayHiddenServiceInfo = () => {
             m('label.nw-label', 'Local Address:'),
             m('.addr-port-group', [
               m('input[type=text].nw-input.nw-input--wide.nw-input--ro', {
+                'aria-label': 'Hidden service local address',
                 readOnly: true,
                 value: details.localAddr || '127.0.0.1',
               }),
               m('input[type=number].nw-port.nw-input--ro', {
+                'aria-label': 'Hidden service local port',
                 readOnly: true,
                 value: details.localPort || 0,
               }),
@@ -574,10 +588,12 @@ const displayHiddenServiceInfo = () => {
             m('label.nw-label', details.hiddenType === 4 ? 'I2P Address:' : 'Onion Address:'),
             m('.addr-port-group', [
               m('input[type=text].nw-input.nw-input--wide.nw-input--ro.nw-input--mono', {
+                'aria-label': details.hiddenType === 4 ? 'I2P address' : 'Onion address',
                 readOnly: true,
                 value: details.hiddenNodeAddress,
               }),
               details.hiddenNodePort && m('input[type=number].nw-port.nw-input--ro', {
+                'aria-label': 'Hidden service port',
                 readOnly: true,
                 value: details.hiddenNodePort,
               }),

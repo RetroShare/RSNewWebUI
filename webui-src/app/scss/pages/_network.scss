@@ -388,7 +388,7 @@
     circle {
       stroke: var(--surface);
       stroke-width: 2;
-      filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.35));
+      filter: drop-shadow(0 var(--stroke) var(--control-inset) var(--overlay));
     }
 
     text {

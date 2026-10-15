@@ -85,14 +85,14 @@ const ConfigChat = () => {
           m('.panel__head', m('h3', 'General Chat Settings')),
           m('.panel__body', [
             m('.config-grid', [
-              m('label.cfg-label', 'Default identity for chat rooms:'),
+              m('label.cfg-label[for=default-chat-identity]', 'Default identity for chat rooms:'),
               m('.default-id-selector', [
                 m(peopleUtil.UserAvatar, {
                   avatar: selectedDetails ? selectedDetails.mAvatar : null,
                   identityId: defaultIdentity,
                   size: 24,
                 }),
-                m('select.cfg-select', {
+                m('select#default-chat-identity.cfg-select', {
                   value: defaultIdentity,
                   onchange: (e) => {
                     defaultIdentity = e.target.value;
@@ -108,8 +108,8 @@ const ConfigChat = () => {
                 ]),
               ]),
 
-              m('label.cfg-label', 'Accept chat from:'),
-              m('select.cfg-select', {
+              m('label.cfg-label[for=chat-permission]', 'Accept chat from:'),
+              m('select#chat-permission.cfg-select', {
                 value: acceptChatFrom,
                 onchange: (e) => {
                   acceptChatFrom = parseInt(e.target.value);
@@ -135,6 +135,7 @@ const ConfigChat = () => {
               ]),
               m('.storage-input-group', [
                 m('input[type=number][min=1][max=365].cfg-num', {
+                  'aria-label': 'Max storage duration (days)',
                   value: maxStorageDays,
                   oninput: (e) => (maxStorageDays = parseInt(e.target.value) || 1),
                   onchange: () => {
@@ -167,6 +168,7 @@ const ConfigChat = () => {
                       ]),
                       m('td.col-enable', [
                         m('input[type=checkbox]', {
+                          'aria-label': `Enable history: ${label}`,
                           checked: historyEnable[key],
                           oninput: (e) => {
                             historyEnable[key] = e.target.checked;
@@ -177,6 +179,7 @@ const ConfigChat = () => {
                       m('td.col-count', [
                         m('.count-group', [
                           m('input[type=number][min=0][max=50000].cfg-num', {
+                            'aria-label': `Max saved messages: ${label}`,
                             value: historySaveCount[key],
                             oninput: (e) => (historySaveCount[key] = parseInt(e.target.value) || 0),
                             onchange: () => {

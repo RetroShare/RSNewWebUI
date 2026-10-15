@@ -338,7 +338,7 @@ table.friendsfiles {
 
       &:hover,
       &.selected {
-        background: rgba(0, 154, 235, 0.1);
+        background: var(--select-faint);
         color: var(--brand);
       }
     }
@@ -598,7 +598,7 @@ table.friendsfiles {
       display: none;
       /* use label with 'for' to manipulate checkbox */
       & + label.share-flags-label {
-        color: grey;
+        color: var(--ink-dim);
         margin-right: 0.25rem;
         padding: 0.25rem 0.25rem 0.125rem;
         border: 1px solid var(--ink-body);
@@ -658,7 +658,7 @@ table.friendsfiles {
     height: 100dvh;
     padding: 0.5rem;
     box-sizing: border-box;
-    background-color: rgba(15, 23, 42, 0.55);
+    background-color: var(--overlay);
 
     .shareManagerPopup {
       position: relative;
@@ -667,7 +667,7 @@ table.friendsfiles {
       min-width: 0;
       overflow: hidden;
       border-radius: var(--r-md);
-      background: white;
+      background: var(--surface);
 
       & > .widget {
         min-width: 0;
@@ -767,7 +767,7 @@ table.friendsfiles {
     border-radius: var(--r-md);
     margin-bottom: 1rem;
     padding: 0.5rem;
-    background: white;
+    background: var(--surface);
   }
 
   .share-manager__table td {
@@ -836,7 +836,7 @@ table.friendsfiles {
     border-radius: var(--r-md);
     margin-bottom: 1rem;
     padding: 0.5rem;
-    background: white;
+    background: var(--surface);
   }
 
   /* Both trees are a hierarchy, so keep each entry as one compact list row
@@ -898,7 +898,7 @@ table.friendsfiles {
     flex-basis: auto;
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid rgba(20, 20, 27, 0.1);
+    border-bottom: 1px solid var(--line-soft);
     padding-bottom: 1rem;
     margin-bottom: 1rem;
   }

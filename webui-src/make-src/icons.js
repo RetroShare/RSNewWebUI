@@ -24,6 +24,7 @@ const MODULE = path.join(__dirname, '..', 'app', 'icon_sprite.js');
 
 // fa name (without the `fa-` prefix) -> phosphor name
 const MAP = {
+  adjust: 'circle-half',
   'angle-double-left': 'caret-double-left',
   'angle-right': 'caret-right',
   'arrow-down': 'arrow-down',
@@ -52,6 +53,7 @@ const MAP = {
   compress: 'corners-in',
   copy: 'copy',
   cube: 'cube',
+  desktop: 'desktop',
   download: 'download-simple',
   edit: 'pencil-simple',
   'ellipsis-v': 'dots-three-vertical',
@@ -90,6 +92,7 @@ const MAP = {
   link: 'link',
   'mail-bulk': 'envelope-simple',
   minus: 'minus',
+  moon: 'moon',
   'network-wired': 'tree-structure',
   'paper-plane': 'paper-plane-tilt',
   paperclip: 'paperclip',
@@ -122,6 +125,7 @@ const MAP = {
   'sticky-note': 'note',
   stopwatch: 'timer',
   stream: 'list-dashes',
+  sun: 'sun',
   'sync-alt': 'arrows-clockwise',
   tag: 'tag',
   'tachometer-alt': 'gauge',

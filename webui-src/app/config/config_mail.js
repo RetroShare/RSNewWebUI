@@ -87,6 +87,7 @@ const Mail = () => {
             m(
               'select',
               {
+                'aria-label': 'Accept encrypted distant messages from',
                 value: distantMessagingPermissionFlag,
                 oninput: (e) => (distantMessagingPermissionFlag = e.target.value),
                 onchange: () => {

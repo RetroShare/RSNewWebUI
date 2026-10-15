@@ -18,7 +18,7 @@
 
 #toggleunsub {
   position: relative;
-  background: gray;
+  background: var(--sunken);
 }
 
 /* subject */
@@ -145,6 +145,7 @@ table {
     @include btn-base;
   }
   &__thumbnail small { color: var(--ink-dim); text-align: center; }
+  &__thumbnail .create-channel-form__image-error { color: var(--down-ink); }
   &__field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
   &__field .config-style-select { width: 100%; max-width: 320px; min-width: 0; }
   &__description { width: 100%; min-height: 7rem; resize: vertical; }
@@ -226,7 +227,7 @@ table {
   &__attachment-button {
     display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
     padding: .4rem .65rem; border: 1px solid var(--brand); border-radius: var(--r-sm);
-    background: var(--brand); color: var(--surface); font-size: var(--t-meta); font-weight: var(--w-label); cursor: pointer;
+    background: var(--action-top); color: var(--on-brand); font-size: var(--t-meta); font-weight: var(--w-label); cursor: pointer;
   }
   &__thumbnail small,
   &__attachments small { color: var(--ink-dim); text-align: center; }
@@ -342,6 +343,8 @@ table {
  * a sparse grid row to the full height of the Posts panel. */
 .posts-container { align-content: start; grid-auto-rows: 240px; }
 .posts-container-card {
+  text-decoration: none;
+  color: var(--ink);
   position: relative;
   display: flex;
   //  Stated, not inherited: the title belongs under the picture, and the card
@@ -359,6 +362,8 @@ table {
   &:hover {
     border-color: var(--line-hover);
   }
+
+  &:focus-visible { outline: var(--control-inset) solid var(--select-edge); }
 }
 
 /* The picture takes the space the title does not. `cover` because a channel
@@ -398,8 +403,8 @@ table {
   padding: 0.25rem 0.45rem;
   box-sizing: border-box;
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--r-full);
   box-shadow: none;
   font-size: var(--t-label);
@@ -485,7 +490,12 @@ table {
 }
 
 
-.channel-mobile-search, .channel-mobile-create { display: none; }
+.channel-mobile-create { display: none; }
+.channel-mobile-search {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+}
 .channel-mobile-actions.menu { display: none; }
 
 @media (max-width: 700px) {
@@ -493,13 +503,13 @@ table {
   .widget.channels-detail-widget {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr);
-    row-gap: 4px;
+    grid-template-rows: auto minmax(0, 1fr);
+    row-gap: var(--s2);
     > .widget__body { min-height: 0; }
     .channel-subscription--subscribed,
     .posts > .channel-posts-heading { display: none; }
-    .posts { margin-top: 9px; min-height: 0; }
-    .posts-container { padding: .5rem; }
+    .posts { margin-top: var(--s2); min-height: 0; }
+    .posts-container { padding: var(--s2); gap: var(--s2); }
   }
   .channel-mobile-search {
     display: flex; align-items: center; justify-content: flex-end;
@@ -508,10 +518,8 @@ table {
   }
   .channel-mobile-create {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 32px; height: 32px; padding: 0; font-size: var(--t-row);
+    width: var(--control); height: var(--control); padding: 0; font-size: var(--t-row);
   }
   //  The overflow menu carries Unsubscribe on a phone, so the header does not.
   .channel-mobile-actions.menu { display: inline-flex; }
 }
-
-

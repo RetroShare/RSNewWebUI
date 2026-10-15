@@ -1,6 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const icon = require('icon');
+const AppearanceControl = require('appearance_control');
 
 // RS_HIDDEN_TYPE constants (from config_util.js / retroshare/rspeers.h)
 const RS_HIDDEN_TYPE_NONE    = 0;
@@ -432,6 +433,7 @@ const StatusBar = {
           }),
           attrs.version,
         ]),
+        m(AppearanceControl),
       ]),
     ]);
   },

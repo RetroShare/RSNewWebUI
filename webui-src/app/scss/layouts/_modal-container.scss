@@ -7,23 +7,37 @@
   z-index: 1300;
   width: 100%;
   height: 100%;
-  background-color: rgb(var(--ink-rgb) / 0.32);
+  background: transparent;
 }
 
-//  One modal. Title bar, body, and a dismiss that is a bare glyph until the
-//  pointer reaches it. Width is capped in ch as well as px so a long form does
-//  not stretch its labels across a wide screen.
+dialog.popup-dialog {
+  padding: max(var(--s3), env(safe-area-inset-top)) max(var(--s3), env(safe-area-inset-right)) max(var(--s3), env(safe-area-inset-bottom)) max(var(--s3), env(safe-area-inset-left));
+  background: var(--overlay);
+  overflow: hidden;
+
+  &[open] { display: flex; align-items: center; justify-content: center; }
+
+  > .modal-content {
+    position: relative;
+    inset: auto;
+    margin: 0;
+    flex: 0 1 auto;
+    max-width: 100%;
+    max-height: 100%;
+  }
+}
+
 .modal-content {
   position: absolute;
   inset: 0;
   margin: auto;
   box-sizing: border-box;
-  width: min(560px, calc(100% - 2rem));
-  max-height: calc(100% - 2rem);
+  width: min(var(--modal-width), calc(100% - var(--s6)));
+  max-height: calc(100% - var(--s6));
   height: max-content;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--line-strong);
+  border: var(--stroke) solid var(--line-strong);
   border-radius: var(--r-md);
   background: var(--surface);
   box-shadow: var(--lift);
@@ -31,7 +45,6 @@
   overflow: hidden;
   animation: modal-in 140ms cubic-bezier(0.21, 1.02, 0.73, 1);
 
-  // The untitled form: content is padded by the box itself.
   padding: var(--s5);
 
   .close-btn,
@@ -40,54 +53,26 @@
     top: var(--s3);
     right: var(--s3);
     z-index: 1;
-
-    //  26px is a pointer target. A thumb needs the touch box; the glyph stays
-    //  its size, the hit area grows around it.
-    @include touch {
-      width: var(--touch);
-      height: var(--touch);
-      top: var(--s1);
-      right: var(--s1);
-    }
   }
 
-  // Remove default widget padding
   & .widget {
     padding: 0;
   }
 }
 
-//  The titled form: head and body own their own padding, so the head can span
-//  the full width. The dismiss stays pinned to the box corner (the base rule),
-//  above the title rather than beside it -- a 30px title beside a 26px glyph
-//  makes the glyph read as part of the heading.
 .modal-content.modal--titled {
   padding: 0;
 }
 
-//  Flat, on the same plane as the body. The 6% gradient and the rule under it
-//  are the product's chrome for a docked panel -- a toolbar, a config section,
-//  something fixed to an edge. On a card floating over a dimmed page that
-//  chrome reads as a heavy strip stuck to the top; the title carries itself on
-//  weight and space instead.
 .modal__head {
   display: flex;
   flex-direction: column;
   gap: var(--s1);
   flex: none;
-  //  Right padding clears the dismiss glyph in its corner.
   padding: var(--s5) calc(var(--s5) + var(--glyph)) var(--s4) var(--s5);
   background: var(--surface);
 }
 
-//  Display scale, not toolbar scale. A modal is a place you have arrived at,
-//  and the title is the only thing telling you where; at toolbar size it reads
-//  as a strip of chrome above the form rather than the name of the task.
-//
-//  Regular weight, and no letter-spacing of its own. At 30px the size alone
-//  carries the hierarchy; bolding it as well makes the head shout over the
-//  form it introduces. Tracking comes from the body rule, like every other
-//  heading in the product.
 .modal__title {
   min-width: 0;
   margin: 0;
@@ -99,17 +84,15 @@
 }
 
 .modal__body {
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
   padding: 0 var(--s5) var(--s5);
   overflow-y: auto;
+  overscroll-behavior: contain;
+
+  > .widget { height: auto; min-height: 0; }
 }
 
-//  Actions right-aligned, primary last -- the reading order of a decision.
-//
-//  No rule and no fill. A divider earns its place when content scrolls under
-//  it; these modals are a field or two, so it was the same heavy band that was
-//  removed from the top, just moved to the bottom. Space does the separating.
 .modal__foot {
   display: flex;
   justify-content: flex-end;
@@ -119,7 +102,7 @@
 }
 
 @keyframes modal-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  from { opacity: 0; transform: translateY(var(--s2)) scale(0.99); }
   to   { opacity: 1; transform: none; }
 }
 

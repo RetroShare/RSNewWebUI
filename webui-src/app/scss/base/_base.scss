@@ -21,6 +21,8 @@ General site-wide rules
 /* Main base div for tabs used by m.route */
 .content {
   @include flex;
+  min-width: 0;
+  min-height: 0;
   height: 100%;
   overflow: hidden;
 }
@@ -28,6 +30,8 @@ General site-wide rules
 /* Main tab content */
 .tab-content {
   @include flex;
+  min-width: 0;
+  min-height: 0;
   height: 100%;
   width: 100%;
   background-color: var(--ground);
@@ -60,6 +64,11 @@ select {
    their own. */
 select {
   @include select-arrow;
+}
+
+textarea:focus-visible {
+  outline: var(--control-inset) solid var(--select-edge);
+  outline-offset: calc(-1 * var(--control-inset));
 }
 
 /* A dropdown has no placeholder attribute, so the convention is an option
@@ -117,7 +126,7 @@ table {
   font-size: var(--t-h3);
   & th {
     font-size: var(--t-h3);
-    color: black;
+    color: var(--ink);
     border-bottom: 2px solid var(--line-soft);
   }
   & tr {
@@ -144,7 +153,7 @@ hr {
 }
 
 .error {
-  color: red;
+  color: var(--down-ink);
 }
 
 blockquote {

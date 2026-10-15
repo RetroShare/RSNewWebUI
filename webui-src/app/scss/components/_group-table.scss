@@ -63,8 +63,8 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    width: var(--glyph);
-    height: var(--glyph);
+    width: var(--s5);
+    height: var(--s5);
     border-radius: var(--r-sm);
     //  Same tint as a selected rail item. --select-faint sat at 1.05:1 against
     //  the row and read as nothing.
@@ -79,11 +79,17 @@
   }
 
   .group-row__title {
+    text-decoration: none;
     overflow: hidden;
     color: var(--ink);
     font-weight: var(--w-label);
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    &:focus-visible {
+      outline: var(--control-inset) solid var(--select-edge);
+      outline-offset: var(--stroke);
+    }
   }
 
   /* One line of it. The full text is on the group's own page. */
@@ -98,14 +104,14 @@
   //  Same ink as Last post beside it: both are facts about the group, not the
   //  group's name.
   .group-row__posts {
-    width: 6rem;
+    width: var(--group-count-column);
     color: var(--ink-dim);
     font-size: var(--t-meta);
     font-variant-numeric: tabular-nums;
   }
 
   .group-row__activity {
-    width: 12rem;
+    width: var(--group-date-column);
     color: var(--ink-dim);
     font-size: var(--t-meta);
     white-space: nowrap;
@@ -116,9 +122,18 @@
  * what tells you whether the group is alive. */
 @media (max-width: 700px) {
   .group-table {
-    table-layout: auto;
+    table-layout: fixed;
+
+    td { padding: var(--s2); }
 
     .group-row__posts { display: none; }
-    .group-row__activity { width: auto; font-size: var(--t-label); }
+    .group-row__activity {
+      width: calc(var(--s6) * 3);
+      font-size: var(--t-label);
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .group-row__inner { gap: var(--s2); }
   }
 }

@@ -21,6 +21,7 @@
 // ── Right pane: content area ──
 .statistics-right-pane {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow-y: auto;

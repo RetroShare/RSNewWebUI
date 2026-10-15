@@ -29,7 +29,7 @@
 @mixin button($bg-color) {
   width: max-content;
   height: max-content;
-  color: white;
+  color: var(--on-brand);
   background: $bg-color;
   font-size: var(--t-h3);
   padding: 0.4rem 1rem;
@@ -89,12 +89,12 @@
 
 /// The confirming action — the one place the brand appears in ordinary chrome.
 @mixin btn-strong {
-  border-color: var(--brand-deep);
-  background: linear-gradient(180deg, var(--brand-hover), var(--brand-deep));
-  color: var(--surface);
+  border-color: var(--action-border);
+  background: linear-gradient(180deg, var(--action-top), var(--action-bottom));
+  color: var(--on-brand);
   font-weight: var(--w-label);
 
-  &:hover { border-color: var(--brand-press); background: linear-gradient(180deg, var(--brand), var(--brand-press)); }
+  &:hover { border-color: var(--action-border); background: var(--action-bottom); }
 }
 
 @mixin btn-quiet {
@@ -212,9 +212,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  min-height: 0;
+  width: var(--glyph);
+  height: var(--glyph);
+  min-height: var(--glyph);
   padding: 0;
   border: 0;
   border-radius: var(--r-sm);
@@ -280,8 +280,7 @@
   appearance: none;
   //  Room for the chevron, plus the gap it sits in.
   padding-right: calc(var(--s3) + 12px);
-  //  `#788d9c` is --ink-dim; a data URI cannot read a custom property.
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23788d9c'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'/%3E%3C/svg%3E");
+  background-image: var(--select-chevron);
   background-repeat: no-repeat;
   background-position: right var(--s2) center;
   background-size: 12px 12px;
@@ -413,7 +412,7 @@
   top: 0;
   left: 0;
   z-index: 1;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: var(--overlay);
 }
 
 /// Blockquote Mixin

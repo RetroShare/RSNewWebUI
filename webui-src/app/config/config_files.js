@@ -14,6 +14,7 @@ const SharedDirectories = () => {
         directories.length
           ? directories.map((dir) =>
             m('input[type=text].stretched', {
+              'aria-label': 'Shared directory',
               value: dir.filename,
               readonly: true,
             })
@@ -46,13 +47,13 @@ const DownloadLocations = () => {
       m('.panel__body-box', [
         m('.panel__head', m('h3', 'Download Locations')),
         m('.grid-2col', [
-          m('p', 'Downloads directory:'),
+          m('label.cfg-label[for=dl-dir-input]', 'Downloads directory:'),
           m('input[type=text].cfg-path#dl-dir-input', {
             oninput: (e) => (dlDir = e.target.value),
             value: dlDir,
             onchange: setDownloadDir,
           }),
-          m('p', 'Partials directory:'),
+          m('label.cfg-label[for=partial-dir-input]', 'Partials directory:'),
           m('input[type=text].cfg-path#partial-dir-input', {
             oninput: (e) => (partialsDir = e.target.value),
             value: partialsDir,
@@ -108,6 +109,7 @@ const TransferOptions = () => {
         m('.grid-2col', [
           m('p', 'Maximum simultaneous downloads:'),
           m('input[type=number]', {
+            'aria-label': 'Maximum simultaneous downloads',
             value: queueSize,
             oninput: (e) => (queueSize = e.target.value),
             onchange: setMaxSimultaneousDownloads,
@@ -116,6 +118,7 @@ const TransferOptions = () => {
           m(
             'select[name=strategy]',
             {
+              'aria-label': 'Default chunk strategy',
               value: strategy,
               oninput: (e) => (strategy = e.target.value),
               onchange: setChunkStrat,
@@ -126,12 +129,14 @@ const TransferOptions = () => {
           ),
           m('p', 'Maximum uploads per friend:'),
           m('input[type=number]', {
+            'aria-label': 'Maximum uploads per friend',
             value: maxUploadSlots,
             oninput: (e) => (maxUploadSlots = e.target.value),
             onchange: setMaxUploadSlots,
           }),
           m('p', 'Safety disk space limit(MB):'),
           m('input[type=number]', {
+            'aria-label': 'Safety disk space limit (MB)',
             value: diskLimit,
             oninput: (e) => (diskLimit = e.target.value),
             onchange: setFreeLimit,
@@ -140,6 +145,7 @@ const TransferOptions = () => {
           m(
             'select',
             {
+              'aria-label': 'Allow direct download',
               value: directDLPerm,
               oninput: (e) => (directDLPerm = e.target.value),
               onchange: setDirectDLPerm,

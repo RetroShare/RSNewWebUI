@@ -1,4 +1,5 @@
 const m = require('mithril');
+const { positionPanel } = require('popover');
 const widget = require('widgets');
 
 const EMOJI_CATEGORIES = ['Smileys', 'People', 'Animals', 'Food', 'Travel', 'Activities', 'Objects', 'Symbols'];
@@ -344,6 +345,11 @@ const EmojiPicker = () => {
   let close = null;
   let root = null;
 
+  const positionPicker = () => {
+    if (!root) return;
+    positionPanel(root, root.parentElement, { align: 'start', up: true, gapToken: '--s2' });
+  };
+
   //  A click anywhere else dismisses it. Registered by the picker rather than
   //  by each surface that hosts one, so every host gets the behaviour and none
   //  of them can forget to take the listener down again.
@@ -362,9 +368,25 @@ const EmojiPicker = () => {
   return {
     oncreate: (vnode) => {
       root = vnode.dom;
+      if (root.showPopover) root.showPopover();
+      positionPicker();
       document.addEventListener('click', onDocClick);
+      window.addEventListener('resize', positionPicker);
+      window.addEventListener('scroll', positionPicker, true);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', positionPicker);
+        window.visualViewport.addEventListener('scroll', positionPicker);
+      }
     },
-    onremove: () => document.removeEventListener('click', onDocClick),
+    onremove: () => {
+      document.removeEventListener('click', onDocClick);
+      window.removeEventListener('resize', positionPicker);
+      window.removeEventListener('scroll', positionPicker, true);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', positionPicker);
+        window.visualViewport.removeEventListener('scroll', positionPicker);
+      }
+    },
 
     view: ({ attrs: { onSelect, onClose } }) => {
       close = onClose;
@@ -374,6 +396,16 @@ const EmojiPicker = () => {
         : (EMOJI_DATA[category] || []);
 
       return m('.emoji-picker', {
+        popover: 'manual',
+        role: 'dialog',
+        'aria-label': 'Emoji picker',
+        onkeydown: (event) => {
+          if (event.key !== 'Escape') return;
+          event.stopPropagation();
+          const trigger = root.parentElement.querySelector('button');
+          if (trigger) trigger.focus();
+          if (close) close();
+        },
         onclick: (e) => e.stopPropagation(),
       }, [
         m(widget.SearchField, {

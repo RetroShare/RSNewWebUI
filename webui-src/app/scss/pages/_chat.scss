@@ -52,19 +52,19 @@
   border: 1px solid var(--ink-faint);
   border-radius: var(--r-md);
   margin-top: 5px;
-  background-color: white;
+  background-color: var(--surface);
 }
 
 .leftlobby.selected-lobby,
 .selectedidentity {
-  color: white;
-  background-color: var(--brand);
+  color: var(--brand-deep);
+  background-color: var(--select);
 }
 
 .rightbar {
   position: absolute;
   width: 185px;
-  background-color: white;
+  background-color: var(--surface);
   overflow: auto;
   top: 130px;
   bottom: 15px;
@@ -92,7 +92,7 @@
 .messages,
 .setup {
   position: absolute;
-  background-color: white;
+  background-color: var(--surface);
   top: 130px;
   left: 360px;
   right: 215px;
@@ -113,13 +113,13 @@
 }
 
 .username {
-  color: darkgreen;
+  color: var(--up-ink);
   font-weight: var(--w-label);
 }
 
 .chatMessage {
   position: absolute;
-  background-color: white;
+  background-color: var(--surface);
   height: 85px;
   bottom: 15px;
   right: 215px;
@@ -134,7 +134,7 @@ textarea.chatMsg {
 .chatatchar {
   margin-left: 0.2em;
   margin-right: 0.2em;
-  color: silver;
+  color: var(--ink-dim);
 }
 
 .setupicon {
@@ -196,7 +196,7 @@ textarea.chatMsg {
     border-bottom: 1px solid var(--line-soft);
     margin: 0;
     z-index: 10;
-    background: white;
+    background: var(--surface);
   }
 
   .node-panel.chat-room .lobbies {
@@ -246,7 +246,7 @@ textarea.chatMsg {
     bottom: auto !important;
     flex: 0 0 auto;
     padding: 10px !important;
-    background: white;
+    background: var(--surface);
     z-index: 10;
   }
 }
@@ -295,7 +295,7 @@ textarea.chatMsg {
     top: 60px !important;
     bottom: 0 !important;
     width: 80% !important;
-    background: white !important;
+    background: var(--surface) !important;
     z-index: 200 !important;
     box-shadow: none !important;
   }
@@ -317,7 +317,7 @@ textarea.chatMsg {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--overlay);
     z-index: 150;
   }
 
@@ -1824,7 +1824,7 @@ label.mobile-chat-attachment__option:hover {
 
 .attach-path-hint code {
   font-family: monospace;
-  background-color: rgba(245, 158, 11, 0.15);
+  background-color: var(--warn-bg);
   padding: 0.05rem 0.25rem;
   border-radius: var(--r-sm);
 }
@@ -1963,11 +1963,13 @@ label.mobile-chat-attachment__option:hover {
 //  one match makes it a sliver, and hiding the category row during a search
 //  moves everything else up as well.
 .emoji-picker {
-  position: absolute;
-  bottom: calc(100% + 0.5rem);
+  position: fixed;
+  margin: 0;
+  inset: auto;
   left: 0;
-  width: 320px;
-  height: 296px;
+  width: var(--picker-width);
+  height: var(--picker-height);
+  color: var(--ink);
   background-color: var(--surface);
   border: 1px solid var(--line-soft);
   border-radius: var(--r-md);

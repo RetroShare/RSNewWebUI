@@ -33,6 +33,7 @@ const Service = () => {
           m(
             'td',
             m('input[type=checkbox]', {
+              'aria-label': `Allow ${v.attrs.data.value.mServiceName} by default`,
               checked: defaultAllowed,
               oninput: (e) => {
                 defaultAllowed = e.target.checked;

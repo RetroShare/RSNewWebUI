@@ -327,7 +327,7 @@ module.exports = {
       ]),
 
       // ── Right pane: section content ──
-      m('.statistics-right-pane', [
+      m('.statistics-right-pane[tabindex=0][role=region][aria-label=Statistics content]', [
         m(widget.PageHead, {
           title: activeSection.label,
           lead: activeSection.description,

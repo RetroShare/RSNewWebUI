@@ -1,16 +1,3 @@
-// -----------------------------------------------------------------------------
-// Settings.
-//
-// Everything here is scoped under `.config` (config/config_resolver.js). The
-// screen shares `.sidebar` and the bare form elements with the rest
-// of the product, so the overrides stay inside the wrapper until the other
-// screens are converted too.
-//
-// Settings is a form, not a feed: one label column, one control column, panels
-// grouped by subject, and colour reserved for whether a thing is actually
-// working. See docs/design-system.html.
-// -----------------------------------------------------------------------------
-
 @use '../abstracts' as *;
 
 .config {
@@ -338,7 +325,7 @@
     border: 1px solid var(--line);
     border-radius: var(--r-md);
     background: var(--surface);
-    overflow: hidden;
+    overflow-x: auto;
   }
 
   .history-config-table {
@@ -369,7 +356,7 @@
     tbody tr:hover { background: var(--select-faint); }
 
     .col-type {
-      width: 220px;
+      width: auto;
       text-align: left;
       color: var(--ink);
       font-weight: var(--w-label);
@@ -534,11 +521,6 @@
   /* == Touch =============================================================== */
 
   @include touch {
-    input,
-    select,
-    textarea,
-    .sidebar a { min-height: var(--touch); }
-
     input[type='checkbox'] { width: 20px; height: 20px; }
   }
 }
@@ -550,6 +532,7 @@
 
 @media (max-width: 700px) {
   .config {
+    position: relative;
     flex-direction: column;
     overflow: auto;
 
@@ -596,6 +579,8 @@
 
     .port-group,
     .status-indicator { margin-left: 0 !important; }
+
+    .addr-control-group > .nw-input { flex: 1 1 100%; }
 
     .external-address {
       width: 100%;

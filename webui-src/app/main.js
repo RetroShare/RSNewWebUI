@@ -23,6 +23,7 @@ const Dialog = require('dialog');
 const networkState = require('network/network_state');
 const peopleState = require('people/people_state');
 const icon = require('icon');
+const AppearanceControl = require('appearance_control');
 const { ChatRoomsModel, receiveLobbyChatMessage } = require('chat/chat_state');
 
 const sumCounts = (counts) => Object.values(counts || {})
@@ -203,15 +204,18 @@ const MobileStatus = () => {
             m('strong', 'RetroShare'),
             m('span.mobile-app-header__version', WEBUI_VERSION),
           ]),
-          m('button.mobile-status-trigger[type=button]', {
-            'aria-label': `Open connection status. ${summary.label}`,
-            'aria-expanded': String(isOpen),
-            'aria-haspopup': 'dialog',
-            onclick: () => (isOpen = true),
-          }, [
-            m('span.mobile-status-trigger__dot', { class: `is-${summary.tone}` }),
-            m('span', `${state.onlineCount}/${state.friendCount}`),
-            icon('chevron-up'),
+          m('.mobile-app-header__actions', [
+            m(AppearanceControl, { up: false }),
+            m('button.mobile-status-trigger[type=button]', {
+              'aria-label': `Open connection status. ${summary.label}`,
+              'aria-expanded': String(isOpen),
+              'aria-haspopup': 'dialog',
+              onclick: () => (isOpen = true),
+            }, [
+              m('span.mobile-status-trigger__dot', { class: `is-${summary.tone}` }),
+              m('span', `${state.onlineCount}/${state.friendCount}`),
+              icon('chevron-up'),
+            ]),
           ]),
         ]),
         isOpen && m(Dialog, {

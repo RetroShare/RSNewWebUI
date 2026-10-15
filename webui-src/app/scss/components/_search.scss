@@ -45,6 +45,8 @@
   //  `input:focus` in the base sheet paints a border and an inset shadow on
   //  every input, which would draw a second box inside this one.
   &__input {
+    appearance: none;
+    -webkit-appearance: none;
     flex: 1 1 auto;
     width: 100%;
     min-width: 0;

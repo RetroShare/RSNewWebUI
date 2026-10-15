@@ -1,5 +1,6 @@
 const m = require('mithril');
 const icon = require('icon');
+const { Menu } = require('widgets');
 const chatEmoji = require('chat/chat_emoji');
 const { autoResizeTextarea } = require('chat/chat_state');
 
@@ -30,21 +31,13 @@ const { autoResizeTextarea } = require('chat/chat_state');
 
 const ChatComposer = () => {
   let emojiOpen = false;
-  let attachOpen = false;
-  let imageInput;
-
-  function onDocClick(e) {
-    if (!attachOpen || e.target.closest('.chat-composer__attach')) return;
-    attachOpen = false;
-    m.redraw();
-  }
 
   //  Enter sends. Shift+Enter inserts a newline natively; Ctrl/Cmd+Enter has
   //  to insert one by hand, the browser does nothing with it in a textarea.
   //  execCommand keeps the undo stack; the splice is the fallback for the
   //  browsers that dropped it.
   const onKeyDown = (attrs) => (e) => {
-    if (e.key !== 'Enter') return;
+    if (e.key !== 'Enter' || e.isComposing || e.keyCode === 229) return;
     if (e.shiftKey || e.altKey) return;
     e.preventDefault();
     if (e.ctrlKey || e.metaKey) {
@@ -84,8 +77,6 @@ const ChatComposer = () => {
   }, icon(opts.icon));
 
   return {
-    oncreate: () => document.addEventListener('click', onDocClick, true),
-    onremove: () => document.removeEventListener('click', onDocClick, true),
     view: ({ attrs }) => [
       attrs.attachment && m('.chat-attachment-preview', [
         m('.chat-attachment-preview__item', [
@@ -130,47 +121,24 @@ const ChatComposer = () => {
           }),
         ]),
 
-        (attrs.onAttachFile || attrs.onImage) && m('.menu.menu--start.menu--up.chat-composer__attach', {
-          onkeydown: (event) => {
-            if (event.key !== 'Escape') return;
-            attachOpen = false;
-            event.currentTarget.querySelector('.chat-composer__attach-button').focus();
-          },
-          onfocusout: (event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) attachOpen = false;
-          },
-        }, [
-          m('button.menu__button.chat-composer__tool.chat-composer__attach-button.chat-hub-action-btn[type=button]', {
-            title: 'Attach',
-            'aria-label': 'Attach',
-            'aria-expanded': String(attachOpen),
-            disabled: attrs.disabled,
-            onclick: () => { attachOpen = !attachOpen; },
-          }, icon('paperclip')),
-          attachOpen && m('.menu__panel', [
-            attrs.onImage && m('button.menu__item[type=button]', {
-              disabled: attrs.disabled,
-              onclick: () => imageInput.click(),
-            }, [icon('image'), m('span', 'Photo')]),
-            attrs.onAttachFile && m('button.menu__item[type=button]', {
-              disabled: attrs.disabled,
-              onclick: () => {
-                attachOpen = false;
-                attrs.onAttachFile();
-              },
-            }, [icon('paperclip'), m('span', 'File link')]),
-          ]),
-          attrs.onImage && m('input.menu__file[type=file][accept=image/*]', {
-            disabled: attrs.disabled,
-            oncreate: ({ dom }) => { imageInput = dom; },
-            onchange: (event) => {
-              const file = event.target.files && event.target.files[0];
-              if (file) attrs.onImage(file);
-              event.target.value = '';
-              attachOpen = false;
+        (attrs.onAttachFile || attrs.onImage) && m(Menu, {
+          class: 'chat-composer__attach',
+          buttonClass: 'chat-composer__tool chat-composer__attach-button chat-hub-action-btn',
+          title: 'Attach',
+          mark: 'paperclip',
+          align: 'start',
+          up: true,
+          disabled: attrs.disabled,
+          items: [
+            attrs.onImage && {
+              label: 'Photo', icon: 'image', accept: 'image/*',
+              disabled: attrs.disabled, onfile: attrs.onImage,
             },
-          }),
-        ]),
+            attrs.onAttachFile && {
+              label: 'File link', icon: 'paperclip', disabled: attrs.disabled, onclick: attrs.onAttachFile,
+            },
+          ].filter(Boolean),
+        }),
 
         m('.chat-composer__emoji', [
           tool(attrs, {
@@ -194,6 +162,7 @@ const ChatComposer = () => {
         ]),
 
         m('textarea.chat-composer__field[rows=1]', {
+          'aria-label': attrs.label || 'Message',
           placeholder: attrs.placeholder || 'Type a message here...',
           enterkeyhint: 'send',
           value: attrs.value || '',
@@ -209,6 +178,8 @@ const ChatComposer = () => {
         }),
 
         m('button.chat-composer__send.is-primary[type=button]', {
+          'aria-label': 'Send message',
+          title: 'Send message',
           disabled: attrs.disabled,
           onclick: () => attrs.onSend(),
         }, [icon('paper-plane'), m('span.btn-text', 'Send')]),

@@ -250,7 +250,11 @@ const DisplayForumsFromList = () => {
           m('td.group-row__name', m('.group-row__inner', [
             m('.group-row__mark', icon('bullhorn')),
             m('.group-row__text', [
-              m('span.group-row__title', summary.mGroupName || ''),
+              m(m.route.Link, {
+                class: 'group-row__title',
+                href: `/forums/${v.attrs.category}/${v.attrs.id}`,
+                onclick: (event) => event.stopPropagation(),
+              }, summary.mGroupName || 'Unnamed forum'),
               summary.description
                 ? m('span.group-row__desc', summary.description)
                 : null,

@@ -25,14 +25,14 @@
   &__field {
     flex: 1;
     min-width: 0;
-    margin: 0 var(--s1);
-    padding: 6px var(--s3);
+    margin: 0;
+    padding: var(--s1) var(--s2);
     resize: none;
     //  autoResizeTextarea reads both of these off the computed style, so the
     //  resting and maximum heights are settled here and nowhere else.
     min-height: var(--control);
     height: var(--control);
-    max-height: 160px;
+    max-height: var(--composer-max-height);
     border: 1px solid var(--line);
     border-radius: var(--r-md);
     background: var(--surface);
@@ -85,7 +85,6 @@
     display: none;
 
     .menu__panel { min-width: 0; }
-    .menu__item { min-height: var(--control); }
   }
 
   &__attach-button {
@@ -111,6 +110,12 @@
 }
 
 @media (max-width: 700px) {
+  .chat-composer {
+    padding: var(--s1);
+    gap: 0;
+    align-items: flex-end;
+  }
+
   .chat-composer .chat-composer__desktop-attach { display: none; }
   .chat-composer.chat-composer .chat-composer__attach { display: inline-flex; }
   .chat-composer.chat-composer .chat-composer__attach-button {
@@ -122,4 +127,16 @@
 
   //  The field needs the width more than the action needs its label.
   .chat-composer__send .btn-text { display: none; }
+
+  .chat-composer .chat-composer__tool,
+  .chat-composer .chat-composer__send {
+    @include btn-square;
+
+    > .icon { width: var(--icon-action); height: var(--icon-action); }
+  }
+
+  .chat-composer .chat-composer__field {
+    font-size: var(--t-h3);
+    padding: var(--s1) var(--s2);
+  }
 }

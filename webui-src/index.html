@@ -3,6 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      try {
+        var appearance = localStorage.getItem('rs.webui.appearance');
+        if (appearance === 'light' || appearance === 'dark') {
+          document.documentElement.dataset.appearance = appearance;
+        }
+      } catch (_) {}
+    </script>
     <link rel="stylesheet" href="styles.css" />
     <link href="images/retroshare.svg" rel="icon" data-n-head="true" type="image/svg" />
     <title>RetroShare</title>

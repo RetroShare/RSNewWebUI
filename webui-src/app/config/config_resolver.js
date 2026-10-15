@@ -9,6 +9,7 @@ const sections = {
   people: require('config/config_people'),
   chat: require('config/config_chat'),
   mail: require('config/config_mail'),
+  appearance: require('config/config_appearance'),
 };
 
 const labels = {
@@ -19,6 +20,7 @@ const labels = {
   people: 'Identities',
   chat: 'Chat',
   mail: 'Mail',
+  appearance: 'Appearance',
 };
 
 const icons = {
@@ -29,6 +31,7 @@ const icons = {
   people: 'users',
   chat: 'comments',
   mail: 'envelope',
+  appearance: 'adjust',
 };
 
 const Layout = {
