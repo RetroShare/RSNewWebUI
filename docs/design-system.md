@@ -306,7 +306,6 @@ or sending. Post media keeps its separate sizing behavior.
 From `webui-src/`:
 
 ```sh
-npm test
 npm run lint
 npm run build
 ```

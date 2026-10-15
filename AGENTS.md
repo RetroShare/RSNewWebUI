@@ -9,6 +9,18 @@ Rules for any agent working in this repo. Not suggestions.
   that. Never a raw hex, px, or rem that bypasses the scale.
 - On any UI/UX work, think about the user: QoL improvements, keep it simple for
   the common case, visual appeal, accessibility.
+- Read `docs/design-system.md` before UI changes. Keep its color and component
+  reference in sync when changing shared tokens or controls.
+- Use semantic color tokens for both light and dark modes. Primary actions use
+  `--action-*` and `--on-brand`, not text or surface tokens as substitutes.
+- Reuse shared headers, search, menus, navigation, composers and dialogs. Keep
+  the compact utility design; avoid new page-specific variants without a need.
+- Keep desktop control heights on mobile. Let labels and layouts adapt instead
+  of enlarging all buttons. Keep mobile input text readable.
+- Use links for navigation and buttons for actions. Label icon-only controls,
+  retain visible keyboard focus, and never communicate state by color alone.
+- Keep overlays inside the visual viewport with scrollable content and reachable
+  actions. Do not dismiss touch menus on focus loss before a tap completes.
 
 ## Code
 
@@ -29,3 +41,8 @@ Rules for any agent working in this repo. Not suggestions.
   messages, or PR descriptions.
 - Concision over grammar. Fragments are fine.
 - No narration. Ship the code, then a few lines on what changed.
+- Commit messages use `feat:`, `fix:`, `chore:` or `docs:` followed by details.
+- Run `npm run lint` and `npm run build` from `webui-src/`. Rebuild and include
+  tracked generated CSS/icons with their source changes; never edit them by hand.
+- Check changed screens in light/dark modes and narrow/wide layouts. Distinguish
+  browser fixtures from live Core validation; do not claim checks not performed.
