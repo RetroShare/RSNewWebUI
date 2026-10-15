@@ -96,12 +96,16 @@ Run these commands from `webui-src/`:
 ```sh
 npm run build
 npm run lint
+npm test
 ```
 
 `npm run build` compiles the SCSS and creates the complete `webui/` directory.
 It automatically uses `build.bat` on Windows and `build.sh` on macOS or Linux.
 
 `npm run lint` checks the source files and does not require `webui/` to exist.
+
+`npm test` runs focused component, appearance and thumbnail regression tests.
+See [the design system](docs/design-system.md) for UI conventions and themes.
 
 To rebuild CSS whenever an SCSS file changes, run:
 
