@@ -20,7 +20,8 @@
  # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ## ------------------------------------------------------------------------- ##
 
-cmake_minimum_required(VERSION 3.0...4.4)
+# 3.7 : if(VERSION_GREATER_EQUAL)
+cmake_minimum_required(VERSION 3.7...4.4)
 
 unset(SOURCES)
 set(i 0)

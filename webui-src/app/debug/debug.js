@@ -43,7 +43,7 @@ const Debug = () => {
       const version = vnode.attrs.version || '';
       const isConnected = rs.connectionState.status;
       const core = coreVersion
-        ? `${coreVersion.major}.${coreVersion.minor}.${coreVersion.mini}${coreVersion.extra || ''}`
+        ? `${coreVersion.major}.${coreVersion.minor}.${coreVersion.mini}`
         : 'Unknown';
       const coreHuman = coreVersion && coreVersion.human ? coreVersion.human : '';
 
