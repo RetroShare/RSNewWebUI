@@ -2,7 +2,7 @@ const m = require('mithril');
 
 //  Bumped at every change of the web UI; shown in the rail, the phone header
 //  and the Debug page.
-const WEBUI_VERSION = 'v175';
+const WEBUI_VERSION = 'v176';
 
 const login = require('login');
 const rs = require('rswebui');
@@ -15,6 +15,7 @@ const files = require('files/files_resolver');
 const channels = require('channels/channels');
 const forums = require('forums/forums');
 const boards = require('boards/boards');
+const feedreader = require('feedreader/feedreader');
 const config = require('config/config_resolver');
 const statistics = require('statistics/statistics');
 const debug = require('debug/debug');
@@ -69,6 +70,10 @@ const navigationItems = [
   {
     name: 'boards', href: '/boards/MyBoards', label: 'Boards',
     icon: 'i.fas.fa-globe.sidenav-icon', mobile: 'more',
+  },
+  {
+    name: 'feedreader', href: '/feedreader', label: 'FeedReader',
+    icon: 'i.fas.fa-rss.sidenav-icon', mobile: 'more',
   },
   {
     name: 'statistics', href: '/statistics', label: 'Statistics',
@@ -460,6 +465,9 @@ m.route(document.getElementById('main'), '/', {
   },
   '/config/:tab': {
     render: (v) => m(Layout, m(config, v.attrs)),
+  },
+  '/feedreader': {
+    render: () => m(Layout, m(feedreader)),
   },
   '/statistics': {
     render: () => m(Layout, m(statistics)),
