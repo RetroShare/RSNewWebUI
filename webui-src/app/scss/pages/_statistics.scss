@@ -429,6 +429,417 @@
   }
 }
 
+// ── Turtle Router section ──
+.turtle-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.turtle-panel {
+  width: 100%;
+  padding: 1.25rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.turtle-panel__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line-soft);
+
+  > .icon {
+    color: var(--brand-deep);
+    width: 17px;
+    height: 17px;
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    margin: 0 0 0.2rem;
+    font-size: var(--t-h3);
+    font-weight: var(--w-label);
+    color: var(--ink);
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--t-meta);
+    color: var(--ink-dim);
+  }
+}
+
+.turtle-prob-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.turtle-prob-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--sunken);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  padding: 0.75rem 0.5rem;
+
+  &__label {
+    font-size: var(--t-label);
+    font-weight: var(--w-label);
+    color: var(--ink-dim);
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+  }
+
+  &__value {
+    font-size: var(--t-row);
+    font-weight: var(--w-state);
+    color: var(--ink);
+    margin-top: 0.5rem;
+  }
+}
+
+.turtle-prob-bar-track {
+  width: 100%;
+  max-width: 32px;
+  height: 80px;
+  background: var(--surface);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.turtle-prob-bar-fill {
+  width: 100%;
+  background: var(--brand);
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+  transition: height 0.35s ease;
+}
+
+.turtle-controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line-soft);
+
+  .turtle-filter-field {
+    width: 260px;
+    max-width: 100%;
+  }
+}
+
+.turtle-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--r-full);
+  font-size: var(--t-micro);
+  font-weight: var(--w-state);
+  background: var(--sunken);
+  color: var(--ink-body);
+
+  &--hit {
+    background: var(--up-bg);
+    color: var(--up-ink);
+  }
+}
+
+.turtle-depth-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--r-sm);
+  font-size: var(--t-label);
+  font-family: var(--font-mono);
+  font-weight: var(--w-state);
+  background: var(--sunken);
+  color: var(--ink-body);
+}
+
+.turtle-hash-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  background: var(--sunken);
+  border-radius: var(--r-sm);
+  font-size: var(--t-meta);
+
+  &__label {
+    font-weight: var(--w-label);
+    color: var(--ink-dim);
+    white-space: nowrap;
+    font-size: var(--t-label);
+  }
+}
+
+.turtle-hash-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow-x: auto;
+  flex: 1;
+}
+
+.turtle-chip {
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--r-sm);
+  font-size: var(--t-label);
+  font-family: var(--font-mono);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-body);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: none;
+
+  &:hover:not(.is-selected) {
+    background: var(--press);
+  }
+
+  &.is-selected {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: var(--surface);
+    font-weight: var(--w-state);
+  }
+}
+
+.turtle-table {
+  min-width: 750px;
+
+  .turtle-cell--mono {
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    color: var(--brand-deep);
+  }
+
+  .turtle-cell--keywords {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-style: italic;
+    color: var(--ink-body);
+  }
+
+  .turtle-speed--active {
+    color: var(--up-ink);
+    font-weight: var(--w-state);
+  }
+
+  .turtle-speed--idle {
+    color: var(--ink-dim);
+    font-style: italic;
+  }
+}
+
+.turtle-vol-badge {
+  font-size: var(--t-label);
+  font-weight: var(--w-state);
+  color: var(--brand-deep);
+  margin-top: 0.15rem;
+  white-space: nowrap;
+}
+
+.turtle-core-summary {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.65rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  font-size: var(--t-meta);
+  color: var(--ink-body);
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    > .icon {
+      color: var(--brand);
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &__title {
+    font-weight: var(--w-state);
+    color: var(--ink);
+  }
+}
+
+// ── Tunnel Requests Repartition (Matches Qt GUI TRHistogram) ──
+.turtle-repartition-view {
+  width: 100%;
+}
+
+.turtle-repartition-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.turtle-repartition-card {
+  background: var(--sunken);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  padding: 1rem;
+}
+
+.turtle-repartition-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--t-row);
+  font-weight: var(--w-state);
+  color: var(--ink);
+  margin: 0 0 0.85rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line-soft);
+
+  > .icon {
+    color: var(--brand-deep);
+    width: 16px;
+    height: 16px;
+  }
+
+  .turtle-badge {
+    margin-left: auto;
+  }
+}
+
+.turtle-repartition-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.turtle-repartition-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--t-meta);
+  }
+
+  &__name {
+    font-weight: var(--w-label);
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+  }
+
+  &__count {
+    color: var(--ink-dim);
+  }
+}
+
+.turtle-repartition-bar-track {
+  width: 100%;
+  height: 6px;
+  background: var(--line-soft);
+  border-radius: var(--r-full);
+  overflow: hidden;
+}
+
+.turtle-repartition-bar-fill {
+  height: 100%;
+  background: var(--brand);
+  border-radius: var(--r-full);
+  transition: width 0.3s ease;
+}
+
+.turtle-repartition-total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.85rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--t-meta);
+  font-weight: var(--w-state);
+  color: var(--ink);
+}
+
+.turtle-depth-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.turtle-depth-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  padding: 0.5rem 0.25rem;
+
+  &__label {
+    font-size: var(--t-micro);
+    font-weight: var(--w-label);
+    color: var(--ink-dim);
+    margin-bottom: 0.35rem;
+    white-space: nowrap;
+  }
+
+  &__count {
+    font-size: var(--t-label);
+    font-weight: var(--w-state);
+    color: var(--ink);
+    margin-top: 0.35rem;
+  }
+
+  &__pct {
+    font-size: var(--t-micro);
+    color: var(--ink-dim);
+  }
+}
+
+.turtle-depth-bar-track {
+  width: 100%;
+  max-width: 24px;
+  height: 70px;
+  background: var(--sunken);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.turtle-depth-bar-fill {
+  width: 100%;
+  background: var(--brand);
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+  transition: height 0.3s ease;
+}
+
 // ── Responsive: medium screens (stack traffic cards & 2-column stats) ──
 @media (max-width: 1200px) {
   .bandwidth-summary-grid {
@@ -524,5 +935,28 @@
 
   .bandwidth-panel {
     padding: 0.8rem 0.5rem;
+  }
+
+  // Turtle mobile
+  .turtle-panel {
+    padding: 0.8rem 0.6rem;
+  }
+
+  .turtle-prob-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .turtle-prob-bar-track {
+    height: 60px;
+  }
+
+  .turtle-controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .turtle-repartition-grid {
+    grid-template-columns: 1fr;
   }
 }
