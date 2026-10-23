@@ -1,4 +1,5 @@
 const m = require('mithril');
+const motion = require('motion');
 const Data = require('network/network_data');
 const peopleUtil = require('people/people_util');
 const chatPreviewText = require('chat/chat_preview');
@@ -50,7 +51,7 @@ const OwnProfileCard = () => {
                 isPresenceMenuOpen = !isPresenceMenuOpen;
               },
             }),
-            isPresenceMenuOpen && m('.profile-presence-menu', [
+            isPresenceMenuOpen && m('.profile-presence-menu', { onbeforeremove: motion.exit }, [
               [
                 { value: 3, label: 'Online' },
                 { value: 1, label: 'Away' },

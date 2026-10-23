@@ -7,18 +7,24 @@ const peopleUtil = require('people/people_util');
 const icon = require('icon');
 
 const getChannels = {
+  loaded: false,
+  loading: false,
+  error: '',
   All: [],
   Popular: [],
   Subscribed: [],
   MyChannels: [],
   Other: [],
   async load() {
+    if (getChannels.loading) return;
+    getChannels.loading = true;
+    getChannels.error = '';
+    m.redraw();
     try {
       const res = await rs.rsJsonApiRequest('/rsgxschannels/getChannelsSummaries');
       const channels = res && res.body && Array.isArray(res.body.channels) ? res.body.channels : null;
       if (!channels) {
-        console.warn('Channels summaries response did not include channels', res && res.body);
-        return;
+        throw new Error('Channel summaries unavailable');
       }
       //  Most popular first, the order the All tab has always shown.
       getChannels.All = [...channels].sort((a, b) => (b.mPop || 0) - (a.mPop || 0));
@@ -35,10 +41,16 @@ const getChannels = {
       getChannels.MyChannels = channels.filter(
         (channel) => channel.mSubscribeFlags === util.GROUP_MY_CHANNEL
       );
+      getChannels.loaded = true;
       m.redraw();
       await getChannels.loadDescriptions();
     } catch (error) {
+      getChannels.error = 'Could not load channels.';
       console.warn('Failed to load channel summaries', error);
+    } finally {
+      getChannels.loaded = true;
+      getChannels.loading = false;
+      m.redraw();
     }
   },
 
@@ -141,7 +153,8 @@ const Layout = () => {
         !vnode.attrs.pathInfo.mGroupId && m(widget.PageHead, {
           class: 'group-list-head',
           title: pageTitles[vnode.attrs.pathInfo.tab] || 'Channels',
-          actions: [
+           actions: [
+             getChannels.loaded && getChannels.loading && getChannels.All.length > 0 && m(widget.Loading, { label: 'Updating…' }),
             m('button.channels-create-button.is-primary', {
               onclick: createChannel,
             }, [icon('plus'), 'Create Channel']),
@@ -158,6 +171,10 @@ const Layout = () => {
               id: vnode.attrs.pathInfo.mGroupId,
               onSubscriptionChange: getChannels.load,
             })
+          : !getChannels.loaded || (getChannels.loading && !getChannels.All.length)
+          ? m(widget.TableLoading, { label: 'Loading channels…' })
+          : getChannels.error && !getChannels.All.length
+          ? m(widget.ListError, { message: getChannels.error, onretry: getChannels.load })
           : m(sections[vnode.attrs.pathInfo.tab], {
               // subscribed, all, popular, other
               list: getChannels[vnode.attrs.pathInfo.tab],

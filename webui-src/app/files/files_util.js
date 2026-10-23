@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const rs = require('rswebui');
 const widget = require('widgets');
 const icon = require('icon');
@@ -239,7 +240,7 @@ const File = () => {
               //  Keyed by hash: one `chunkTag` id was shared by every row, so
               //  the label focused whichever select happened to render last.
               m(`label[for=chunk-${info.hash}]`, 'Chunk strategy'),
-              m(`select[id=chunk-${info.hash}]`, { value: chunkStrat, onchange: changeChunkStrategy }, [
+              select(`select[id=chunk-${info.hash}]`, { value: chunkStrat, onchange: changeChunkStrategy }, [
                 Object.keys(chunkStrats).map((strat) =>
                   m('option', { value: strat }, chunkStrats[strat])
                 ),
@@ -325,7 +326,7 @@ const MyFilesTable = () => {
       m('table.myfiles', [
         //  No separate twist column: the chevron lives in the name cell, so
         //  it indents with the row it belongs to.
-        m('tr', [m('th', 'My Directories'), m('th', 'Size')]),
+        m('thead', m('tr', [m('th[scope=col]', 'My Directories'), m('th[scope=col]', 'Size')])),
         v.children,
       ]),
   };
@@ -335,11 +336,11 @@ const FriendsFilesTable = () => {
   return {
     view: (v) =>
       m('table.friendsfiles', [
-        m('tr', [
-          m('th', 'Friends Directories'),
-          m('th', 'Size'),
-          m('th', 'Download'),
-        ]),
+        m('thead', m('tr', [
+          m('th[scope=col]', 'Friends Directories'),
+          m('th[scope=col]', 'Size'),
+          m('th[scope=col]', 'Download'),
+        ])),
         v.children,
       ]),
   };

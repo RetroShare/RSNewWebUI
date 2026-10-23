@@ -1,6 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const icon = require('icon');
+const brandLogo = require('brand_logo');
 
 const displayErrorMessage = function (message) {
   m.render(document.getElementById('error'), message);
@@ -45,7 +46,7 @@ function loginComponent() {
   let withOptions = false;
 
   const logo = () =>
-    m('img.login-logo', { src: 'images/retroshare.svg', alt: '' });
+    m('img.login-logo', { src: brandLogo, alt: '', width: 200, height: 200 });
 
   const inputName = () =>
     m('input', {

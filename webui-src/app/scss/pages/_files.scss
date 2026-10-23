@@ -112,12 +112,12 @@ table.friendsfiles {
     word-wrap: break-word;
   }
 
-  tr:hover td { background: var(--ground); }
+  tr:hover > td { background: var(--ground); }
 
   //  A size is a number in a column of numbers.
   th:nth-child(2),
   td:nth-child(2) {
-    width: 140px;
+    width: var(--tree-size-column);
     text-align: right;
     font-variant-numeric: tabular-nums;
     color: var(--ink-dim);
@@ -128,7 +128,10 @@ table.friendsfiles {
   //  cell, so the chevron steps right with the row rather than staying put in
   //  a column of its own; the flex row sits inside the cell so the cell keeps
   //  its table-cell display and this fixed layout still allocates widths.
-  td.file-tree__name { min-width: 0; }
+  td.file-tree__name {
+    min-width: 0;
+    padding-left: calc(var(--s2) + var(--tree-depth, 0) * var(--tree-indent));
+  }
 
   .file-tree__row {
     display: flex;
@@ -170,7 +173,7 @@ table.friendsfiles {
 table.friendsfiles {
   th:nth-child(3),
   td:nth-child(3) {
-    width: 150px;
+    width: var(--tree-action-column);
     text-align: center;
   }
 }
@@ -1035,4 +1038,63 @@ table.friendsfiles {
     align-items: center;
     gap: var(--s2);
   }
+}
+
+table.myfiles,
+table.friendsfiles {
+  button.file-tree__row {
+    width: 100%;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    justify-content: flex-start;
+    text-align: left;
+
+    &:hover { color: var(--brand-deep); }
+    &:focus-visible { outline: var(--control-inset) solid var(--select-edge); }
+  }
+
+  .file-tree__twist,
+  .file-tree__loading {
+    width: var(--t-row);
+    height: var(--t-row);
+    transition: transform var(--motion-enter) var(--ease-out), color var(--motion-fast) ease;
+  }
+
+  [aria-expanded='true'] > .file-tree__twist { transform: rotate(90deg); }
+
+  tr.file-tree__branch {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+
+    > td { padding: 0; border: 0; background: transparent; }
+  }
+}
+
+.file-tree__size-column { width: var(--tree-size-column); }
+.file-tree__action-column { width: var(--tree-action-column); }
+
+@include mobile {
+  table.myfiles > thead,
+  table.friendsfiles > thead { display: none; }
+
+  table.myfiles > tbody,
+  table.friendsfiles > tbody { display: block; width: 100%; }
+
+  .file-tree__branch-grid colgroup { display: none; }
+
+  // Keep depth after the old phone cell padding reset.
+  table.myfiles td.file-tree__name,
+  table.friendsfiles td.file-tree__name {
+    padding-left: calc(var(--tree-depth, 0) * var(--s2)) !important;
+  }
+
+  table.myfiles tr.file-tree__branch,
+  table.friendsfiles tr.file-tree__branch { display: block; }
 }

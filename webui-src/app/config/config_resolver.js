@@ -34,6 +34,17 @@ const icons = {
   appearance: 'adjust',
 };
 
+const descriptions = {
+  network: 'Manage connectivity, discovery and proxy access.',
+  node: 'Connection details and the identity of this RetroShare node.',
+  services: 'Choose which services are available to friends by default.',
+  files: 'Shared folders, download locations and transfer limits.',
+  people: 'Contact preferences, reputation and identity retention.',
+  chat: 'Default identity, chat permissions and stored history.',
+  mail: 'Message permissions and the tags used to organize mail.',
+  appearance: 'Choose how RetroShare looks in this browser.',
+};
+
 const Layout = {
   view: (vnode) => m('.config', [
     m(widget.Sidebar, {
@@ -44,13 +55,19 @@ const Layout = {
       labels,
       icons,
     }),
-    m('.node-panel', vnode.children),
+    m('.node-panel', m('.settings-page', [
+      m(widget.PageHead, {
+        title: `${labels[vnode.attrs.tab] || 'Network'} settings`,
+        lead: descriptions[vnode.attrs.tab],
+      }),
+      m('.settings-body', vnode.children),
+    ])),
   ]),
 };
 
 module.exports = {
   view: (vnode) => {
     const tab = vnode.attrs.tab;
-    return m(Layout, m(sections[tab]));
+    return m(Layout, { tab }, m(sections[tab] || sections.network));
   },
 };

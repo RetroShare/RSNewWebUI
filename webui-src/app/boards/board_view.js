@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const util = require('boards/boards_util');
 const boardKanban = require('boards/board_kanban');
 const rs = require('rswebui');
@@ -85,7 +86,7 @@ function createboard() {
         ]),
         m('.create-board-form__field.create-board-form__identity', [
           m('label[for=idtags]', 'Publishing identity'),
-          m('select.config-style-select[id=idtags]', {
+          select('select.config-style-select[id=idtags]', {
             value: identity,
             onchange: (e) => (identity = vnode.attrs.authorId[e.target.selectedIndex]),
           }, vnode.attrs.authorId && vnode.attrs.authorId.map((o) => m(
@@ -96,7 +97,7 @@ function createboard() {
         ]),
         m('.create-board-form__field.create-board-form__distribution', [
           m('label[for=circletags]', 'Message distribution'),
-          m('select.config-style-select[id=circletags]', {
+          select('select.config-style-select[id=circletags]', {
             value: circle,
             onchange: (e) => (circle = e.target.value),
           }, [
@@ -106,7 +107,7 @@ function createboard() {
         ]),
         Number(circle) === util.EXTERNAL && m('.create-board-form__field.create-board-form__circle', [
           m('label[for=board-circle]', 'Circle'),
-          m('select.config-style-select[id=board-circle]', {
+          select('select.config-style-select[id=board-circle]', {
             value: selectedCircle && selectedCircle.mGroupId,
             onchange: (e) => {
               selectedCircle = circles.find((item) => item.mGroupId === e.target.value);
@@ -268,7 +269,7 @@ function CreatePost() {
       }),
       m('.create-board-post__author', [
         m('label[for=board-post-author]', 'Post as'),
-        m('select.config-style-select.network-style-select[id=board-post-author]', {
+        select('select.config-style-select.network-style-select[id=board-post-author]', {
           value: authorId,
           onchange: (e) => (authorId = e.target.value),
           disabled: identities.length === 0,
@@ -678,7 +679,7 @@ function PostView() {
           m('.board-post-voting', [
             m('.board-post-voting__identity', [
               m('label[for=board-post-voter]', 'Vote as'),
-              m('select#board-post-voter', {
+              select('select#board-post-voter', {
                 value: voteIdentity || '',
                 disabled: identities.length === 0 || postVoteSubmitting,
                 onchange: (e) => { voteIdentity = e.target.value; },

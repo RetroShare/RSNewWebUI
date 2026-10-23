@@ -21,6 +21,8 @@
 // 6. Page-specific styles
 @use 'pages';
 
-// 7. Small screen / touch adaptations. Must stay last: it overrides the
-//    layouts defined above without relying on !important.
+// 7. Small screen / touch adaptations override the layouts above.
 @use 'responsive';
+
+// 8. Shared motion overrides the older per-page animations.
+@use 'motion';

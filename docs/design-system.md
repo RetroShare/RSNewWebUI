@@ -62,7 +62,9 @@ inherits light values unless the dark palette overrides them.
 | `--select-faint` | `#e4f1fa` | `#203544` | Quiet selected surfaces |
 
 Primary buttons use a 180° gradient from `--action-top` to `--action-bottom`,
-with `--action-border` and `--on-brand`. Do not substitute `--brand-deep` for
+with `--action-border` and `--on-brand`. Hover eases the backing color toward
+`--action-top`, without removing the gradient and flashing a clear background.
+Do not substitute `--brand-deep` for
 their border: its dark-theme value is intentionally light for text.
 
 ### Status and reach
@@ -134,21 +136,72 @@ channels. `--select-chevron` supplies a theme-specific SVG for select controls.
 - Icons: use `icon()` with names from `webui-src/make-src/icons.js`. It builds
   the Phosphor sprite. Label icon-only controls; decorative icons stay hidden
   from assistive technology.
+- Branding: `brand_logo.js` embeds the existing RetroShare SVG in the app bundle.
+  Home, login and navigation reuse that source without another image request.
+  Images declare their intrinsic ratio; `--home-logo-size` and its mobile token
+  reserve the homepage mark's space before decoding, preventing layout shifts.
 
 Measurements above are in CSS pixels. Use token names in styles, not literals.
 
 ## Shared components
 
+### Motion
+
+- `--motion-fast` (120ms) for feedback; `--motion-enter` (280ms) for arrivals.
+- `--motion-exit` (160ms) for exits; `--motion-layout` (320ms) for rails and sheets.
+- `--motion-loop` (1200ms) for loading; `--motion-stagger` (32ms) for short lists.
+- Use `--ease-out`, `--ease-in` and `--ease-layout`, with spacing-based travel.
+- `motion.exit` keeps removed overlays mounted until their exit finishes.
+  Loading loops do not delay removal. Reduced motion skips the wait and travel.
+- `Loading` provides a shared, labeled status ring. Keep real request state as
+  the source of truth; do not fake progress.
+- `Segmented` shares one moving active tile/underline. Measurements follow
+  selected button widths, badges and container resizing; reduced motion is instant.
+- File branches expand/collapse their actual height. Directory rows are keyboard
+  buttons, show pending work, and ignore duplicate loads.
+- Forum replies reuse the same animated table shell and keep their columns aligned.
+- Skeleton rows follow real group-list loading state. Cached rows stay visible
+  during background refreshes; failed initial loads offer a retry.
+- Pressed segmented buttons stay clear while the shared active tile moves.
+  Keep keyboard focus visible, without a second mouse-focus fill.
+
 - `PageHead`: title, optional back arrow, description and actions.
 - `BackButton`: the same left arrow on every detail page.
 - `SearchField`: persistent accessible name, optional clear or submit action.
+- `select()` in `select.js`: styled combobox/listbox using the shared popover.
+  Supports arrows, Home/End, typing, Enter, Escape and Tab. A hidden native select
+  retains existing form values, labels, validation and change handlers.
 - `Segmented`: labeled choices with a single tab stop and arrow/Home/End keys.
 - `Menu`: compact secondary actions in a top-layer popover. Focus loss alone
   never dismisses it: touch browsers can blur before delivering a tap. Pass an
   accessible title, especially when the visible label disappears on phones.
 - `Sidebar`: routed links or real buttons for local-state navigation.
 - `ChatComposer`: shared attachments, emoji, message field and send action.
-- `.group-table`: shared channel/forum list layout and responsive columns.
+- `.group-table`: shared board/channel/forum lists, with icon, linked name,
+  optional description, post count and last activity. Phone layouts hide counts.
+- Desktop rail: `--nav-item-width` adds room beside the selection edge, with
+  `--nav-item-size` height and `--s1` row gaps. Center `--nav-icon-size` glyphs;
+  `--nav-gutter` keeps the icon column fixed on collapse.
+- Expanded main navigation uses `--rail-open` (184), keeping the collapsed rail unchanged.
+- Settings share a page header, section panels and aligned labels/fields.
+  `--settings-width`, `--settings-label-width` and `--settings-field-width` keep
+  forms readable on wide screens. Narrow screens stack fields; tables scroll.
+- The network graph uses one high-DPI canvas, capped at 200 displayed peers.
+  Spatial buckets limit repulsion work; springs run only while settling or dragging.
+  Rendering does not redraw the app on every pointer move. Idle, hidden and
+  removed graphs stop their frame loop; reduced motion disables settling.
+- Graph view controls live inside the top-right corner; spacing is top-left,
+  the legend bottom-left, and the interaction hint bottom-right. Drawing leaves
+  room for these overlays. Nodes and labels stay within that usable rectangle.
+- Peer names are visible by default, with cached text measurements and a Names
+  toggle for crowded graphs. Clicking a node focuses it; Page Up/Down switches
+  keyboard focus between peers, and arrow keys move the focused peer.
+- Spacing scales spring and repulsion distances without refitting the camera,
+  so changing it visibly changes density. Fit view remains an explicit action.
+- The spacing slider retains native keyboard/touch behavior, with a thin filled
+  track, outlined thumb, hover halo and numeric chip. Track fill follows its value;
+  keyboard focus and forced-colors mode remain visible.
+- Inline help icons follow their label text, with the same spacing and alignment.
 - `popupMessage`: shared form/confirmation overlay; pass `title` and optional
   `lead`. Use `confirmMessage` for decisions and toasts for notices.
 - `Dialog`: native modal shell, focus handling and visual-viewport sizing.
@@ -177,7 +230,12 @@ not all one generic row or modal; preserve the existing page-specific behavior.
 | `AppearanceControl` | `appearance_control.js`, `appearance.js` | Desktop status bar and mobile top strip |
 | `CommentsSection` | `comments.js`, `scss/components/_comments.scss` | Board/channel post comments |
 | `HistoryBrowserModal` | `people/people_history.js`, `scss/components/_history-browser.scss` | Network, People and room chat history |
-| Group table | `scss/components/_group-table.scss` | Channel/forum lists rendered by their `*_util.js` modules |
+| Group table | `scss/components/_group-table.scss` | Board/channel/forum lists rendered by their `*_util.js` modules |
+| `TableLoading` / `ListError` | `widgets.js`, `scss/components/_group-table.scss` | Pending group lists and retryable loading failures |
+| `TableBranch` | `table_branch.js`, `scss/components/_table-branch.scss` | Animated file folders and nested forum replies |
+| `select()` | `select.js`, `scss/components/_select.scss` | Settings, identity choices and list filters |
+| Settings shell | `config/config_resolver.js`, `scss/pages/_config.scss` | Shared headings and layouts for all settings sections |
+| Network graph | `network/network_graph.js`, `network/graph_canvas.js`, `network/graph_physics.js`, `network/graph_viewport.js`, `scss/pages/_network-graph.scss` | Cached discovery, rectangular projection, bounded canvas rendering and on-demand springs |
 | Media details | `scss/components/_media.scss` | Board/channel metadata and thumbnails |
 | Post grid | `scss/components/_posts.scss` | Channel post cards |
 | Transfer progress | `scss/components/_progress-bar.scss` | Files transfer percentages and chunk maps |

@@ -1,0 +1,143 @@
+@use 'abstracts' as *;
+
+@keyframes surface-in {
+  from { opacity: 0; transform: translateY(var(--motion-distance)) scale(var(--motion-scale)); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes surface-out {
+  to { opacity: 0; transform: translateY(var(--motion-distance)) scale(var(--motion-scale)); }
+}
+
+@keyframes veil-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes veil-out { to { opacity: 0; } }
+@keyframes sheet-in { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes sheet-out { to { transform: translateY(100%); } }
+@keyframes drawer-in { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes drawer-out { to { transform: translateX(-100%); } }
+
+.is-leaving { pointer-events: none !important; }
+
+.attach-modal-overlay,
+.accessible-dialog[open] {
+  animation: veil-in var(--motion-enter) var(--ease-out) backwards;
+
+  &.is-leaving {
+    animation: veil-out var(--motion-exit) var(--ease-in) both;
+  }
+}
+
+.modal-content {
+  animation: surface-in var(--motion-enter) var(--ease-out) backwards;
+}
+
+.is-leaving .modal-content {
+  animation: surface-out var(--motion-exit) var(--ease-in) both;
+}
+
+.menu__panel,
+.select-control__panel,
+.forum-details__panel,
+.people-context-menu,
+.rightbar-context-menu,
+.chat-msg-context-menu,
+.profile-presence-menu,
+.emoji-picker {
+  --motion-distance: calc(-1 * var(--s1));
+  transform-origin: top right;
+  animation: surface-in var(--motion-enter) var(--ease-out) backwards;
+
+  &.is-leaving {
+    animation: surface-out var(--motion-exit) var(--ease-in) both;
+  }
+}
+
+.floating-panel[data-align='start'] { transform-origin: top left; }
+.is-leaving > .emoji-picker {
+  animation: surface-out var(--motion-exit) var(--ease-in) both;
+}
+.floating-panel[data-opens-up='true'],
+.emoji-picker {
+  --motion-distance: var(--s1);
+  transform-origin: bottom left;
+}
+
+.menu__caret {
+  transition: transform var(--motion-enter) var(--ease-out);
+}
+.menu__button[aria-expanded='true'] .menu__caret { transform: rotate(180deg); }
+
+:where(button, .menu__button, .menu__item, .sidebar a, .segmented__item,
+  .nav-menu .item, .mobile-bottom-nav__item) {
+  transition: background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease, color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease, scale var(--motion-fast) var(--ease-out);
+}
+
+button:enabled:active:not(.status-dot) { scale: var(--motion-press); }
+
+.tab-content > :not(.sidebar):not(.sidebar-drawer) {
+  animation: veil-in var(--motion-enter) var(--ease-out) backwards;
+}
+
+.loading-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  color: var(--ink-dim);
+  font-size: var(--t-meta);
+  animation: veil-in var(--motion-enter) var(--ease-out) backwards;
+
+  &__ring {
+    flex: none;
+    width: var(--loader-size);
+    height: var(--loader-size);
+    box-sizing: border-box;
+    border: var(--loader-stroke) solid var(--line-soft);
+    border-top-color: var(--brand);
+    border-right-color: var(--brand);
+    border-radius: var(--r-full);
+    animation: icon-spin var(--motion-loop) linear infinite;
+  }
+}
+
+@include mobile {
+  .mobile-more-sheet,
+  .mobile-status-sheet {
+    animation: sheet-in var(--motion-layout) var(--ease-layout) backwards;
+  }
+
+  .is-leaving > .mobile-more-sheet,
+  .is-leaving > .mobile-status-sheet {
+    animation: sheet-out var(--motion-exit) var(--ease-in) both;
+  }
+
+  .section-drawer {
+    animation: drawer-in var(--motion-layout) var(--ease-layout) backwards;
+  }
+
+  .is-leaving > .section-drawer {
+    animation: drawer-out var(--motion-exit) var(--ease-in) both;
+  }
+
+  .mobile-more-sheet__links > a {
+    animation: surface-in var(--motion-enter) var(--ease-out) backwards;
+    @for $i from 1 through 7 {
+      &:nth-child(#{$i}) { animation-delay: calc(var(--motion-stagger) * #{$i - 1}); }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-exit: 0ms;
+    --motion-enter: 0ms;
+    --motion-layout: 0ms;
+    --motion-stagger: 0ms;
+    --motion-press: 1;
+  }
+
+  .loading-state__ring { animation: none; }
+}

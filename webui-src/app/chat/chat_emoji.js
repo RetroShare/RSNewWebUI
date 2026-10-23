@@ -1,4 +1,5 @@
 const m = require('mithril');
+const motion = require('motion');
 const { positionPanel } = require('popover');
 const widget = require('widgets');
 
@@ -378,6 +379,7 @@ const EmojiPicker = () => {
         window.visualViewport.addEventListener('scroll', positionPicker);
       }
     },
+    onbeforeremove: motion.exit,
     onremove: () => {
       document.removeEventListener('click', onDocClick);
       window.removeEventListener('resize', positionPicker);

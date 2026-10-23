@@ -1,4 +1,6 @@
 const m = require('mithril');
+const select = require('select');
+const motion = require('motion');
 const rs = require('rswebui');
 const peopleUtil = require('people/people_util');
 const chatEmoji = require('chat/chat_emoji');
@@ -650,9 +652,10 @@ const Layout = () => {
               identityId: Data.identity,
               size: 24,
             }),
-            m(
+            select(
               'select[id=idtags]',
               {
+                'aria-label': 'Sender identity',
                 value: Data.identity,
                 onchange: (e) => {
                   Data.identity = Data.ownId[e.target.selectedIndex];
@@ -894,7 +897,7 @@ const Layout = () => {
                     showEmojiPicker = !showEmojiPicker;
                   },
                 }, icon('smile')),
-                showEmojiPicker && m('.emoji-picker__anchor',
+                showEmojiPicker && m('.emoji-picker__anchor', { onbeforeremove: motion.exit },
                   m(chatEmoji.EmojiPicker, {
                     onSelect: insertEmoji,
                     onClose: () => { showEmojiPicker = false; },

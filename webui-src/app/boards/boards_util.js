@@ -3,6 +3,7 @@ const rs = require('rswebui');
 const peopleUtil = require('people/people_util');
 const widget = require('widgets');
 const toast = require('toast');
+const icon = require('icon');
 
 const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this group
 const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
@@ -211,12 +212,14 @@ const BoardSummary = () => {
   return {
     view: (vnode) => {
       const details = vnode.attrs.details;
-      const bname = details.mGroupName || details.name || '';
+      const bname = details.mGroupName || details.name || 'Unnamed board';
+      const description = plainText(details.mDescription || details.description);
 
       return m(
-        'tr',
+        'tr.group-row',
         {
           key: details.mGroupId,
+          class: details.isSearched === false ? 'hidden' : '',
           onclick: () => {
             m.route.set('/boards/:tab/:mGroupId', {
               tab: vnode.attrs.category,
@@ -225,7 +228,20 @@ const BoardSummary = () => {
           },
         },
         [
-          m('td', bname),
+          m('td.group-row__name', m('.group-row__inner', [
+            m('.group-row__mark', icon('th-large')),
+            m('.group-row__text', [
+              m(m.route.Link, {
+                class: 'group-row__title',
+                href: `/boards/${vnode.attrs.category}/${details.mGroupId}`,
+                onclick: (event) => event.stopPropagation(),
+              }, bname),
+              description ? m('span.group-row__desc', description) : null,
+            ]),
+          ])),
+          m('td.group-row__posts', details.mVisibleMsgCount ?? 0),
+          m('td.group-row__activity', rs.getTimestampValue(details.mLastPost)
+            ? rs.formatTimestamp(details.mLastPost) : '—'),
         ]
       );
     },
@@ -235,10 +251,12 @@ const BoardSummary = () => {
 const BoardTable = () => {
   return {
     view: (vnode) =>
-      m('table.board-table', [
+      m('table.group-table', [
         m('thead', [
           m('tr', [
-            m('th', 'Board Name'),
+            m('th[scope=col]', 'Board'),
+            m('th.group-row__posts[scope=col]', 'Posts'),
+            m('th.group-row__activity[scope=col]', 'Last post'),
           ]),
         ]),
         vnode.children,

@@ -14,6 +14,7 @@
 
 const m = require('mithril');
 const icon = require('icon');
+const motion = require('motion');
 
 const LIFETIME = { success: 4000, info: 4000, warning: 6000, error: 7000 };
 const MAX_VISIBLE = 4;
@@ -50,18 +51,13 @@ function clearTimer(toast) {
   }
 }
 
-//  Removal is two-stage so the leaving animation can play: mark it leaving,
-//  redraw, then drop it once the transition has had its time.
 function dismiss(id) {
   const toast = toasts.find((t) => t.id === id);
   if (!toast || toast.leaving) return;
   clearTimer(toast);
   toast.leaving = true;
+  toasts = toasts.filter((t) => t.id !== id);
   m.redraw();
-  setTimeout(() => {
-    toasts = toasts.filter((t) => t.id !== id);
-    m.redraw();
-  }, 180);
 }
 
 function arm(toast) {
@@ -138,6 +134,7 @@ const Stack = {
 };
 
 const Toast = {
+  onbeforeremove: motion.exit,
   view: (vnode) => {
     const { toast } = vnode.attrs;
     return m(

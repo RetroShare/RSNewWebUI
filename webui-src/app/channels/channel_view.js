@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const rs = require('rswebui');
 const util = require('channels/channels_util');
 const widget = require('widgets');
@@ -196,7 +197,7 @@ function createchannel() {
 
         m('.create-channel-form__field.create-channel-form__identity', [
           m('label[for=idtags]', 'Publishing identity'),
-          m(
+          select(
             'select.config-style-select[id=idtags]',
             {
               value: identity,
@@ -220,7 +221,7 @@ function createchannel() {
         ]),
         m('.create-channel-form__field.create-channel-form__distribution', [
           m('label[for=mtags]', 'Message distribution'),
-          m(
+          select(
             'select.config-style-select[id=mtags]',
             {
               value: selectedGroup,
@@ -241,7 +242,7 @@ function createchannel() {
             '.create-channel-form__field.create-channel-form__circle',
             [
               m('label[for=circlestag]', 'Circle'),
-              m(
+              select(
                 'select.config-style-select[id=circlestag]',
                 {
                   value: selectedCircle && selectedCircle.mGroupName,

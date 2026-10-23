@@ -1,4 +1,5 @@
 const m = require('mithril');
+const motion = require('motion');
 const rs = require('rswebui');
 const peopleState = require('people/people_state');
 const icon = require('icon');
@@ -65,6 +66,7 @@ const HistoryBrowserModal = () => {
       });
 
       return m('.attach-modal-overlay', {
+        onbeforeremove: motion.exit,
         onclick: (e) => {
           if (e.target === e.currentTarget) stateObj.showHistoryModal = false;
         }
@@ -97,10 +99,7 @@ const HistoryBrowserModal = () => {
 
           m('.modal__body.history-list', [
             stateObj.isHistoryLoading
-              ? m('.history-placeholder', [
-                  icon('spinner', { spin: true, class: 'history-placeholder__icon' }),
-                  m('p', 'Fetching chat history…'),
-                ])
+              ? m('.history-placeholder', m(widget.Loading, { label: 'Fetching chat history…' }))
               : filteredHistory.length === 0
                 ? m('.history-placeholder', [
                     icon('comments', { class: 'history-placeholder__icon' }),

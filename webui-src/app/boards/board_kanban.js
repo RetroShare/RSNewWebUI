@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const util = require('boards/boards_util');
 const icon = require('icon');
 const widget = require('widgets');
@@ -499,7 +500,7 @@ function Toolbar() {
               ])
             : null,
           m('.board-toolbar__voter', [
-            m('select#board-post-voter', {
+            select('select#board-post-voter', {
               value: voterId || '',
               disabled: voterIdentitiesLoading || voterIdentities.length === 0,
               onchange: (e) => onVoterIdChange && onVoterIdChange(e.target.value),

@@ -1,0 +1,63 @@
+@use '../abstracts' as *;
+
+.select-control {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+  min-width: 0;
+  max-width: 100%;
+
+  &__native {
+    position: absolute;
+    width: var(--stroke) !important;
+    height: var(--stroke) !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    clip-path: inset(50%);
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  &__trigger {
+    width: 100%;
+    min-width: 0;
+    justify-content: space-between;
+    gap: var(--s2);
+    background: var(--surface);
+
+    > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    > .icon { width: var(--s3); height: var(--s3); transition: transform var(--motion-enter) var(--ease-out); }
+    &[aria-expanded='true'] > .icon { transform: rotate(180deg); }
+  }
+
+  &__panel {
+    @include tip-surface;
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    padding: var(--s1);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    min-height: var(--control);
+    padding: var(--s1) var(--s2);
+    border-radius: var(--r-sm);
+    color: var(--ink);
+    cursor: pointer;
+
+    &.is-active { background: var(--sunken); }
+    &[aria-selected='true'] { background: var(--select-soft); color: var(--brand-deep); }
+    &[aria-disabled='true'] { color: var(--ink-faint); cursor: default; }
+    > .icon, > .select-control__check { flex: none; width: var(--s4); height: var(--s4); }
+  }
+}
+
+.config .select-control { width: 100%; max-width: var(--picker-width); }
+.config .select-control.nw-input { flex: 1; }
+.modal__body > form .select-control { width: 100%; }
+.create-board-post__author .select-control { flex: 1; width: 100%; min-width: 0; }

@@ -1,4 +1,5 @@
 const m = require('mithril');
+const motion = require('motion');
 
 function positionPanel(panel, anchor, { align = 'end', up = false, gapToken = '--s1' } = {}) {
   if (!anchor) return;
@@ -16,6 +17,8 @@ function positionPanel(panel, anchor, { align = 'end', up = false, gapToken = '-
   const panelWidth = panel.offsetWidth;
   const panelHeight = panel.offsetHeight;
   const opensUp = up ? above >= panelHeight || above >= below : below < panelHeight && above > below;
+  panel.dataset.align = align;
+  panel.dataset.opensUp = String(opensUp);
   const x = align === 'start' ? bounds.left : bounds.right - panelWidth;
   const y = opensUp ? bounds.top - panelHeight - gap : bounds.bottom + gap;
   panel.style.left = `${Math.max(left + gap, Math.min(x, left + width - panelWidth - gap))}px`;
@@ -31,6 +34,14 @@ const Popover = () => {
     attrs.onClose();
     m.redraw();
   };
+  const escape = (event) => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopPropagation();
+    attrs.anchor()?.focus();
+    attrs.onClose();
+    m.redraw();
+  };
   return {
     oncreate: ({ dom }) => {
       root = dom;
@@ -38,13 +49,20 @@ const Popover = () => {
       position();
       if (attrs.focus) root.querySelector('button:not(:disabled), input:not(:disabled), [tabindex="0"]')?.focus();
       document.addEventListener('pointerdown', outside, true);
+      document.addEventListener('keydown', escape);
       window.addEventListener('resize', position);
       window.addEventListener('scroll', position, true);
       window.visualViewport?.addEventListener('resize', position);
       window.visualViewport?.addEventListener('scroll', position);
     },
+    onbeforeremove: (vnode) => {
+      document.removeEventListener('pointerdown', outside, true);
+      document.removeEventListener('keydown', escape);
+      return motion.exit(vnode);
+    },
     onremove: () => {
       document.removeEventListener('pointerdown', outside, true);
+      document.removeEventListener('keydown', escape);
       window.removeEventListener('resize', position);
       window.removeEventListener('scroll', position, true);
       window.visualViewport?.removeEventListener('resize', position);
@@ -54,19 +72,16 @@ const Popover = () => {
       attrs = vnode.attrs;
       return m('.floating-panel', {
         class: attrs.class,
-        popover: 'auto',
-        role: 'dialog',
+        id: attrs.id,
+        style: attrs.style,
+        // Outside clicks and Escape close it after the exit can play.
+        popover: 'manual',
+        role: attrs.role || 'dialog',
         'aria-label': attrs.label,
         ontoggle: (event) => {
           if (event.newState === 'closed') attrs.onClose();
         },
-        onkeydown: (event) => {
-          if (event.key !== 'Escape') return;
-          event.preventDefault();
-          event.stopPropagation();
-          attrs.anchor()?.focus();
-          attrs.onClose();
-        },
+        onkeydown: escape,
       }, vnode.children);
     },
   };

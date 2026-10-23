@@ -525,6 +525,108 @@
   }
 }
 
+.config .settings-page {
+  width: 100%;
+  max-width: var(--settings-width);
+  margin-inline: auto;
+
+  > .page-head {
+    padding: 0 0 var(--s5);
+    margin: 0 0 var(--s5);
+    border-bottom: var(--stroke) solid var(--line-soft);
+  }
+
+  .settings-body,
+  .node-config,
+  .config-network { display: flex; flex-direction: column; gap: var(--s5); min-width: 0; }
+
+  .panel + .panel { margin-top: 0; }
+  .panel { min-width: 0; border-color: var(--line-soft); }
+
+  .panel__head {
+    flex-wrap: wrap;
+    padding: var(--s4) var(--s5);
+    border-color: var(--line-soft);
+    background: var(--surface);
+  }
+
+  .panel__body { gap: var(--s5); padding: var(--s5); }
+  .panel__body .panel__head { padding: 0; }
+  .panel__body .panel__head h3 { font-size: var(--t-row); font-weight: var(--w-label); }
+  .panel__body-box + .panel__body-box {
+    margin-top: 0;
+    padding-top: var(--s5);
+    border-top: var(--stroke) solid var(--line-soft);
+  }
+  .panel__body-box { gap: var(--s4); }
+
+  .nw-config-row,
+  .config-grid,
+  .grid-2col { grid-template-columns: var(--settings-label-width) minmax(0, 1fr); gap: var(--s4) var(--s5); }
+
+  input[type='text'],
+  input[type='password'],
+  textarea,
+  .select-control { max-width: var(--settings-field-width); }
+
+  input.stretched,
+  input.cfg-path { width: 100%; max-width: 100%; }
+
+  .permission-flag { display: grid; grid-template-columns: var(--settings-label-width) minmax(0, 1fr); gap: var(--s5); margin: 0; }
+  .storage-row,
+  .table-container { max-width: 100%; }
+  .default-id-selector {
+    flex-wrap: nowrap;
+    > .select-control { flex: 1; min-width: 0; width: auto; }
+    > :not(.select-control) { flex: none; }
+  }
+  .cfg-label,
+  .nw-label,
+  .grid-2col > p { font-size: var(--t-row); line-height: 1.5; }
+  .nw-label:has(> .tooltip) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s1);
+    > .tooltip { flex: none; margin: 0; }
+  }
+
+  .settings-facts {
+    > div {
+      display: grid;
+      grid-template-columns: var(--settings-label-width) minmax(0, 1fr);
+      gap: var(--s5);
+      padding-block: var(--s3);
+      border-bottom: var(--stroke) solid var(--line-soft);
+      &:first-child { padding-top: 0; }
+      &:last-child { border: 0; padding-bottom: 0; }
+    }
+    dt { color: var(--ink-dim); }
+    dd { min-width: 0; overflow-wrap: anywhere; color: var(--ink); font-variant-numeric: tabular-nums; }
+  }
+
+  .settings-table-scroll { overflow-x: auto; }
+  table.settings-services {
+    width: 100%;
+    border-collapse: collapse;
+    td, th { padding: var(--s3); font-size: var(--t-row); }
+    th { background: var(--sunken); }
+    td:nth-child(2), td:nth-child(3) { font-family: var(--font-mono); font-size: var(--t-meta); }
+    td:last-child, th:last-child { text-align: center; }
+    tbody tr:hover { background: var(--ground); }
+  }
+}
+
+@media (max-width: 899px) {
+  .config .settings-page {
+    .nw-config-row, .config-grid, .grid-2col, .permission-flag { grid-template-columns: minmax(0, 1fr); gap: var(--s2); }
+    .settings-facts > div { grid-template-columns: minmax(0, 1fr); gap: var(--s1); }
+    input[type='text'], input[type='password'], textarea, .select-control { max-width: 100%; }
+    .panel__head, .panel__body { padding: var(--s4); }
+    .panel__body .panel__head { padding: 0; }
+    .grid-2col > :nth-child(even) { margin-bottom: var(--s3); }
+  }
+}
+
 /* == Small screens =========================================================
    The label column collapses: a 200px gutter next to a full-width field wastes
    half a phone. Rows stack, fields stretch, the history table becomes a list

@@ -1,4 +1,5 @@
 const m = require('mithril');
+const motion = require('motion');
 const rs = require('rswebui');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
@@ -379,6 +380,7 @@ const PeopleSidebar = () => {
                 },
               }),
               m('.people-context-menu', {
+                onbeforeremove: motion.exit,
                 style: {
                   top: `${menu.top}px`,
                   left: menu.left !== undefined ? `${menu.left}px` : '10px',

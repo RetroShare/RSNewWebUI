@@ -12,6 +12,7 @@ const { renderChatMessage, openChatImageViewer } = require('chat/chat_state');
 const { ChatComposer } = require('chat/chat_composer');
 const HistoryBrowserModal = require('people/people_history');
 const icon = require('icon');
+const motion = require('motion');
 
 // Direct peer-to-peer chat images do NOT require 200KB compression limit
 function formatDirectChatImage(file, callback) {
@@ -208,6 +209,7 @@ const ChatTab = () => {
         }),
 
         State.showAttachModal && m('.attach-modal-overlay', {
+          onbeforeremove: motion.exit,
           onclick: (e) => {
             if (e.target === e.currentTarget && !State.isHashing) {
               State.showAttachModal = false;

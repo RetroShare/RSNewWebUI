@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const rs = require('rswebui');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
@@ -112,7 +113,7 @@ const CreateIdentity = () => {
       ]),
       m('.create-identity-form__field', [
         m('label[for=create-identity-type]', 'Identity type'),
-        m('select.config-style-select[id=create-identity-type]', {
+        select('select.config-style-select[id=create-identity-type]', {
           value: String(pseudonimous),
           onchange: (e) => (pseudonimous = e.target.value === 'true'),
         }, [

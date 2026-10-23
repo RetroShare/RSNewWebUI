@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const rs = require('rswebui');
 const peopleUtil = require('people/people_util');
 const peopleState = require('people/people_state');
@@ -92,7 +93,7 @@ const ConfigChat = () => {
                   identityId: defaultIdentity,
                   size: 24,
                 }),
-                m('select#default-chat-identity.cfg-select', {
+                select('select#default-chat-identity.cfg-select', {
                   value: defaultIdentity,
                   onchange: (e) => {
                     defaultIdentity = e.target.value;
@@ -109,7 +110,7 @@ const ConfigChat = () => {
               ]),
 
               m('label.cfg-label[for=chat-permission]', 'Accept chat from:'),
-              m('select#chat-permission.cfg-select', {
+              select('select#chat-permission.cfg-select', {
                 value: acceptChatFrom,
                 onchange: (e) => {
                   acceptChatFrom = parseInt(e.target.value);

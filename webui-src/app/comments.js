@@ -1,8 +1,10 @@
 const m = require('mithril');
+const select = require('select');
 const rs = require('rswebui');
 const peopleUtil = require('people/people_util');
 const chatEmoji = require('chat/chat_emoji');
 const icon = require('icon');
+const { Loading } = require('widgets');
 
 //  The core's contract (rsgxscommon.h RsGxsVoteType, same as the legacy
 //  GXS_VOTE_* constants used by boards_util/channels_util): DOWN = 1, UP = 2.
@@ -185,7 +187,7 @@ const CommentsSection = () => {
           m('span', [icon('sort-amount-down'), ' Oldest first']),
           showVoter ? m('.comments__voter', [
             m('label[for=comment-voter-select]', 'Voter identity'),
-            m('select#comment-voter-select', {
+            select('select#comment-voter-select', {
               value: vnode.attrs.voteIdentity || '',
               disabled: identities.length === 0,
               onchange: (e) => vnode.attrs.onVoteIdentity(e.target.value),
@@ -208,7 +210,7 @@ const CommentsSection = () => {
                 onclick: () => { replyTo = null; composerText = ''; },
               }, icon('times')),
             ]) : null,
-            identities.length ? m('select.comment-composer__identity', {
+            identities.length ? select('select.comment-composer__identity', {
               value: authorId || '',
               onchange: (e) => { authorId = e.target.value; },
             }, identities.map((id) => m('option', { value: id }, nameOf(id)))) : null,
@@ -255,7 +257,7 @@ const CommentsSection = () => {
             ]),
           ]),
         ]),
-        vnode.attrs.loading ? m('.comments__status', [icon('spinner', { spin: true }), ' Loading comments…'])
+        vnode.attrs.loading ? m('.comments__status', m(Loading, { label: 'Loading comments…' }))
           : roots.length ? m('.comments__list', roots.map((node) => renderCommentNode(node, 0, vnode)))
           : m('.comments__empty', [icon('comment'), m('p', 'No comments yet. Start the conversation.')]),
       ]);

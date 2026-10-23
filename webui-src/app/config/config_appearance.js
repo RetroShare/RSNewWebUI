@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const appearance = require('appearance');
 
 module.exports = {
@@ -7,7 +8,7 @@ module.exports = {
     m('.panel__body', [
       m('.config-grid', [
         m('label[for=appearance]', 'Color theme'),
-        m('select#appearance', {
+        select('select#appearance', {
           value: appearance.getPreference(),
           'aria-describedby': 'appearance-help',
           onchange: (event) => appearance.setPreference(event.target.value),

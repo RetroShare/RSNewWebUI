@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const widget = require('widgets');
 const rs = require('rswebui');
 const {
@@ -164,7 +165,7 @@ const ChatTab = () => {
                   identityId: ownId,
                   size: 22,
                 }),
-                m('select.chat-identity-select', {
+                select('select.chat-identity-select', {
                   'aria-label': 'Chatting as',
                   value: ownId,
                   onchange: (e) => switchChatIdentity(e.target.value),

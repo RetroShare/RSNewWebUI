@@ -7,6 +7,9 @@ const peopleUtil = require('people/people_util');
 const icon = require('icon');
 
 const getForums = {
+  loaded: false,
+  loading: false,
+  error: '',
   All: [],
   //  Keyed by tab name, and the "All Forums" tab is called Other.
   Other: [],
@@ -14,8 +17,13 @@ const getForums = {
   Subscribed: [],
   MyForums: [],
   async load() {
-    const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumsSummaries');
-    if (res && res.body && res.body.forums) {
+    if (getForums.loading) return;
+    getForums.loading = true;
+    getForums.error = '';
+    m.redraw();
+    try {
+      const res = await rs.rsJsonApiRequest('/rsgxsforums/getForumsSummaries');
+      if (!Array.isArray(res?.body?.forums)) throw new Error('Forum summaries unavailable');
       getForums.All = res.body.forums;
       getForums.Other = getForums.All;
       getForums.Popular = getForums.All;
@@ -27,7 +35,16 @@ const getForums = {
       getForums.MyForums = getForums.All.filter(
         (forum) => forum.mSubscribeFlags === util.GROUP_MY_FORUM
       );
+      getForums.loaded = true;
+      m.redraw();
       await getForums.loadDescriptions();
+    } catch (error) {
+      getForums.error = 'Could not load forums.';
+      console.warn('Failed to load forum summaries', error);
+    } finally {
+      getForums.loaded = true;
+      getForums.loading = false;
+      m.redraw();
     }
   },
 
@@ -133,7 +150,8 @@ const Layout = () => {
         !forumId && m(widget.PageHead, {
           class: 'group-list-head',
           title: pageTitles[vnode.attrs.pathInfo.tab] || 'Forums',
-          actions: [
+           actions: [
+             getForums.loaded && getForums.loading && getForums.All.length > 0 && m(widget.Loading, { label: 'Updating…' }),
             vnode.attrs.pathInfo.tab === 'MyForums' &&
               m('button.forums-create-button.is-primary', {
                 onclick: createForum,
@@ -149,6 +167,10 @@ const Layout = () => {
             msgId,
             onSubscriptionChange: getForums.load,
           })
+          : !getForums.loaded || (getForums.loading && !getForums.All.length)
+          ? m(widget.TableLoading, { label: 'Loading forums…' })
+          : getForums.error && !getForums.All.length
+          ? m(widget.ListError, { message: getForums.error, onretry: getForums.load })
           : m(sections[vnode.attrs.pathInfo.tab], {
             list: getForums[vnode.attrs.pathInfo.tab],
             onCreateForum: createForum,

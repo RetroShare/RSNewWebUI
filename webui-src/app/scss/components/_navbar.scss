@@ -3,7 +3,7 @@
 /* =============================================================================
    The sidebar.
 
-   Two states: a 208px list and a 52px rail. The collapse is persisted in
+   Two states: a 184px list and a 52px rail. The collapse is persisted in
    main.js (rail on a first run below 1280px), the toggle is pinned in the
    footer rather than appearing on hover, and the rail shows a tooltip on focus
    as well as hover so it stays keyboard navigable.
@@ -18,9 +18,9 @@
   width: var(--rail-open);
   height: 100%;
   flex: none;
-  border-right: 1px solid var(--line);
+  border-right: var(--stroke) solid var(--line);
   background: var(--chrome);
-  transition: width 160ms ease;
+  transition: width var(--motion-layout) var(--ease-layout);
 
   &.collapsed { width: var(--rail); }
 
@@ -35,11 +35,11 @@
     align-items: center;
     gap: var(--s2);
     height: 46px;
-    padding: 0 var(--s2);
+    padding: 0 calc((var(--rail) - var(--stroke) - var(--glyph)) / 2);
     border-bottom: 1px solid var(--line-soft);
   }
 
-  &__mark { width: 26px; height: 26px; flex: none; }
+  &__mark { width: var(--glyph); height: var(--glyph); flex: none; }
 
   &__logo-text h5 {
     margin: 0;
@@ -55,8 +55,8 @@
   &__box {
     display: flex;
     flex-direction: column;
-    gap: 1px;
-    padding: var(--s2) 6px;
+    gap: var(--s1);
+    padding: var(--s2) var(--nav-gutter);
     overflow-y: auto;
     overflow-x: hidden;
   }
@@ -66,8 +66,10 @@
     display: flex;
     align-items: center;
     gap: var(--s2);
-    min-height: 34px;
-    padding: 0 8px;
+    flex: none;
+    min-height: var(--nav-item-size);
+    height: var(--nav-item-size);
+    padding: 0 calc((var(--nav-item-width) - var(--nav-icon-size)) / 2);
     border-radius: var(--r-sm);
     color: var(--ink-body);
     font-size: var(--t-row);
@@ -81,27 +83,11 @@
     &:hover { background: var(--sunken); color: var(--ink); }
   }
 
-  //  The mark, stated here for every row in the rail.
-  //
-  //  `icon({ size: 19 })` writes width/height as SVG *attributes*, and a
-  //  presentational attribute loses to any CSS rule at all -- so `.icon`
-  //  (1.15em) was sizing the nav links to 16.1px, and `btn-base`'s
-  //  `> .icon { 1em }` was sizing the footer buttons to 14px. Neither was 19,
-  //  and the footer looked both smaller and thinner than the rows above it.
-  //
-  //  (0,2,1), which is what it takes to outrank `button > .icon`.
-  .item > .icon {
-    width: 19px;
-    height: 19px;
-  }
-
-  //  The footer marks sit a step under the nav marks. The rows are the same
-  //  size, so this is the only thing saying these are utilities rather than
-  //  destinations -- which is what the rail is for.
+  .item > .icon,
   &__action > .icon,
   &__toggle > .icon {
-    width: 17px;
-    height: 17px;
+    width: var(--nav-icon-size);
+    height: var(--nav-icon-size);
   }
 
   /* Selection matches the row primitive: a pale sky band with a saturated
@@ -121,6 +107,18 @@
   }
 
   &__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+  &__label,
+  &__logo-text {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity var(--motion-enter) var(--ease-out),
+      transform var(--motion-enter) var(--ease-out),
+      visibility var(--motion-enter);
+  }
+
+  &__logo { overflow: hidden; }
+  .sidenav-icon { flex: none; }
 
   .nav-unread-badge {
     flex: none;
@@ -143,8 +141,8 @@
     margin-top: auto;
     display: flex;
     flex-direction: column;
-    gap: 1px;
-    padding: var(--s2) 6px;
+    gap: var(--s1);
+    padding: var(--s2) var(--nav-gutter);
     border-top: 1px solid var(--line-soft);
   }
 
@@ -157,9 +155,12 @@
   &__toggle {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: var(--s2);
-    min-height: 34px;
-    padding: 0 8px;
+    flex: none;
+    min-height: var(--nav-item-size);
+    height: var(--nav-item-size);
+    padding: 0 calc((var(--nav-item-width) - var(--nav-icon-size)) / 2);
     border-radius: var(--r-sm);
     font-size: var(--t-row);
     line-height: 1.2;
@@ -191,38 +192,27 @@
     &:hover { background: var(--sunken); color: var(--ink); }
   }
 
-  &__toggle .icon { transition: transform 160ms ease; }
+  &__toggle .icon { transition: transform var(--motion-layout) var(--ease-layout); }
 
   /* -- collapsed ----------------------------------------------------------- */
 
   &.collapsed {
-    .nav-menu__logo { justify-content: center; padding: 0; }
-    .nav-menu__logo-text { display: none; }
-    .nav-menu__label { display: none; }
+    .nav-menu__logo-text,
+    .nav-menu__label {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(calc(-1 * var(--s2)));
+    }
 
-    //  Collapsing hides the label; it must not resize the row. Each keeps the
-    //  height it has when expanded, so the selected band is the same object in
-    //  both states -- squaring everything to --control shrank the nav items
-    //  from 34px and made them a different size from their expanded selves.
+    // Keep the icon in one fixed column while the labels slide away.
     .item {
-      width: 34px;
-      height: 34px;
-      margin: 0 auto;
-      padding: 0;
-      gap: 0;
-      justify-content: center;
+      overflow: hidden;
     }
 
     .nav-menu__action,
     .nav-menu__toggle,
     .nav-menu__status {
-      width: 34px;
-      height: 34px;
-      min-height: 34px;
-      margin: 0 auto;
-      padding: 0;
-      gap: 0;
-      justify-content: center;
+      overflow: hidden;
     }
 
     /* The count has no room beside a label any more, so it becomes a corner

@@ -1283,7 +1283,6 @@ input.star-check {
   //  is the anchor, so the picker sits flush inside it.
   > .emoji-picker {
     position: static;
-    animation: emoji-pop 0.15s ease-out;
   }
 }
 
@@ -1752,10 +1751,13 @@ input.star-check {
     background: var(--surface);
     box-shadow: none;
     transform: translateX(-105%);
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    visibility: hidden;
+    transition: transform var(--motion-layout) var(--ease-layout),
+      visibility var(--motion-layout);
 
     &--open {
       transform: translateX(0);
+      visibility: visible;
     }
   }
 

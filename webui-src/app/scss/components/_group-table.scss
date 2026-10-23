@@ -1,10 +1,36 @@
 @use '../abstracts' as *;
 
+.group-list-loading { width: 100%; }
+.group-list-loading tbody tr { cursor: default; }
+.group-list-loading > .loading-state { padding: var(--s3) var(--s2); }
+.group-list-error {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  padding: var(--s4);
+  color: var(--down-ink);
+  background: var(--down-bg);
+  border: var(--stroke) solid var(--down-line);
+  border-radius: var(--r-md);
+}
+.skeleton {
+  display: block;
+  height: var(--s3);
+  width: 70%;
+  border-radius: var(--r-sm);
+  background: var(--line-soft);
+  animation: skeleton-pulse var(--motion-loop) ease-in-out infinite alternate;
+
+  &--mark { width: var(--s5); height: var(--s5); flex: none; }
+  &--name { width: min(60%, var(--picker-width)); }
+}
+@keyframes skeleton-pulse { to { opacity: 0.4; } }
+
 // -----------------------------------------------------------------------------
 // The group list.
 //
-// Forums and Channels list the same thing: a group you can open, how much is
-// in it, and when it last moved. One table for both.
+// Boards, Forums and Channels share the same group list.
 // -----------------------------------------------------------------------------
 
 .group-table {

@@ -2,6 +2,35 @@ const m = require('mithril');
 const icon = require('icon');
 const { Popover } = require('popover');
 const Dialog = require('dialog');
+const motion = require('motion');
+const selectionIndicator = require('selection_indicator');
+
+const Loading = {
+  view: ({ attrs }) => m('.loading-state', { role: 'status' }, [
+    m('span.loading-state__ring', { 'aria-hidden': 'true' }),
+    m('span', attrs.label || 'Loading…'),
+  ]),
+};
+
+const TableLoading = {
+  view: ({ attrs }) => m('.group-list-loading', { 'aria-busy': 'true' }, [
+    m(Loading, { label: attrs.label || 'Loading groups…' }),
+    m('table.group-table', { 'aria-hidden': 'true' }, m('tbody',
+      Array.from({ length: 5 }, (_, index) => m('tr', { key: index }, [
+        m('td', m('.group-row__inner', [m('span.skeleton.skeleton--mark'), m('span.skeleton.skeleton--name')])),
+        m('td.group-row__posts', m('span.skeleton')),
+        m('td.group-row__activity', m('span.skeleton')),
+      ])))),
+  ]),
+};
+
+const ListError = {
+  view: ({ attrs }) => m('.group-list-error[role=alert]', [
+    icon('exclamation-triangle'),
+    m('span', attrs.message),
+    m('button[type=button]', { onclick: attrs.onretry }, 'Try again'),
+  ]),
+};
 
 const SearchField = {
   view: ({ attrs }) => {
@@ -159,6 +188,7 @@ const Segmented = {
     const iconsOnly = options.every((o) => o.icon && !o.label);
     const selectedIndex = options.findIndex((option) => option.id === attrs.value);
     return m('.segmented', {
+      ...selectionIndicator,
       class: [
         underline ? 'segmented--underline' : 'segmented--lozenge',
         iconsOnly ? 'segmented--icons' : '',
@@ -283,16 +313,27 @@ const SidebarQuickView = () => {
   };
 };
 
+let popupClose;
+
 function closePopupMessage() {
   const container = document.getElementById('modal-container');
-  if (!container) return;
-  m.mount(container, null);
-  container.style.display = 'none';
+  if (!container || container.style.display === 'none' || popupClose) return;
+  const surface = container.querySelector('dialog') || container;
+  const done = motion.leave(surface);
+  popupClose = done;
+  done.then(() => {
+    if (popupClose !== done) return;
+    m.mount(container, null);
+    container.style.display = 'none';
+    motion.reset(surface);
+    popupClose = null;
+  });
 }
 
 function popupMessage(message, modalClass = '', options = {}) {
   const container = document.getElementById('modal-container');
   if (!container) return;
+  popupClose = null;
   container.style.display = 'block';
 
   // Mithril skips reused vnodes. Copy them so modal content can update.
@@ -382,6 +423,9 @@ function confirmMessage(options) {
 }
 
 module.exports = {
+  TableLoading,
+  ListError,
+  Loading,
   BackButton,
   Menu,
   PageHead,

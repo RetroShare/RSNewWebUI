@@ -5,6 +5,7 @@ const widget = require('widgets');
 const fileDown = require('files/files_downloads');
 const icon = require('icon');
 const toast = require('toast');
+const { FileTreeRow, FileTreeBranch } = require('files/file_tree');
 
 //  The transfer figures as one line of text, for the info tooltip. The full
 //  File card cannot live inside a table cell, but the numbers it shows can.
@@ -38,6 +39,31 @@ function displayfiles() {
   let haveFile = false;
   let isId = false;
   let nameOfId;
+  let loading = false;
+  const toggle = async () => {
+    if (loading) return;
+    if (loaded) {
+      parStruct.showChild = !parStruct.showChild;
+      return;
+    }
+    loading = true;
+    try {
+      const results = await Promise.all(parStruct.details.children.map((child) =>
+        rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
+          handle: child.handle.xint64,
+          flags: util.RS_FILE_HINTS_REMOTE,
+        })));
+      if (results.some((res) => !res?.body?.details)) throw new Error('Missing directory');
+      childrenList.push(...results.map((res) => res.body.details));
+      loaded = true;
+      parStruct.showChild = true;
+    } catch {
+      toast.error('Could not load this folder. Try again.');
+    } finally {
+      loading = false;
+      m.redraw();
+    }
+  };
   return {
     oninit: async (v) => {
       if (v.attrs.par_directory) {
@@ -68,35 +94,16 @@ function displayfiles() {
         //  `position: relative; left:` moved only the text.
         m(
           'td.file-tree__name',
-          { style: { paddingLeft: `calc(var(--s2) + ${v.attrs.replyDepth} * 1.25rem)` } },
+          { style: { '--tree-depth': v.attrs.replyDepth } },
           //  The flex row is inside the cell, not the cell itself: `display:
           //  flex` on a td drops it out of the table box model, and this
           //  table is `table-layout: fixed`.
-          m('.file-tree__row', [
-            parStruct && parStruct.details.children && Object.keys(parStruct.details.children).length
-              ? icon('angle-right', {
-                class: parStruct.showChild ? 'file-tree__twist icon--rot-90' : 'file-tree__twist',
-                title: parStruct.showChild ? 'Collapse' : 'Expand',
-                onclick: async () => {
-                  if (!loaded) {
-                    // Retrieve the directory entries before displaying the nested rows.
-                    const entries = await Promise.all(
-                      parStruct.details.children.map(async (child) => {
-                        const res = await rs.rsJsonApiRequest('/rsfiles/requestDirDetails', {
-                          handle: child.handle.xint64,
-                          flags: util.RS_FILE_HINTS_REMOTE,
-                        });
-                        return res.body.details;
-                      })
-                    );
-                    childrenList.push(...entries);
-                    loaded = true;
-                  }
-                  parStruct.showChild = !parStruct.showChild;
-                  m.redraw();
-                },
-              })
-              : m('span.file-tree__twist.is-empty'),
+          m(FileTreeRow, {
+            label: isId ? nameOfId || parStruct.details.name : parStruct.details.name,
+            ontoggle: parStruct.details.children?.length ? toggle : undefined,
+            expanded: parStruct.showChild,
+            loading,
+          }, [
             icon(
               //  `users`, which has the duotone the friend row asks for
               //  (`user-friends` maps to the same glyph but has no -duo).
@@ -159,12 +166,13 @@ function displayfiles() {
           ),
       ]),
       parStruct.showChild && // recursive call to show children
-        childrenList.map((child) =>
+        m(FileTreeBranch, { remote: true }, childrenList.map((child) =>
           m(displayfiles, {
+            key: String(child.handle?.xint64 ?? `${child.hash || ''}:${child.name}`),
             par_directory: { details: child, showChild: false },
             replyDepth: v.attrs.replyDepth + 1,
           })
-        ),
+        )),
     ],
   };
 }

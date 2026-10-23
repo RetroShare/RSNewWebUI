@@ -4,14 +4,17 @@ const widget = require('widgets');
 const NetworkData = require('network/network_data');
 const icon = require('icon');
 const toast = require('toast');
+const brandLogo = require('brand_logo');
 
 const logo = () => {
   return {
     view() {
       return m('.logo', [
         m('img', {
-          src: 'images/retroshare.svg',
-          alt: 'retroshare_icon',
+          src: brandLogo,
+          alt: '',
+          width: 200,
+          height: 200,
         }),
         m('.retroshareText', [
           m('.retrotext', [m('span', 'RETRO'), 'SHARE']),

@@ -78,17 +78,6 @@
   box-sizing: border-box;
 }
 
-.board-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.board-table th,
-.board-table td {
-  text-align: left;
-  padding: 0.65rem 0.85rem;
-}
-
 /* Toolbar Header Controls */
 .board-toolbar {
   display: flex;

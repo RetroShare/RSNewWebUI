@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const widget = require('widgets');
 const rs = require('rswebui');
 const peopleUtil = require('people/people_util');
@@ -9,6 +10,7 @@ const HistoryBrowserModal = require('people/people_history');
 const renderIdentityTooltip = require('mail/mail_identity_tooltip');
 const icon = require('icon');
 const toast = require('toast');
+const motion = require('motion');
 
 const {
   sortLobbies,
@@ -471,6 +473,7 @@ const ChatConversationView = () => {
           }),
 
           ChatHubState.showAttachModal && m('.attach-modal-overlay', {
+            onbeforeremove: motion.exit,
             onclick: (e) => {
               if (e.target === e.currentTarget) {
                 ChatHubState.showAttachModal = false;
@@ -746,6 +749,7 @@ const ChatConversationView = () => {
                 },
               }),
               m('.rightbar-context-menu', {
+                onbeforeremove: motion.exit,
                 style: {
                   top: `${menu.top}px`,
                 },
@@ -1483,6 +1487,7 @@ const Layout = {
         ]),
       ]),
       ChatHubState.showCreateRoomModal && m('.attach-modal-overlay', {
+        onbeforeremove: motion.exit,
         onclick: (e) => { if (e.target === e.currentTarget) closeCreateRoomModal(); },
       }, [
         m('.modal-content.modal--titled', {
@@ -1523,7 +1528,7 @@ const Layout = {
 
               m('.form-field', [
                 m('label[for=new-room-identity]', 'Admin identity'),
-                m('select#new-room-identity', {
+                select('select#new-room-identity', {
                   value: ChatHubState.newRoomIdentity,
                   onchange: (e) => { ChatHubState.newRoomIdentity = e.target.value; },
                 }, [
@@ -1564,6 +1569,7 @@ const Layout = {
         ]),
       ]),
       ChatHubState.showInviteModal && m('.attach-modal-overlay', {
+        onbeforeremove: motion.exit,
         onclick: (e) => { if (e.target === e.currentTarget) closeInviteModal(); },
       }, [
         m('.modal-content.modal--titled', {
@@ -1652,6 +1658,7 @@ const Layout = {
             ]),
         ]),
       ChatHubState.messageContextMenu.show && m('.chat-msg-context-menu', {
+        onbeforeremove: motion.exit,
         style: {
           top: `${Math.max(8, Math.min(ChatHubState.messageContextMenu.y, window.innerHeight - 132))}px`,
           left: `${Math.max(8, Math.min(ChatHubState.messageContextMenu.x, window.innerWidth - 228))}px`,

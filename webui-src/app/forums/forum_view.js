@@ -1,4 +1,7 @@
 const m = require('mithril');
+const { nestedRows } = require('table_branch');
+const select = require('select');
+const motion = require('motion');
 const rs = require('rswebui');
 const util = require('forums/forums_util');
 const peopleUtil = require('people/people_util');
@@ -46,7 +49,7 @@ function createforum() {
         }),
         m('.create-forum-form__field', [
           m('label[for=forum-idtags]', 'Owner identity'),
-          m('select.config-style-select[id=forum-idtags]', {
+          select('select.config-style-select[id=forum-idtags]', {
             value: identity,
             onchange: (e) => (identity = vnode.attrs.authorId[e.target.selectedIndex]),
           }, vnode.attrs.authorId && vnode.attrs.authorId.map((o) => m('option', { value: o },
@@ -54,7 +57,7 @@ function createforum() {
         ]),
         m('.create-forum-form__field', [
           m('label[for=forum-distribution]', 'Message distribution'),
-          m('select.config-style-select[id=forum-distribution]', {
+          select('select.config-style-select[id=forum-distribution]', {
             value: circle,
             onchange: (e) => (circle = e.target.value),
           }, [
@@ -64,7 +67,7 @@ function createforum() {
         ]),
         Number(circle) === CIRCLE_EXTERNAL && m('.create-forum-form__field', [
           m('label[for=forum-circle]', 'Circle'),
-          m('select.config-style-select[id=forum-circle]', {
+          select('select.config-style-select[id=forum-circle]', {
             value: selectedCircle && selectedCircle.mGroupId,
             onchange: (e) => (selectedCircle = circles.find((item) => item.mGroupId === e.target.value)),
           }, circles.length
@@ -88,7 +91,7 @@ function createforum() {
             enableModerators && m('span', `${moderators.size} selected`),
           ]),
           enableModerators && m('.create-forum-form__moderator-controls', [
-            m('select.config-style-select[id=forum-moderator-filter]', {
+            select('select.config-style-select[id=forum-moderator-filter]', {
               value: moderatorFilter,
               onchange: (e) => {
                 moderatorFilter = e.target.value;
@@ -334,7 +337,7 @@ const AddThread = () => {
         }),
         m('.forum-thread-composer__field', [
           m('label[for=forum-thread-identity]', 'Publishing identity'),
-          m('select.config-style-select[id=forum-thread-identity]', {
+          select('select.config-style-select[id=forum-thread-identity]', {
             value: identity,
             onchange: (e) => {
               identity = vnode.attrs.authorId[e.target.selectedIndex];
@@ -565,14 +568,15 @@ const ForumDetails = () => ({
     return m('details.forum-details', {
       onkeydown: (event) => {
         if (event.key !== 'Escape') return;
-        event.currentTarget.open = false;
+        motion.closeDetails(event.currentTarget);
         event.currentTarget.querySelector('summary').focus();
       },
       onfocusout: (event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
+        if (!event.currentTarget.contains(event.relatedTarget)) motion.closeDetails(event.currentTarget);
       },
     }, [
       m('summary.forum-details__toggle[title=Forum details][aria-label=Forum details]',
+        { onclick: motion.toggleDetails },
         [icon('info-circle'), m('span.btn-text', 'Details')]),
       m('.forum-details__panel', [
         m('h4.forum-details__name', d.name || 'Forum'),
@@ -877,8 +881,10 @@ const ForumView = () => {
               'tbody',
               rows.length === 0
                 ? m('tr', m('td.forum-threads__empty[colspan=4]',
-                  query ? 'No threads matching search.' : 'No threads in this forum yet.'))
-                : rows.map((row) =>
+                  util.Data.loading.has(v.attrs.id)
+                    ? m(widget.Loading, { label: 'Loading threads…' })
+                    : query ? 'No threads matching search.' : 'No threads in this forum yet.'))
+                : nestedRows(rows, (row) =>
                   m(
                     'tr.forum-thread-row',
                     {
@@ -910,7 +916,7 @@ const ForumView = () => {
                                 if (row.open) expanded.delete(row.meta.mMsgId);
                                 else expanded.add(row.meta.mMsgId);
                               },
-                            }, icon(row.open ? 'chevron-down' : 'chevron-right'))
+                            }, icon('chevron-right'))
                             : m('span.forum-thread-row__toggle-spacer'),
                           m('button.forum-thread-row__title[type=button]', {
                             'aria-current': row.meta.mOrigMsgId === v.attrs.msgId
@@ -939,8 +945,7 @@ const ForumView = () => {
                         m('span', rs.userList.username(row.meta.mAuthorId)),
                       ])),
                     ]
-                  )
-                )
+                  ), { tableClass: 'threads', columns: ['', 'forum-thread-row__unread', 'forum-thread-row__date', 'forum-thread-row__author'] })
             ),
           ])),
           v.attrs.msgId && m(ThreadReader, {

@@ -90,11 +90,16 @@
 /// The confirming action — the one place the brand appears in ordinary chrome.
 @mixin btn-strong {
   border-color: var(--action-border);
-  background: linear-gradient(180deg, var(--action-top), var(--action-bottom));
+  background-color: var(--action-bottom);
+  background-image: linear-gradient(180deg, var(--action-top), transparent);
   color: var(--on-brand);
   font-weight: var(--w-label);
 
-  &:hover { border-color: var(--action-border); background: var(--action-bottom); }
+  &:hover {
+    border-color: var(--action-border);
+    background-color: var(--action-top);
+    background-image: linear-gradient(180deg, var(--action-top), transparent);
+  }
 }
 
 @mixin btn-quiet {

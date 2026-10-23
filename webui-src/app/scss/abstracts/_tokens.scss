@@ -117,10 +117,19 @@
   --control: 30px;       /* shared control height on all devices */
   --glyph: 26px;         /* square side of a bare glyph button */
   --rail: 52px;          /* sidebar, collapsed */
-  --rail-open: 208px;    /* sidebar, expanded */
+  --rail-open: 184px;    /* sidebar, expanded */
+  --nav-item-size: calc(var(--s6) + var(--control-inset));
+  --nav-icon-size: 19px;
+  --nav-item-width: calc(var(--nav-item-size) + var(--s1));
+  --nav-gutter: calc((var(--rail) - var(--stroke) - var(--nav-item-width)) / 2);
+  --tree-indent: var(--s4);
+  --tree-size-column: 140px;
+  --tree-action-column: 150px;
   --measure: 68ch;       /* reading column */
   --popover-wide: 24rem; /* identity cards with label/value rows */
   --group-logo: 64px;
+  --home-logo-size: 90px;
+  --home-logo-size-mobile: 60px;
   --group-count-column: 6rem;
   --group-date-column: 12rem;
   --picker-width: 320px;
@@ -133,11 +142,38 @@
   --menu-width: 11rem;
   --modal-width: 560px;
   --statusbar-height: 28px;
+  --settings-width: 1040px;
+  --settings-label-width: 220px;
+  --settings-field-width: 360px;
+  --graph-height: 36rem;
+  --graph-min-height: 20rem;
+  --graph-node-radius: 9px;
+  --graph-own-radius: 12px;
+  --graph-fit-padding: var(--s4);
+  --graph-control-width: 184px;
+  --graph-spacing-width: 160px;
+  --graph-search-width: 220px;
 
   /* == Depth and focus ================================================== */
   --lift: 0 12px 32px rgb(var(--ink-rgb) / 0.18);
   --lift-sm: 0 4px 12px rgb(var(--ink-rgb) / 0.12);  /* tooltips, popovers */
   --ring: 0 0 0 3px rgb(var(--brand-rgb) / 0.22);
+
+  /* == Motion. Quick feedback, soft arrivals, shorter exits. ============== */
+  --motion-fast: 120ms;
+  --motion-exit: 160ms;
+  --motion-enter: 280ms;
+  --motion-layout: 320ms;
+  --motion-loop: 1200ms;
+  --motion-stagger: 32ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-layout: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-scale: 0.97;
+  --motion-press: 0.98;
+  --motion-distance: var(--s3);
+  --loader-size: var(--s4);
+  --loader-stroke: calc(var(--stroke) * 2);
 }
 
 @mixin dark-palette {

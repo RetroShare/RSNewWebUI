@@ -7,18 +7,24 @@ const peopleUtil = require('people/people_util');
 const icon = require('icon');
 
 const getBoards = {
+  loaded: false,
+  loading: false,
+  error: '',
   All: [],
   Popular: [],
   Subscribed: [],
   MyBoards: [],
   Other: [],
   async load() {
+    if (getBoards.loading) return;
+    getBoards.loading = true;
+    getBoards.error = '';
+    m.redraw();
     try {
       const res = await rs.rsJsonApiRequest('/rsPosted/getBoardsSummaries');
       const boards = res && res.body && Array.isArray(res.body.groupInfo) ? res.body.groupInfo : null;
       if (!boards) {
-        console.warn('Boards summaries response did not include groupInfo', res && res.body);
-        return;
+        throw new Error('Board summaries unavailable');
       }
       const popular = [...boards].sort((a, b) => (b.mPop || 0) - (a.mPop || 0));
       getBoards.All = popular;
@@ -32,7 +38,12 @@ const getBoards = {
       );
       m.redraw();
     } catch (error) {
+      getBoards.error = 'Could not load boards.';
       console.warn('Failed to load board summaries', error);
+    } finally {
+      getBoards.loaded = true;
+      getBoards.loading = false;
+      m.redraw();
     }
   },
 };
@@ -110,7 +121,8 @@ const Layout = () => {
         !vnode.attrs.pathInfo.mGroupId && m(widget.PageHead, {
           class: 'group-list-head',
           title: pageTitles[vnode.attrs.pathInfo.tab] || 'Boards',
-          actions: [
+           actions: [
+             getBoards.loaded && getBoards.loading && getBoards.All.length > 0 && m(widget.Loading, { label: 'Updating…' }),
             m('button.boards-create-button.is-primary', {
               onclick: createBoard,
             }, [icon('plus'), 'Create Board']),
@@ -129,6 +141,10 @@ const Layout = () => {
               id: vnode.attrs.pathInfo.mGroupId,
               onSubscriptionChange: getBoards.load,
             })
+          : !getBoards.loaded || (getBoards.loading && !getBoards.All.length)
+          ? m(widget.TableLoading, { label: 'Loading boards…' })
+          : getBoards.error && !getBoards.All.length
+          ? m(widget.ListError, { message: getBoards.error, onretry: getBoards.load })
           : m(sections[vnode.attrs.pathInfo.tab], {
               list: getBoards[vnode.attrs.pathInfo.tab],
               onCreateBoard: createBoard,

@@ -1,8 +1,9 @@
 const m = require('mithril');
+const brandLogo = require('brand_logo');
 
 //  Bumped at every change of the web UI; shown in the rail, the phone header
 //  and the Debug page.
-const WEBUI_VERSION = 'v180';
+const WEBUI_VERSION = 'v187';
 
 const login = require('login');
 const rs = require('rswebui');
@@ -141,7 +142,7 @@ const navbar = () => {
         },
         [
           m('.nav-menu__logo', [
-            m('img.nav-menu__mark', { src: 'images/retroshare.svg', alt: '' }),
+            m('img.nav-menu__mark', { src: brandLogo, alt: '', width: 200, height: 200 }),
             m('.nav-menu__logo-text', [m('h5', 'RetroShare')]),
           ]),
           m('.nav-menu__box', { style: { flex: 1 } }, [
@@ -200,7 +201,7 @@ const MobileStatus = () => {
       return [
         m('.mobile-app-header', [
           m('.mobile-app-header__brand', [
-            m('img', { src: 'images/retroshare.svg', alt: '' }),
+            m('img', { src: brandLogo, alt: '', width: 200, height: 200 }),
             m('strong', 'RetroShare'),
             m('span.mobile-app-header__version', WEBUI_VERSION),
           ]),

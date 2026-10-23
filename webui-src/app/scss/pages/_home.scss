@@ -9,7 +9,11 @@
     @include flex($justify: center, $align: center);
 
     & img {
-      width: 90px;
+      width: var(--home-logo-size);
+      height: var(--home-logo-size);
+      aspect-ratio: 1;
+      object-fit: contain;
+      flex: none;
     }
 
     .retroshareText {
@@ -127,7 +131,8 @@
       text-align: center !important;
 
       & img {
-        width: 60px !important;
+        width: var(--home-logo-size-mobile) !important;
+        height: var(--home-logo-size-mobile) !important;
       }
 
       .retroshareText {

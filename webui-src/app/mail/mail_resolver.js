@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const rs = require('rswebui');
 const util = require('mail/mail_util');
 const compose = require('mail/mail_compose');
@@ -446,9 +447,10 @@ const MailComponent = () => {
                     filterUnreadOnly = id === 'unread';
                   },
                 }),
-                m(
+                select(
                   'select.mail-tag-select',
                   {
+                    'aria-label': 'Filter by tag',
                     value: selectedTagFilter,
                     onchange: (e) => {
                       selectedTagFilter = e.target.value;

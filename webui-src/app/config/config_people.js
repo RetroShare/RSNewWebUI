@@ -47,7 +47,7 @@ const Reputation = () => {
         m('.panel__head', m('h3', 'Reputation')),
         m('.panel__body', [
           m('.grid-2col', [
-            m('label.cfg-label[for=positive-contact-opinion]', 'Use "positive" as the default opinion for contacts(instead of neutral):'),
+            m('label.cfg-label[for=positive-contact-opinion]', 'Use a positive opinion for contacts'),
             m('input#positive-contact-opinion[type=checkbox]', {
               checked: usePositiveDefault,
               oninput: (e) => {
@@ -61,7 +61,7 @@ const Reputation = () => {
                 );
               },
             }),
-            m('label.cfg-label[for=auto-add-identities]', 'Automatically add identities owned by friend nodes to my contacts:'),
+            m('label.cfg-label[for=auto-add-identities]', 'Add friends’ identities to contacts'),
             m('input#auto-add-identities[type=checkbox]', {
               checked: addFriendIdAsContacts,
               oninput: (e) => {
@@ -75,7 +75,7 @@ const Reputation = () => {
                 );
               },
             }),
-            m('p', 'Difference in votes (+/-) to rate an ID positively:'),
+            m('p', 'Positive reputation threshold'),
             m('input[type=number]', {
               'aria-label': 'Difference in votes to rate an identity positively',
               oninput: (e) => (positiveThreshold = parseInt(e.target.value)),
@@ -89,7 +89,7 @@ const Reputation = () => {
                   () => {}
                 ),
             }),
-            m('p', 'Difference in votes (+/-) to rate an ID negatively:'),
+            m('p', 'Negative reputation threshold'),
             m('input[type=number]', {
               'aria-label': 'Difference in votes to rate an identity negatively',
               oninput: (e) => (negativeThreshold = parseInt(e.target.value)),
@@ -103,7 +103,7 @@ const Reputation = () => {
                   () => {}
                 ),
             }),
-            m('p', 'Delete banned identities after(0 means never):'),
+            m('p', 'Delete banned identities after (days, 0 = never)'),
             m('input[type=number]', {
               'aria-label': 'Delete banned identities after (days, 0 means never)',
               oninput: (e) => (deleteBannedAfter = parseInt(e.target.value)),
@@ -117,7 +117,7 @@ const Reputation = () => {
                   () => {}
                 ),
             }),
-            m('p', 'Reset reputation of banned identities after (0 means never):'),
+            m('p', 'Reset banned reputation after (days, 0 = never)'),
             m('input[type=number]', {
               'aria-label': 'Reset reputation of banned identities after (days, 0 means never)',
               oninput: (e) => (rememberBannedAfter = parseInt(e.target.value)),

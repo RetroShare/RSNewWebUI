@@ -62,13 +62,14 @@ button:has(> :where(.icon:first-child)) {
 
 @mixin role-primary {
   border-color: var(--action-border) !important;
-  background: linear-gradient(180deg, var(--action-top), var(--action-bottom)) !important;
+  background-color: var(--action-bottom) !important;
+  background-image: linear-gradient(180deg, var(--action-top), transparent) !important;
   color: var(--on-brand) !important;
   font-weight: var(--w-label);
 
   &:hover {
     border-color: var(--action-border) !important;
-    background: var(--action-bottom) !important;
+    background-color: var(--action-top) !important;
   }
 }
 

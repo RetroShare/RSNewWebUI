@@ -1,4 +1,5 @@
 const m = require('mithril');
+const motion = require('motion');
 
 const Dialog = () => {
   let opener;
@@ -34,6 +35,7 @@ const Dialog = () => {
       if (desktopQuery.addEventListener) desktopQuery.addEventListener('change', onLayoutChange);
       else desktopQuery.addListener(onLayoutChange);
     },
+    onbeforeremove: motion.exit,
     onremove: ({ dom }) => {
       window.removeEventListener('resize', fitViewport);
       window.visualViewport?.removeEventListener('resize', fitViewport);

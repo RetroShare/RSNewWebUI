@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const rs = require('rswebui');
 const widget = require('widgets');
 const util = require('config/config_util');
@@ -80,11 +81,11 @@ const Mail = () => {
     },
     view: () =>
       m('.panel.mail', [
-        m('.panel__head', m('h3', 'Mail Configuration')),
+        m('.panel__head', m('h3', 'Permissions and tags')),
         m('.panel__body', [
           m('.permission-flag', [
             m('p', 'Accept encrypted distant messages from: '),
-            m(
+            select(
               'select',
               {
                 'aria-label': 'Accept encrypted distant messages from',
@@ -150,6 +151,7 @@ const Mail = () => {
                       m('.tag-item__modify', [
                         m('button.is-icon',
                           {
+                            'aria-label': `Edit tag ${tag.value.first}`,
                             onclick: () => {
                               msgTagObj.tagName = tag.value.first;
                               msgTagObj.tagColor = `#${tag.value.second
@@ -162,6 +164,7 @@ const Mail = () => {
                         ),
                         m('button.red.is-icon',
                           {
+                            'aria-label': `Delete tag ${tag.value.first}`,
                             onclick: () => {
                               rs.rsJsonApiRequest('/rsMail/removeMessageTagType', {
                                 tagId: tag.key,

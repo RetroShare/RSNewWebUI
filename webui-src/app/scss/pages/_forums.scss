@@ -371,6 +371,9 @@ table.threads {
     box-shadow: none;
     cursor: pointer;
 
+    > .icon { transition: transform var(--motion-enter) var(--ease-out); }
+    &[aria-expanded='true'] > .icon { transform: rotate(90deg); }
+
     &:hover {
       background: transparent;
       color: var(--ink);
@@ -527,7 +530,10 @@ table.threads {
   /* Four columns do not fit a phone. Two lines instead: title and unread
    * count, then author and date. Indent step shrinks to keep titles readable. */
   table.threads {
+    display: block;
     table-layout: auto;
+
+    > tbody { display: block; width: 100%; }
 
     thead { display: none; }
 

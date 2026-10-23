@@ -1,11 +1,14 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const widget = require('widgets');
 
 const servicesInfo = {
   list: [],
+  loaded: false,
 
   setData(data) {
     servicesInfo.list = data.info.mServiceList;
+    servicesInfo.loaded = true;
   },
 };
 
@@ -35,6 +38,7 @@ const Service = () => {
             m('input[type=checkbox]', {
               'aria-label': `Allow ${v.attrs.data.value.mServiceName} by default`,
               checked: defaultAllowed,
+              disabled: defaultAllowed === undefined,
               oninput: (e) => {
                 defaultAllowed = e.target.checked;
                 rs.rsJsonApiRequest('/rsServiceControl/updateServicePermissions', {
@@ -57,21 +61,23 @@ const MyServices = {
   },
   view() {
     return m('.panel', [
-      m('.panel__head', m('h3', 'My Services')),
+      m('.panel__head', m('h3', 'Available services')),
       m('.panel__body', [
-        m('table', [
-          m('tr', [
-            m('th', 'Name'),
-            m('th', 'ID'),
-            m('th', 'Version'),
-            m('th', 'Allow by default'),
-          ]),
-          servicesInfo.list.map((data) =>
+        !servicesInfo.loaded ? m(widget.Loading, { label: 'Loading services…' })
+        : m('.settings-table-scroll', m('table.settings-services', [
+          m('thead', m('tr', [
+            m('th[scope=col]', 'Service'),
+            m('th[scope=col]', 'ID'),
+            m('th[scope=col]', 'Version'),
+            m('th[scope=col]', 'Allowed'),
+          ])),
+          m('tbody', servicesInfo.list.map((data) =>
             m(Service, {
+              key: data.key,
               data,
             })
-          ),
-        ]),
+          )),
+        ])),
       ]),
     ]);
   },

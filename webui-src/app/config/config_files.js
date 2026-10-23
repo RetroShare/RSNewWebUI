@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const rs = require('rswebui');
 const util = require('config/config_util');
 
@@ -115,7 +116,7 @@ const TransferOptions = () => {
             onchange: setMaxSimultaneousDownloads,
           }),
           m('p', 'Default chunk strategy:'),
-          m(
+          select(
             'select[name=strategy]',
             {
               'aria-label': 'Default chunk strategy',
@@ -142,7 +143,7 @@ const TransferOptions = () => {
             onchange: setFreeLimit,
           }),
           m('p', 'Allow Direct Download:'),
-          m(
+          select(
             'select',
             {
               'aria-label': 'Allow direct download',
@@ -183,7 +184,7 @@ const Layout = () => {
   return {
     view: () =>
       m('.panel', [
-        m('.panel__head', m('h3', 'Files Configuration')),
+        m('.panel__head', m('h3', 'Storage and transfers')),
         m('.panel__body.config-files', [
           m(SharedDirectories),
           m(DownloadLocations),

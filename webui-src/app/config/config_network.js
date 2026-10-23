@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const rs = require('rswebui');
 
 const util = require('config/config_util');
@@ -81,7 +82,7 @@ const SetNwMode = () => {
 
       return [
         !hideLabel && m('p', isHiddenMode ? 'Discovery:' : 'Network mode:'),
-        m(
+        select(
           'select.nw-input',
           {
             'aria-label': isHiddenMode ? 'Discovery' : 'Network mode',
@@ -149,6 +150,7 @@ const SetLimits = () => {
     view: () => [
       m('.nw-config-row', [
         m('p.nw-label', [
+          'Download limit (KB/s)',
           util.tooltip(
             'The download limit covers the whole application. ' +
               'However, in some situations, such as when transfering ' +
@@ -156,7 +158,6 @@ const SetLimits = () => {
               'unreliable and the total value reported by Retroshare ' +
               'might exceed that limit.'
           ),
-          'Download limit(KB/s):'
         ]),
         m('input[type=number][name=download].nw-input', {
           'aria-label': 'Download limit (KB/s)',
@@ -167,13 +168,13 @@ const SetLimits = () => {
       ]),
       m('.nw-config-row', [
         m('p.nw-label', [
+          'Upload limit (KB/s)',
           util.tooltip(
             'The upload limit covers the entire software. ' +
               'Too small an upload limit may eventually block ' +
               'low priority services(forums, channels). ' +
               'A minimum recommended value is 50KB/s.'
           ),
-          'Upload limit(KB/s):'
         ]),
         m('input[type=number][name=upload].nw-input', {
           'aria-label': 'Upload limit (KB/s)',
@@ -198,14 +199,14 @@ const SetOpMode = () => {
     view: () => [
       m('.nw-config-row', [
         m('p.nw-label', [
-          'Operating mode: ',
+          'Operating mode',
           util.tooltip(
             `No Anon D/L: Switches off file forwarding\n
             Gaming Mode: 25% standard traffic and TODO: Reduced popups\n
             Low traffic: 10% standard traffic and TODO: pause all file transfers\n`
           )
         ]),
-        m(
+        select(
           'select.nw-input',
           {
             'aria-label': 'Operating mode',
@@ -335,7 +336,7 @@ const NetworkConfigForm = () => {
         !isHiddenMode && m('.nw-config-row', [
           m('label.nw-label', 'NAT'),
           m('.nat-control-group', [
-            m('select.nw-input', {
+            select('select.nw-input', {
               'aria-label': 'NAT mode',
               value: netMode,
               onchange: (e) => saveNetMode(e.target.value),
