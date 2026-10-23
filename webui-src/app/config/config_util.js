@@ -1,4 +1,5 @@
 const m = require('mithril');
+const icon = require('icon');
 
 /* Visibility parameter for discovery */
 const RS_VS_DISC_OFF = 0x0000;
@@ -49,7 +50,7 @@ function getRandomId(tagArr) {
 }
 
 function tooltip(text) {
-  return m('.tooltip', [m('i.fas.fa-info-circle'), m('.tooltiptext', text)]);
+  return m('.tooltip', [icon('info-circle'), m('.tooltiptext', text)]);
 }
 
 module.exports = {

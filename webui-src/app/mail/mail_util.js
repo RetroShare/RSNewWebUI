@@ -1,10 +1,13 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const mailApi = require('mail/mail_api');
 const util = require('files/files_util');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
 const compose = require('mail/mail_compose');
 const renderIdentityTooltip = require('mail/mail_identity_tooltip');
+const icon = require('icon');
+const toast = require('toast');
 
 // rsmail.h
 const RS_MSG_BOXMASK = 0x000f;
@@ -12,6 +15,7 @@ const RS_MSG_BOXMASK = 0x000f;
 const RS_MSG_INBOX = 0x00;
 const RS_MSG_SENTBOX = 0x01;
 const RS_MSG_OUTBOX = 0x03;
+const RS_MSG_DRAFT = 0x04;
 const RS_MSG_DRAFTBOX = 0x05;
 const RS_MSG_TRASH = 0x000020;
 const RS_MSG_NEW = 0x10;
@@ -34,6 +38,97 @@ const MSG_ADDRESS_MODE_CC = 0x02;
 const MSG_ADDRESS_MODE_BCC = 0x03;
 
 const BOX_ALL = 0x06;
+
+//  What counts as a draft, in one place. The Drafts folder and the reading
+//  pane disagreed: the folder listed anything with the DRAFT bit, the toolbar
+//  asked for the exact DRAFTBOX box value (OUTGOING|DRAFT) -- so a draft the
+//  core had not also marked OUTGOING appeared in the folder and then opened
+//  with the Reply / Forward / Spam toolbar of a received mail.
+//  0x08 is not a box value rsmail.h defines; it is kept because the folder
+//  filter has always listed it and dropping it would change what Drafts shows.
+//  Mail with no subject is common enough (invites, system notices, replies
+//  sent from the Qt client) that a blank cell reads as a rendering fault. The
+//  table left it blank while the cards and the reading pane already said this.
+const NO_SUBJECT = '(No Subject)';
+function subjectOf(title) {
+  return (title && title.trim()) || NO_SUBJECT;
+}
+
+function isDraftMessage(msgflags) {
+  return (msgflags & RS_MSG_DRAFT) !== 0 || (msgflags & 0x08) !== 0;
+}
+
+//  Identity details, fetched once on the first miss. Callers read this
+//  synchronously from a view and the redraw brings the avatar and nickname in.
+//  Sender details were only ever fetched from the message's own `from`, so a
+//  draft the core left without one showed a jdenticon while the same identity
+//  showed its real photo in the list.
+//  A failed answer (the core unreachable, an HTTP error) is remembered for a
+//  while: the request's own redraw calls this again from the view, and with
+//  nothing cached the next redraw asked again, once per unresolved address,
+//  for as long as the core stayed away.
+const GXS_DETAIL_RETRY_MS = 60000;
+const GxsDetailFetches = new Set();
+const GxsDetailMisses = {};
+function identityDetails(addr) {
+  if (!addr) return null;
+  if (MailGxsDetailsCache[addr]) return MailGxsDetailsCache[addr];
+  if (GxsDetailFetches.has(addr)) return null;
+  if (GxsDetailMisses[addr] && Date.now() - GxsDetailMisses[addr] < GXS_DETAIL_RETRY_MS) return null;
+  GxsDetailFetches.add(addr);
+  rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: addr }, (data) => {
+    GxsDetailFetches.delete(addr);
+    if (!data || !data.details) {
+      GxsDetailMisses[addr] = Date.now();
+      return;
+    }
+    delete GxsDetailMisses[addr];
+    MailGxsDetailsCache[addr] = data.details;
+    UserNicknamesCache[addr] = data.details.mNickname || '';
+    m.redraw();
+  });
+  return null;
+}
+
+//  rs.userList.username() hands back the id itself while its bulk fetch is in
+//  flight, and keeps doing so for an identity this node has never seen -- so
+//  the To: chips were 32-character hex strings. That is not a name: shorten it
+//  so the row stays readable, and keep the full id in the title.
+//  The bulk identity list is asked first: when it knows the name there is
+//  nothing to fetch. The per-identity details are only for the names it does
+//  not have.
+function identityLabel(addr) {
+  if (!addr) return '';
+  const known = rs.userList.username(addr);
+  const name = (known && known !== addr ? known : '')
+    || UserNicknamesCache[addr]
+    || identityDetails(addr)?.mNickname;
+  if (!name) return `${addr.slice(0, 8)}…`;
+  return name;
+}
+
+//  A draft was written BY us, so an empty `from` means the core never recorded
+//  which identity -- not that the sender is a stranger. Fall back to our first
+//  identity rather than showing the mail as being from [Unknown].
+//
+//  Read synchronously from a view, so the fetch is kicked off on the first miss
+//  and the redraw picks it up. people_util caches for 30s, so this is one
+//  request, not one per row.
+let OwnIds = [];
+let ownIdsPending = false;
+function draftSenderId(addr) {
+  if (peopleUtil.isUsableIdentityId(addr)) return addr;
+  if (!OwnIds.length && !ownIdsPending) {
+    ownIdsPending = true;
+    peopleUtil.ownIds((ids) => {
+      ownIdsPending = false;
+      if (!ids || !ids.length) return;
+      OwnIds = ids;
+      m.redraw();
+    });
+  }
+  return OwnIds[0] || '';
+}
 
 const MessageCache = {};
 const UserNicknamesCache = {};
@@ -103,9 +198,11 @@ function getTagDetails(tagId) {
 }
 
 function loadTagTypes() {
+  //  The callback form hands the response BODY to the callback; reading
+  //  res.body here found nothing, and every tag showed as "Tag <id>" in grey.
   rs.rsJsonApiRequest('/rsMail/getMessageTagTypes', {}, (res) => {
-    if (res && res.body && res.body.tags && res.body.tags.types) {
-      res.body.tags.types.forEach((tag) => {
+    if (res && res.tags && res.tags.types) {
+      res.tags.types.forEach((tag) => {
         tagTypesCache[tag.key] = {
           name: tag.value.first,
           color: `#${tag.value.second.toString(16).padStart(6, '0')}`,
@@ -116,20 +213,30 @@ function loadTagTypes() {
 }
 loadTagTypes();
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+//  The compact form, for the card list where the date sits beside a name.
 function formatMailDate(ts) {
   if (!ts) return '';
   const date = new Date(ts * 1000);
   const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
-  if (isToday) {
+  if (date.toDateString() === now.toDateString()) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
-  const isThisYear = date.getFullYear() === now.getFullYear();
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  if (isThisYear) {
-    return `${date.getDate()} ${months[date.getMonth()]}`;
+  if (date.getFullYear() === now.getFullYear()) {
+    return `${date.getDate()} ${MONTHS[date.getMonth()]}`;
   }
   return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear().toString().slice(2)}`;
+}
+
+//  The table has a column to itself, so it carries the time as well -- which
+//  is the only thing that separates two mails that arrived the same day.
+function formatMailDateTime(ts) {
+  if (!ts) return '';
+  const date = new Date(ts * 1000);
+  const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (date.toDateString() === new Date().toDateString()) return time;
+  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear().toString().slice(2)}, ${time}`;
 }
 
 // Utility functions
@@ -197,19 +304,9 @@ const MessageSummary = () => {
           }
         })
         .then(() => {
-          if (details?.from?._addr_string) {
-            rs.rsJsonApiRequest(
-              '/rsIdentity/getIdDetails',
-              { id: details.from._addr_string },
-              (data) => {
-                fromUserInfo = data.details;
-                if (fromUserInfo) {
-                  UserNicknamesCache[details.from._addr_string] = fromUserInfo.mNickname || '';
-                  MailGxsDetailsCache[details.from._addr_string] = fromUserInfo;
-                }
-              }
-            );
-          }
+          //  Through the shared fetch, which the view also goes through: one
+          //  request per identity, not one per row plus one per redraw.
+          if (details?.from?._addr_string) identityDetails(details.from._addr_string);
         });
     },
     //  The reading pane's star/spam toggles refresh the summaries; the row's
@@ -256,6 +353,16 @@ const MessageSummary = () => {
         && !(currentFlags & RS_MSG_TRASH)
         && !(currentFlags & RS_MSG_SPAM);
       const currentStatus = isUnread ? 'unread' : 'read';
+      const isDraft = isDraftMessage(currentFlags);
+      const hideJudgements = v.attrs.category === 'drafts';
+      //  An old draft can carry no `from` at all; it was still written by us.
+      const fromAddr = isDraft
+        ? draftSenderId(details.from?._addr_string)
+        : details.from?._addr_string;
+      if (details.from?._addr_string) fromUserInfo = MailGxsDetailsCache[details.from._addr_string];
+      const fromName = fromUserInfo && Number(fromUserInfo.mId) !== 0
+        ? fromUserInfo.mNickname
+        : (fromAddr && identityLabel(fromAddr)) || '[Unknown]';
 
       return m(
         'tr.msgbody',
@@ -275,57 +382,41 @@ const MessageSummary = () => {
           },
         },
         [
-          m(
+          //  Star and spam are judgements about mail someone sent you; a draft
+          //  is yours and unsent. In the Drafts folder the columns come out
+          //  altogether -- a header over nothing but blank cells reads as
+          //  broken -- so the header and the cells key off the same folder.
+          !hideJudgements && m(
             'td.cell-star',
-            m(`input.star-check[type=checkbox][id=msg-${v.attrs.details.msgId}]`, { checked: isStarred }),
+            isDraft ? null : m(`input.star-check[type=checkbox][id=msg-${v.attrs.details.msgId}]`, { checked: isStarred }),
             // Use label with  [for] to manipulate hidden checkbox
-            m(
+            isDraft ? null : m(
               `label.star-check[for=msg-${v.attrs.details.msgId}]`,
               {
                 onclick: starMessage,
                 class: (details.msgflags & 0xf00) === RS_MSG_STAR ? 'starred' : 'unstarred',
               },
-              m('i.fas.fa-star')
+              icon((details.msgflags & 0xf00) === RS_MSG_STAR ? 'star-fill' : 'star')
             )
           ),
-          m('td.cell-attachment', files && files.length > 0 ? m('i.fas.fa-paperclip', { title: `${files.length} attachment(s)` }) : null),
+          m('td.cell-attachment', files && files.length > 0 ? icon('paperclip', { title: `${files.length} attachment(s)` }) : null),
           m('td.cell-subject', [
-            m('div', {
-              style: {
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-              }
-            }, [
-              files && files.length > 0 && m('i.fas.fa-paperclip.mobile-subject-clip', { title: `${files.length} attachment(s)` }),
-              m('span', details.title),
-              details.msgtags && details.msgtags.length > 0 && m('.mail-tags-container', { style: 'display: inline-flex; gap: 0.25rem;' },
-                details.msgtags.map((tagId) => {
-                  const tag = getTagDetails(tagId);
-                  return m('span.mail-tag-badge', {
-                    title: tag.name,
-                    style: `display: inline-block; width: 10px; height: 10px; border-radius: 2px; background-color: ${tag.color};`
-                  });
-                })
-              )
+            m('.cell-subject__row', [
+              files && files.length > 0 && icon('paperclip', { class: 'mobile-subject-clip',  title: `${files.length} attachment(s)` }),
+              m('span', {
+                class: subjectOf(details.title) === NO_SUBJECT ? 'is-placeholder' : '',
+              }, subjectOf(details.title)),
             ])
           ]),
           m(
             'td.cell-from',
             m(
-              'div',
+              '.cell-from__row',
               {
-                style: {
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  justifyContent: 'start',
-                  cursor: 'pointer',
-                },
                 onmouseenter: (e) => {
-                  if (!details?.from?._addr_string) return;
-                  const gxsId = details.from._addr_string;
-                  const name = fromUserInfo && Number(fromUserInfo.mId) !== 0 ? fromUserInfo.mNickname : '[Unknown]';
+                  if (!fromAddr) return;
+                  const gxsId = fromAddr;
+                  const name = fromName;
                   const rect = e.currentTarget.getBoundingClientRect();
                   MailHoverState.hoveredUser = { gxsId, name, rect };
                   if (fromUserInfo) MailGxsDetailsCache[gxsId] = fromUserInfo;
@@ -347,27 +438,34 @@ const MessageSummary = () => {
               [
                 m(peopleUtil.UserAvatar, {
                   avatar: fromUserInfo?.mAvatar,
-                  firstLetter: (fromUserInfo?.mNickname || '').slice(0, 1).toUpperCase(),
-                  identityId: details.from?._addr_string,
+                  firstLetter: fromUserInfo?.mNickname,
+                  identityId: fromAddr,
                   size: 24,
                 }),
-                m('span', fromUserInfo && Number(fromUserInfo.mId) !== 0 ? fromUserInfo.mNickname : '[Unknown]'),
+                m('span', fromName),
               ]
             )
           ),
-          m(
+          !hideJudgements && m(
             'td.cell-spam',
-            m(
+            isDraft ? null : m(
               'button.spam-btn[type=button]',
               {
                 onclick: spamMessage,
                 class: spamActive ? 'spammed' : '',
                 title: spamActive ? 'Mark as not spam' : 'Mark as spam',
               },
-              m('i.fas.fa-fire')
+              icon(spamActive ? 'fire-fill' : 'fire')
             )
           ),
-          m('td.cell-date', { title: new Date(details.ts * 1000).toLocaleString() }, formatMailDate(details.ts)),
+          m('td.cell-date', { title: new Date(details.ts * 1000).toLocaleString() }, formatMailDateTime(details.ts)),
+          m('td.cell-tags', (details.msgtags || []).map((tagId) => {
+            const tag = getTagDetails(tagId);
+            return m('span.mail-card-tag-badge', {
+              title: tag.name,
+              style: { '--tag': tag.color },
+            }, [m('span.mail-card-tag-dot'), tag.name]);
+          })),
           m('td.cell-spacer'),
         ]
       );
@@ -393,30 +491,12 @@ const MessageCard = () => {
             if (v.attrs.msg && v.attrs.msg.msgflags !== undefined) {
               MessageCache[msgId].msgflags = v.attrs.msg.msgflags;
             }
-            const senderAddr = res.body.msg.from?._addr_string;
-            if (senderAddr && !MailGxsDetailsCache[senderAddr]) {
-              rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: senderAddr }, (d) => {
-                if (d && d.details) {
-                  MailGxsDetailsCache[senderAddr] = d.details;
-                  UserNicknamesCache[senderAddr] = d.details.mNickname || '';
-                  m.redraw();
-                }
-              });
-            }
+            identityDetails(res.body.msg.from?._addr_string);
             m.redraw();
           }
         });
       } else {
-        const senderAddr = MessageCache[msgId]?.from?._addr_string || v.attrs.msg.from?._addr_string;
-        if (senderAddr && !MailGxsDetailsCache[senderAddr]) {
-          rs.rsJsonApiRequest('/rsIdentity/getIdDetails', { id: senderAddr }, (d) => {
-            if (d && d.details) {
-              MailGxsDetailsCache[senderAddr] = d.details;
-              UserNicknamesCache[senderAddr] = d.details.mNickname || '';
-              m.redraw();
-            }
-          });
-        }
+        identityDetails(MessageCache[msgId]?.from?._addr_string || v.attrs.msg.from?._addr_string);
       }
     },
     view: (v) => {
@@ -425,10 +505,12 @@ const MessageCard = () => {
       if (MessageCache[msg.msgId] && msg.msgflags !== undefined) {
         MessageCache[msg.msgId].msgflags = msg.msgflags;
       }
-      const senderAddr = details.from?._addr_string || msg.from?._addr_string;
-      const senderName = UserNicknamesCache[senderAddr] || rs.userList.username(senderAddr) || '[Unknown]';
-      const senderInfo = MailGxsDetailsCache[senderAddr];
       const currentFlags = msg.msgflags !== undefined ? msg.msgflags : (details.msgflags || 0);
+      const isDraft = isDraftMessage(currentFlags);
+      const rawSenderAddr = details.from?._addr_string || msg.from?._addr_string;
+      const senderAddr = isDraft ? draftSenderId(rawSenderAddr) : rawSenderAddr;
+      const senderName = (senderAddr && identityLabel(senderAddr)) || '[Unknown]';
+      const senderInfo = MailGxsDetailsCache[senderAddr];
       const flag = currentFlags & 0xf0;
       const isUnread = (flag === RS_MSG_NEW || flag === RS_MSG_UNREAD_BY_USER)
         && !(currentFlags & RS_MSG_TRASH)
@@ -441,6 +523,9 @@ const MessageCard = () => {
 
       const rawMsg = details.msg || '';
       const snippet = stripHtmlForSnippet(rawMsg).slice(0, 110);
+      const openMessage = () => {
+        if (v.attrs.onSelect) v.attrs.onSelect(msg.msgId);
+      };
 
       return m(
         '.mail-card-item',
@@ -450,16 +535,14 @@ const MessageCard = () => {
             isSelected ? 'selected' : '',
             isUnread ? 'unread' : 'read',
           ].filter(Boolean).join(' '),
-          onclick: () => {
-            if (v.attrs.onSelect) v.attrs.onSelect(msg.msgId);
-          },
+          onclick: openMessage,
         },
         [
           isUnread && m('.mail-card-unread-dot'),
           m('.mail-card-avatar-col', [
             m(peopleUtil.UserAvatar, {
               avatar: senderInfo?.mAvatar,
-              firstLetter: senderName.slice(0, 1).toUpperCase(),
+              firstLetter: senderName,
               identityId: senderAddr,
               size: 38,
             }),
@@ -486,14 +569,25 @@ const MessageCard = () => {
               m('.mail-card-date', { title: new Date((msg.ts?.xint64 || msg.ts || details.ts) * 1000).toLocaleString() }, formatMailDate(msg.ts?.xint64 || msg.ts || details.ts)),
             ]),
             m('.mail-card-row-subject', [
-              m('.mail-card-subject', { title: details.title || msg.title }, details.title || msg.title || '(No Subject)'),
+              m('button.mail-card-subject[type=button]', {
+                class: subjectOf(details.title || msg.title) === NO_SUBJECT ? 'is-placeholder' : '',
+                title: details.title || msg.title,
+                onclick: (e) => {
+                  e.stopPropagation();
+                  openMessage();
+                },
+              }, subjectOf(details.title || msg.title)),
               m('.mail-card-indicators', [
-                filesCount > 0 && m('i.fas.fa-paperclip.mail-card-clip', { title: `${filesCount} attachment(s)` }),
-                m(
-                  'span.mail-card-spam-btn[role=button]',
+                filesCount > 0 && icon('paperclip', { class: 'mail-card-clip',  title: `${filesCount} attachment(s)` }),
+                //  Star and spam are judgements about mail someone sent you.
+                //  A draft is yours and unsent, so neither applies to it.
+                !isDraft && m(
+                  'button.mail-card-spam-btn[type=button]',
                   {
                     class: isSpam ? 'spammed' : '',
                     title: isSpam ? 'Mark as not spam' : 'Mark as spam',
+                    'aria-label': isSpam ? 'Mark as not spam' : 'Mark as spam',
+                    'aria-pressed': String(isSpam),
                     onclick: (e) => {
                       e.stopPropagation();
                       e.preventDefault();
@@ -515,13 +609,15 @@ const MessageCard = () => {
                       m.redraw();
                     },
                   },
-                  m('i.fas.fa-fire')
+                  icon(isSpam ? 'fire-fill' : 'fire')
                 ),
-                m(
-                  'span.mail-card-star-btn[role=button]',
+                !isDraft && m(
+                  'button.mail-card-star-btn[type=button]',
                   {
                     class: isStarred ? 'starred' : '',
                     title: isStarred ? 'Unstar' : 'Star',
+                    'aria-label': isStarred ? 'Unstar message' : 'Star message',
+                    'aria-pressed': String(isStarred),
                     onclick: (e) => {
                       e.stopPropagation();
                       e.preventDefault();
@@ -543,7 +639,7 @@ const MessageCard = () => {
                       m.redraw();
                     },
                   },
-                  m('i.fas.fa-star')
+                  icon(isStarred ? 'star-fill' : 'star')
                 ),
               ]),
             ]),
@@ -557,9 +653,9 @@ const MessageCard = () => {
                     'span.mail-card-tag-badge',
                     {
                       title: tag.name,
-                      style: `background-color: ${tag.color}20; color: ${tag.color}; border: 1px solid ${tag.color}40;`,
+                      style: { '--tag': tag.color },
                     },
-                    [m('span.mail-card-tag-dot', { style: `background-color: ${tag.color};` }), tag.name]
+                    [m('span.mail-card-tag-dot'), tag.name]
                   );
                 })
               ),
@@ -579,10 +675,7 @@ const AttachmentSection = () => {
       '/rsFiles/FileRequest',
       { fileName, hash, flags, size: { xstr64 } },
       (status) =>
-        widget.popupMessage([
-          m('i.fas.fa-file-medical'),
-          m('h3', `File is ${status.retval ? 'being' : 'already'} downloaded!`),
-        ])
+        toast.info(`File is ${status.retval ? 'being' : 'already'} downloaded!`)
     ).catch((error) => { });
   }
   return {
@@ -591,15 +684,14 @@ const AttachmentSection = () => {
         v.attrs.files.map((file) => {
           const fileSizeNum = file.size ? (typeof file.size === 'object' ? file.size.xint64 || parseInt(file.size.xstr64) || 0 : Number(file.size) || 0) : 0;
           return m('.attachment-card', [
-            m('.attachment-icon', m('i.fas.fa-paperclip')),
+            m('.attachment-icon', icon('paperclip')),
             m('.attachment-info', [
               m('.attachment-name', file.fname),
               m('.attachment-size', humanReadableSize(fileSizeNum)),
             ]),
-            m(
-              'button.btn-attachment-download',
+            m('button.btn-attachment-download.is-primary',
               { onclick: () => handleAttachmentDownload(file) },
-              [m('i.fas.fa-download'), m('span.btn-text', ' Download')]
+              [icon('download'), m('span.btn-text', ' Download')]
             ),
           ]);
         }),
@@ -610,11 +702,25 @@ const AttachmentSection = () => {
 const ReadingPanePlaceholder = {
   view: () =>
     m('.mail-reading-placeholder', [
-      m('.mail-reading-placeholder__icon', m('i.fas.fa-envelope-open-text')),
+      m('.mail-reading-placeholder__icon', icon('envelope-open-text')),
       m('h3.mail-reading-placeholder__title', 'Select an email to read'),
       m('p.mail-reading-placeholder__subtitle', 'Choose a message from the list to display its full content here.'),
     ]),
 };
+
+//  One recipient line. A broadcast can carry hundreds of addresses, so the
+//  chips scroll in a box of their own, with the label fixed beside them,
+//  rather than wrapping down the pane and pushing the message off the screen.
+function recipientRow(label, keys) {
+  if (!keys || keys.length === 0) return null;
+  return m('.msg-recipients-row', [
+    m('span.recipient-label', label),
+    m('.msg-recipients-row__list', keys.map((addr) => {
+      return m('span.recipient-chip', { title: addr }, identityLabel(addr));
+    })),
+    keys.length > 8 && m('span.msg-recipients-row__count', `${keys.length}`),
+  ]);
+}
 
 const MessageView = () => {
   let showCompose = false;
@@ -640,6 +746,7 @@ const MessageView = () => {
     timeStamp: '',
     files: [],
     msgtags: [],
+    msgflags: 0,
   };
 
   function loadMail(msgId) {
@@ -656,6 +763,7 @@ const MessageView = () => {
     MailData.sender = {};
     MailData.timeStamp = '';
     MailData.msgtags = [];
+    MailData.msgflags = 0;
 
     markMessageRead(msgId);
 
@@ -666,9 +774,10 @@ const MessageView = () => {
         MessageCache[msgId] = msgDetails;
         MailData.msgId = msgDetails.msgId;
         MailData.sender = msgDetails.from;
-        MailData.subject = msgDetails.title || '(No Subject)';
+        MailData.subject = subjectOf(msgDetails.title);
         MailData.timeStamp = msgDetails.ts;
         MailData.msgtags = msgDetails.msgtags || (MessageCache[msgId] && MessageCache[msgId].msgtags) || [];
+        MailData.msgflags = msgDetails.msgflags || 0;
         isStarred = (msgDetails.msgflags & 0xf00) === RS_MSG_STAR;
         isSpam = Boolean(msgDetails.msgflags & RS_MSG_SPAM);
 
@@ -738,10 +847,7 @@ const MessageView = () => {
         else MessageCache[MailData.msgId].msgflags &= ~RS_MSG_SPAM;
       }
       triggerMessageUpdated(MailData.msgId, RS_MSG_SPAM, isSpam);
-      widget.popupMessage([
-        m('i.fas.fa-fire'),
-        m('h3', isSpam ? 'Marked as spam' : 'Removed from spam'),
-      ]);
+      toast.info(isSpam ? 'Marked as spam' : 'Removed from spam');
       m.redraw();
     });
   }
@@ -752,23 +858,14 @@ const MessageView = () => {
         MessageCache[MailData.msgId].msgflags |= RS_MSG_UNREAD_BY_USER;
       }
       triggerMessageUpdated(MailData.msgId, RS_MSG_UNREAD_BY_USER, true);
-      widget.popupMessage([
-        m('i.fas.fa-envelope'),
-        m('h3', 'Marked as unread'),
-      ]);
+      toast.info('Marked as unread');
       m.redraw();
     });
   }
 
   function deleteMail(vnode) {
-    rs.rsJsonApiRequest('/rsMail/MessageToTrash', { msgId: MailData.msgId, bTrash: true });
-    rs.rsJsonApiRequest('/rsMail/MessageDelete', { msgId: MailData.msgId }).then((res) => {
-      widget.popupMessage(
-        m('.widget', [
-          m('.widget__heading', m('h3', res.body.retval ? 'Success' : 'Error')),
-          m('.widget__body', m('p', res.body.retval ? 'Mail Deleted.' : 'Error in Deleting.')),
-        ])
-      );
+    mailApi.deleteMessage(MailData.msgId).then((ok) => {
+      toast.result(ok, 'Mail deleted.', 'Could not delete the mail.');
       if (vnode.attrs.onDeleted) {
         vnode.attrs.onDeleted(MailData.msgId);
       } else {
@@ -778,10 +875,13 @@ const MessageView = () => {
   }
 
   function confirmMailDelete(vnode) {
-    widget.popupMessage([
-      m('p', 'Are you sure you want to delete this mail?'),
-      m('button.red', { onclick: () => deleteMail(vnode) }, 'Delete'),
-    ]);
+    widget.confirmMessage({
+      title: 'Delete mail',
+      message: 'This message will be removed from your node.',
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: () => deleteMail(vnode),
+    });
   }
 
   return {
@@ -794,8 +894,11 @@ const MessageView = () => {
       }
     },
     view: (v) => {
-      const senderAddr = MailData.sender?._addr_string;
-      const senderName = (senderAddr && UserNicknamesCache[senderAddr]) || (senderAddr && rs.userList.username(senderAddr)) || '[Unknown]';
+      const isDraft = isDraftMessage(MailData.msgflags);
+      const senderAddr = isDraft
+        ? draftSenderId(MailData.sender?._addr_string)
+        : MailData.sender?._addr_string;
+      const senderName = (senderAddr && identityLabel(senderAddr)) || '[Unknown]';
       const toKeys = Object.keys(MailData.toList || {});
       const ccKeys = Object.keys(MailData.ccList || {});
       const bccKeys = Object.keys(MailData.bccList || {});
@@ -804,47 +907,58 @@ const MessageView = () => {
         '.msg-view.mail-reading-card',
         [
           m('.msg-view-nav', [
-            m(
-              'button.mail-view-back-btn[type=button][title=Back][aria-label=Back]',
-              {
-                onclick: () => {
-                  if (v.attrs.onBack) v.attrs.onBack();
-                  else m.route.set('/mail/:tab', { tab: m.route.param().tab || 'inbox' });
-                },
+            m(widget.BackButton, {
+              label: 'Back to messages',
+              onclick: () => {
+                if (v.attrs.onBack) v.attrs.onBack();
+                else m.route.set('/mail/:tab', { tab: m.route.param().tab || 'inbox' });
               },
-              m('i.fas.fa-chevron-left')
-            ),
-            m('.msg-view-nav__action', [
+            }),
+            //  A draft has not been sent, so there is nothing to reply to,
+            //  forward, mark unread or flag as spam. Two actions apply to it:
+            //  carry on writing, or throw it away.
+            m('.msg-view-nav__action', isDraft
+              ? [
+                  m('button.mail-action-btn.is-primary', {
+                    title: 'Continue writing this draft',
+                    onclick: () => { composeType = 'draft'; setShowCompose(true); },
+                  }, [icon('edit'), m('span.btn-text', ' Edit draft')]),
+                  m('button.mail-action-btn.mail-action-btn--delete', {
+                    title: 'Discard draft',
+                    onclick: () => confirmMailDelete(v),
+                  }, [icon('trash-alt'), m('span.btn-text', ' Discard')]),
+                ]
+              : [
               m('button.mail-action-btn', {
                 title: 'Reply',
                 onclick: () => { composeType = 'reply'; setShowCompose(true); },
-              }, [m('i.fas.fa-reply'), m('span.btn-text', ' Reply')]),
+              }, [icon('reply'), m('span.btn-text', ' Reply')]),
               m('button.mail-action-btn', {
                 title: 'Forward',
                 onclick: () => { composeType = 'forward'; setShowCompose(true); },
-              }, [m('i.fas.fa-forward'), m('span.btn-text', ' Forward')]),
+              }, [icon('forward'), m('span.btn-text', ' Forward')]),
               m('button.mail-action-btn', {
                 title: 'Reply All',
                 onclick: () => { composeType = 'replyAll'; setShowCompose(true); },
-              }, [m('i.fas.fa-reply-all'), m('span.btn-text', ' Reply All')]),
+              }, [icon('reply-all'), m('span.btn-text', ' Reply All')]),
               m('button.mail-action-btn', {
                 title: isStarred ? 'Unstar' : 'Star',
                 class: isStarred ? 'mail-action-btn--starred' : '',
                 onclick: toggleStar,
-              }, [m('i.fas.fa-star'), m('span.btn-text', isStarred ? ' Starred' : ' Star')]),
+              }, [icon(isStarred ? 'star-fill' : 'star'), m('span.btn-text', isStarred ? ' Starred' : ' Star')]),
               m('button.mail-action-btn', {
                 title: isSpam ? 'Remove from spam' : 'Mark as spam',
                 class: isSpam ? 'mail-action-btn--spam' : '',
                 onclick: toggleSpam,
-              }, [m('i.fas.fa-fire'), m('span.btn-text', isSpam ? ' Spam' : ' Spam')]),
+              }, [icon(isSpam ? 'fire-fill' : 'fire'), m('span.btn-text', 'Spam')]),
               m('button.mail-action-btn', {
                 title: 'Mark as unread',
                 onclick: markUnread,
-              }, [m('i.fas.fa-envelope'), m('span.btn-text', ' Unread')]),
+              }, [icon('envelope'), m('span.btn-text', ' Unread')]),
               m('button.mail-action-btn.mail-action-btn--delete', {
                 title: 'Delete mail',
                 onclick: () => confirmMailDelete(v),
-              }, [m('i.fas.fa-trash-alt'), m('span.btn-text', ' Delete')]),
+              }, [icon('trash-alt'), m('span.btn-text', ' Delete')]),
             ]),
           ]),
           m('.msg-view__header', [
@@ -855,15 +969,15 @@ const MessageView = () => {
                   const tag = getTagDetails(tagId);
                   return m('span.mail-card-tag-badge', {
                     title: tag.name,
-                    style: `background-color: ${tag.color}20; color: ${tag.color}; border: 1px solid ${tag.color}40;`,
-                  }, [m('span.mail-card-tag-dot', { style: `background-color: ${tag.color};` }), tag.name]);
+                    style: { '--tag': tag.color },
+                  }, [m('span.mail-card-tag-dot'), tag.name]);
                 })),
             ]),
             m('.msg-details', [
-              MailData.sender &&
+              senderAddr &&
                 m(peopleUtil.UserAvatar, {
-                  avatar: MailData.avatar,
-                  firstLetter: senderName.slice(0, 1).toUpperCase(),
+                  avatar: MailData.avatar || identityDetails(senderAddr)?.mAvatar,
+                  firstLetter: senderName,
                   identityId: senderAddr,
                   size: 46,
                 }),
@@ -890,44 +1004,23 @@ const MessageView = () => {
                       new Date(MailData.timeStamp * 1000).toLocaleString()
                     ),
                 ]),
-                toKeys.length > 0 &&
-                  m('.msg-recipients-row', [
-                    m('span.recipient-label', 'To:'),
-                    toKeys.map((addr) => {
-                      const name = UserNicknamesCache[addr] || rs.userList.username(addr) || addr.slice(0, 8);
-                      return m('span.recipient-chip', { title: addr }, name);
-                    }),
-                  ]),
-                ccKeys.length > 0 &&
-                  m('.msg-recipients-row', [
-                    m('span.recipient-label', 'Cc:'),
-                    ccKeys.map((addr) => {
-                      const name = UserNicknamesCache[addr] || rs.userList.username(addr) || addr.slice(0, 8);
-                      return m('span.recipient-chip', { title: addr }, name);
-                    }),
-                  ]),
-                //  Own sent mail carries its Bcc list; the old view showed it.
-                bccKeys.length > 0 &&
-                  m('.msg-recipients-row', [
-                    m('span.recipient-label', 'Bcc:'),
-                    bccKeys.map((addr) => {
-                      const name = UserNicknamesCache[addr] || rs.userList.username(addr) || addr.slice(0, 8);
-                      return m('span.recipient-chip', { title: addr }, name);
-                    }),
-                  ]),
+                //  Bcc is on own sent mail only.
+                recipientRow('To:', toKeys),
+                recipientRow('Cc:', ccKeys),
+                recipientRow('Bcc:', bccKeys),
               ]),
             ]),
           ]),
           MailData.files && MailData.files.length > 0 &&
             m('.msg-view__attachment', [
               m('h4.attachments-title', [
-                m('i.fas.fa-paperclip'),
+                icon('paperclip'),
                 m('span', `Attachments (${MailData.files.length})`),
               ]),
               m('.msg-view__attachment-items', m(AttachmentSection, { files: MailData.files })),
             ]),
           m('.msg-view__body', [
-            m('.mail-body-container', m.trust(MailData.message || '<p style="color: #94a3b8; font-style: italic;">(No message content)</p>')),
+            m('.mail-body-container', m.trust(MailData.message || '<p class="mail-body-empty">(No message content)</p>')),
           ]),
           showCompose &&
             m(
@@ -943,15 +1036,22 @@ const MessageView = () => {
                       //  The prefix depends on the ACTION, not on whatever
                       //  prefix the subject already has: forwarding "Re: X"
                       //  must send "Fwd: Re: X", not "Re: X".
-                      subject: composeType === 'forward'
-                        ? (MailData.subject.startsWith('Fwd:') ? MailData.subject : `Fwd: ${MailData.subject}`)
-                        : (MailData.subject.startsWith('Re:') ? MailData.subject : `Re: ${MailData.subject}`),
+                      subject: composeType === 'draft'
+                        ? MailData.subject
+                        : composeType === 'forward'
+                          ? (MailData.subject.startsWith('Fwd:') ? MailData.subject : `Fwd: ${MailData.subject}`)
+                          : (MailData.subject.startsWith('Re:') ? MailData.subject : `Re: ${MailData.subject}`),
                       replyMessage: MailData.message,
                       timeStamp: new Date(MailData.timeStamp * 1000),
+                      //  Only when resuming: saving then replaces this
+                      //  draft instead of leaving a second copy behind.
+                      draftMsgId: composeType === 'draft' ? MailData.msgId : undefined,
                       setShowCompose,
                     })
                   : m('.widget', m('.widget__heading', m('h3', 'Sender is not known'))),
-                m('button.red.close-btn', { onclick: () => setShowCompose(false) }, m('i.fas.fa-times'))
+                m('button.red.close-btn', {
+                  onclick: () => compose.requestClose(() => setShowCompose(false)),
+                }, icon('times'))
               )
             ),
           renderMailUserTooltip(),
@@ -961,22 +1061,40 @@ const MessageView = () => {
   };
 };
 
+//  `column: null` is the unsorted state -- newest first, the order the core
+//  hands the list back in.
 const SortState = {
   column: 'date',
   direction: 'desc',
 };
 
+//  Three clicks on one header: ascending, descending, off. Moving to another
+//  header starts that cycle over, so a column is never picked up mid-way.
 function setSort(column) {
-  if (SortState.column === column) {
-    SortState.direction = SortState.direction === 'asc' ? 'desc' : 'asc';
-  } else {
+  if (SortState.column !== column) {
     SortState.column = column;
-    SortState.direction = (column === 'date' || column === 'attachments' || column === 'starred' || column === 'spam') ? 'desc' : 'asc';
+    SortState.direction = 'asc';
+    return;
   }
+  if (SortState.direction === 'asc') {
+    SortState.direction = 'desc';
+    return;
+  }
+  SortState.column = null;
+  SortState.direction = 'desc';
 }
 
 function sortList(list) {
   if (!list) return [];
+  //  Unsorted: newest first, which is what the list looks like before anyone
+  //  touches a header.
+  if (!SortState.column) {
+    return [...list].sort((msgA, msgB) => {
+      const aTs = Number(MessageCache[msgA.msgId]?.ts || msgA.ts?.xint64 || msgA.ts || 0);
+      const bTs = Number(MessageCache[msgB.msgId]?.ts || msgB.ts?.xint64 || msgB.ts || 0);
+      return bTs - aTs;
+    });
+  }
   return [...list].sort((msgA, msgB) => {
     let valA, valB;
     switch (SortState.column) {
@@ -1019,6 +1137,17 @@ function sortList(list) {
         valB = bFrom.toLowerCase();
         break;
       }
+      case 'tags': {
+        const firstTag = (msg) => {
+          const tags = MessageCache[msg.msgId]?.msgtags || msg.msgtags || [];
+          return tags.length ? getTagDetails(tags[0]).name.toLowerCase() : '';
+        };
+        //  Untagged mail sorts last in both directions: it is the absence of
+        //  the thing being sorted by, not the lowest value of it.
+        valA = firstTag(msgA) || '\uffff';
+        valB = firstTag(msgB) || '\uffff';
+        break;
+      }
       case 'date':
       default: {
         const aTs = MessageCache[msgA.msgId]?.ts || msgA.ts?.xint64 || msgA.ts || 0;
@@ -1042,26 +1171,30 @@ const Table = () => {
     view: (v) => {
       const renderHeader = (colName, label, isIcon = false) => {
         const isActive = SortState.column === colName;
+        //  A caret for the direction, `arrows-down-up` when idle. The
+        //  sort-ascending/descending glyphs are bars-plus-arrow, too busy to
+        //  read at 12px; colour is what says "this is the sorted column".
         const iconClass = isActive
-          ? (SortState.direction === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down')
-          : 'fas fa-sort';
+          ? (SortState.direction === 'asc' ? 'sort-up' : 'sort-down')
+          : 'sort';
+        const next = !isActive ? 'ascending'
+          : SortState.direction === 'asc' ? 'descending' : 'unsorted';
         return m(
           `th.sortable-th.col-${colName}`,
           {
             onclick: () => setSort(colName),
-            style: { cursor: 'pointer', userSelect: 'none' },
+            title: `Sort ${next}`,
+            'aria-sort': isActive
+              ? (SortState.direction === 'asc' ? 'ascending' : 'descending')
+              : 'none',
           },
-          [
+          //  One row, always: the label and its sort glyph beside it. Without
+          //  the wrapper the glyph fell to a second line in the two icon-only
+          //  columns, since a `th` is not a flex container.
+          m('.sortable-th__inner', [
             isIcon ? label : m('span', label),
-            ' ',
-            m(`i.${iconClass}`, {
-              style: {
-                marginLeft: '0.25rem',
-                opacity: isActive ? 1 : 0.2,
-                transition: 'opacity 0.2s',
-              },
-            }),
-          ]
+            icon(iconClass, { class: isActive ? 'sort-glyph is-active' : 'sort-glyph' }),
+          ])
         );
       };
 
@@ -1080,57 +1213,36 @@ const Table = () => {
       if (currentPage >= totalPages) currentPage = totalPages - 1;
       if (currentPage < 0) currentPage = 0;
 
-      const paginationUI = totalItems > pageSize && m('.pagination', {
-        style: {
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '1rem',
-          padding: '1rem',
-          borderTop: '1px solid #eee',
-          fontSize: '1rem',
-          color: '#555',
-          userSelect: 'none'
-        }
-      }, [
-        m('button', {
+      //  `.pagination` is already styled inside .table-pagination-container,
+      //  so nothing is spelled inline here. A disabled button already looks
+      //  disabled, too.
+      const paginationUI = totalItems > pageSize && m('.pagination', [
+        m('button.is-icon[type=button][aria-label=Previous page]', {
           disabled: currentPage === 0,
           onclick: () => currentPage--,
-          style: {
-            padding: '0.4rem 0.8rem',
-            background: currentPage === 0 ? '#ccc' : '#019dff',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
-            boxShadow: 'none'
-          }
-        }, m('i.fas.fa-chevron-left')),
-        m('span.bold', `${totalItems > 0 ? currentPage * pageSize + 1 : 0} - ${Math.min((currentPage + 1) * pageSize, totalItems)} of ${totalItems}`),
-        m('button', {
+        }, icon('chevron-left')),
+        m('span.pagination__range',
+          `${totalItems > 0 ? currentPage * pageSize + 1 : 0} - ${Math.min((currentPage + 1) * pageSize, totalItems)} of ${totalItems}`),
+        m('button.is-icon[type=button][aria-label=Next page]', {
           disabled: currentPage >= totalPages - 1,
           onclick: () => currentPage++,
-          style: {
-            padding: '0.4rem 0.8rem',
-            background: currentPage >= totalPages - 1 ? '#ccc' : '#019dff',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: currentPage >= totalPages - 1 ? 'not-allowed' : 'pointer',
-            boxShadow: 'none'
-          }
-        }, m('i.fas.fa-chevron-right'))
+        }, icon('chevron-right'))
       ]);
+
+      //  Drafts cannot be starred or marked as spam, so in that folder the two
+      //  columns are dropped rather than left as headers over blank cells.
+      const hideJudgements = v.attrs.category === 'drafts';
 
       return m('.table-pagination-container', [
         m('table.mails', [
           m('tr', [
-            renderHeader('starred', m('i.fas.fa-star'), true),
-            renderHeader('attachments', m('i.fas.fa-paperclip'), true),
+            !hideJudgements && renderHeader('starred', icon('star'), true),
+            renderHeader('attachments', icon('paperclip'), true),
             renderHeader('subject', 'Subject'),
             renderHeader('from', 'From'),
-            renderHeader('spam', m('i.fas.fa-fire'), true),
-            renderHeader('date', 'Date'),
+            !hideJudgements && renderHeader('spam', icon('fire'), true),
+            renderHeader('date', 'Date & time'),
+            renderHeader('tags', 'Tags'),
             m('th.col-spacer'),
           ]),
           tbody,
@@ -1146,7 +1258,8 @@ const SearchBar = () => {
   let searchString = '';
   return {
     view: ({ attrs: { list } }) =>
-      m('input[type=text][placeholder=Search Subject].searchbar', {
+      m(widget.SearchField, {
+        placeholder: 'Search subject',
         value: searchString,
         oninput: (e) => {
           searchString = e.target.value.toLowerCase();
@@ -1163,22 +1276,42 @@ const activeSideLink = {
   quicksideactive: -1,
 };
 
-const sidebarIcons = {
-  inbox: m('i.fas.fa-inbox', { style: 'color: #3b82f6; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
-  outbox: m('i.fas.fa-envelope-open-text', { style: 'color: #10b981; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
-  drafts: m('i.fas.fa-edit', { style: 'color: #6b7280; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
-  sent: m('i.fas.fa-envelope-open', { style: 'color: #f59e0b; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
-  trash: m('i.fas.fa-trash-alt', { style: 'color: #ef4444; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
-  starred: m('i.fas.fa-star', { style: 'color: #eab308; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
-  system: m('i.fas.fa-bell', { style: 'color: #3b82f6; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
-  spam: m('i.fas.fa-fire', { style: 'color: #f97316; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
-  attachment: m('i.fas.fa-paperclip', { style: 'color: #06b6d4; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
-  important: m('i.fas.fa-square', { style: 'color: #ef4444; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
-  work: m('i.fas.fa-square', { style: 'color: #f97316; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
-  personal: m('i.fas.fa-square', { style: 'color: #22c55e; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
-  todo: m('i.fas.fa-square', { style: 'color: #3b82f6; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
-  later: m('i.fas.fa-square', { style: 'color: #a855f7; margin-right: 0.75rem; font-size: 24px; width: 24px; text-align: center;' }),
+//  Folder glyphs inherit the link's colour, so the selected folder is the only
+//  coloured thing in the column. A colour per folder would make it read as a
+//  legend rather than a list of places, and leave selection nothing to say.
+//
+//  The five Quick View entries are tags, where the colour IS the data: those
+//  keep it, taken from the tag the core defines rather than written here.
+const folderIcons = {
+  inbox: 'inbox',
+  outbox: 'envelope-open-text',
+  drafts: 'edit',
+  sent: 'envelope-open',
+  trash: 'trash-alt',
+  starred: 'star',
+  system: 'bell',
+  spam: 'fire',
+  attachment: 'paperclip',
 };
+
+const quickViewTagIds = {
+  important: 1,
+  work: 2,
+  personal: 3,
+  todo: 4,
+  later: 5,
+};
+
+function sidebarIcon(panelName) {
+  if (folderIcons[panelName]) {
+    return icon(folderIcons[panelName], { class: 'sidebar-link-icon' });
+  }
+  const tagId = quickViewTagIds[panelName];
+  if (!tagId) return null;
+  return m('span.sidebar-link-swatch', {
+    style: { backgroundColor: getTagDetails(tagId).color },
+  });
+}
 
 const Sidebar = () => {
   return {
@@ -1191,7 +1324,6 @@ const Sidebar = () => {
             m.route.Link,
             {
               class: index === activeSideLink.sideactive ? 'selected-sidebar-link' : '',
-              style: 'display: flex; align-items: center;',
               onclick: () => {
                 activeSideLink.sideactive = index;
                 activeSideLink.quicksideactive = -1;
@@ -1200,7 +1332,7 @@ const Sidebar = () => {
               href: baseRoute + panelName,
             },
             [
-              sidebarIcons[panelName] || null,
+              sidebarIcon(panelName),
               m('span.sidebar-link-text', displayName),
               size[panelName] > 0 && m('span.sidebar-badge', size[panelName]),
             ]
@@ -1224,7 +1356,6 @@ const SidebarQuickView = () => {
             {
               class:
                 index === activeSideLink.quicksideactive ? 'selected-sidebarquickview-link' : '',
-              style: 'display: flex; align-items: center;',
               onclick: () => {
                 activeSideLink.quicksideactive = index;
                 activeSideLink.sideactive = -1;
@@ -1233,7 +1364,7 @@ const SidebarQuickView = () => {
               href: baseRoute + panelName,
             },
             [
-              sidebarIcons[panelName] || null,
+              sidebarIcon(panelName),
               m('span.sidebar-link-text', displayName),
               size[panelName] > 0 && m('span.sidebar-badge', size[panelName]),
             ]
@@ -1260,7 +1391,9 @@ module.exports = {
   RS_MSG_INBOX,
   RS_MSG_SENTBOX,
   RS_MSG_OUTBOX,
+  RS_MSG_DRAFT,
   RS_MSG_DRAFTBOX,
+  isDraftMessage,
   RS_MSG_NEW,
   RS_MSG_UNREAD_BY_USER,
   RS_MSG_STAR,
@@ -1277,4 +1410,5 @@ module.exports = {
   onMessageUpdated,
   triggerMessageUpdated,
   MessageCache,
+  getTagDetails,
 };

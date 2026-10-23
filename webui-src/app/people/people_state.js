@@ -2,6 +2,7 @@ const m = require('mithril');
 const rs = require('rswebui');
 const Data = require('network/network_data');
 const peopleUtil = require('people/people_util');
+const toast = require('toast');
 
 const State = {
   searchString: '',
@@ -63,10 +64,10 @@ function getDistantChatSession(gxsId) {
 //  the history loader work on the per peer `session.messages`. Those two MUST
 //  remain the very same array: the moment one side is *reassigned* instead of
 //  mutated, the other one becomes an orphan and the messages written into it
-//  are never displayed. That is exactly what used to happen -- the history
-//  answer rebound `State.chatMessages` to a fresh array, so every incoming
-//  message landed in the now invisible `session.messages` and the conversation
-//  looked one-way. Everything below therefore mutates the session array in
+//  are never displayed: a history answer that rebinds `State.chatMessages` to
+//  a fresh array leaves every incoming message in the now invisible
+//  `session.messages`, and the conversation reads as one-way.
+//  Everything below therefore mutates the session array in
 //  place, and `State.chatMessages` is only ever re-pointed *at* it.
 function chatMessageKey(msg) {
   const text = msg.msg || msg.message || '';
@@ -77,10 +78,10 @@ function chatMessageKey(msg) {
   return (msg.incoming ? 'in_' : 'out_') + time + '_' + text;
 }
 
-//  The text being typed belongs to the conversation it is being typed in. It
-//  used to live in State.chatInputMsg alone, which nothing cleared when the
-//  selected peer changed: a message written to one contact stayed in the box
-//  when the next conversation opened, one Enter away from the wrong recipient.
+//  The text being typed belongs to the conversation it is being typed in. A
+//  single State.chatInputMsg is not cleared when the selected peer changes: a
+//  message written to one contact then stays in the box when the next
+//  conversation opens, one Enter away from the wrong recipient.
 function setChatDraft(text) {
   State.chatInputMsg = text;
   const session = State.selectedId ? getDistantChatSession(State.selectedId) : null;
@@ -232,8 +233,7 @@ function get64Num(val) {
 
 //  RsIdentityUsage::mServiceId is an RsServiceType (rsserviceids.h), a 16 bit
 //  service number -- 0x0215 for the forums, 0x0217 for the channels. Matching it
-//  against 1..8 could never succeed, so every line of the usage panel used to
-//  read "Unknown (533)".
+//  against 1..8 can never succeed -- every line reads "Unknown (533)".
 const SERVICE_NAMES = {
   0x0012: 'Chat',
   0x0022: 'Mail',
@@ -348,12 +348,14 @@ function syncFilter(tab) {
   }
 }
 
+//  The tunnel light, in the product's own status colours rather than the
+//  Tailwind palette these were written in.
 function getStatusColor(status) {
   switch (status) {
-    case 1: return '#eab308'; // Yellow
-    case 2: return '#22c55e'; // Green
-    case 3: return '#ef4444'; // Red
-    default: return '#94a3b8'; // Grey
+    case 1: return 'var(--warn-ink)';
+    case 2: return 'var(--up-ink)';
+    case 3: return 'var(--down-ink)';
+    default: return 'var(--ink-faint)';
   }
 }
 
@@ -370,7 +372,7 @@ function pollDistantChatStatus() {
   if (!State.chatPid) return;
   //  Captured now: the answer lands seconds later on a slow link, and by then
   //  the user may be on another contact, or the page on another tunnel. An
-  //  answer about a stale pid used to mark the new conversation as ended.
+  //  answer about a stale pid must not mark the new conversation as ended.
   const pid = State.chatPid;
   const askedFor = State.selectedId;
   const session = askedFor ? getDistantChatSession(askedFor) : null;
@@ -580,9 +582,9 @@ function openDistantChat(session) {
       {
         //  The session keeps its pid whatever is on screen by now; the
         //  page-wide state and the loads/polls belong to the conversation
-        //  still being looked at. Without this, a late answer clobbered
+        //  still being looked at. Without this, a late answer clobbers
         //  State.chatPid and every downstream guard that compares against
-        //  it, merging the old contact's tunnel into the new one's view.
+        //  it, merging one contact's tunnel into another's view.
         session.pid = hexPid;
         if (State.selectedId !== askedFor) return;
 
@@ -723,7 +725,9 @@ function sendDistantChatMessage() {
         //  unlimited, for distant chat, and the core slices anything longer
         //  than 15000 characters and reassembles it on the other side. Blaming
         //  the payload was a guess, and a wrong one.
-        alert('Failed to send the message. The tunnel may have closed -- check the connection state above.');
+        toast.error('Message not sent', {
+          description: 'The tunnel may have closed. Check the connection state above.',
+        });
         // Restore only the saved conversation's draft, preserving newer typing.
         if (!session.inputMsg) session.inputMsg = text;
         if (isCurrentChat() && !State.chatInputMsg) State.chatInputMsg = session.inputMsg;
@@ -735,8 +739,8 @@ function sendDistantChatMessage() {
 
 //  Changing the identity we talk as means another tunnel: its id is
 //  sha1(sorted(own || peer)), so the one built for the previous identity is a
-//  different tunnel, and nothing but this closes it -- it used to be left open
-//  and digging.
+//  different tunnel, and nothing but this closes it: without it the previous
+//  one is left open and digging.
 function switchChatIdentity(ownGxsId) {
   const previousPid = State.chatPid;
   State.selectedOwnGxsIdForChat = ownGxsId;

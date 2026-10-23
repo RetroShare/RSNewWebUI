@@ -1,8 +1,9 @@
 const m = require('mithril');
 const peopleUtil = require('people/people_util');
 
-// Hidden autocomplete lists can contain the entire address book. Fetch photos
-// only for visible results, using the shared identity-details cache.
+//  A hidden autocomplete list can hold the entire address book, and
+//  IdentityAvatar fetches details per identity. Rows start on the cheap
+//  UserAvatar and only upgrade once they are actually on screen.
 module.exports = () => {
   let visible = false;
   let observer;
@@ -23,7 +24,7 @@ module.exports = () => {
         identityId: item.mGroupId,
         name: item.mGroupName,
         avatar: item.mAvatar,
-        firstLetter: (item.mGroupName || '?').slice(0, 1).toUpperCase(),
+        firstLetter: item.mGroupName,
         size: 32,
       }),
       m('.mail-recipient-result__details', [

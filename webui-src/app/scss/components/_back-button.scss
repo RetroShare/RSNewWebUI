@@ -1,0 +1,37 @@
+@use '../abstracts' as *;
+
+// -----------------------------------------------------------------------------
+// The back button.
+//
+// One arrow, one size, one behaviour, everywhere a detail view can be left.
+// It never gets a row to itself: it is the first thing in the header row, and
+// the title (or the actions) share that row with it.
+//
+// Before this, Forums, Boards, Channels and Mail each had their own: three
+// bare anchors and one button, two glyphs, and a phone-only round blue variant
+// that only Forums had.
+// -----------------------------------------------------------------------------
+
+.back-button {
+  @include btn-base;
+  @include btn-glyph;
+
+  color: var(--ink-dim);
+  text-decoration: none;
+  box-shadow: none;
+
+  > .icon { transition: transform .15s ease; }
+
+  //  The arrow nudges the way it sends you, so the button reads as a
+  //  direction and not just another glyph.
+  &:hover {
+    border-color: transparent;
+    background: none;
+    color: var(--ink);
+    box-shadow: none;
+
+    > .icon { transform: translateX(-2px); }
+  }
+
+  &:active { transform: scale(.92); }
+}

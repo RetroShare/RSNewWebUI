@@ -30,6 +30,54 @@
    ========================================================================= */
 
 @include mobile {
+  .board-detail-head,
+  .channel-detail-head,
+  .forum-detail-head {
+    margin-bottom: 0;
+    gap: var(--s2);
+
+    .page-head__actions { gap: var(--s1); }
+  }
+
+  .board-detail-head {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+
+    .page-head__group { flex: 1; padding-right: 0; }
+    .page-head__actions { flex: none; }
+  }
+
+  .board-toolbar__view-toggle .segmented__item {
+    width: calc(var(--control) - var(--s1));
+    padding-inline: 0;
+  }
+
+  .board-card--compact {
+    display: grid;
+    grid-template-columns: var(--group-logo) minmax(0, 1fr);
+    gap: var(--s2);
+
+    .board-card__image-container {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      width: var(--group-logo);
+      height: var(--group-logo);
+    }
+
+    .board-card__content { display: contents; }
+    .board-card__title,
+    .board-card__meta { grid-column: 2; margin: 0; }
+    .board-card__footer { grid-column: 1 / -1; flex-wrap: wrap; gap: var(--s1); }
+  }
+
+  .forum-detail-head .page-head__actions { position: relative; }
+  .forum-details { position: static; }
+  .forum-details__panel { max-width: 100%; }
+
+  .forum-threads__search { flex: 1; }
+  .forum-thread-row__inner { max-width: 100%; }
+
   /* Network friend details, identity details, location cards */
   .network-detail-view {
     gap: 1rem;
@@ -41,7 +89,7 @@
       padding-bottom: 1rem;
 
       .detail-title h2 {
-        font-size: 1.35rem;
+        font-size: var(--t-h2);
       }
 
       .detail-actions {
@@ -77,7 +125,7 @@
     grid-template-columns: 1fr;
     gap: 0.35rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--line-soft);
   }
 
   /* Generic two column form grid used across the config pages */
@@ -118,7 +166,7 @@
      every column below readability. Let the content drive the width instead. */
   table {
     table-layout: auto;
-    font-size: 1rem;
+    font-size: var(--t-h3);
   }
 
   table td,
@@ -165,8 +213,8 @@
       & > td:nth-child(n + 3) {
         display: inline-block;
         margin-right: 0.75rem;
-        font-size: 0.8rem;
-        color: #64748b;
+        font-size: var(--t-meta);
+        color: var(--ink-dim);
       }
 
       & > td:nth-child(5)::before {
@@ -226,12 +274,11 @@
   input[type='email'],
   select,
   textarea {
-    font-size: 16px;
+    font-size: var(--t-h3);
   }
 
   input {
-    &.stretched,
-    &.searchbar {
+    &.stretched {
       width: 100%;
     }
 
@@ -243,18 +290,13 @@
   /* Page level sidebars turned into a horizontal tab strip by _navbar.scss:
      make the targets tall enough for a finger. */
   .sidebar a {
-    min-height: $touch-target;
+    min-height: var(--control);
     display: inline-flex !important;
     align-items: center;
   }
 
-  /* Tooltips are anchored with a fixed -120px offset, which pushes them off
-     screen on a narrow viewport */
+  /* A centred tooltip can still overhang a narrow viewport; cap it. */
   .tooltiptext {
-    left: 0;
-    margin-left: 0;
-    min-width: 0;
-    width: max-content;
     max-width: 80vw;
   }
 }
@@ -264,19 +306,6 @@
    ========================================================================= */
 
 @include touch {
-  /* Hover-revealed helpers are unreachable without a pointer */
-  .tooltip .tooltiptext {
-    /* still hidden by default, but reachable by tapping the element */
-    &:focus,
-    &:focus-within {
-      visibility: visible;
-    }
-  }
-
-  .tooltip:focus-within .tooltiptext {
-    visibility: visible;
-  }
-
   /* Recipient autocomplete stays open while the field has focus; the list is
      only kept alive by :hover on desktop. */
   .compose-mail__recipients .recipients__input:focus-within .recipients__input-list {

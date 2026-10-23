@@ -22,6 +22,8 @@ const {
 const PeopleSidebar = require('people/people_sidebar');
 const DetailsTab = require('people/people_details_tab');
 const ChatTab = require('people/people_chat_tab');
+const icon = require('icon');
+const widget = require('widgets');
 
 const PeopleLayout = () => {
   let stopWatchingOwnIds;
@@ -99,45 +101,40 @@ const PeopleLayout = () => {
         // Right Side Details / Actions Pane
         m('.people-right-pane', [
           m('.mobile-pane-header', [
-            m('button.mobile-back-button', {
-              type: 'button',
+            m(widget.BackButton, {
+              label: State.mainTab === 'chats' ? 'Back to Chats' : 'Back to People',
               onclick: () => { State.mobilePane = 'list'; },
-            }, [m('i.fas.fa-chevron-left'), State.mainTab === 'chats' ? ' Chats' : ' People']),
+            }),
             m('strong', name || 'Profile'),
           ]),
           State.selectedId && details
             ? [
-                m('.network-tabs', [
-                  m(
-                    'button.tab-btn' + (State.activeTab === 'details' ? '.active' : ''),
-                    {
-                      onclick: () => {
-                        State.activeTab = 'details';
-                        State.mobilePane = 'detail';
-                        stopStatusPolling();
-                      },
-                    },
-                    'Profile Details'
-                  ),
-                  m(
-                    'button.tab-btn' + (State.activeTab === 'chat' ? '.active' : ''),
-                    {
-                      onclick: () => {
-                        State.activeTab = 'chat';
-                        State.mobilePane = 'detail';
-                        markDistantChatRead(State.selectedId);
-                        initializeDistantChat();
-                      },
-                    },
-                    'Chat Conversation'
-                  ),
-                ]),
+                m(widget.Segmented, {
+                  variant: 'underline',
+                  class: 'network-tabs',
+                  ariaLabel: 'Identity view',
+                  value: State.activeTab,
+                  options: [
+                    { id: 'details', label: 'Profile Details' },
+                    { id: 'chat', label: 'Chat Conversation' },
+                  ],
+                  onSelect: (tab) => {
+                    State.activeTab = tab;
+                    State.mobilePane = 'detail';
+                    if (tab === 'details') {
+                      stopStatusPolling();
+                    } else {
+                      markDistantChatRead(State.selectedId);
+                      initializeDistantChat();
+                    }
+                  },
+                }),
                 m('.network-tab-content' + (State.activeTab === 'chat' ? '.network-chat-tab-content' : ''), [
                   State.activeTab === 'details' ? m(DetailsTab) : m(ChatTab),
                 ]),
               ]
             : m('.network-pane-placeholder', [
-                m('i.fas.fa-users'),
+                icon('users'),
                 m('p', 'Select an identity from the left panel to view profile details or perform actions.'),
               ]),
         ]),
@@ -166,7 +163,7 @@ const PeopleLayout = () => {
                     State.showMailCompose = false;
                   },
                 },
-                m('i.fas.fa-times')
+                icon('times')
               )
             )
           ),

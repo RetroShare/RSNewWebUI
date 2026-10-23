@@ -3,6 +3,7 @@ const rs = require('rswebui');
 const widget = require('widgets');
 const peopleUtil = require('people/people_util');
 const ownIdsLayout = require('people/people_ownids');
+const icon = require('icon');
 const { EditIdentity, DeleteIdentity } = ownIdsLayout;
 const {
   State,
@@ -47,38 +48,13 @@ const DetailsTab = () => {
               size: 128,
               isSquare: true,
             })),
-            m('.identity-votes', {
-              style: {
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                marginTop: '0.5rem',
-              },
-            }, [
-              m('.vote-positive', {
-                style: {
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  color: '#22c55e',
-                  fontSize: '1.25rem',
-                  fontWeight: 'bold',
-                },
-              }, [
-                m('i.fas.fa-thumbs-up'),
+            m('.identity-votes', [
+              m('.vote-positive', [
+                icon('thumbs-up'),
                 m('span', details.mReputation ? details.mReputation.mFriendsPositiveVotes : 0),
               ]),
-              m('.vote-negative', {
-                style: {
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  color: '#ef4444',
-                  fontSize: '1.25rem',
-                  fontWeight: 'bold',
-                },
-              }, [
-                m('i.fas.fa-thumbs-down'),
+              m('.vote-negative', [
+                icon('thumbs-down'),
                 m('span', details.mReputation ? details.mReputation.mFriendsNegativeVotes : 0),
               ]),
             ]),
@@ -86,58 +62,57 @@ const DetailsTab = () => {
           m('.detail-title', [
             m('h2', name),
             m('.detail-subtitle', [
-              m('i.fas.fa-id-card'),
+              icon('id-card'),
               m('span', isOwn ? 'My Identity' : isContact ? 'Saved Contact' : 'Discovered Identity'),
             ]),
             m('.detail-actions', [
               isOwn
                 ? [
-                    m(
-                      'button.btn',
+                    m('button.btn.is-primary',
                       {
                         onclick: () =>
                           widget.popupMessage(
                             m(EditIdentity, {
                               details,
                             }),
-                            'edit-identity-modal'
+                            'edit-identity-modal',
+                            {
+                              title: 'Edit Identity',
+                              lead: 'Rename this identity or replace its avatar.',
+                            }
                           ),
                       },
-                      [m('i.fas.fa-edit'), m('span.btn-text', ' Edit')]
+                      [icon('edit'), m('span.btn-text', ' Edit')]
                     ),
                     m(
-                      'button.btn.red',
+                      'button.btn.is-danger',
                       {
                         onclick: () =>
-                          widget.popupMessage(
-                            m(DeleteIdentity, {
-                              id: details.mId,
-                              name: details.mNickname,
-                            })
-                          ),
+                          DeleteIdentity({
+                            id: details.mId,
+                            name: details.mNickname,
+                          }),
                       },
-                      [m('i.fas.fa-trash-alt'), m('span.btn-text', ' Delete')]
+                      [icon('trash-alt'), m('span.btn-text', ' Delete')]
                     ),
                   ]
                 : [
-                    m(
-                      'button.btn.blue',
+                    m('button.btn.blue.is-primary',
                       {
                         onclick: () => {
                           State.activeTab = 'chat';
                           initializeDistantChat();
                         },
                       },
-                      [m('i.fas.fa-comment-alt'), m('span.btn-text', ' Start Chat')]
+                      [icon('comments'), m('span.btn-text', ' Start Chat')]
                     ),
-                    m(
-                      'button.btn.blue',
+                    m('button.btn.blue.is-primary',
                       {
                         onclick: () => {
                           State.showMailCompose = true;
                         },
                       },
-                      [m('i.fas.fa-envelope'), m('span.btn-text', ' Send Mail')]
+                      [icon('envelope'), m('span.btn-text', ' Send Mail')]
                     ),
                     m(
                       'button.btn' + (isContact ? '.red' : '.blue'),
@@ -154,8 +129,8 @@ const DetailsTab = () => {
                         },
                       },
                       isContact
-                        ? [m('i.fas.fa-user-minus'), m('span.btn-text', ' Remove Contact')]
-                        : [m('i.fas.fa-user-plus'), m('span.btn-text', ' Add Contact')]
+                        ? [icon('user-minus'), m('span.btn-text', ' Remove Contact')]
+                        : [icon('user-plus'), m('span.btn-text', ' Add Contact')]
                     ),
                   ],
             ]),
@@ -205,24 +180,15 @@ const DetailsTab = () => {
           m('h3', 'Usage Statistics'),
           m('.usage-list', [
             (!details.mUseCases || details.mUseCases.length === 0)
-              ? m('p.usage-placeholder', { style: 'font-style: italic; color: #64748b; padding: 0.5rem 0;' }, '[No record in current session]')
+              ? m('p.usage-placeholder', 'No recorded use in this session.')
               : (() => {
                   const sorted = [...details.mUseCases].sort((a, b) => get64Num(b.value) - get64Num(a.value));
                   return sorted.map((item) => {
                     const usage = item.key;
                     const ts = get64Num(item.value);
                     const dateStr = ts > 0 ? new Date(ts * 1000).toLocaleString() : 'Unknown';
-                    return m('.usage-item', {
-                      style: {
-                        padding: '0.5rem 0',
-                        borderBottom: '1px solid #f1f5f9',
-                        fontSize: '0.9rem',
-                        display: 'flex',
-                        gap: '1rem',
-                        alignItems: 'flex-start',
-                      },
-                    }, [
-                      m('strong.usage-time', { style: 'color: #64748b; flex-shrink: 0; min-width: 150px;' }, dateStr),
+                    return m('.usage-item', [
+                      m('span.usage-time', dateStr),
                       m('span.usage-desc', createUsageString(usage)),
                     ]);
                   });

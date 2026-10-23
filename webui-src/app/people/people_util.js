@@ -75,8 +75,12 @@ function getAvatarColor(seed) {
       hash = seed.charCodeAt(i) + ((hash << 5) - hash);
     }
   }
+  //  Enough saturation to read as a colour rather than a slate chip, and a
+  //  lightness that holds white text at every hue. Kept well under a vivid
+  //  fill: these sit in a list of a hundred, so the palette has to stay quiet
+  //  as a group even though each chip is identifiable on its own.
   const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 60%, 60%)`;
+  return `hsl(${hue}, 42%, 45%)`;
 }
 
 //  jdenticon draws a fresh SVG on every call, and this runs in the view of every
@@ -152,7 +156,13 @@ const UserAvatar = () => ({
       }, m.trust(svgString));
     }
 
-    const seed = v.attrs.seed || v.attrs.firstLetter || '';
+    //  Callers hand over a whole name, and an unresolved sender arrives here
+    //  as the stand-in '[Unknown]' -- whose first character is '[', which is
+    //  what the mail cards were drawing. Only a letter or a digit is an
+    //  initial; anything else means we do not know who this is.
+    const rawInitial = (v.attrs.firstLetter || '').trim();
+    const initial = /^[\p{L}\p{N}]/u.test(rawInitial) ? rawInitial.slice(0, 1).toUpperCase() : '?';
+    const seed = v.attrs.seed || initial;
     const backgroundColor = getAvatarColor(seed);
 
     return m(
@@ -172,14 +182,9 @@ const UserAvatar = () => ({
           backgroundColor,
         }
       },
-      m('p', {
-        style: {
-          color: '#ffffff',
-          fontWeight: '900',
-          margin: '0',
-          fontSize: `calc(${sizeStr} * 0.55)`,
-        }
-      }, v.attrs.firstLetter || '?')
+      m('p.avatar-initial', {
+        style: { fontSize: `calc(${sizeStr} * 0.55)` }
+      }, initial)
     );
   },
 });
@@ -244,8 +249,7 @@ function contactlist(list) {
 function sortUsers(list) {
   if (list === undefined) return list;
   //  Copied, not sorted in place: this is rs.userList.users, shared with every
-  //  other page. The isSearched marking that used to happen here belonged to a
-  //  search box that no longer exists.
+  //  other page.
   return [...list].sort((a, b) => a.mGroupName.localeCompare(b.mGroupName));
 }
 

@@ -1,0 +1,206 @@
+@use '../abstracts' as *;
+
+@mixin spacing-track {
+  height: var(--s1);
+  border: 0;
+  border-radius: var(--r-full);
+  background: var(--range-track-background, linear-gradient(to right,
+    var(--brand) 0 var(--range-progress), var(--line) var(--range-progress) 100%));
+}
+
+@mixin spacing-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: var(--s4);
+  height: var(--s4);
+  border: var(--control-inset) solid var(--range-thumb-border, var(--brand));
+  border-radius: var(--r-full);
+  background: var(--range-thumb-background, var(--surface));
+  transition: box-shadow var(--motion-fast) var(--ease-out), background-color var(--motion-fast) ease;
+}
+
+.network-graph {
+  display: flex;
+  flex-direction: column;
+  container: network-graph / inline-size;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  gap: var(--s3);
+  padding: var(--s4);
+  overflow: auto;
+
+  > .page-head {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+    gap: var(--s3);
+  }
+  .page-head__title { font-size: var(--t-h3); font-weight: var(--w-label); }
+  .page-head__lead { font-size: var(--t-meta); }
+  .page-head__actions { margin-left: auto; flex-wrap: nowrap; max-width: 100%; }
+  .page-head__actions > .network-graph__search {
+    flex: 1 1 var(--graph-search-width);
+    width: var(--graph-search-width);
+    min-width: 0;
+  }
+  &__connections { width: var(--graph-control-width); flex: 0 1 var(--graph-control-width); min-width: 0; }
+  &__redraw { height: var(--control); padding-inline: var(--s3); }
+
+  &__stage {
+    position: relative;
+    flex: 1 1 var(--graph-height);
+    min-height: var(--graph-min-height);
+    border: var(--stroke) solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    overflow: hidden;
+  }
+  &__canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    touch-action: none;
+
+    &:active { cursor: grabbing; }
+    &:focus-visible { outline: var(--control-inset) solid var(--select-edge); outline-offset: calc(-1 * var(--control-inset)); }
+  }
+  &__loading, &__message {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--ink-dim);
+    background: rgb(var(--ground-rgb) / 0.85);
+    z-index: 2;
+  }
+
+  &__top-controls, &__bottom-overlay {
+    position: absolute;
+    left: var(--s2);
+    right: var(--s2);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    pointer-events: none;
+  }
+  &__top-controls { top: var(--s2); }
+  &__bottom-overlay { bottom: var(--s2); align-items: center; }
+  &__edge-control, &__zoom-control {
+    padding: var(--s1);
+    border: var(--stroke) solid var(--line-soft);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    pointer-events: auto;
+  }
+  &__edge-control {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    width: var(--graph-spacing-width);
+    color: var(--ink-dim);
+    font-size: var(--t-label);
+
+    > span { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
+    output {
+      min-width: var(--s6);
+      padding-inline: var(--s1);
+      border-radius: var(--r-sm);
+      background: var(--select-faint);
+      color: var(--brand-deep);
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
+    input {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: var(--control);
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: var(--r-sm);
+      background: transparent;
+      cursor: ew-resize;
+
+      &::-webkit-slider-runnable-track { @include spacing-track; }
+      &::-moz-range-track { @include spacing-track; }
+      &::-webkit-slider-thumb {
+        @include spacing-thumb;
+        margin-top: calc((var(--s1) - var(--s4)) / 2);
+      }
+      &::-moz-range-thumb { @include spacing-thumb; }
+      &:hover::-webkit-slider-thumb,
+      &:active::-webkit-slider-thumb { box-shadow: var(--range-focus-shadow, var(--ring)); }
+      &:hover::-moz-range-thumb,
+      &:active::-moz-range-thumb { box-shadow: var(--range-focus-shadow, var(--ring)); }
+      &:focus-visible { outline: var(--control-inset) solid var(--select-edge); outline-offset: var(--stroke); }
+    }
+  }
+  &__zoom-control { display: flex; align-items: center; gap: var(--s1); margin-left: auto; }
+  &__zoom-value { min-width: calc(var(--control) + var(--s2)); padding-inline: var(--s1); font-size: var(--t-label); font-variant-numeric: tabular-nums; }
+  &__names {
+    @include btn-icon;
+    &[aria-pressed='true'] { background: var(--select-soft); border-color: var(--select-edge); color: var(--brand-deep); }
+  }
+
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s1) var(--s3);
+    color: var(--ink-dim);
+    font-size: var(--t-label);
+    padding: var(--s1);
+    background: var(--surface);
+
+    > span { display: inline-flex; align-items: center; gap: var(--s1); }
+  }
+  &__key {
+    width: var(--s2);
+    height: var(--s2);
+    border-radius: var(--r-full);
+    background: var(--ink-dim);
+
+    &--own { background: var(--brand); }
+    &--online { background: var(--up-ink); }
+  }
+  &__help {
+    margin-left: auto;
+    padding: var(--s1);
+    background: var(--surface);
+    color: var(--ink-dim);
+    font-size: var(--t-label);
+    text-align: right;
+  }
+}
+
+@container network-graph (max-width: #{$bp-mobile}) {
+  .network-graph .page-head__actions { flex: 1 1 100%; margin: 0; }
+  .network-graph__redraw { width: var(--control); padding: 0; }
+  .network-graph__redraw span { display: none; }
+  .network-graph__edge-control { width: calc(var(--s6) * 3 + var(--s4)); }
+}
+
+@include mobile {
+  .network-graph { padding: var(--s3); }
+}
+
+@media (forced-colors: active) {
+  .network-graph__edge-control input {
+    forced-color-adjust: none;
+    --range-track-background: CanvasText;
+    --range-thumb-background: Canvas;
+    --range-thumb-border: Highlight;
+    --range-focus-shadow: none;
+    &:focus-visible { outline-color: Highlight; }
+  }
+}

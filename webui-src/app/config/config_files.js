@@ -1,4 +1,5 @@
 const m = require('mithril');
+const select = require('select');
 const rs = require('rswebui');
 const util = require('config/config_util');
 
@@ -9,64 +10,57 @@ const SharedDirectories = () => {
       rs.rsJsonApiRequest('/rsFiles/getSharedDirectories', {}, (data) => (directories = data.dirs));
     },
     view: () =>
-      m('.widget__body-box', [
-        m('.widget__heading', m('h3', 'Shared Directories')),
-        directories.map((dir) =>
-          m('input[type=text].stretched', {
-            value: dir.filename,
-          })
-        ),
+      m('.panel__body-box', [
+        m('.panel__head', m('h3', 'Shared Directories')),
+        directories.length
+          ? directories.map((dir) =>
+            m('input[type=text].stretched', {
+              'aria-label': 'Shared directory',
+              value: dir.filename,
+              readonly: true,
+            })
+          )
+          : m('p.cfg-note', 'No directories shared yet. Add them from Files → My Files.'),
       ]),
   };
 };
 
-const DownloadDirectory = () => {
+//  Where finished and in-progress downloads live. Two paths, so two rows in
+//  the same label column as every other setting -- a heading over a single
+//  text field announced a section that was not there.
+const DownloadLocations = () => {
   let dlDir = '';
-  const setDir = () => {
-    rs.rsJsonApiRequest('/rsFiles/setDownloadDirectory', {
-      path: dlDir,
-    });
-  };
+  let partialsDir = '';
+  const setDownloadDir = () =>
+    rs.rsJsonApiRequest('/rsFiles/setDownloadDirectory', { path: dlDir });
+  const setPartialsDir = () =>
+    rs.rsJsonApiRequest('/rsFiles/setPartialsDirectory', { path: partialsDir });
   return {
     oninit: () => {
       rs.rsJsonApiRequest('/rsFiles/getDownloadDirectory', {}, (data) => (dlDir = data.retval));
-    },
-    view: () =>
-      m('.widget__body-box', [
-        m('.widget__heading', m('h3', 'Downloads Directory')),
-        m('input[type=text].stretched#dl-dir-input', {
-          oninput: (e) => (dlDir = e.target.value),
-          value: dlDir,
-          onchange: setDir,
-        }),
-      ]),
-  };
-};
-
-const PartialsDirectory = () => {
-  let partialsDir = '';
-  const setDir = () => {
-    // const path = document.getElementById('partial-dir-input').value; // unused?
-
-    rs.rsJsonApiRequest('/rsFiles/setPartialsDirectory', {
-      path: partialsDir,
-    });
-  };
-  return {
-    oninit: () =>
       rs.rsJsonApiRequest(
         '/rsFiles/getPartialsDirectory',
         {},
         (data) => (partialsDir = data.retval)
-      ),
+      );
+    },
     view: () =>
-      m('.widget__body-box', [
-        m('.widget__heading', m('h3', 'Partials Directory')),
-        m('input[type=text].stretched#partial-dir-input', {
-          oninput: (e) => (partialsDir = e.target.value),
-          value: partialsDir,
-          onchange: setDir,
-        }),
+      m('.panel__body-box', [
+        m('.panel__head', m('h3', 'Download Locations')),
+        m('.grid-2col', [
+          m('label.cfg-label[for=dl-dir-input]', 'Downloads directory:'),
+          m('input[type=text].cfg-path#dl-dir-input', {
+            oninput: (e) => (dlDir = e.target.value),
+            value: dlDir,
+            onchange: setDownloadDir,
+          }),
+          m('label.cfg-label[for=partial-dir-input]', 'Partials directory:'),
+          m('input[type=text].cfg-path#partial-dir-input', {
+            oninput: (e) => (partialsDir = e.target.value),
+            value: partialsDir,
+            onchange: setPartialsDir,
+          }),
+        ]),
       ]),
   };
 };
@@ -111,19 +105,21 @@ const TransferOptions = () => {
       );
     },
     view: () =>
-      m('.widget__body-box', [
-        m('.widget__heading', m('h3', 'Transfer options')),
+      m('.panel__body-box', [
+        m('.panel__head', m('h3', 'Transfer options')),
         m('.grid-2col', [
           m('p', 'Maximum simultaneous downloads:'),
           m('input[type=number]', {
+            'aria-label': 'Maximum simultaneous downloads',
             value: queueSize,
             oninput: (e) => (queueSize = e.target.value),
             onchange: setMaxSimultaneousDownloads,
           }),
           m('p', 'Default chunk strategy:'),
-          m(
+          select(
             'select[name=strategy]',
             {
+              'aria-label': 'Default chunk strategy',
               value: strategy,
               oninput: (e) => (strategy = e.target.value),
               onchange: setChunkStrat,
@@ -134,20 +130,23 @@ const TransferOptions = () => {
           ),
           m('p', 'Maximum uploads per friend:'),
           m('input[type=number]', {
+            'aria-label': 'Maximum uploads per friend',
             value: maxUploadSlots,
             oninput: (e) => (maxUploadSlots = e.target.value),
             onchange: setMaxUploadSlots,
           }),
           m('p', 'Safety disk space limit(MB):'),
           m('input[type=number]', {
+            'aria-label': 'Safety disk space limit (MB)',
             value: diskLimit,
             oninput: (e) => (diskLimit = e.target.value),
             onchange: setFreeLimit,
           }),
           m('p', 'Allow Direct Download:'),
-          m(
+          select(
             'select',
             {
+              'aria-label': 'Allow direct download',
               value: directDLPerm,
               oninput: (e) => (directDLPerm = e.target.value),
               onchange: setDirectDLPerm,
@@ -184,12 +183,11 @@ const TransferOptions = () => {
 const Layout = () => {
   return {
     view: () =>
-      m('.widget', [
-        m('.widget__heading', m('h3', 'Files Configuration')),
-        m('.widget__body.config-files', [
+      m('.panel', [
+        m('.panel__head', m('h3', 'Storage and transfers')),
+        m('.panel__body.config-files', [
           m(SharedDirectories),
-          m(DownloadDirectory),
-          m(PartialsDirectory),
+          m(DownloadLocations),
           m(TransferOptions),
         ]),
       ]),

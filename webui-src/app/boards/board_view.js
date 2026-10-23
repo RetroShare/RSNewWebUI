@@ -1,9 +1,14 @@
 const m = require('mithril');
+const select = require('select');
 const util = require('boards/boards_util');
 const boardKanban = require('boards/board_kanban');
 const rs = require('rswebui');
 const peopleUtil = require('people/people_util');
+const icon = require('icon');
+const widget = require('widgets');
 const { CommentsSection } = require('comments');
+const toast = require('toast');
+const prepareGroupThumbnail = require('group_thumbnail');
 const Data = util.Data;
 
 function createboard() {
@@ -13,6 +18,10 @@ function createboard() {
   let thumbnail;
   let thumbnailPreview = '';
   let thumbnailFileName = '';
+  let thumbnailLoading = false;
+  let thumbnailError = '';
+  let thumbnailSelection = 0;
+  let submitting = false;
   let circle = util.PUBLIC;
   let circles = [];
   let selectedCircle;
@@ -29,10 +38,6 @@ function createboard() {
     },
     view: (vnode) =>
       m('.widget.create-board-form', [
-        m('.create-board-form__heading', [
-          m('h3', 'Create Board'),
-          m('p', 'Set up the board appearance and publishing options.'),
-        ]),
         m('input.create-board-form__title[type=text][placeholder=Board title]', {
           oninput: (e) => (title = e.target.value),
         }),
@@ -41,39 +46,47 @@ function createboard() {
             thumbnailPreview
               ? m('img', { src: thumbnailPreview, alt: 'Board thumbnail preview' })
               : m('.board-thumbnail-preview__placeholder', [
-                m('i.fas.fa-image'),
+                icon('image'),
                 m('span', 'Board logo'),
                 m('small', 'No image selected'),
               ]),
           ]),
           m('span.create-board-form__visual-label', 'Thumbnail'),
           m('input.create-board-form__file-input[type=file][id=board-thumbnail][accept=image/*]', {
-            onchange: (e) => {
+            onchange: async (e) => {
+              const selection = ++thumbnailSelection;
               const file = e.target.files[0];
-              if (!file) {
-                thumbnail = undefined;
-                thumbnailPreview = '';
-                thumbnailFileName = '';
-                return;
+              thumbnail = undefined;
+              thumbnailPreview = '';
+              thumbnailFileName = file ? file.name : '';
+              thumbnailError = '';
+              thumbnailLoading = Boolean(file);
+              if (!file) return;
+              try {
+                const preview = await prepareGroupThumbnail(file);
+                if (selection !== thumbnailSelection) return;
+                thumbnailPreview = preview;
+                thumbnail = preview.substring(preview.indexOf(',') + 1);
+              } catch (_error) {
+                if (selection !== thumbnailSelection) return;
+                thumbnailError = 'Unable to load thumbnail. Choose another image.';
+              } finally {
+                if (selection === thumbnailSelection) {
+                  thumbnailLoading = false;
+                  m.redraw();
+                }
               }
-              thumbnailFileName = file.name;
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                thumbnailPreview = reader.result;
-                thumbnail = thumbnailPreview.substring(thumbnailPreview.indexOf(',') + 1);
-                m.redraw();
-              };
-              reader.readAsDataURL(file);
             },
           }),
           m('label.create-board-form__file-button[for=board-thumbnail]', {
             title: thumbnailFileName || 'Choose a board thumbnail',
-          }, [m('i.fas.fa-upload'), thumbnailPreview ? ' Change image' : ' Choose image']),
-          m('small', 'Square images work best.'),
+          }, [icon('upload'), thumbnailPreview ? ' Change image' : ' Choose image']),
+          m('small[role=status]', thumbnailLoading ? 'Preparing thumbnail…' : 'Images are center-cropped to a 64 × 64 pixel square.'),
+          thumbnailError && m('small.create-board-form__image-error[role=alert]', thumbnailError),
         ]),
         m('.create-board-form__field.create-board-form__identity', [
           m('label[for=idtags]', 'Publishing identity'),
-          m('select.config-style-select[id=idtags]', {
+          select('select.config-style-select[id=idtags]', {
             value: identity,
             onchange: (e) => (identity = vnode.attrs.authorId[e.target.selectedIndex]),
           }, vnode.attrs.authorId && vnode.attrs.authorId.map((o) => m(
@@ -84,7 +97,7 @@ function createboard() {
         ]),
         m('.create-board-form__field.create-board-form__distribution', [
           m('label[for=circletags]', 'Message distribution'),
-          m('select.config-style-select[id=circletags]', {
+          select('select.config-style-select[id=circletags]', {
             value: circle,
             onchange: (e) => (circle = e.target.value),
           }, [
@@ -94,7 +107,7 @@ function createboard() {
         ]),
         Number(circle) === util.EXTERNAL && m('.create-board-form__field.create-board-form__circle', [
           m('label[for=board-circle]', 'Circle'),
-          m('select.config-style-select[id=board-circle]', {
+          select('select.config-style-select[id=board-circle]', {
             value: selectedCircle && selectedCircle.mGroupId,
             onchange: (e) => {
               selectedCircle = circles.find((item) => item.mGroupId === e.target.value);
@@ -107,36 +120,42 @@ function createboard() {
           oninput: (e) => (body = e.target.value),
           value: body,
         }),
-        m(
-          'button.create-board-form__submit',
+        m('button.create-board-form__submit.is-primary',
           {
+            disabled: thumbnailLoading || Boolean(thumbnailError) || submitting,
             onclick: async () => {
-              const res = await rs.rsJsonApiRequest('/rsposted/createBoardV2', {
-                board_name: title,
-                board_description: body,
-                board_image: { mData: { base64: thumbnail } },
-                ...(Number(identity) !== 0 && { authorId: identity }),
-                circleType: Number(circle),
-                ...(Number(circle) === util.EXTERNAL && selectedCircle && {
-                  circleId: selectedCircle.mGroupId,
-                }),
-              });
-              if (res.body.retval && vnode.attrs.onCreated) await vnode.attrs.onCreated();
-              res.body.retval
-                ? util.popupmessage([
-                    m('h3', 'Success'),
-                    m('hr'),
-                    m('p', 'Board created successfully'),
-                  ])
-                : util.popupmessage([
-                    m('h3', 'Error'),
-                    m('hr'),
-                    m('p', res.body.errorMessage || 'Error in creating Board'),
-                  ]);
+              if (thumbnailLoading || thumbnailError || submitting) return;
+              submitting = true;
+              try {
+                const res = await rs.rsJsonApiRequest('/rsposted/createBoardV2', {
+                  board_name: title,
+                  board_description: body,
+                  board_image: { mData: { base64: thumbnail } },
+                  ...(Number(identity) !== 0 && { authorId: identity }),
+                  circleType: Number(circle),
+                  ...(Number(circle) === util.EXTERNAL && selectedCircle && {
+                    circleId: selectedCircle.mGroupId,
+                  }),
+                });
+                if (!res.body.retval) {
+                  toast.error(res.body.errorMessage || 'Error in creating Board');
+                  return;
+                }
+                widget.closePopupMessage();
+                toast.success('Board created successfully');
+                try {
+                  if (vnode.attrs.onCreated) await vnode.attrs.onCreated();
+                } catch (_error) {
+                  toast.error('Board created, but the list could not refresh.');
+                }
+              } catch (_error) {
+                toast.error('Unable to create board. Please try again.');
+              } finally {
+                submitting = false;
+                m.redraw();
+              }
             },
-          },
-          'Create'
-        ),
+          }, [icon('plus'), 'Create']),
       ]),
   };
 }
@@ -200,18 +219,14 @@ function CreatePost() {
       m.redraw();
     },
     view: (vnode) => m('.widget.create-board-post', [
-      m('.create-board-post__heading', [
-        m('h3', 'Create a Post'),
-        m('p', 'Share an interesting post with a clear, descriptive title.'),
-      ]),
       m('.create-board-post__modes', [
-        ['post', 'fa-comment-alt', 'Post'],
-        ['image', 'fa-image', 'Image'],
-        ['link', 'fa-link', 'Link'],
-      ].map(([value, icon, label]) => m('button[type=button]', {
+        ['post', 'comment-alt', 'Post'],
+        ['image', 'image', 'Image'],
+        ['link', 'link', 'Link'],
+      ].map(([value, iconName, label]) => m('button[type=button]', {
         class: mode === value ? 'active' : '',
         onclick: () => (mode = value),
-      }, [m(`i.fas.${icon}`), ` ${label}`]))),
+      }, [icon(iconName), ` ${label}`]))),
       m('input.create-board-post__title[type=text][placeholder=Post title]', {
         value: title,
         oninput: (e) => (title = e.target.value),
@@ -224,7 +239,7 @@ function CreatePost() {
         m('.create-board-post__preview', [
           imagePreview
             ? m('img', { src: imagePreview, alt: 'Post image preview' })
-            : m('.create-board-post__placeholder', [m('i.fas.fa-image'), m('span', 'Post image')]),
+            : m('.create-board-post__placeholder', [icon('image'), m('span', 'Post image')]),
         ]),
         m('input.create-board-post__file[type=file][id=board-post-image][accept=image/*]', {
           onchange: async (e) => {
@@ -245,7 +260,7 @@ function CreatePost() {
         }),
         m('label.create-board-post__file-button[for=board-post-image]', {
           title: imageFileName || 'Choose a post image',
-        }, [m('i.fas.fa-upload'), imagePreview ? ' Change image' : ' Choose image']),
+        }, [icon('upload'), imagePreview ? ' Change image' : ' Choose image']),
         imageError && m('.create-board-post__image-error', imageError),
       ]),
       mode === 'post' && m('textarea.create-board-post__notes[rows=8][placeholder=Text (optional)]', {
@@ -254,7 +269,7 @@ function CreatePost() {
       }),
       m('.create-board-post__author', [
         m('label[for=board-post-author]', 'Post as'),
-        m('select.config-style-select.network-style-select[id=board-post-author]', {
+        select('select.config-style-select.network-style-select[id=board-post-author]', {
           value: authorId,
           onchange: (e) => (authorId = e.target.value),
           disabled: identities.length === 0,
@@ -280,17 +295,17 @@ function CreatePost() {
             if (res.body.retval) {
               Data.Posts[vnode.attrs.boardId] = {};
               await util.updateDisplayBoards(vnode.attrs.boardId);
-              util.popupmessage([m('h3', 'Success'), m('hr'), m('p', 'Post created successfully')]);
+              widget.closePopupMessage();
+              toast.success('Post created successfully');
             } else {
-              util.popupmessage([m('h3', 'Error'), m('hr'), m('p',
-                res.body.error_message || res.body.errorMessage || 'The post could not be created')]);
+              toast.error(res.body.error_message || res.body.errorMessage || 'The post could not be created');
             }
           } finally {
             submitting = false;
             m.redraw();
           }
         },
-      }, submitting ? 'Posting…' : 'Post'),
+      }, [icon('paper-plane'), submitting ? 'Posting…' : 'Post']),
     ]),
   };
 }
@@ -409,50 +424,34 @@ function BoardView() {
     });
 
       return [
-        m('.board-detail-navigation', [
-        m(
-          'a.board-back[title=Back][aria-label=Back]',
-          {
-            onclick: () =>
-              m.route.set('/boards/:tab', {
-                tab: m.route.param().tab || 'Subscribed',
-              }),
+        m(widget.PageHead, {
+          class: 'board-detail-head',
+          back: {
+            label: 'Back to boards',
+            onclick: () => m.route.set('/boards/:tab', {
+              tab: m.route.param().tab || 'Subscribed',
+            }),
           },
-          m('i.fas.fa-arrow-left')
-        ),
-          m('details.board-mobile-actions', {
-            onkeydown: (event) => {
-              if (event.key === 'Escape') {
-                event.currentTarget.open = false;
-                event.currentTarget.querySelector('summary').focus();
-              }
-            },
-            onfocusout: (event) => {
-              if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
-            },
-          }, [
-            m('summary[aria-label=Board actions][title=Board actions]', m('i.fas.fa-ellipsis-v')),
-            m('.board-mobile-actions__items', m('button[type=button]', {
-              onclick: (event) => {
-                const menu = event.currentTarget.closest('details');
-                menu.open = false;
-                menu.querySelector('summary').focus();
-                return toggleSubscription();
-              },
-            }, bsubscribed ? 'Unsubscribe' : 'Subscribe')),
-          ]),
-        ]),
-        m('.widget__heading', [
-          m('h3', bname),
-          m(
-            'button.board-subscription-button',
-            {
-              class: bsubscribed ? 'board-subscription-button--subscribed' : '',
-              onclick: toggleSubscription,
-            },
-            bsubscribed ? 'Subscribed' : 'Subscribe'
-          ),
-        ]),
+          title: bname,
+          actions: [
+            m('button.board-subscription-button.is-primary',
+              {
+                class: bsubscribed ? 'board-subscription-button--subscribed' : '',
+                onclick: toggleSubscription,
+              }, [icon('bookmark'), bsubscribed ? 'Subscribed' : 'Subscribe']),
+            m(widget.Menu, {
+              class: 'board-mobile-actions',
+              mark: 'ellipsis-v',
+              title: 'Board actions',
+              items: [{
+                label: bsubscribed ? 'Unsubscribe' : 'Subscribe',
+                icon: 'bookmark',
+                danger: bsubscribed,
+                onclick: toggleSubscription,
+              }],
+            }),
+          ],
+        }),
         m('.widget__body', [
           m('.media-item', [
             m('.media-item__details', [
@@ -462,7 +461,7 @@ function BoardView() {
                   alt: `${bname} board thumbnail`,
                 })
                 : m('.board-detail-default-thumbnail[role=img][aria-label=Default board thumbnail]',
-                  m('i.fas.fa-globe')
+                  icon('globe')
                 ),
               m('.media-item__details-info', [
                 m('div', [m('b', 'Posts: '), m('span', bposts)]),
@@ -499,18 +498,26 @@ function BoardView() {
             },
             m('.posts__heading.board-posts-heading', [
               m('h3', 'Posts'),
-              canPublish && m('button.board-posts-heading__create[type=button][title=Create Post][aria-label=Create Post]', {
+              canPublish && m('button.board-posts-heading__create.is-primary[type=button][title=Create Post][aria-label=Create Post]', {
                 onclick: () => util.popupmessage(
                   m(CreatePost, { boardId: v.attrs.id }),
-                  'create-board-post-modal'
+                  'create-board-post-modal',
+                  {
+                    title: 'Create a Post',
+                    lead: 'Share an interesting post with a clear, descriptive title.',
+                  }
                 ),
-              }, [m('i.fas.fa-plus'), m('span', 'Create Post')]),
+              }, [icon('plus'), m('span', 'Create Post')]),
             ]),
             m(boardKanban.BoardView, {
               forumId: v.attrs.id,
               onCreatePost: canPublish ? () => util.popupmessage(
                 m(CreatePost, { boardId: v.attrs.id }),
-                'create-board-post-modal'
+                'create-board-post-modal',
+                {
+                  title: 'Create a Post',
+                  lead: 'Share an interesting post with a clear, descriptive title.',
+                }
               ) : null,
               items,
               voterIdentities,
@@ -617,6 +624,8 @@ function PostView() {
       const postUpVotes = numberValue(p.mUpVotes !== undefined ? p.mUpVotes : meta.mUpVotes);
       const postDownVotes = numberValue(p.mDownVotes !== undefined ? p.mDownVotes : meta.mDownVotes);
 
+      //  The kanban resolver knows every shape a board image arrives in; the
+      //  two explicit fields below are the fallback for posts it cannot read.
       let imgSrc = boardKanban.extractImageSrc(itemObj);
       if (!imgSrc) {
         if (p.mImage && p.mImage.mData && p.mImage.mData.base64 && p.mImage.mData.base64.trim()) {
@@ -626,19 +635,20 @@ function PostView() {
         }
       }
 
+      const openPhoto = () =>
+        boardKanban.openPhotoModal([{ title, image: imgSrc, thumbnail: imgSrc, post: p }], 0);
+
       return [
-        m(
-          'a.board-back[title=Back][aria-label=Back]',
-          {
-            onclick: () =>
-              m.route.set('/boards/:tab/:mGroupId', {
-                tab: m.route.param().tab || 'Subscribed',
-                mGroupId: forumId,
-              }),
+        m(widget.PageHead, {
+          back: {
+            label: 'Back to board',
+            onclick: () => m.route.set('/boards/:tab/:mGroupId', {
+              tab: m.route.param().tab || 'Subscribed',
+              mGroupId: forumId,
+            }),
           },
-          m('i.fas.fa-arrow-left')
-        ),
-        m('.widget__heading', m('h3', title)),
+          title,
+        }),
         m('.widget__body', [
           imgSrc
             ? m(
@@ -646,46 +656,18 @@ function PostView() {
                 {
                   role: 'button',
                   tabindex: 0,
-                  title: 'Click to view full photo',
-                  'aria-label': 'Click to view full photo',
-                  onclick: () => {
-                    boardKanban.openPhotoModal([
-                      {
-                        title,
-                        image: imgSrc,
-                        thumbnail: imgSrc,
-                        post: p,
-                      },
-                    ], 0);
-                  },
+                  title: 'View full photo',
+                  'aria-label': 'View full photo',
+                  onclick: openPhoto,
                   onkeydown: (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      boardKanban.openPhotoModal([
-                        {
-                          title,
-                          image: imgSrc,
-                          thumbnail: imgSrc,
-                          post: p,
-                        },
-                      ], 0);
-                    }
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    e.preventDefault();
+                    openPhoto();
                   },
                 },
                 [
-                  m('.board-post-media__backdrop', {
-                    style: {
-                      backgroundImage: `url("${imgSrc}")`,
-                    },
-                  }),
-                  m('img.board-post-media__image', {
-                    src: imgSrc,
-                    alt: title,
-                  }),
-                  m('.board-post-media__expand-hint', [
-                    m('i.fas.fa-expand'),
-                    m('span', 'View full photo'),
-                  ]),
+                  m('img.board-post-media__image', { src: imgSrc, alt: title }),
+                  m('.board-post-media__expand-hint', [icon('expand'), m('span', 'View full photo')]),
                 ]
               )
             : null,
@@ -697,7 +679,7 @@ function PostView() {
           m('.board-post-voting', [
             m('.board-post-voting__identity', [
               m('label[for=board-post-voter]', 'Vote as'),
-              m('select#board-post-voter', {
+              select('select#board-post-voter', {
                 value: voteIdentity || '',
                 disabled: identities.length === 0 || postVoteSubmitting,
                 onchange: (e) => { voteIdentity = e.target.value; },
@@ -718,7 +700,7 @@ function PostView() {
                   postVoteSubmitting = false;
                   m.redraw();
                 },
-              }, [m('i.fas.fa-arrow-up'), ` ${postUpVotes}`]),
+              }, [icon('arrow-up'), ` ${postUpVotes}`]),
               m('span.board-post-voting__score', postUpVotes - postDownVotes),
               m('button[type=button][title=Downvote post]', {
                 disabled: !voteIdentity || postVoteSubmitting,
@@ -730,7 +712,7 @@ function PostView() {
                   postVoteSubmitting = false;
                   m.redraw();
                 },
-              }, [m('i.fas.fa-arrow-down'), ` ${postDownVotes}`]),
+              }, [icon('arrow-down'), ` ${postDownVotes}`]),
             ]),
           ]),
           notes ? m('.post-description.board-post-description', [

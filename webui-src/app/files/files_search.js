@@ -1,8 +1,10 @@
 const m = require('mithril');
 const rs = require('rswebui');
-const widget = require('widgets');
 const futil = require('files/files_util');
 const fproxy = require('files/files_proxy');
+const icon = require('icon');
+const toast = require('toast');
+const widget = require('widgets');
 
 let matchString = '';
 let currentItem = 0;
@@ -21,45 +23,40 @@ function handleSubmit() {
 const SearchBar = () => {
   return {
     view: () =>
-      m('form.search-form', {
-        onsubmit: (event) => {
-          event.preventDefault();
-          handleSubmit();
-        },
-      }, [
-        m('input[type=text][placeholder=Search files]', {
-          value: matchString,
-          oninput: (e) => (matchString = e.target.value),
-        }),
-        m('button[type=submit]', m('i.fas.fa-search')),
-      ]),
+      m(widget.SearchField, {
+        class: 'search-form',
+        placeholder: 'Search files',
+        value: matchString,
+        oninput: (e) => (matchString = e.target.value),
+        onSubmit: handleSubmit,
+      }),
   };
 };
 
 const getFileIcon = (fileName) => {
   const ext = fileName.split('.').pop().toLowerCase();
   switch (ext) {
-    case 'pdf': return 'i.fas.fa-file-pdf';
+    case 'pdf': return 'file-pdf';
     case 'zip':
     case 'rar':
     case 'tar':
     case 'gz':
-    case '7z': return 'i.fas.fa-file-archive';
+    case '7z': return 'file-archive';
     case 'jpg':
     case 'jpeg':
     case 'png':
-    case 'gif': return 'i.fas.fa-file-image';
+    case 'gif': return 'file-image';
     case 'mp4':
     case 'mkv':
     case 'avi':
-    case 'mov': return 'i.fas.fa-file-video';
+    case 'mov': return 'file-video';
     case 'mp3':
     case 'wav':
-    case 'flac': return 'i.fas.fa-file-audio';
+    case 'flac': return 'file-audio';
     case 'txt':
     case 'doc':
-    case 'docx': return 'i.fas.fa-file-alt';
-    default: return 'i.fas.fa-file';
+    case 'docx': return 'file-alt';
+    default: return 'file';
   }
 };
 
@@ -75,15 +72,7 @@ const Layout = () => {
       },
     })
       .then((res) => {
-        widget.popupMessage(
-          m('.widget', [
-            m('.widget__heading', m('h3', m('i.fas.fa-file-medical'), ' File Download')),
-            m(
-              '.widget__body',
-              m('p', `File is ${res.body.retval ? 'getting' : 'already'} downloaded.`)
-            ),
-          ])
-        );
+        toast.info(res.body.retval ? 'Download started' : 'Already downloading');
       })
       .catch((error) => {
         // console.log('error in sending download request: ', error);
@@ -91,12 +80,26 @@ const Layout = () => {
   }
   return {
     view: () => [
-      m('.widget__heading', [m('h3', 'Search'), m(SearchBar)]),
+      m(widget.PageHead, {
+        title: 'Search',
+        lead: 'Ask the network for files by name. Results arrive as peers answer.',
+        actions: m(SearchBar),
+      }),
       m('.widget__body', [
-        m('div.file-search-container', [
+        //  Nothing has been asked for yet: the two-pane split with an empty
+        //  Keywords list and a bare "Results" heading said nothing about what
+        //  to do next.
+        Object.keys(reqObj).length === 0
+          ? m('.empty', [
+            icon('search', { size: 28 }),
+            m('b', 'No searches yet'),
+            m('span', 'Type a file name above and press Search. Results arrive as '
+              + 'peers answer, so they can take a moment to appear.'),
+          ])
+          : m('div.file-search-container', [
           m('div.file-search-container__keywords', [
             m('.keywords-header', [
-              m('h5.bold', 'Keywords'),
+              m('h5', 'Keywords'),
               m(
                 'button.red.clear-btn',
                 {
@@ -106,9 +109,7 @@ const Layout = () => {
                     currentItem = 0;
                     active = 0;
                   },
-                },
-                'Clear'
-              ),
+                }, [icon('eraser'), 'Clear']),
             ]),
             Object.keys(reqObj).length !== 0 &&
             m(
@@ -133,7 +134,12 @@ const Layout = () => {
           ]),
           m('div.file-search-container__results', [
             Object.keys(fproxy.fileProxyObj).length === 0 || currentItem === 0
-              ? m('h5.bold', 'Results')
+              ? m('.empty', [
+                icon('search', { size: 24 }),
+                m('b', 'Waiting for answers'),
+                m('span', 'Peers reply as they find matches. Pick a search on the '
+                  + 'left to see what has come back.'),
+              ])
               : m('div.results-container', [
                 m(
                   'div.results-header',
@@ -150,7 +156,7 @@ const Layout = () => {
                     ? fproxy.fileProxyObj[currentItem.slice(1)].map((item) =>
                       m('div.results-row.file-item', [
                         m('.results-cell.name-col', { 'data-label': 'Name' }, [
-                          m(getFileIcon(item.fName)),
+                          icon(getFileIcon(item.fName)),
                           m('span', item.fName),
                         ]),
                         m(
@@ -161,15 +167,15 @@ const Layout = () => {
                         m('.results-cell.hash-col', { 'data-label': 'Hash' }, item.fHash),
                         m(
                           '.results-cell.action-col',
-                          m(
-                            'button.download-btn-v65',
-                            { onclick: () => handleFileDownload(item) },
-                            'Download'
-                          )
+                          m('button.download-btn-v65.is-primary',
+                            { onclick: () => handleFileDownload(item) }, [icon('download'), 'Download'])
                         ),
                       ])
                     )
-                    : 'No Results.'
+                    : m('.empty', [
+                      m('b', 'No matches'),
+                      m('span', 'No peer has answered with a file by that name.'),
+                    ])
                 ),
               ]),
           ]),

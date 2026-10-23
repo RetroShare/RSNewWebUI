@@ -1,0 +1,110 @@
+@use '../abstracts' as *;
+
+// -----------------------------------------------------------------------------
+// The chat history browser.
+//
+// Opened from three places -- a distant chat, a chat room, and a network
+// conversation -- and until now it described itself entirely in inline styles:
+// its own backdrop, its own 780px box, its own header band and its own close
+// button with JS mouseenter/mouseleave handlers. It is the shared modal now;
+// what is left here is the two things that are genuinely its own, a taller box
+// and the list inside it.
+// -----------------------------------------------------------------------------
+
+//  Taller and wider than a form modal: this one is for reading through.
+.modal-content.history-modal {
+  width: min(780px, calc(100% - 2rem));
+  height: min(85vh, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  min-height: 0;
+}
+
+//  Search and the result count, fixed above the scrolling list. It sits
+//  between the head and the body, so it carries the same side padding.
+.history-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex: none;
+  padding: 0 var(--s5) var(--s4);
+}
+
+.history-count {
+  flex: none;
+  color: var(--ink-dim);
+  font-size: var(--t-row);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+//  The scrolling body. A sunken ground so the message cards read as objects
+//  sitting on it rather than bands across it.
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s4) var(--s5);
+  background: var(--ground);
+}
+
+.history-placeholder {
+  margin: auto;
+  padding: var(--s6) var(--s4);
+  color: var(--ink-dim);
+  text-align: center;
+
+  > p { margin: var(--s3) 0 0; }
+
+  &__icon {
+    width: 28px;
+    height: 28px;
+    color: var(--ink-faint);
+  }
+}
+
+.history-item {
+  box-sizing: border-box;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+
+  &__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s3);
+    margin-bottom: var(--s1);
+  }
+
+  //  Who said it, coloured by direction -- the one distinction a flat list of
+  //  messages needs, since there are no bubbles here to lean left and right.
+  &__sender {
+    min-width: 0;
+    font-size: var(--t-row);
+    font-weight: var(--w-label);
+    overflow-wrap: anywhere;
+
+    &.is-incoming { color: var(--brand-deep); }
+    &.is-own { color: var(--up-ink); }
+  }
+
+  &__time {
+    flex: none;
+    color: var(--ink-dim);
+    font-size: var(--t-meta);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__body {
+    color: var(--ink-body);
+    font-size: var(--t-row);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 600px) {
+  .history-toolbar { padding: 0 var(--s4) var(--s3); }
+  .history-list { padding: var(--s3) var(--s4); }
+}

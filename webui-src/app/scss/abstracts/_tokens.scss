@@ -1,0 +1,234 @@
+// CSS properties let themes change without a rebuild.
+// Keep RGB channels in sync with their matching colors.
+
+:root {
+  color-scheme: light;
+  /* == Ground and structure ================================ Standard_Light */
+  --ground: #fafafa;      /* app background */
+  --surface: #ffffff;     /* panels, rows, sheets */
+  --sunken: #f0f2f3;      /* wells, inactive tabs, disabled fields */
+  --line: #c9cdd0;        /* structural rule */
+  --line-soft: #e8e8e8;   /* row separators */
+  --line-hover: #a8b0b6;  /* control border on hover */
+  --line-strong: #9aa3a9; /* sheet border */
+  --press: #e9ecee;       /* control background, pressed */
+
+  --chrome: linear-gradient(180deg, #ffffff, #f4f6f7);
+
+  /* == Ink. Deep navy-black, not grey-black. =============== Standard_Light */
+  --ink: #19232d;         /* headings, primary text */
+  --ink-body: #3d4a55;    /* body text */
+  --ink-dim: #566b7a;     /* secondary, labels, metadata */
+  --ink-faint: #5a6e7b;   /* placeholder and quiet labels */
+
+  /* == Brand. The logo gradient and its primary. ===================== logo */
+  --brand: #0b7cb2;       /* readable logo blue */
+  --brand-deep: #0a6899;  /* gradient dark stop, and selected-row ink */
+  --brand-pale: #abe3ff;  /* gradient light stop */
+  --brand-hover: #1a9ad6;
+  --brand-press: #0b7cb2;
+  --on-brand: #ffffff;
+  --action-top: #0b7cb2;
+  --action-bottom: #0a6899;
+  --action-border: var(--action-bottom);
+  --accent: #0099cc;      /* the one accent shared by both Qt themes */
+
+  /* Reach shows distance, not speed or health. */
+  --reach-0: #0e8ecb;     /* direct */
+  --reach-1: #57b6e3;     /* one hop */
+  --reach-1-ink: #2f7d9b; /* one hop, as readable text */
+  --reach-2: #9fcbff;     /* two or more hops */
+  --reach-2-ink: #5d7486; /* two or more hops, as readable text */
+  --reach-off: #acb1b6;   /* offline */
+
+  /* Selection needs both a visible band and readable text. */
+  --select: #a9d7ed;
+  --select-soft: #c9e5f4;
+  --select-edge: var(--brand);
+  --select-faint: #e4f1fa;
+
+  /* == Status. Transfer direction and failure only — never chrome. ======== */
+  --up: #32cd32;          /* uploading (fills, dots) */
+  --up-ink: #217a21;      /* the same state as readable text */
+  --up-bg: #eff8ef;
+  --up-line: #8cc98c;
+  --down: #cd3232;        /* failed, stalled (fills, dots) */
+  --down-ink: #c23636;
+  --down-bg: #fbefef;
+  --down-line: #d79a9a;   /* border tone for danger surfaces */
+  --warn: #dcdc41;
+  --warn-ink: #8a6d1f;
+  --warn-bg: #fdf8e3;
+  --warn-line: #d8cf8a;   /* border tone for warning surfaces, like --down-line */
+
+  /* A star is not a warning, so it has its own color. */
+  --star: #e0a92b;
+
+  /* == Channels, for the alpha derivations in the page stylesheets ======== */
+  --ink-rgb: 25 35 45;
+  --ground-rgb: 250 250 250;
+  --brand-rgb: 11 124 178;
+  --select-rgb: 169 215 237;
+  --down-rgb: 205 50 50;
+  --warn-rgb: 220 220 65;
+  --overlay-rgb: 15 23 42;
+  --overlay: rgb(var(--overlay-rgb) / 0.45);
+  --overlay-strong: rgb(var(--overlay-rgb) / 0.75);
+  --media-ground: #101820;
+  --media-overlay: rgb(0 0 0 / 0.85);
+  --media-control: rgb(0 0 0 / 0.25);
+  --on-media: #ffffff;
+  --login-backdrop: linear-gradient(135deg, var(--brand-deep), var(--brand-pale));
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%235f7382'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'/%3E%3C/svg%3E");
+
+  /* == Type ============================================================= */
+  --t-title: 30px;   /* page title */
+  --t-h2: 21px;      /* section heading */
+  --t-h3: 16px;      /* toolbar and sheet titles */
+  --t-body: 15px;    /* body, inputs, reading */
+  --t-row: 14px;     /* dense rows, list items, buttons */
+  --t-meta: 13px;    /* secondary metadata, hints */
+  --t-label: 12px;   /* field labels, timestamps */
+  --t-micro: 11px;   /* counts, tags, status pills — nothing else */
+
+  --font-sans: 'Archivo', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Use stronger weight for state, not whole screens. */
+  --w-body: 400;
+  --w-label: 500;
+  --w-state: 600;
+
+  /* == Space. A 4px grid, six stops. Nothing between them. ================ */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+
+  /* == Radius. A desktop utility earns a small budget. ==================== */
+  --r-sm: 2px;       /* controls, rows, inputs */
+  --r-md: 4px;       /* sheets */
+  --r-full: 999px;   /* counts, dots, avatars */
+
+  /* == Sizing ============================================================= */
+  --touch: 44px;         /* navigation and gestures */
+  --control: 30px;       /* shared control height on all devices */
+  --glyph: 26px;         /* square side of a bare glyph button */
+  --rail: 52px;          /* sidebar, collapsed */
+  --rail-open: 184px;    /* sidebar, expanded */
+  --nav-item-size: calc(var(--s6) + var(--control-inset));
+  --nav-icon-size: 19px;
+  --nav-item-width: calc(var(--nav-item-size) + var(--s1));
+  --nav-gutter: calc((var(--rail) - var(--stroke) - var(--nav-item-width)) / 2);
+  --tree-indent: var(--s4);
+  --tree-size-column: 140px;
+  --tree-action-column: 150px;
+  --measure: 68ch;       /* reading column */
+  --popover-wide: 24rem; /* identity cards with label/value rows */
+  --group-logo: 64px;
+  --home-logo-size: 90px;
+  --home-logo-size-mobile: 60px;
+  --group-count-column: 6rem;
+  --group-date-column: 12rem;
+  --picker-width: 320px;
+  --picker-height: 296px;
+  --composer-max-height: 160px;
+  --icon-action: 20px;
+  --stroke: 1px;
+  --control-inset: 2px;
+  --drawer-width: 300px;
+  --menu-width: 11rem;
+  --modal-width: 560px;
+  --statusbar-height: 28px;
+  --settings-label-width: 220px;
+  --settings-field-width: 360px;
+  --graph-height: 36rem;
+  --graph-min-height: 20rem;
+  --graph-node-radius: 9px;
+  --graph-own-radius: 12px;
+  --graph-fit-padding: var(--s4);
+  --graph-control-width: 184px;
+  --graph-spacing-width: 160px;
+  --graph-search-width: 220px;
+
+  /* == Depth and focus ================================================== */
+  --lift: 0 12px 32px rgb(var(--ink-rgb) / 0.18);
+  --lift-sm: 0 4px 12px rgb(var(--ink-rgb) / 0.12);  /* tooltips, popovers */
+  --ring: 0 0 0 3px rgb(var(--brand-rgb) / 0.22);
+
+  /* == Motion. Quick feedback, soft arrivals, shorter exits. ============== */
+  --motion-fast: 120ms;
+  --motion-exit: 160ms;
+  --motion-enter: 280ms;
+  --motion-layout: 320ms;
+  --motion-loop: 1200ms;
+  --motion-stagger: 32ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-layout: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-scale: 0.97;
+  --motion-press: 0.98;
+  --motion-distance: var(--s3);
+  --loader-size: var(--s4);
+  --loader-stroke: calc(var(--stroke) * 2);
+}
+
+@mixin dark-palette {
+  color-scheme: dark;
+  --ground: #161b21;
+  --surface: #1e252d;
+  --sunken: #192027;
+  --line: #485563;
+  --line-soft: #343f4b;
+  --line-hover: #728394;
+  --line-strong: #8092a3;
+  --press: #354351;
+  --chrome: linear-gradient(180deg, #29333e, #222b35);
+  --ink: #edf2f7;
+  --ink-body: #d1dce5;
+  --ink-dim: #a7b8c7;
+  --ink-faint: #95a7b7;
+  --brand: #6dc9f5;
+  --brand-deep: #9bdcff;
+  --brand-pale: #354f63;
+  --brand-hover: #87d5fa;
+  --brand-press: #b4e6ff;
+  --accent: #6dc9f5;
+  --action-top: #12618c;
+  --action-bottom: #0b4f76;
+  --action-border: var(--action-top);
+  --login-backdrop: linear-gradient(135deg, var(--ground), var(--surface));
+  --reach-0: #6dc9f5;
+  --reach-1-ink: #89cce6;
+  --reach-2-ink: #b0c8db;
+  --select: #254d67;
+  --select-soft: #234054;
+  --select-edge: #6dc9f5;
+  --select-faint: #203544;
+  --up-ink: #8cd68c;
+  --up-bg: #203a2a;
+  --up-line: #547d5e;
+  --down-ink: #ffaaaa;
+  --down-bg: #432b31;
+  --down-line: #a2656f;
+  --warn-ink: #ead38d;
+  --warn-bg: #3b3523;
+  --warn-line: #978449;
+  --ink-rgb: 237 242 247;
+  --ground-rgb: 22 27 33;
+  --brand-rgb: 109 201 245;
+  --select-rgb: 37 77 103;
+  --lift: 0 12px 32px rgb(0 0 0 / 0.45);
+  --lift-sm: 0 4px 12px rgb(0 0 0 / 0.35);
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' fill='%23a7b8c7'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'/%3E%3C/svg%3E");
+}
+
+:root[data-appearance='dark'] { @include dark-palette; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-appearance='light']):not([data-appearance='dark']) {
+    @include dark-palette;
+  }
+}

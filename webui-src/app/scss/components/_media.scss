@@ -1,14 +1,16 @@
-@use 'sass:color';
 @use '../abstracts' as *;
 
 .media-item {
   display: flex;
-  margin-top: 0.5rem;
-  padding: 1rem;
-  border: 1px solid color.adjust($dark-color, $alpha: -0.9);
-  border-radius: 4px;
+  margin-top: 0;
+  padding: var(--s3);
+  gap: var(--s4);
+  flex: none;
+  border: 1px solid rgb(var(--ink-rgb) / 0.1);
+  border-radius: var(--r-sm);
 
   &__details {
+    min-width: 0;
     flex-basis: 40%;
     @include flex($align: start, $gap: 0.5rem);
 
@@ -20,6 +22,7 @@
 
   &__desc {
     flex-basis: 60%;
+    overflow-wrap: anywhere;
   }
 
   @media (max-width: 768px) {
@@ -30,6 +33,27 @@
     &__details {
       flex-basis: 100% !important;
       width: 100% !important;
+    }
+  }
+}
+
+@include mobile {
+  .media-item {
+    padding: var(--s2);
+
+    &__details > img,
+    .board-detail-default-thumbnail,
+    .channel-detail-default-thumbnail {
+      flex: 0 0 var(--group-logo);
+      width: var(--group-logo);
+      height: var(--group-logo);
+      object-fit: cover;
+    }
+
+    &__details-info {
+      min-width: 0;
+      font-size: var(--t-meta);
+      overflow-wrap: anywhere;
     }
   }
 }

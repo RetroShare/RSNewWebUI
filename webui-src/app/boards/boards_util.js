@@ -2,6 +2,8 @@ const m = require('mithril');
 const rs = require('rswebui');
 const peopleUtil = require('people/people_util');
 const widget = require('widgets');
+const toast = require('toast');
+const icon = require('icon');
 
 const GROUP_SUBSCRIBE_ADMIN = 0x01; // means: you have the admin key for this group
 const GROUP_SUBSCRIBE_PUBLISH = 0x02; // means: you have the publish key for thiss group. Typical use: publish key in channels are shared with specific friends.
@@ -210,12 +212,14 @@ const BoardSummary = () => {
   return {
     view: (vnode) => {
       const details = vnode.attrs.details;
-      const bname = details.mGroupName || details.name || '';
+      const bname = details.mGroupName || details.name || 'Unnamed board';
+      const description = plainText(details.mDescription || details.description);
 
       return m(
-        'tr',
+        'tr.group-row',
         {
           key: details.mGroupId,
+          class: details.isSearched === false ? 'hidden' : '',
           onclick: () => {
             m.route.set('/boards/:tab/:mGroupId', {
               tab: vnode.attrs.category,
@@ -224,7 +228,20 @@ const BoardSummary = () => {
           },
         },
         [
-          m('td', bname),
+          m('td.group-row__name', m('.group-row__inner', [
+            m('.group-row__mark', icon('th-large')),
+            m('.group-row__text', [
+              m(m.route.Link, {
+                class: 'group-row__title',
+                href: `/boards/${vnode.attrs.category}/${details.mGroupId}`,
+                onclick: (event) => event.stopPropagation(),
+              }, bname),
+              description ? m('span.group-row__desc', description) : null,
+            ]),
+          ])),
+          m('td.group-row__posts', details.mVisibleMsgCount ?? 0),
+          m('td.group-row__activity', rs.getTimestampValue(details.mLastPost)
+            ? rs.formatTimestamp(details.mLastPost) : '—'),
         ]
       );
     },
@@ -234,10 +251,12 @@ const BoardSummary = () => {
 const BoardTable = () => {
   return {
     view: (vnode) =>
-      m('table.board-table', [
+      m('table.group-table', [
         m('thead', [
           m('tr', [
-            m('th', 'Board Name'),
+            m('th[scope=col]', 'Board'),
+            m('th.group-row__posts[scope=col]', 'Posts'),
+            m('th.group-row__activity[scope=col]', 'Last post'),
           ]),
         ]),
         vnode.children,
@@ -249,26 +268,25 @@ const SearchBar = () => {
   let searchString = '';
   return {
     view: (vnode) =>
-      m('.search-bar', [
-        m('input[type=text][placeholder=Search Boards...]', {
-          value: searchString,
-          oninput: (e) => {
-            searchString = e.target.value;
-            const query = searchString.toLowerCase();
-            if (vnode.attrs.list) {
-              vnode.attrs.list.forEach((board) => {
-                const name = (board.mGroupName || board.name || '').toLowerCase();
-                board.isSearched = name.includes(query);
-              });
-            }
-          },
-        }),
-      ]),
+      m(widget.SearchField, {
+        placeholder: 'Search boards',
+        value: searchString,
+        oninput: (e) => {
+          searchString = e.target.value;
+          const query = searchString.toLowerCase();
+          if (vnode.attrs.list) {
+            vnode.attrs.list.forEach((board) => {
+              const name = (board.mGroupName || board.name || '').toLowerCase();
+              board.isSearched = name.includes(query);
+            });
+          }
+        },
+      }),
   };
 };
 
-function popupmessage(message, modalClass = '') {
-  widget.popupMessage(message, modalClass);
+function popupmessage(message, modalClass = '', options = {}) {
+  widget.popupMessage(message, modalClass, options);
 }
 
 //  Replace the cached post only once the core's background tally has moved
@@ -307,7 +325,7 @@ async function voteForPost(postGrpId, postMsgId, voteType, voterId = null) {
       //  one place: /rsIdentity/getOwnIds is deprecated and answers 404.
       const ownIds = await peopleUtil.ownIds();
       if (ownIds.length === 0) {
-        alert('No identity found to vote.');
+        toast.warning('Create an identity before voting');
         return false;
       }
       authorId = ownIds[0];

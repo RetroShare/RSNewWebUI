@@ -1,6 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const NetworkData = require('network/network_data');
+const icon = require('icon');
 
 function idString(value) {
   if (!value) return '';
@@ -54,6 +55,10 @@ function formatRate(rate) {
   return rate.toFixed(1);
 }
 
+//  A categorical series palette: ten hues that have to stay apart from each
+//  other, which is a different job from the product's semantic tokens. It is
+//  data the charts read, so it lives here -- once, and exported, rather than
+//  copied into every module that draws a series.
 const COLORS = ['#0788cb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#ec4899', '#84cc16', '#64748b', '#f97316'];
 
 function DonutChart() {
@@ -66,7 +71,7 @@ function DonutChart() {
 
       if (!rows.length && !total) {
         return m('.traffic-empty', [
-          m('i.fas.fa-chart-pie'),
+          icon('chart-pie'),
           m('p', 'No session data recorded yet.'),
         ]);
       }
@@ -194,33 +199,33 @@ const Bandwidth = {
     const peers = Bandwidth.peerRates;
 
     return m('.bandwidth-view', [
-      Bandwidth.error && m('.statistics-error', [m('i.fas.fa-exclamation-triangle'), Bandwidth.error]),
+      Bandwidth.error && m('.statistics-error', [icon('exclamation-triangle'), Bandwidth.error]),
 
       // ── Top summary cards ──
       totals && m('.bandwidth-summary-grid', [
         m('.bandwidth-stat-card', [
-          m('.bandwidth-stat-card__icon.bandwidth-stat-card__icon--in', m('i.fas.fa-arrow-down')),
+          m('.bandwidth-stat-card__icon.bandwidth-stat-card__icon--in', icon('arrow-down')),
           m('.bandwidth-stat-card__body', [
             m('.bandwidth-stat-card__value', formatBytes(totals.totalIn)),
             m('.bandwidth-stat-card__label', 'Session In'),
           ]),
         ]),
         m('.bandwidth-stat-card', [
-          m('.bandwidth-stat-card__icon.bandwidth-stat-card__icon--out', m('i.fas.fa-arrow-up')),
+          m('.bandwidth-stat-card__icon.bandwidth-stat-card__icon--out', icon('arrow-up')),
           m('.bandwidth-stat-card__body', [
             m('.bandwidth-stat-card__value', formatBytes(totals.totalOut)),
             m('.bandwidth-stat-card__label', 'Session Out'),
           ]),
         ]),
         m('.bandwidth-stat-card', [
-          m('.bandwidth-stat-card__icon.bandwidth-stat-card__icon--queue', m('i.fas.fa-layer-group')),
+          m('.bandwidth-stat-card__icon.bandwidth-stat-card__icon--queue', icon('layer-group')),
           m('.bandwidth-stat-card__body', [
             m('.bandwidth-stat-card__value', formatBytes(totals.queueOutBytes)),
             m('.bandwidth-stat-card__label', 'Queue Size'),
           ]),
         ]),
         m('.bandwidth-stat-card', [
-          m('.bandwidth-stat-card__icon.bandwidth-stat-card__icon--drain', m('i.fas.fa-stopwatch')),
+          m('.bandwidth-stat-card__icon.bandwidth-stat-card__icon--drain', icon('stopwatch')),
           m('.bandwidth-stat-card__body', [
             m('.bandwidth-stat-card__value', `${totals.queueOut.toLocaleString()} ${totals.queueOut === 1 ? 'pkt' : 'pkts'} / ${Math.round(totals.drain)}s`),
             m('.bandwidth-stat-card__label', 'Queue Packets & Drain'),
@@ -255,7 +260,7 @@ const Bandwidth = {
         return m('.statistics-grid', [
           m('section.traffic-panel', [
             m('.traffic-panel__heading', [
-              m('i.fas.fa-arrow-down'),
+              icon('arrow-down'),
               m('div', [
                 m('h3', 'Session Received by friend'),
                 m('p', 'Incoming data transferred per friend during this session.'),
@@ -270,7 +275,7 @@ const Bandwidth = {
           ]),
           m('section.traffic-panel', [
             m('.traffic-panel__heading', [
-              m('i.fas.fa-arrow-up'),
+              icon('arrow-up'),
               m('div', [
                 m('h3', 'Session Sent by friend'),
                 m('p', 'Outgoing data transferred per friend during this session.'),
@@ -289,7 +294,7 @@ const Bandwidth = {
       // ── Bandwidth detailed rates table ──
       m('section.traffic-panel.bandwidth-panel', [
         m('.traffic-panel__heading', [
-          m('i.fas.fa-tachometer-alt'),
+          icon('tachometer-alt'),
           m('div', [
             m('h3', 'Bandwidth Control Rates'),
             m('p', 'Real-time throughput, allocation limits, output queues, and estimated drain time per peer.'),
@@ -353,7 +358,7 @@ const Bandwidth = {
                   ])
                 )
                 : (!totals
-                  ? m('tr', [m('td[colspan=13]', m('.traffic-empty', [m('i.fas.fa-tachometer-alt'), m('p', 'No bandwidth data available.')]))])
+                  ? m('tr', [m('td[colspan=13]', m('.traffic-empty', [icon('tachometer-alt'), m('p', 'No bandwidth data available.')]))])
                   : null),
             ]),
           ]),
@@ -364,5 +369,7 @@ const Bandwidth = {
     ]);
   },
 };
+
+Bandwidth.COLORS = COLORS;
 
 module.exports = Bandwidth;
