@@ -3,7 +3,7 @@ const brandLogo = require('brand_logo');
 
 //  Bumped at every change of the web UI; shown in the rail, the phone header
 //  and the Debug page.
-const WEBUI_VERSION = 'v187';
+const WEBUI_VERSION = 'v188';
 
 const login = require('login');
 const rs = require('rswebui');

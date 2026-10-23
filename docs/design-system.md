@@ -184,8 +184,11 @@ Measurements above are in CSS pixels. Use token names in styles, not literals.
   `--nav-gutter` keeps the icon column fixed on collapse.
 - Expanded main navigation uses `--rail-open` (184), keeping the collapsed rail unchanged.
 - Settings share a page header, section panels and aligned labels/fields.
-  `--settings-width`, `--settings-label-width` and `--settings-field-width` keep
-  forms readable on wide screens. Narrow screens stack fields; tables scroll.
+  Use the full content column, the shared `PageHead` gap, `--s4` panel padding,
+  `--s2` row gaps and `--s3` section gaps. Do not stack extra header padding,
+  margins or a centered width cap. `--settings-label-width` and
+  `--settings-field-width` align readable forms. Narrow screens stack fields;
+  tables scroll. Controls keep the shared height.
 - The network graph uses one high-DPI canvas, capped at 200 displayed peers.
   Spatial buckets limit repulsion work; springs run only while settling or dragging.
   Rendering does not redraw the app on every pointer move. Idle, hidden and
