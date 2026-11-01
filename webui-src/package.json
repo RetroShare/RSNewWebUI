@@ -7,7 +7,7 @@
     "build": "sass --no-source-map --style=compressed ./app/scss/main.scss ./styles.css && node ./make-src/build.js",
     "lint": "eslint app && node ./make-src/build.js --check && echo Lint checks passed."
   },
-  "license": "ISC",
+  "license": "AGPL-3.0-or-later",
   "engines": {
     "node": ">=24"
   },
