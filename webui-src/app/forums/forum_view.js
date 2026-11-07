@@ -589,7 +589,7 @@ const ForumDetails = () => ({
 });
 
 /**
- * The lower half of the split: the post currently selected in the table above.
+ * The post selected in the thread list.
  *
  * attrs:
  *   forumId, msgId  which post to show
@@ -680,11 +680,75 @@ const subtreeMatches = (struct, query) =>
   (struct.thread.mMeta.mMsgName || '').toLowerCase().includes(query) ||
   replyList(struct).some((reply) => subtreeMatches(reply, query));
 
+const THREAD_SPLIT_MIN = 25;
+const THREAD_SPLIT_MAX = 75;
+const THREAD_SPLIT_STEP = 5;
+const THREAD_SPLIT_DEFAULT = 45;
+const FORUM_VIEW_MODE_KEY = 'rs.webui.forums.view-mode';
+const FORUM_VIEW_MODES = new Set(['split', 'reader']);
+
+function readForumViewMode() {
+  try {
+    const mode = window.localStorage.getItem(FORUM_VIEW_MODE_KEY);
+    return FORUM_VIEW_MODES.has(mode) ? mode : 'split';
+  } catch (_) {
+    return 'split';
+  }
+}
+
+function saveForumViewMode(mode) {
+  if (!FORUM_VIEW_MODES.has(mode)) return;
+  try {
+    window.localStorage.setItem(FORUM_VIEW_MODE_KEY, mode);
+  } catch (_) {
+    // The view still changes when storage is blocked.
+  }
+}
+
 const ForumView = () => {
   let ownId = '';
   let threadSearch = '';
+  let viewMode = readForumViewMode();
+  let threadSplit = THREAD_SPLIT_DEFAULT;
   //  Threads start closed. Only what you open is in here.
   const expanded = new Set();
+
+  const updateThreadSplit = (splitter, clientY) => {
+    const panes = splitter.parentElement;
+    const bounds = panes.getBoundingClientRect();
+    if (!bounds.height) return;
+    threadSplit = Math.max(THREAD_SPLIT_MIN, Math.min(
+      THREAD_SPLIT_MAX,
+      ((clientY - bounds.top) / bounds.height) * 100
+    ));
+    panes.style.setProperty('--forum-thread-split', `${threadSplit}%`);
+    splitter.setAttribute('aria-valuenow', String(Math.round(threadSplit)));
+    splitter.setAttribute('aria-valuetext', `${Math.round(threadSplit)}% for thread list`);
+  };
+
+  const resizeThreadSplit = (event) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    updateThreadSplit(event.currentTarget, event.clientY);
+  };
+
+  const finishThreadResize = (event) => {
+    const splitter = event.currentTarget;
+    if (splitter.hasPointerCapture(event.pointerId)) {
+      splitter.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  const adjustThreadSplit = (event) => {
+    const next = event.key === 'Home' ? THREAD_SPLIT_MIN
+      : event.key === 'End' ? THREAD_SPLIT_MAX
+        : event.key === 'ArrowUp' ? threadSplit - THREAD_SPLIT_STEP
+          : event.key === 'ArrowDown' ? threadSplit + THREAD_SPLIT_STEP : null;
+    if (next === null) return;
+    event.preventDefault();
+    threadSplit = Math.max(THREAD_SPLIT_MIN, Math.min(THREAD_SPLIT_MAX, next));
+    m.redraw();
+  };
+
   return {
     oninit: (v) => {
       util.updatedisplayforums(v.attrs.id);
@@ -815,6 +879,19 @@ const ForumView = () => {
               icon('pencil-alt')
             ),
             m(ForumDetails, { details: forumDetails }),
+            m(widget.Segmented, {
+              class: 'forum-view-toggle',
+              ariaLabel: 'Forum view mode',
+              value: viewMode,
+              options: [
+                { id: 'split', label: 'Split', title: 'Show threads and reader together' },
+                { id: 'reader', label: 'Reader', title: 'Open posts in full view' },
+              ],
+              onSelect: (mode) => {
+                viewMode = mode;
+                saveForumViewMode(mode);
+              },
+            }),
             m('button.forum-subscription-button.is-primary',
               {
                 class: fsubscribed ? 'forum-subscription--subscribed' : '',
@@ -833,9 +910,10 @@ const ForumView = () => {
             }),
           ],
         }),
-        m(
+          m(
           'threaddetails.forum-threads',
           {
+            class: v.attrs.msgId && viewMode === 'reader' ? 'forum-threads--reader-mode' : '',
             style: 'display:' + (fsubscribed ? 'flex' : 'none'),
           },
           m('.forum-threads__heading', [
@@ -870,90 +948,108 @@ const ForumView = () => {
               [icon('pencil-alt'), m('span', 'New Thread')]
             ),
           ]),
-          m('.threads-scroll', m(util.ThreadsTable, [
-            m('thead', m('tr.forum-thread-head', [
-              m('th.forum-thread-row__cell', 'Threads'),
-              m('th.forum-thread-row__unread', 'Unread'),
-              m('th.forum-thread-row__date', 'Date'),
-              m('th.forum-thread-row__author', 'Author'),
-            ])),
-            m(
-              'tbody',
-              rows.length === 0
-                ? m('tr', m('td.forum-threads__empty[colspan=4]',
-                  util.Data.loading.has(v.attrs.id)
-                    ? m(widget.Loading, { label: 'Loading threads…' })
-                    : query ? 'No threads matching search.' : 'No threads in this forum yet.'))
-                : nestedRows(rows, (row) =>
-                  m(
-                    'tr.forum-thread-row',
-                    {
-                      key: row.meta.mMsgId,
-                      class: [
-                        util.isUnread(row.meta.mMsgStatus)
-                          ? 'forum-thread-row--unread' : '',
-                        row.meta.mOrigMsgId === v.attrs.msgId
-                          ? 'forum-thread-row--selected' : '',
-                      ].filter(Boolean).join(' '),
-                      onclick: () => openThread(row),
-                    },
-                    [
-                      //  The flex box is inside the cell, not the cell itself:
-                      //  a flex `td` drops out of the table's columns and the
-                      //  header stops lining up with the rows.
-                      //
-                      //  Depth is a variable, not a padding -- inline padding
-                      //  would beat the phone media query.
-                      m('td.forum-thread-row__cell',
-                        m('.forum-thread-row__inner', { style: `--depth:${row.depth}` }, [
-                          row.replies
-                            ? m('button.forum-thread-row__toggle[type=button]', {
-                              title: row.open ? 'Collapse replies' : 'Expand replies',
-                              'aria-label': row.open ? 'Collapse replies' : 'Expand replies',
-                              'aria-expanded': String(row.open),
+          m('.forum-threads__panes', {
+            class: v.attrs.msgId
+              ? `forum-threads__panes--split${viewMode === 'reader' ? ' forum-threads__panes--reader-mode' : ''}`
+              : '',
+            style: { '--forum-thread-split': `${threadSplit}%` },
+          }, [
+            m('.threads-scroll', m(util.ThreadsTable, [
+              m('thead', m('tr.forum-thread-head', [
+                m('th.forum-thread-row__cell', 'Threads'),
+                m('th.forum-thread-row__unread', 'Unread'),
+                m('th.forum-thread-row__date', 'Date'),
+                m('th.forum-thread-row__author', 'Author'),
+              ])),
+              m(
+                'tbody',
+                rows.length === 0
+                  ? m('tr', m('td.forum-threads__empty[colspan=4]',
+                    util.Data.loading.has(v.attrs.id)
+                      ? m(widget.Loading, { label: 'Loading threads…' })
+                      : query ? 'No threads matching search.' : 'No threads in this forum yet.'))
+                  : nestedRows(rows, (row) =>
+                    m(
+                      'tr.forum-thread-row',
+                      {
+                        key: row.meta.mMsgId,
+                        class: [
+                          util.isUnread(row.meta.mMsgStatus)
+                            ? 'forum-thread-row--unread' : '',
+                          row.meta.mOrigMsgId === v.attrs.msgId
+                            ? 'forum-thread-row--selected' : '',
+                        ].filter(Boolean).join(' '),
+                        onclick: () => openThread(row),
+                      },
+                      [
+                        m('td.forum-thread-row__cell',
+                          m('.forum-thread-row__inner', { style: `--depth:${row.depth}` }, [
+                            row.replies
+                              ? m('button.forum-thread-row__toggle[type=button]', {
+                                title: row.open ? 'Collapse replies' : 'Expand replies',
+                                'aria-label': row.open ? 'Collapse replies' : 'Expand replies',
+                                'aria-expanded': String(row.open),
+                                onclick: (e) => {
+                                  e.stopPropagation();
+                                  if (row.open) expanded.delete(row.meta.mMsgId);
+                                  else expanded.add(row.meta.mMsgId);
+                                },
+                              }, icon('chevron-right'))
+                              : m('span.forum-thread-row__toggle-spacer'),
+                            m('button.forum-thread-row__title[type=button]', {
+                              'aria-current': row.meta.mOrigMsgId === v.attrs.msgId
+                                ? 'page' : undefined,
                               onclick: (e) => {
                                 e.stopPropagation();
-                                if (row.open) expanded.delete(row.meta.mMsgId);
-                                else expanded.add(row.meta.mMsgId);
+                                openThread(row);
                               },
-                            }, icon('chevron-right'))
-                            : m('span.forum-thread-row__toggle-spacer'),
-                          m('button.forum-thread-row__title[type=button]', {
-                            'aria-current': row.meta.mOrigMsgId === v.attrs.msgId
-                              ? 'page' : undefined,
-                            onclick: (e) => {
-                              e.stopPropagation();
-                              openThread(row);
-                            },
-                          }, row.meta.mMsgName || 'No subject'),
-                          !row.open && row.replies
-                            ? m('span.forum-thread-row__replies',
-                              `${row.replies} ${row.replies === 1 ? 'reply' : 'replies'}`)
-                            : '',
+                            }, row.meta.mMsgName || 'No subject'),
+                            !row.open && row.replies
+                              ? m('span.forum-thread-row__replies',
+                                `${row.replies} ${row.replies === 1 ? 'reply' : 'replies'}`)
+                              : '',
+                          ])),
+                        m('td.forum-thread-row__unread',
+                          row.unread > 0 ? m('span.forum-thread-row__badge', row.unread) : ''),
+                        m('td.forum-thread-row__date', formatTimestamp(row.meta.mPublishTs)),
+                        m('td.forum-thread-row__author', m('.forum-thread-row__by', [
+                          m(peopleUtil.UserAvatar, {
+                            firstLetter: rs.userList.username(row.meta.mAuthorId)
+                              .slice(0, 1).toUpperCase(),
+                            identityId: row.meta.mAuthorId,
+                            size: 20,
+                            isSquare: true,
+                          }),
+                          m('span', rs.userList.username(row.meta.mAuthorId)),
                         ])),
-                      m('td.forum-thread-row__unread',
-                        row.unread > 0 ? m('span.forum-thread-row__badge', row.unread) : ''),
-                      m('td.forum-thread-row__date', formatTimestamp(row.meta.mPublishTs)),
-                      m('td.forum-thread-row__author', m('.forum-thread-row__by', [
-                        m(peopleUtil.UserAvatar, {
-                          firstLetter: rs.userList.username(row.meta.mAuthorId)
-                            .slice(0, 1).toUpperCase(),
-                          identityId: row.meta.mAuthorId,
-                          size: 20,
-                          isSquare: true,
-                        }),
-                        m('span', rs.userList.username(row.meta.mAuthorId)),
-                      ])),
-                    ]
-                  ), { tableClass: 'threads', columns: ['', 'forum-thread-row__unread', 'forum-thread-row__date', 'forum-thread-row__author'] })
-            ),
-          ])),
-          v.attrs.msgId && m(ThreadReader, {
-            forumId: v.attrs.id,
-            msgId: v.attrs.msgId,
-            ownId,
-            rows,
-          })
+                      ]
+                    ), { tableClass: 'threads', columns: ['', 'forum-thread-row__unread', 'forum-thread-row__date', 'forum-thread-row__author'] })
+              ),
+            ])),
+            v.attrs.msgId && viewMode === 'split' && m('.forum-thread-splitter[role=separator][tabindex=0]', {
+              'aria-label': 'Resize thread list and post reader',
+              'aria-orientation': 'horizontal',
+              'aria-valuemin': THREAD_SPLIT_MIN,
+              'aria-valuemax': THREAD_SPLIT_MAX,
+              'aria-valuenow': Math.round(threadSplit),
+              'aria-valuetext': `${Math.round(threadSplit)}% for thread list`,
+              onpointerdown: (event) => {
+                if (event.button !== 0) return;
+                event.preventDefault();
+                event.currentTarget.setPointerCapture(event.pointerId);
+              },
+              onpointermove: resizeThreadSplit,
+              onpointerup: finishThreadResize,
+              onpointercancel: finishThreadResize,
+              onkeydown: adjustThreadSplit,
+            }),
+            v.attrs.msgId && m(ThreadReader, {
+              forumId: v.attrs.id,
+              msgId: v.attrs.msgId,
+              ownId,
+              rows,
+            }),
+          ]),
         ),
       ];
     },

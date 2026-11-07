@@ -164,11 +164,9 @@
     flex-basis: 100%;
   }
 
-  /* The right group held the view toggle, the pager and the vote identity on
-   * one unshrinkable line, which ran off the side of a phone and left the
-   * whole page scrolling sideways. It wraps and shrinks now. */
+  /* Keep the identity selector beside the view controls; let it shrink. */
   .board-toolbar__right {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     flex-shrink: 1;
     justify-content: space-between;
     width: 100%;
@@ -180,7 +178,7 @@
   .board-toolbar__view-toggle .segmented__item span { display: none; }
 
   .board-toolbar__voter {
-    flex: 1 1 100%;
+    flex: 1 1 0;
     min-width: 0;
   }
 
@@ -363,7 +361,6 @@
 }
 
 .board-card--compact:hover {
-  background-color: var(--line-soft);
   border-color: var(--ink-faint);
 }
 
@@ -402,8 +399,8 @@ button.board-card__vote-btn,
 }
 
 .board-card__vote-pill .board-card__vote-btn:hover {
-  background: var(--line-soft);
-  box-shadow: none;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 var(--stroke) var(--line-hover);
 }
 
 .board-card__vote-pill .board-card__vote-btn--up i {
@@ -486,6 +483,7 @@ button.board-card__vote-btn,
 }
 
 .board-card__title-button,
+.board-card__title-button:hover,
 .board-card__title-button:active {
   all: unset;
   box-sizing: border-box;
@@ -515,10 +513,6 @@ button.board-card__vote-btn,
   cursor: pointer;
 }
 
-.board-card--compact .board-card__title:hover {
-  color: var(--brand-press);
-}
-
 /* Meta line: Posted by <author> <date> */
 .board-card--compact .board-card__meta {
   font-size: var(--t-meta);
@@ -533,7 +527,7 @@ button.board-card__vote-btn,
 /* Footer: Comment button matching Qt GUI */
 .board-card--compact .board-card__footer {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.5rem;
   padding: 0;

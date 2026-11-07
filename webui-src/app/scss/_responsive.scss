@@ -60,7 +60,7 @@
 
     .board-card__image-container {
       grid-column: 1;
-      grid-row: 1 / span 2;
+      grid-row: 1 / span 3;
       width: var(--group-logo);
       height: var(--group-logo);
     }
@@ -68,7 +68,7 @@
     .board-card__content { display: contents; }
     .board-card__title,
     .board-card__meta { grid-column: 2; margin: 0; }
-    .board-card__footer { grid-column: 1 / -1; flex-wrap: wrap; gap: var(--s1); }
+    .board-card__footer { grid-column: 2; flex-wrap: wrap; gap: var(--s1); }
   }
 
   .forum-detail-head .page-head__actions { position: relative; }

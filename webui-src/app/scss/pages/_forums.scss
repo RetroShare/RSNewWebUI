@@ -198,25 +198,79 @@
   background: var(--sunken);
 }
 
-/* The thread list scrolls inside the top half; the reading pane below stays
- * put. Without a selection it takes the whole pane. */
+/* The divider keeps both the list and the post reader adjustable. */
+.forum-threads--reader-mode .forum-threads__heading { display: none; }
+
+.forum-threads__panes {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+
+  &--split {
+    display: grid;
+    grid-template-rows: minmax(0, var(--forum-thread-split)) var(--s3) minmax(0, 1fr);
+  }
+
+  &--reader-mode {
+    grid-template-rows: minmax(0, 1fr);
+
+    .threads-scroll,
+    .forum-thread-splitter { display: none; }
+  }
+}
+
+.forum-view-toggle { flex: none; }
+
 .threads-scroll {
-  flex: 45 1 0;
+  flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
 }
 
+.forum-thread-splitter {
+  position: relative;
+  display: grid;
+  place-items: center;
+  cursor: row-resize;
+  touch-action: none;
+  user-select: none;
 
-/* The post you picked. It gets the larger share: reading is the job here, the
- * list above is only how you got to it. */
+  &::before {
+    content: '';
+    width: 100%;
+    height: var(--stroke);
+    background: var(--line-soft);
+  }
+
+  &::after {
+    position: absolute;
+    content: '';
+    width: var(--s6);
+    height: var(--s1);
+    border-radius: var(--r-full);
+    background: var(--line-hover);
+  }
+
+  &:hover::after,
+  &:focus-visible::after { background: var(--brand); }
+
+  &:focus-visible {
+    outline: var(--control-inset) solid var(--select-edge);
+    outline-offset: calc(-1 * var(--control-inset));
+  }
+}
+
+
+/* The post you picked. It gets the larger share in the default split. */
 .forum-reader {
   display: flex;
-  flex: 55 1 0;
+  flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
-  margin-top: var(--s3);
-  padding-top: var(--s3);
-  border-top: 1px solid var(--line);
+  margin-top: 0;
+  padding-top: var(--s2);
 
   &__bar {
     display: flex;
@@ -246,6 +300,8 @@
   //  Pushed to the far end of the bar, where the page header keeps its actions.
   &__actions {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: var(--s2);
     margin-left: auto;
   }
@@ -491,6 +547,8 @@ table.threads {
       display: none;
     }
 
+    .forum-threads__panes--split { display: flex; }
+
     .forum-reader {
       flex: 1 1 auto;
       margin-top: 0;
@@ -498,6 +556,9 @@ table.threads {
       border-top: 0;
     }
   }
+
+  .forum-thread-splitter,
+  .forum-view-toggle { display: none; }
 
   .forum-threads__search {
     flex: 1 1 auto;
