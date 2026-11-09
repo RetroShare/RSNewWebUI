@@ -1,5 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const widget = require('widgets');
 
 const Node = () => {
   const nodeInfo = {
@@ -13,18 +14,20 @@ const Node = () => {
     },
     view() {
       return [
-        m('.widget', [
-          m('.widget__heading', m('h3', 'Public Information')),
-          m('.widget__body', [
-            m('ul', [
-              m('li', 'Name: ' + nodeInfo.ownName),
-              m('li', 'Location ID: ' + nodeInfo.ownId),
-              m('li', 'Firewall: ' + nodeInfo.firewalled),
-              m('li', 'Port Forwarding: ' + nodeInfo.forwardPort),
-              m('li', 'DHT: ' + nodeInfo.DHTActive),
-              m('li', 'uPnP: ' + nodeInfo.uPnPActive),
-              m('li', 'Local Address: ' + nodeInfo.localAddr + '  Port: ' + nodeInfo.localPort),
-            ]),
+        m('.panel', [
+          m('.panel__head', m('h3', 'Node details')),
+          m('.panel__body', [
+            nodeInfo.ownName === undefined
+              ? m(widget.Loading, { label: 'Loading node details…' })
+              : m('dl.settings-facts', [
+                ['Name', nodeInfo.ownName],
+                ['Location ID', nodeInfo.ownId],
+                ['Firewall', nodeInfo.firewalled ? 'Enabled' : 'Disabled'],
+                ['Port forwarding', nodeInfo.forwardPort ? 'Enabled' : 'Disabled'],
+                ['DHT', nodeInfo.DHTActive ? 'Active' : 'Inactive'],
+                ['UPnP', nodeInfo.uPnPActive ? 'Active' : 'Inactive'],
+                ['Local address', `${nodeInfo.localAddr || '—'}:${nodeInfo.localPort || '—'}`],
+              ].map(([label, value]) => m('div', [m('dt', label), m('dd', value || '—')]))),
           ]),
         ]),
       ];

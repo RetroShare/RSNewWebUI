@@ -1,50 +1,88 @@
-@use 'sass:color';
 @use '../abstracts' as *;
 
 .login-page {
-  background-image: linear-gradient(-45deg,
-      color.adjust($primary-color, $alpha: -0.25),
-      color.adjust($primary-retro-color, $alpha: -0.25));
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
   height: 100%;
+  padding: var(--s5);
+  overflow: auto;
+  background: var(--login-backdrop);
   animation: fadein 0.5s;
 
   .login-container {
-    background-color: white;
-    box-shadow: 3px 3px 5px color.adjust($dark-color, $alpha: -0.6);
-    margin: auto;
-    position: relative;
-    top: 100px;
-    max-width: 400px;
-    max-height: 500px;
-    border-radius: 5px;
-    @include flex(column, $align: center);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s4);
+    width: min(100%, var(--popover-wide));
+    padding: var(--s6);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    box-shadow: var(--lift);
+  }
 
-    & input {
-      padding: 0.375rem 0.75rem;
-      border-radius: 0.275rem;
-    }
+  .login-brand {
+    display: grid;
+    justify-items: center;
+    gap: var(--s2);
+    text-align: center;
 
-    & * {
-      margin-bottom: 1rem;
-    }
-
-    &>img {
-      margin: 1rem 0 2rem;
-    }
-
-    & extra {
+    h1,
+    p {
       margin: 0;
     }
 
-    &>a {
-      text-decoration: underline;
-      cursor: pointer;
+    h1 {
+      color: var(--ink);
+      font-size: var(--t-title);
+      font-weight: var(--w-state);
+    }
+
+    p {
+      color: var(--ink-dim);
+      font-size: var(--t-body);
     }
   }
 
-  .extra>label,
-  .extra>br,
-  .extra>input {
-    margin-bottom: 0;
+  .login-logo {
+    width: calc(var(--s6) * 2);
+    height: calc(var(--s6) * 2);
+  }
+
+  .login-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s4);
+
+    label {
+      color: var(--ink-body);
+      font-size: var(--t-label);
+      font-weight: var(--w-label);
+    }
+  }
+
+  .login-options {
+    align-self: center;
+  }
+
+  .submit-btn {
+    width: 100%;
+  }
+
+  .error {
+    margin: 0;
+    color: var(--down-ink);
+    font-size: var(--t-meta);
+    text-align: center;
+  }
+
+  @include mobile {
+    padding: var(--s4);
+
+    .login-container {
+      padding: var(--s5);
+    }
   }
 }

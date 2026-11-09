@@ -1,5 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const icon = require('icon');
+const brandLogo = require('brand_logo');
 
 const displayErrorMessage = function (message) {
   m.render(document.getElementById('error'), message);
@@ -44,50 +46,56 @@ function loginComponent() {
   let withOptions = false;
 
   const logo = () =>
-    m('img.logo[width=30%]', { src: 'images/retroshare.svg', alt: 'retroshare_icon' });
+    m('img.login-logo', { src: brandLogo, alt: '', width: 200, height: 200 });
 
   const inputName = () =>
     m('input', {
       id: 'username',
       type: 'text',
       value: uname,
-      placeholder: 'Username',
-      onchange: (e) => (uname = e.target.value),
+      placeholder: 'Enter your username',
+      autocomplete: 'username',
+      oninput: (e) => (uname = e.target.value),
     });
   const buttonLogin = () =>
-    m(
-      'button[type=submit].submit-btn#loginBtn',
-      {
-        onclick: (ev) => {
-          ev.preventDefault();
-          verifyLogin(uname, passwd, url);
-        },
-      },
-      'Login'
-    );
+    m('button.is-primary[type=submit].submit-btn#loginBtn', [
+      icon('sign-in-alt'),
+      'Login',
+    ]);
 
-  const inputPassword = () =>
+  const inputPassword = (placeholder) =>
     m('input[autofocus]', {
       id: 'password',
       type: 'password',
-      placeholder: 'Password',
+      placeholder,
+      autocomplete: 'current-password',
       oncreate: (e) => e.dom.focus(),
-      onchange: (e) => (passwd = e.target.value),
+      oninput: (e) => (passwd = e.target.value),
     });
 
   const inputUrl = () =>
     m('input', {
       id: 'url',
       type: 'text',
-      placeholder: 'Url',
+      placeholder: 'Enter node URL',
       value: url,
+      spellcheck: false,
       oninput: (e) => (url = e.target.value),
     });
 
-  const linkOptions = (action) =>
-    m('a', { onclick: () => (withOptions = !withOptions) }, `${action} options`);
+  const optionsButton = () =>
+    m('button.login-options.is-quiet[type=button]', {
+      'aria-expanded': String(withOptions),
+      onclick: () => (withOptions = !withOptions),
+    }, [
+      'Advanced options',
+      icon(withOptions ? 'chevron-up' : 'chevron-down'),
+    ]);
 
-  const textError = () => m('p.error[id=error]');
+  const field = (id, label, input) =>
+    m('.form-field', [m('label', { for: id }, label), input]);
+
+  const textError = () => m('p.error[id=error][aria-live=polite]');
 
   return {
     oninit: () => {
@@ -98,19 +106,31 @@ function loginComponent() {
     view: () => {
       return m(
         'form.login-page',
+        {
+          onsubmit: (ev) => {
+            ev.preventDefault();
+            verifyLogin(uname, passwd, url);
+          },
+        },
         m(
           '.login-container',
-          withOptions
-            ? [
+          [
+            m('.login-brand', [
               logo(),
-              m('.extra', [m('label', 'Username:'), m('br'), inputName()]),
-              m('.extra', [m('label', 'Password:'), m('br'), inputPassword()]),
-              m('.extra', [m('label', 'Url:'), m('br'), inputUrl()]),
-              linkOptions('hide'),
-              buttonLogin(),
-              textError(),
-            ]
-            : [logo(), inputPassword(), linkOptions('show'), buttonLogin(), textError()]
+              m('h1', 'RetroShare'),
+              m('p', 'Connect to your node'),
+            ]),
+            m('.login-fields', [
+              withOptions && field('username', 'Username', inputName()),
+              withOptions
+                ? field('password', 'Password', inputPassword('Enter your password'))
+                : inputPassword('Password'),
+              withOptions && field('url', 'Node URL', inputUrl()),
+            ]),
+            optionsButton(),
+            buttonLogin(),
+            textError(),
+          ]
         )
       );
     },

@@ -1,0 +1,35 @@
+@use '../abstracts' as *;
+
+table tr.table-branch {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+
+  > td { padding: 0; border: 0; background: transparent; }
+}
+
+.table-branch__grid {
+  display: grid;
+  grid-template-rows: 1fr;
+  animation: branch-in var(--motion-enter) var(--ease-out) backwards;
+
+  > div { min-height: 0; overflow: hidden; }
+  table { width: 100%; margin: 0; padding: 0; }
+}
+
+.is-leaving > td > .table-branch__grid {
+  animation: branch-out var(--motion-exit) var(--ease-in) both;
+}
+
+@keyframes branch-in {
+  from { grid-template-rows: 0fr; opacity: 0; }
+  to { grid-template-rows: 1fr; opacity: 1; }
+}
+@keyframes branch-out { to { grid-template-rows: 0fr; opacity: 0; } }
+
+@include mobile {
+  table tr.table-branch,
+  table tr.table-branch > td { display: block; width: 100%; }
+  .table-branch__grid colgroup { display: none; }
+}

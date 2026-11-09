@@ -1,0 +1,35 @@
+// -----------------------------------------------------------------------------
+// Icons. See app/icon.js — one Phosphor sprite, referenced by <use>.
+// -----------------------------------------------------------------------------
+
+.icon {
+  // Sits on the text baseline at whatever size the surrounding type is, so an
+  // icon beside a label needs no per-site tuning. Explicit sizes come from the
+  // four steps below.
+  width: 1.15em;
+  height: 1.15em;
+  flex: none;
+  vertical-align: -0.19em;
+  fill: currentColor;
+}
+
+// The four sizes. Anything else is a bug.
+.icon--sm { width: 16px; height: 16px; }   // inline, buttons
+.icon--md { width: 19px; height: 19px; }   // sidebar, rows
+.icon--lg { width: 22px; height: 22px; }   // toolbars
+.icon--xl { width: 28px; height: 28px; }   // empty states
+
+.icon--spin { animation: icon-spin 1s linear infinite; }
+
+// Replaces Font Awesome's fa-rotate-* utilities.
+.icon--rot-90 { transform: rotate(90deg); }
+.icon--rot-180 { transform: rotate(180deg); }
+.icon--rot-270 { transform: rotate(270deg); }
+
+@keyframes icon-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon--spin { animation-duration: 2.4s; }
+}

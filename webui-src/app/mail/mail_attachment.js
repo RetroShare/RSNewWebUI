@@ -1,6 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
 const util = require('mail/mail_util');
+const widget = require('widgets');
 
 const Layout = () => {
   const files = [];
@@ -22,24 +23,15 @@ const Layout = () => {
     view: (v) => [
       m('.widget__heading', [
         m('h3', 'Attachments'),
-        m('.view-toggle', [
-          m(
-            '.mail-view',
-            {
-              onclick: () => (viewChanged = false),
-              style: { backgroundColor: viewChanged ? '#fff' : '#019DFF' },
-            },
-            m('i.fas.fa-mail-bulk')
-          ),
-          m(
-            '.attachment-view',
-            {
-              onclick: () => (viewChanged = true),
-              style: { backgroundColor: viewChanged ? '#019DFF' : '#fff' },
-            },
-            m('i.fas.fa-file')
-          ),
-        ]),
+        m(widget.Segmented, {
+          ariaLabel: 'Attachment view',
+          value: viewChanged ? 'files' : 'mails',
+          options: [
+            { id: 'mails', icon: 'mail-bulk', title: 'Group by message' },
+            { id: 'files', icon: 'file', title: 'List all files' },
+          ],
+          onSelect: (id) => (viewChanged = id === 'files'),
+        }),
       ]),
       m('.widget__body', [
         viewChanged

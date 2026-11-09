@@ -1,0 +1,92 @@
+@use '../abstracts' as *;
+
+.menu {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+
+  &__button {
+    @include btn-base;
+
+    box-sizing: border-box;
+    user-select: none;
+  }
+
+  &__button[aria-expanded='true'] {
+    border-color: var(--select-edge);
+    background: var(--select-soft);
+    color: var(--brand-deep);
+  }
+
+  &__caret {
+    display: inline-flex;
+    color: var(--ink-dim);
+
+    > .icon { width: var(--s3); height: var(--s3); }
+  }
+
+  &__panel {
+    @include tip-surface;
+
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    width: max-content;
+    min-width: min(var(--menu-width), calc(100vw - var(--s5)));
+    max-width: calc(100vw - var(--s5));
+    padding: var(--s1);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  &__item {
+    @include btn-base;
+
+    justify-content: flex-start;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    box-shadow: none;
+    text-align: left;
+    white-space: normal;
+
+    &:hover { background: var(--sunken); }
+
+    &.is-selected {
+      background: var(--select-soft);
+      color: var(--brand-deep);
+      font-weight: var(--w-state);
+    }
+
+    &.is-danger { color: var(--down-ink); }
+  }
+
+  &__file {
+    position: absolute;
+    width: var(--stroke);
+    height: var(--stroke);
+    overflow: hidden;
+    opacity: 0;
+  }
+}
+
+.appearance-control > .menu__button .menu__caret { display: none; }
+
+@include mobile {
+  .menu__button .btn-text,
+  .menu__caret {
+    display: none;
+  }
+
+  .menu__button {
+    @include btn-square;
+
+    width: var(--control);
+    height: var(--control);
+    min-width: var(--control);
+    min-height: var(--control);
+  }
+}

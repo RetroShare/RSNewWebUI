@@ -1,0 +1,165 @@
+@use '../abstracts' as *;
+
+.group-list-loading { width: 100%; }
+.group-list-loading tbody tr { cursor: default; }
+.group-list-loading > .loading-state { padding: var(--s3) var(--s2); }
+.group-list-error {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  padding: var(--s4);
+  color: var(--down-ink);
+  background: var(--down-bg);
+  border: var(--stroke) solid var(--down-line);
+  border-radius: var(--r-md);
+}
+.skeleton {
+  display: block;
+  height: var(--s3);
+  width: 70%;
+  border-radius: var(--r-sm);
+  background: var(--line-soft);
+  animation: skeleton-pulse var(--motion-loop) ease-in-out infinite alternate;
+
+  &--mark { width: var(--s5); height: var(--s5); flex: none; }
+  &--name { width: min(60%, var(--picker-width)); }
+}
+@keyframes skeleton-pulse { to { opacity: 0.4; } }
+
+// -----------------------------------------------------------------------------
+// The group list.
+//
+// Boards, Forums and Channels share the same group list.
+// -----------------------------------------------------------------------------
+
+.group-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  thead tr {
+    border-bottom: 1px solid var(--line);
+  }
+
+  th {
+    padding: var(--s2);
+    color: var(--ink-dim);
+    //  The same size as the rows it names. At --t-label it read as a caption
+    //  rather than as the head of the column.
+    font-size: var(--t-row);
+    font-weight: var(--w-label);
+    text-align: left;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--line-soft);
+    cursor: pointer;
+    transition: background-color .15s ease;
+  }
+
+  tbody tr:hover {
+    background-color: var(--ground);
+  }
+
+  tr.hidden {
+    display: none;
+  }
+
+  //  The base table stylesheet centres cells. A list of names reads down its
+  //  left edge.
+  td {
+    padding: var(--s3) var(--s2);
+    font-size: var(--t-row);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  //  The flex box is inside the cell, never the cell itself: a flex `td` drops
+  //  out of the table's columns and the header stops lining up with the rows.
+  .group-row__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    min-width: 0;
+  }
+
+  .group-row__mark {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--s5);
+    height: var(--s5);
+    border-radius: var(--r-sm);
+    //  Same tint as a selected rail item. --select-faint sat at 1.05:1 against
+    //  the row and read as nothing.
+    background: var(--select-soft);
+    color: var(--brand-deep);
+  }
+
+  .group-row__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .group-row__title {
+    text-decoration: none;
+    overflow: hidden;
+    color: var(--ink);
+    font-weight: var(--w-label);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:focus-visible {
+      outline: var(--control-inset) solid var(--select-edge);
+      outline-offset: var(--stroke);
+    }
+  }
+
+  /* One line of it. The full text is on the group's own page. */
+  .group-row__desc {
+    overflow: hidden;
+    color: var(--ink-dim);
+    font-size: var(--t-meta);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  //  Same ink as Last post beside it: both are facts about the group, not the
+  //  group's name.
+  .group-row__posts {
+    width: var(--group-count-column);
+    color: var(--ink-dim);
+    font-size: var(--t-meta);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .group-row__activity {
+    width: var(--group-date-column);
+    color: var(--ink-dim);
+    font-size: var(--t-meta);
+    white-space: nowrap;
+  }
+}
+
+/* Two columns is all a phone fits. The count goes; the date stays, since it is
+ * what tells you whether the group is alive. */
+@media (max-width: 700px) {
+  .group-table {
+    table-layout: fixed;
+
+    td { padding: var(--s2); }
+
+    .group-row__posts { display: none; }
+    .group-row__activity {
+      width: calc(var(--s6) * 3);
+      font-size: var(--t-label);
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .group-row__inner { gap: var(--s2); }
+  }
+}

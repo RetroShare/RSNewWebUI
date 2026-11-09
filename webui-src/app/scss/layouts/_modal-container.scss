@@ -3,38 +3,105 @@
 #modal-container {
   display: none;
   position: fixed;
+  inset: 0;
   z-index: 1300;
-  height: 100%;
-  top: 0;
-  left: 0;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.2);
+  height: 100%;
+  background: transparent;
+}
+
+dialog.popup-dialog {
+  padding: max(var(--s3), env(safe-area-inset-top)) max(var(--s3), env(safe-area-inset-right)) max(var(--s3), env(safe-area-inset-bottom)) max(var(--s3), env(safe-area-inset-left));
+  background: var(--overlay);
+  overflow: hidden;
+
+  &[open] { display: flex; align-items: center; justify-content: center; }
+
+  > .modal-content {
+    position: relative;
+    inset: auto;
+    margin: 0;
+    flex: 0 1 auto;
+    max-width: 100%;
+    max-height: 100%;
+  }
 }
 
 .modal-content {
   position: absolute;
-  color: #555;
-  width: 40%;
-  min-height: 10rem;
-  height: max-content;
-  padding: 1.5rem;
   inset: 0;
   margin: auto;
-  background-color: white;
-  border-radius: 0.5rem;
-  animation: fadein 0.5s;
-  @include flex(column);
-  & button:last-child {
-    margin-top: auto;
-  }
-  & .close-btn {
+  box-sizing: border-box;
+  width: min(var(--modal-width), calc(100% - var(--s6)));
+  max-height: calc(100% - var(--s6));
+  height: max-content;
+  display: flex;
+  flex-direction: column;
+  border: var(--stroke) solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  color: var(--ink-body);
+  overflow: hidden;
+
+  padding: var(--s5);
+
+  .close-btn,
+  .modal__close {
     position: absolute;
-    right: 1.5rem;
+    top: var(--s3);
+    right: var(--s3);
+    z-index: 1;
   }
-  // Remove default widget padding
+
   & .widget {
     padding: 0;
   }
+}
+
+.modal-content.modal--titled {
+  padding: 0;
+}
+
+.modal__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  flex: none;
+  padding: var(--s5) calc(var(--s5) + var(--glyph)) var(--s4) var(--s5);
+  background: var(--surface);
+}
+
+.modal__title {
+  min-width: 0;
+  margin: 0;
+  font-size: var(--t-title);
+  font-weight: var(--w-body);
+  line-height: 1.15;
+  text-wrap: balance;
+  color: var(--ink);
+}
+
+.modal__body {
+  flex: 0 1 auto;
+  min-height: 0;
+  padding: 0 var(--s5) var(--s5);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  > .widget { height: auto; min-height: 0; }
+}
+
+.modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s2);
+  flex: none;
+  padding-top: var(--s5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-content { animation: none; }
 }
 
 .modal-content.location-details-modal {
@@ -54,20 +121,20 @@
   min-height: 0;
   overflow: hidden;
 
-  h3 {
-    margin: 0 2.5rem 0.75rem 0;
-    color: #1e293b;
-  }
-
   .location-detail-tabs {
     overflow-x: auto;
     margin: 0 -1.5rem;
     padding: 0 1rem;
 
-    .tab-btn {
-      flex: 0 0 auto !important;
-      margin: 0 !important;
-    }
+  }
+
+  //  A section heading inside a tab, not a second title: h4 is --t-h2 (21px)
+  //  globally, which competes with the modal's own head.
+  h4 {
+    margin: var(--s4) 0 var(--s2);
+    font-size: var(--t-row);
+    font-weight: var(--w-label);
+    color: var(--ink);
   }
 
   .location-detail-content {
@@ -84,13 +151,13 @@
   }
 
   .info-label {
-    color: #64748b;
-    font-weight: 600;
+    color: var(--ink-dim);
+    font-weight: var(--w-label);
   }
 
   .info-value {
     min-width: 0;
-    color: #1e293b;
+    color: var(--ink);
     overflow-wrap: anywhere;
   }
 
@@ -99,8 +166,8 @@
     box-sizing: border-box;
     overflow: auto;
     padding: 0.75rem;
-    border: 1px solid #cbd5e1;
-    background: #f8fafc;
+    border: 1px solid var(--line);
+    background: var(--ground);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
@@ -111,8 +178,8 @@
     margin-bottom: 0;
     overflow: auto;
     padding: 0.75rem;
-    border: 1px solid #cbd5e1;
-    background: #f8fafc;
+    border: 1px solid var(--line);
+    background: var(--ground);
     white-space: pre;
   }
 }
@@ -127,11 +194,18 @@
     right: 1rem;
   }
 
+  //  The head and body carry the padding on a titled modal, so the phone
+  //  layout has to reach them rather than the box.
+  .modal-content.modal--titled {
+    .modal__head { padding: var(--s4) calc(var(--s4) + var(--glyph)) var(--s3) var(--s4); }
+    .modal__body { padding: 0 var(--s4) var(--s4); }
+    .modal__title { font-size: var(--t-h2); }
+  }
+
   .modal-content.location-details-modal {
     width: calc(100% - 1rem);
     height: max-content;
     max-height: calc(100dvh - 5rem);
-    padding: 1rem;
   }
 
   .location-details-dialog {
@@ -139,11 +213,6 @@
       margin: 0 -1rem;
       padding: 0 0.5rem;
 
-      .tab-btn {
-        padding-right: 0.75rem;
-        padding-left: 0.75rem;
-        font-size: 0.85rem;
-      }
     }
 
     .info-grid {
@@ -158,7 +227,83 @@
     .known-addresses-list {
       height: 8rem;
       max-height: 20vh;
-      font-size: 0.75rem;
+      font-size: var(--t-label);
     }
   }
+}
+
+/* == Confirmation =========================================================
+   One question, two answers. Narrower than a form modal, because a decision
+   should not look like a task. */
+
+.modal-content.modal--confirm {
+  width: min(420px, calc(100% - 2rem));
+}
+
+.modal__confirm-text {
+  margin: 0;
+  font-size: var(--t-body);
+  line-height: 1.5;
+  color: var(--ink-body);
+}
+
+.modal__confirm-hint {
+  margin: var(--s2) 0 0;
+  font-size: var(--t-meta);
+  color: var(--ink-dim);
+}
+
+/* A sentence under the title saying what to do — what a two-word title
+   cannot. Not a second heading: it sits in the head, at row size, dim. */
+.modal__lead {
+  margin: 0;
+  font-size: var(--t-row);
+  line-height: 1.45;
+  color: var(--ink-dim);
+}
+
+/* Forms rendered straight into a modal body: one column, even spacing, and
+   the foot spanning the full width at the bottom. */
+.modal-content.modal--titled .modal__body > form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+
+  label {
+    font-size: var(--t-row);
+    font-weight: var(--w-label);
+    color: var(--ink-body);
+  }
+
+  input[type='text'],
+  input[type='password'],
+  input[type='number'],
+  textarea,
+  select {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+}
+
+/* A label sitting on its own field. The pair is tight, so the gap between two
+   fields (--s4, from the form) reads as the separation and the gap inside one
+   (--s1) reads as attachment -- otherwise a label floats equidistant between
+   the field it names and the one above it. */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+/* A checkbox names itself, so the label goes beside it and takes the
+   normal body weight -- it is an option, not a field heading. */
+.form-field--check {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s2);
+
+  > label { font-weight: var(--w-body); cursor: pointer; }
+  > input[type='checkbox'] { flex: none; margin: 0; }
 }

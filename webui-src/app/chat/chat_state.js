@@ -1,5 +1,6 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const toast = require('toast');
 
 // **************** utility functions ********************
 
@@ -71,12 +72,14 @@ function getNicknameColor(id, name) {
   return `hsl(${hue}, 75%, 35%)`;
 }
 
+//  The tunnel light, in the product's own status colours rather than the
+//  Tailwind palette these were written in.
 function getStatusColor(status) {
   switch (status) {
-    case 1: return '#eab308'; // Yellow
-    case 2: return '#22c55e'; // Green
-    case 3: return '#ef4444'; // Red
-    default: return '#94a3b8'; // Grey
+    case 1: return 'var(--warn-ink)';
+    case 2: return 'var(--up-ink)';
+    case 3: return 'var(--down-ink)';
+    default: return 'var(--ink-faint)';
   }
 }
 
@@ -170,7 +173,12 @@ function openChatImageViewer(src) {
   closeButton.className = 'chat-image-viewer__close';
   closeButton.type = 'button';
   closeButton.setAttribute('aria-label', 'Close image preview');
-  closeButton.innerHTML = '&times;';
+  //  The sprite glyph, not the `&times;` text character -- every other close
+  //  in the product is `icon('times')`, and a text multiplication sign sets
+  //  its own weight and baseline.
+  closeButton.innerHTML =
+    '<svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false">' +
+    '<use href="#i-times"></use></svg>';
   closeButton.onclick = (event) => {
     event.stopPropagation();
     closeChatImageViewer();
@@ -277,16 +285,6 @@ function renderChatMessage(rawText) {
         parts.push(
           m('img.chat-embedded-image', {
             src,
-            style: {
-              maxWidth: '100%',
-              maxHeight: '300px',
-              borderRadius: '0.375rem',
-              marginTop: '0.25rem',
-              marginBottom: '0.25rem',
-              display: 'block',
-              cursor: 'pointer',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            },
             onclick: () => openChatImageViewer(src),
           })
         );
@@ -311,16 +309,6 @@ function renderChatMessage(rawText) {
     const src = rawText.trim();
     return m('img.chat-embedded-image', {
       src,
-      style: {
-        maxWidth: '100%',
-        maxHeight: '300px',
-        borderRadius: '0.375rem',
-        marginTop: '0.25rem',
-        marginBottom: '0.25rem',
-        display: 'block',
-        cursor: 'pointer',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-      },
       onclick: () => openChatImageViewer(src),
     });
   }
@@ -345,20 +333,7 @@ function renderFormattedMessageText(text) {
     if (currentQuoteLines.length > 0) {
       const quoteText = currentQuoteLines.join('\n');
       elements.push(
-        m('blockquote.chat-quote-block', {
-          style: {
-            borderLeft: '3px solid #3b82f6',
-            backgroundColor: '#f8fafc',
-            color: '#475569',
-            padding: '0.35rem 0.65rem',
-            margin: '0.35rem 0',
-            borderRadius: '0 0.375rem 0.375rem 0',
-            fontSize: '0.9em',
-            fontStyle: 'italic',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
-          }
-        }, renderTextWithEmoji(quoteText))
+        m('blockquote.chat-quote-block', renderTextWithEmoji(quoteText))
       );
       currentQuoteLines = [];
     }
@@ -635,28 +610,17 @@ const Message = () => {
       const datetime = new Date(msg.sendTime * 1000).toLocaleTimeString();
       if (msg.isSystem) {
         const text = msg.msg || msg.message;
-        const isSecured = text.includes('secured') || text.includes('talk');
-        const bgColor = isSecured ? '#fffbeb' : '#f8fafc';
-        const borderColor = isSecured ? '#fcd34d' : '#cbd5e1';
-        const textColor = isSecured ? '#b45309' : '#475569';
-        const borderStyle = isSecured ? 'solid' : 'dashed';
+        //  A tunnel that has come up is worth noticing; one still negotiating
+        //  is not. Two states, so two classes -- the colours live in the
+        //  stylesheet with the rest of chat.
+        const tone = (text.includes('secured') || text.includes('talk')) ? 'is-secured' : 'is-pending';
 
         return m(
           '.message.incoming',
           [
             m('span.datetime', datetime),
             m('span.username', 'Chat status'),
-            m('.messagetext', {
-              style: {
-                backgroundColor: bgColor,
-                border: `1px ${borderStyle} ${borderColor}`,
-                color: textColor,
-                padding: '0.5rem 0.75rem',
-                borderRadius: '0.375rem',
-                display: 'inline-block',
-                marginTop: '0.25rem',
-              }
-            }, text)
+            m('.messagetext.chat-system-note', { class: tone }, text)
           ]
         );
       }
@@ -1122,7 +1086,9 @@ const ChatLobbyModel = {
     this.stopParticipantPolling();
     this.lastLobbyId = currentlobbyid;
     ChatRoomsModel.unreadCount[currentlobbyid] = 0;
-    ChatHubState.showParticipants = false;
+    //  Re-seed rather than close: on a wide screen the column is part of
+    //  the layout, so switching rooms should not make it disappear.
+    ChatHubState.showParticipants = window.innerWidth >= 900;
     ChatHubState.attachedImage = null;
 
     const finishLoad = (detail) => {
@@ -1231,7 +1197,9 @@ const ChatLobbyModel = {
           if (onsuccess) onsuccess();
         } else {
           console.error('[RS] Failed to send chat message:', data);
-          alert('Failed to send chat message. The image/payload exceeds RetroShare max chat packet size.');
+          toast.error('Message not sent', {
+            description: 'The image exceeds the maximum chat packet size. Try a smaller one.',
+          });
           if (onsuccess) onsuccess();
         }
       }
@@ -1270,13 +1238,16 @@ const ChatHubState = {
   mutedUsers: new Set(),
   activeMenu: null,
   //  Phone only: the participants column is shown as a sheet over the messages.
-  showParticipants: false,
+  //  null until the conversation opens and seeds it from the viewport.
+  showParticipants: null,
   showAttachModal: false,
   attachPath: '',
   attachBrowseHint: false,
   isHashing: false,
   hashingError: '',
   attachedImage: null,
+  //  Per room, because the hub switches rooms without unmounting the composer.
+  drafts: {},
   showEmojiPicker: false,
   emojiSearch: '',
   emojiCategory: 'Smileys',
@@ -1346,9 +1317,15 @@ module.exports = {
 function autoResizeTextarea(el) {
   if (!el) return;
   el.style.height = 'auto';
-  const maxHeight = 160;
   const scrollHeight = el.scrollHeight;
-  const newHeight = Math.min(Math.max(scrollHeight, 40), maxHeight);
+  //  Both bounds come from the stylesheet, not from here. A number written
+  //  inline outranks every rule, so the row could not then be aligned from CSS
+  //  at all -- and a ceiling that disagrees with the CSS clip cuts text off
+  //  instead of scrolling it.
+  const style = getComputedStyle(el);
+  const floor = parseFloat(style.minHeight) || 0;
+  const maxHeight = parseFloat(style.maxHeight) || Infinity;
+  const newHeight = Math.min(Math.max(scrollHeight, floor), maxHeight);
   el.style.height = newHeight + 'px';
   el.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden';
 }

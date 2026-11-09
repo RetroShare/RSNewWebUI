@@ -103,6 +103,8 @@ It automatically uses `build.bat` on Windows and `build.sh` on macOS or Linux.
 
 `npm run lint` checks the source files and does not require `webui/` to exist.
 
+See [the design system](docs/design-system.md) for UI conventions and themes.
+
 To rebuild CSS whenever an SCSS file changes, run:
 
 ```sh

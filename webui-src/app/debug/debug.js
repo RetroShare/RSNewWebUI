@@ -1,5 +1,7 @@
 const m = require('mithril');
 const rs = require('rswebui');
+const icon = require('icon');
+const widget = require('widgets');
 
 //  A page for what is otherwise invisible from a phone: which build this is,
 //  what the core answers, and what the API is doing from this browser --
@@ -49,37 +51,30 @@ const Debug = () => {
 
       return m('.debug-page', [
         // Page Header
-        m('.debug-header', [
-          m('.debug-header__title', [
-            m('.debug-header__icon', m('i.fas.fa-bug')),
-            m('.debug-header__text', [
-              m('h1', 'Debug & Diagnostics'),
-              m('p', 'Real-time build information, API performance metrics, and connection health.'),
-            ]),
-          ]),
-          m('.debug-header__actions', [
+        m(widget.PageHead, {
+          mark: 'bug',
+          title: 'Debug & Diagnostics',
+          lead: 'Real-time build information, API performance metrics, and connection health.',
+          actions: [
             m('button.debug-btn[type=button]', {
               onclick: () => window.location.reload(true),
-              'aria-label': 'Reload Web UI',
               title: 'Force reload the Web UI bundle',
-            }, [m('i.fas.fa-sync-alt'), m('span', ['Reload', m('span.debug-btn__suffix', ' Web UI')])]),
+            }, [icon('sync-alt'), m('span', ['Reload', m('span.debug-btn__suffix', ' Web UI')])]),
             m('button.debug-btn[type=button]', {
               onclick: loadCoreVersion,
-              'aria-label': 'Ping Core',
               title: 'Ping the RetroShare core for version & latency',
-            }, [m('i.fas.fa-stopwatch'), m('span', ['Ping', m('span.debug-btn__suffix', ' Core')])]),
+            }, [icon('stopwatch'), m('span', ['Ping', m('span.debug-btn__suffix', ' Core')])]),
             m('button.debug-btn.debug-btn--danger[type=button]', {
               onclick: () => rs.resetApiStats(),
-              'aria-label': 'Reset Stats',
               title: 'Reset API counters and latency tracking',
-            }, [m('i.fas.fa-eraser'), m('span', ['Reset', m('span.debug-btn__suffix', ' Stats')])]),
-          ]),
-        ]),
+            }, [icon('eraser'), m('span', ['Reset', m('span.debug-btn__suffix', ' Stats')])]),
+          ],
+        }),
 
         // KPI Summary Cards
         m('.debug-kpi-grid', [
           m('.debug-kpi-card', [
-            m('.debug-kpi-card__icon.debug-kpi-card__icon--blue', m('i.fas.fa-server')),
+            m('.debug-kpi-card__icon.debug-kpi-card__icon--blue', icon('server')),
             m('.debug-kpi-card__body', [
               m('.debug-kpi-card__label', 'Core Latency'),
               m('.debug-kpi-card__value', coreVersion ? `${coreVersionAt} ms` : '-'),
@@ -90,7 +85,7 @@ const Debug = () => {
             ]),
           ]),
           m('.debug-kpi-card', [
-            m('.debug-kpi-card__icon.debug-kpi-card__icon--purple', m('i.fas.fa-network-wired')),
+            m('.debug-kpi-card__icon.debug-kpi-card__icon--purple', icon('network-wired')),
             m('.debug-kpi-card__body', [
               m('.debug-kpi-card__label', 'Active Requests'),
               m('.debug-kpi-card__value', s.pending),
@@ -98,7 +93,7 @@ const Debug = () => {
             ]),
           ]),
           m('.debug-kpi-card', [
-            m('.debug-kpi-card__icon.debug-kpi-card__icon--green', m('i.fas.fa-comment-dots')),
+            m('.debug-kpi-card__icon.debug-kpi-card__icon--green', icon('comment-dots')),
             m('.debug-kpi-card__body', [
               m('.debug-kpi-card__label', 'Last sendChat'),
               m('.debug-kpi-card__value', s.lastSend ? `${s.lastSend.ms} ms` : 'None yet'),
@@ -106,7 +101,7 @@ const Debug = () => {
             ]),
           ]),
           m('.debug-kpi-card', [
-            m('.debug-kpi-card__icon.debug-kpi-card__icon--amber', m('i.fas.fa-satellite-dish')),
+            m('.debug-kpi-card__icon.debug-kpi-card__icon--amber', icon('satellite-dish')),
             m('.debug-kpi-card__body', [
               m('.debug-kpi-card__label', 'Event Stream'),
               m('.debug-kpi-card__value', rs.formatBytes(s.eventsBytes)),
@@ -119,7 +114,7 @@ const Debug = () => {
         m('.debug-grid-2col', [
           m('.debug-section', [
             m('.debug-section__header', [
-              m('i.fas.fa-cube'),
+              icon('cube'),
               m('h3', 'Build & Environment'),
             ]),
             m('.debug-info-list', [
@@ -158,7 +153,7 @@ const Debug = () => {
 
           m('.debug-section', [
             m('.debug-section__header', [
-              m('i.fas.fa-stream'),
+              icon('stream'),
               m('h3', 'Event Stream & Connection'),
             ]),
             m('.debug-info-list', [
@@ -180,7 +175,7 @@ const Debug = () => {
               ]),
             ]),
             m('.debug-callout', [
-              m('i.fas.fa-info-circle'),
+              icon('info-circle'),
               m('p', 'The event stream carries every real-time event from the core over a single persistent HTTP channel. Browsers typically keep up to 6 simultaneous connections per host, allowing the remaining 5 to handle concurrent API requests.'),
             ]),
           ]),
@@ -189,7 +184,7 @@ const Debug = () => {
         // API Performance Section
         m('.debug-section', [
           m('.debug-section__header', [
-            m('i.fas.fa-tachometer-alt'),
+            icon('tachometer-alt'),
             m('h3', 'API Performance & Request History'),
           ]),
 
@@ -201,7 +196,7 @@ const Debug = () => {
               ]),
               s.slowest.length === 0
                 ? m('.debug-empty', [
-                    m('i.fas.fa-check-circle'),
+                    icon('check-circle'),
                     m('p', 'No slow requests recorded yet.'),
                   ])
                 : m('.debug-table-wrap', [
@@ -227,7 +222,7 @@ const Debug = () => {
               ]),
               s.recent.length === 0
                 ? m('.debug-empty', [
-                    m('i.fas.fa-inbox'),
+                    icon('inbox'),
                     m('p', 'No requests recorded yet.'),
                   ])
                 : m('.debug-table-wrap', [

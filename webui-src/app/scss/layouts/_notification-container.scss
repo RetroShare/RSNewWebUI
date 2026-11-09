@@ -1,5 +1,6 @@
+//  The toast stack mounts here (app/toast.js). Positioning belongs to
+//  `.toasts` in components/_toast.scss; this element is only the mount point
+//  and must not create a stacking or layout context of its own.
 #notification-container {
-  position: absolute;
-  bottom: 0;
-  right: 0;
+  position: static;
 }

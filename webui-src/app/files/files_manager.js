@@ -3,6 +3,8 @@ const rs = require('rswebui');
 const widget = require('widgets');
 const futil = require('files/files_util');
 const cutil = require('config/config_util');
+const icon = require('icon');
+const toast = require('toast');
 
 const shareManagerInfo = `
   This is a list of shared folders. You can add and remove folders using the buttons at the bottom.
@@ -12,17 +14,13 @@ const shareManagerInfo = `
 
 const accessTooltipText = [
   'Manage Control Access for Directories, The three options are for the following purpose.',
-  m('i.fas.fa-search'),
+  icon('search'),
   ' Directory can be searched anonymously, ',
-  m('i.fas.fa-download'),
+  icon('download'),
   ' Directory can be accessed anonymously, ',
-  m('i.fas.fa-eye'),
+  icon('eye'),
   ' Directory can be browsed by designated friends',
 ];
-
-const addNewDirInfo = `For Security reasons, Browsers don't allow to read directories so Please
-  copy and paste the absolute path of the directory which you want to share.
-`;
 
 let sharedDirArr = [];
 let isEditDisabled = true;
@@ -51,7 +49,7 @@ const AddSharedDirForm = () => {
     // check if newDirPath already exists
     const sharedDirArrExists = sharedDirArr.find((item) => item.filename === newDirPath);
     if (sharedDirArrExists) {
-      alert('The path you entered already exists.');
+      toast.warning('That path is already shared');
       return;
     }
     const newSharedDir = {
@@ -65,38 +63,27 @@ const AddSharedDirForm = () => {
     rs.rsJsonApiRequest('/rsFiles/addSharedDirectory', { ...newSharedDir }).then((res) => {
       if (res.body.retval) {
         loadSharedDirectories();
+        widget.closePopupMessage();
       }
-      widget.popupMessage(
-        m('.widget', [
-          m('.widget__heading', m('h3', 'Add Shared Directory')),
-          m(
-            '.widget__body',
-            m(
-              'p',
-              res.body.retval
-                ? 'Successfully Added Directory to Shared List'
-                : 'Error in Adding Directory to Shared List'
-            )
-          ),
-        ])
-      );
+      toast.result(res.body.retval,
+        'Directory shared',
+        'The directory could not be added to the shared list.');
     });
   }
 
   return {
     view: () =>
-      m('.widget', [
-        m('.widget__heading', m('h3', 'Add New Directory')),
-        m('form.widget__body.share-manager__form', { onsubmit: addNewSharedDirectory }, [
-          m('blockquote.info', addNewDirInfo),
-          m('.share-manager__form_input', [
-            m('label', 'Enter absolute directory path :'),
-            m('input[type=text]', {
-              value: newDirPath,
-              oninput: (e) => (newDirPath = e.target.value),
-            }),
-          ]),
-          m('button[type=submit]', 'Add Directory'),
+      m('form.share-manager__form', { onsubmit: addNewSharedDirectory }, [
+        m('.share-manager__form_input', [
+          m('label', 'Enter absolute directory path :'),
+          m('input[type=text]', {
+            value: newDirPath,
+            oninput: (e) => (newDirPath = e.target.value),
+          }),
+        ]),
+        m('.modal__foot', [
+          m('button[type=button]', { onclick: () => widget.closePopupMessage() }, [icon('times'), 'Cancel']),
+          m('button[type=submit]', 'Add directory'),
         ]),
       ]),
   };
@@ -112,7 +99,7 @@ const ManageVisibility = () => {
     view: (v) => {
       const { parentGroups } = v.attrs;
       return m('.widget', [
-        m('.widget__heading', m('h3', 'Manage Visibility')),
+
         m('form.widget__body', { onsubmit: handleSubmit }, [
           Object.keys(futil.RsNodeGroupId).map((groupId) =>
             m('div.manage-visibility', [
@@ -200,21 +187,21 @@ const ShareDirTable = () => {
                           sharedFlags[flag] = !sharedFlags[flag];
                           sharedDirArr[index].shareflags = futil.calcShareFlagsValue(sharedFlags);
                         },
-                        style: isEditDisabled && { color: '#7D7D7D' },
+                        class: isEditDisabled ? 'is-disabled' : '',
                       },
-                      m(
+                      (
                         // check the flag type then if its value is true then only render the icon
                         flag === 'isAnonymousSearch'
                           ? sharedFlags[flag]
-                            ? 'i.fas.fa-search'
-                            : 'span'
+                            ? icon('search')
+                            : m('span')
                           : flag === 'isAnonymousDownload'
                             ? sharedFlags[flag]
-                              ? 'i.fas.fa-download'
-                              : 'span'
+                              ? icon('download')
+                              : m('span')
                             : sharedFlags[flag]
-                              ? 'i.fas.fa-eye'
-                              : 'span'
+                              ? icon('eye')
+                              : m('span')
                       )
                     ),
                   ];
@@ -223,10 +210,13 @@ const ShareDirTable = () => {
               m(
                 'td',
                 {
-                  // since this is not an input element, manually change color
-                  style: { color: isEditDisabled ? '#6D6D6D' : 'black' },
+                  //  Not an input, so the disabled look has to be asked for.
+                  class: isEditDisabled ? 'is-disabled' : '',
                   onclick: () =>
-                    !isEditDisabled && widget.popupMessage(m(ManageVisibility, { parentGroups })),
+                    !isEditDisabled && widget.popupMessage(m(ManageVisibility, { parentGroups }), '', {
+                      title: 'Visibility',
+                      lead: 'Choose which groups of friends can see this directory.',
+                    }),
                 },
                 parentGroups.length === 0
                   ? 'All Friend nodes'
@@ -256,12 +246,12 @@ const ShareManager = () => {
           m('blockquote.info', shareManagerInfo),
           m(ShareDirTable),
           m('.share-manager__actions', [
-            m('button', { onclick: () => widget.popupMessage(m(AddSharedDirForm)) }, 'Add New'),
-            m(
-              'button',
-              { onclick: () => (isEditDisabled = !isEditDisabled) },
-              isEditDisabled ? 'Edit' : 'Apply and Close'
-            ),
+            m('button.is-primary', { onclick: () => widget.popupMessage(m(AddSharedDirForm), '', {
+              title: 'Share a Directory',
+              lead: 'Browsers cannot read a directory, so paste its absolute path.',
+            }) }, [icon('plus'), 'Add New']),
+            m('button.is-primary',
+              { onclick: () => (isEditDisabled = !isEditDisabled) }, [icon('pen'), isEditDisabled ? 'Edit' : 'Apply and Close']),
           ]),
         ]),
       ]);

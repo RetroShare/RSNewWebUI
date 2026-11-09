@@ -39,9 +39,33 @@ function renderPolygon(shapePoints, x, y, angle, shapeAngle, size, color) {
   return `<polygon points="${pointsStr}" fill="${color}" transform="translate(${x}, ${y}) rotate(${angle}) translate(${halfSize}, ${halfSize}) rotate(${shapeAngle})"/>`;
 }
 
+//  The renderer reads 18 hex digits straight out of the value it is given, so
+//  the value has to BE a hash. A GXS identity id is 32 hex chars and works; a
+//  PGP node id is 16, fell under the threshold, and was replaced with a
+//  constant -- which is why every node in the network list drew the same
+//  identicon. Expand anything short into 32 hex chars instead, deterministically.
+//
+//  FNV-1a, four times with different offsets. Not cryptographic, and it does
+//  not need to be: it only has to spread short ids across the sprite space.
+function expandSeed(value) {
+  const OFFSETS = [0x811c9dc5, 0x01000193, 0x9e3779b9, 0x85ebca6b];
+  return OFFSETS.map((offset) => {
+    let h = offset;
+    for (let i = 0; i < value.length; i++) {
+      h ^= value.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h.toString(16).padStart(8, '0');
+  }).join('');
+}
+
 function toSvg(hash, width) {
-  if (!hash || hash.length < 18) {
+  if (!hash) {
     hash = '00000000000000000000000000000000';
+  } else if (hash.length < 18 || !/^[0-9a-f]+$/i.test(hash)) {
+    //  Long, already-hex ids (GXS) pass through untouched, so every identicon
+    //  the product has ever drawn for a contact stays exactly as it is.
+    hash = expandSeed(hash);
   }
 
   const csh = parseInt(hash.substr(0, 1), 16);
