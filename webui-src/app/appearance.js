@@ -1,4 +1,5 @@
 const KEY = 'rs.webui.appearance';
+const storage = require('preferences');
 const preferences = ['system', 'light', 'dark'];
 
 function getPreference() {
@@ -9,11 +10,7 @@ function getPreference() {
 function setPreference(value) {
   const preference = preferences.includes(value) ? value : 'system';
   document.documentElement.dataset.appearance = preference;
-  try {
-    localStorage.setItem(KEY, preference);
-  } catch (_error) {
-    // The choice still works when storage is blocked.
-  }
+  storage.write(KEY, preference);
 }
 
 module.exports = { getPreference, setPreference };

@@ -315,6 +315,13 @@ building another overlay. Set native `disabled` while an action is pending.
 
 ## Responsive behavior
 
+Display preferences persist in local storage through `preferences.js`, with
+validated defaults and safe fallback when storage is blocked. Remember Boards
+and Mail layouts, Forums mode/divider, Mail sorting, and graph spacing, names
+and friendship level. Keep searches, pagination, selected identities/posts and
+temporary form state out of these display preferences. Mobile layout rules
+still take priority over saved desktop modes.
+
 - Phone navigation stays in the bottom bar; secondary destinations are in More.
   Keep six equal navigation slots. Mobile appearance switching sits in the top
   strip, just left of the friends-online indicator, not in the bottom bar.

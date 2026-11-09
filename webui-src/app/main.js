@@ -1,5 +1,6 @@
 const m = require('mithril');
 const brandLogo = require('brand_logo');
+const preferences = require('preferences');
 
 //  Bumped at every change of the web UI; shown in the rail, the phone header
 //  and the Debug page.
@@ -103,25 +104,11 @@ function navigationContent(item) {
 const NAV_KEY = 'rs.webui.nav.collapsed';
 
 function readCollapsed() {
-  try {
-    const stored = window.localStorage.getItem(NAV_KEY);
-    if (stored !== null) return stored === 'true';
-  } catch (e) {
-    // Private windows and blocked site data throw on access. Fall through to
-    // the width default rather than failing to render the sidebar.
-  }
-  // No stored choice: expanded on a wide screen, a rail below it. The old
-  // default was collapsed always, which hid all twelve destination names
-  // behind unlabelled icons on a first run.
-  return window.innerWidth < 1280;
+  return preferences.read(NAV_KEY, window.innerWidth < 1280);
 }
 
 function writeCollapsed(value) {
-  try {
-    window.localStorage.setItem(NAV_KEY, String(value));
-  } catch (e) {
-    // Not being able to remember the choice is not a reason to refuse it.
-  }
+  preferences.write(NAV_KEY, value);
 }
 
 const navbar = () => {

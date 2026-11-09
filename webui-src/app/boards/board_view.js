@@ -494,7 +494,7 @@ function BoardView() {
           m(
             '.posts',
             {
-              style: 'display:' + (bsubscribed ? 'block' : 'none'),
+              style: 'display:' + (bsubscribed || Data.loading.has(v.attrs.id) || Data.errors[v.attrs.id] ? 'block' : 'none'),
             },
             m('.posts__heading.board-posts-heading', [
               m('h3', 'Posts'),
@@ -520,6 +520,9 @@ function BoardView() {
                 }
               ) : null,
               items,
+              loading: Data.loading.has(v.attrs.id),
+              error: Data.errors[v.attrs.id],
+              onretry: () => util.updateDisplayBoards(v.attrs.id, undefined, true),
               voterIdentities,
               voterId,
               voterIdentitiesLoading,

@@ -685,31 +685,15 @@ const THREAD_SPLIT_MAX = 75;
 const THREAD_SPLIT_STEP = 5;
 const THREAD_SPLIT_DEFAULT = 45;
 const FORUM_VIEW_MODE_KEY = 'rs.webui.forums.view-mode';
-const FORUM_VIEW_MODES = new Set(['split', 'reader']);
-
-function readForumViewMode() {
-  try {
-    const mode = window.localStorage.getItem(FORUM_VIEW_MODE_KEY);
-    return FORUM_VIEW_MODES.has(mode) ? mode : 'split';
-  } catch (_) {
-    return 'split';
-  }
-}
-
-function saveForumViewMode(mode) {
-  if (!FORUM_VIEW_MODES.has(mode)) return;
-  try {
-    window.localStorage.setItem(FORUM_VIEW_MODE_KEY, mode);
-  } catch (_) {
-    // The view still changes when storage is blocked.
-  }
-}
+const preferences = require('preferences');
+const THREAD_SPLIT_KEY = 'rs.webui.forums.thread-split';
 
 const ForumView = () => {
   let ownId = '';
   let threadSearch = '';
-  let viewMode = readForumViewMode();
-  let threadSplit = THREAD_SPLIT_DEFAULT;
+  let viewMode = preferences.read(FORUM_VIEW_MODE_KEY, 'split', (mode) => ['split', 'reader'].includes(mode));
+  let threadSplit = preferences.read(THREAD_SPLIT_KEY, THREAD_SPLIT_DEFAULT,
+    (value) => Number.isFinite(value) && value >= THREAD_SPLIT_MIN && value <= THREAD_SPLIT_MAX);
   //  Threads start closed. Only what you open is in here.
   const expanded = new Set();
 
@@ -735,6 +719,7 @@ const ForumView = () => {
     const splitter = event.currentTarget;
     if (splitter.hasPointerCapture(event.pointerId)) {
       splitter.releasePointerCapture(event.pointerId);
+      preferences.write(THREAD_SPLIT_KEY, threadSplit);
     }
   };
 
@@ -746,6 +731,7 @@ const ForumView = () => {
     if (next === null) return;
     event.preventDefault();
     threadSplit = Math.max(THREAD_SPLIT_MIN, Math.min(THREAD_SPLIT_MAX, next));
+    preferences.write(THREAD_SPLIT_KEY, threadSplit);
     m.redraw();
   };
 
@@ -889,7 +875,7 @@ const ForumView = () => {
               ],
               onSelect: (mode) => {
                 viewMode = mode;
-                saveForumViewMode(mode);
+                preferences.write(FORUM_VIEW_MODE_KEY, mode);
               },
             }),
             m('button.forum-subscription-button.is-primary',

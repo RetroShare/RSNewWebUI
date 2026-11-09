@@ -6,6 +6,7 @@ const icon = require('icon');
 const { State } = require('network/network_state');
 const widget = require('widgets');
 const GraphCanvas = require('network/graph_canvas');
+const preferences = require('preferences');
 
 const NODE_LIMIT = 200;
 const GRAPH_CACHE_MS = 60000;
@@ -15,12 +16,13 @@ let edges = [];
 let positions = {};
 let loading = false;
 let error = '';
-let friendshipLevel = 1;
-let edgeLength = 105;
+let friendshipLevel = preferences.read('rs.webui.graph.friendship-level', 1, (value) => [1, 2].includes(value));
+let edgeLength = preferences.read('rs.webui.graph.spacing', 105,
+  (value) => Number.isFinite(value) && value >= SPACING_RANGE.min && value <= SPACING_RANGE.max);
 let zoom = 1;
 let search = '';
 let selectedId = '';
-let showNames = true;
+let showNames = preferences.read('rs.webui.graph.show-names', true);
 let loadedAt = 0;
 let loadToken = 0;
 let truncated = false;
@@ -140,7 +142,11 @@ const NetworkGraph = () => {
             'aria-label': 'Friendship level',
             value: friendshipLevel,
             disabled: loading,
-            onchange: (event) => { friendshipLevel = Number(event.target.value); loadGraph(); },
+            onchange: (event) => {
+              friendshipLevel = Number(event.target.value);
+              preferences.write('rs.webui.graph.friendship-level', friendshipLevel);
+              loadGraph();
+            },
           }, [m('option[value=1]', 'Direct friends'), m('option[value=2]', 'Friends of friends')]),
           m(widget.SearchField, {
             id: 'graph-peer-search', class: 'network-graph__search', label: 'Find peer', placeholder: 'Find peer', value: search,
@@ -167,6 +173,7 @@ const NetworkGraph = () => {
               'aria-label': 'Connection spacing', value: edgeLength,
               style: { '--range-progress': `${(edgeLength - SPACING_RANGE.min) / (SPACING_RANGE.max - SPACING_RANGE.min) * 100}%` },
               oninput: (event) => { edgeLength = Number(event.target.value); },
+              onchange: () => { preferences.write('rs.webui.graph.spacing', edgeLength); },
             }),
           ]),
           m('.network-graph__zoom-control[role=group][aria-label=Graph view]', [
@@ -178,7 +185,10 @@ const NetworkGraph = () => {
             m('button.is-icon[type=button][aria-label=Peer names]', {
               title: showNames ? 'Hide peer names' : 'Show peer names',
               'aria-pressed': String(showNames),
-              onclick: () => { showNames = !showNames; },
+              onclick: () => {
+                showNames = !showNames;
+                preferences.write('rs.webui.graph.show-names', showNames);
+              },
             }, icon('eye')),
           ]),
         ]),

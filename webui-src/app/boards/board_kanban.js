@@ -3,8 +3,11 @@ const select = require('select');
 const util = require('boards/boards_util');
 const icon = require('icon');
 const widget = require('widgets');
+const preferences = require('preferences');
+const toast = require('toast');
 
 const PAGE_SIZE = 25;
+const postVotes = new Map();
 
 function numberValue(value) {
   if (value && typeof value === 'object' && value.xint64 !== undefined) value = value.xint64;
@@ -236,6 +239,12 @@ function BoardCard() {
       const dateString = publishTs
         ? (typeof publishTs === 'object' && publishTs.xint64 ? new Date(publishTs.xint64 * 1000).toLocaleString() : new Date(publishTs * 1000).toLocaleString())
         : '';
+      const publishedDate = publishTs
+        ? new Date(Number(typeof publishTs === 'object' ? publishTs.xint64 : publishTs) * 1000)
+        : null;
+      const compactDate = publishedDate && !isNaN(publishedDate.getTime())
+        ? publishedDate.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : '';
 
       // RsPostedPost keeps calculated vote totals on the post, not mMeta.
       const post = item.post || item;
@@ -258,6 +267,30 @@ function BoardCard() {
           : (meta.mChildCount !== undefined ? meta.mChildCount : 0));
 
       const msgId = item.msgId || item.mMsgId || (item.key ? item.key : null);
+      const voteKey = JSON.stringify([forumId, msgId, voterId]);
+      const voteState = postVotes.get(voteKey) || {};
+      const voteDisabled = !voterId || !forumId || !msgId || Boolean(voteState.pending || voteState.confirmed);
+
+      const castVote = async (event, voteType) => {
+        event.stopPropagation();
+        if (voteDisabled || postVotes.get(voteKey)?.pending || postVotes.get(voteKey)?.confirmed) return;
+        const state = { pending: voteType };
+        postVotes.set(voteKey, state);
+        m.redraw();
+        try {
+          const voted = await util.voteForPost(forumId, msgId, voteType, voterId);
+          if (!voted) {
+            toast.error('Your vote could not be saved. It may already have been cast.');
+            return;
+          }
+          const field = voteType === util.GXS_VOTE_UP ? 'mUpVotes' : 'mDownVotes';
+          post[field] = (voteType === util.GXS_VOTE_UP ? upVotes : downVotes) + 1;
+          state.confirmed = voteType;
+        } finally {
+          state.pending = null;
+          m.redraw();
+        }
+      };
 
       return m(
         '.board-card',
@@ -320,9 +353,11 @@ function BoardCard() {
 
             // Metadata Line (Posted by <author> <date>)
             m('.board-card__meta', [
-              m('span', 'Posted by '),
-              m('b', author),
-              dateString ? m('span', ` ${dateString}`) : null,
+              m('span.board-card__author', ['by ', m('b', author)]),
+              compactDate ? m('time.board-card__date', {
+                datetime: publishedDate.toISOString(),
+                title: dateString,
+              }, compactDate) : null,
             ]),
 
             // Card Actions Line. Notes stay out of the card preview and open in a dedicated dialog.
@@ -369,43 +404,31 @@ function BoardCard() {
                   m('span.board-card__comments-label', commentCount > 0 ? `${commentCount} comment${commentCount === 1 ? '' : 's'}` : 'Comment'),
                 ]
               ),
-              m('.board-card__vote-pill', [
+              m('.board-card__vote-pill', { 'aria-busy': String(Boolean(voteState.pending)) }, [
                 m(
                   'button.board-card__vote-btn.board-card__vote-btn--up[type=button][title=Upvote]',
                   {
-                    disabled: !voterId,
-                    title: voterId ? 'Upvote' : 'Select a voter identity first',
-                    onclick: async (e) => {
-                      e.stopPropagation();
-                      if (forumId && msgId) {
-                        const voted = await util.voteForPost(forumId, msgId, util.GXS_VOTE_UP, voterId);
-                        if (voted) {
-                          post.mUpVotes = numberValue(post.mUpVotes) + 1;
-                          m.redraw();
-                        }
-                      }
-                    },
+                    disabled: voteDisabled,
+                    'aria-label': 'Upvote',
+                    'aria-pressed': String(voteState.confirmed === util.GXS_VOTE_UP),
+                    title: !voterId ? 'Select a voter identity first'
+                      : voteState.pending ? 'Saving vote…' : voteState.confirmed ? 'Vote recorded for this identity' : 'Upvote',
+                    onclick: (event) => castVote(event, util.GXS_VOTE_UP),
                   },
-                  [icon('arrow-up')]
+                  [voteState.pending === util.GXS_VOTE_UP ? icon('spinner', { spin: true }) : icon('arrow-up')]
                 ),
                 m('span.board-card__vote-score', score),
                 m(
                   'button.board-card__vote-btn.board-card__vote-btn--down[type=button][title=Downvote]',
                   {
-                    disabled: !voterId,
-                    title: voterId ? 'Downvote' : 'Select a voter identity first',
-                    onclick: async (e) => {
-                      e.stopPropagation();
-                      if (forumId && msgId) {
-                        const voted = await util.voteForPost(forumId, msgId, util.GXS_VOTE_DOWN, voterId);
-                        if (voted) {
-                          post.mDownVotes = numberValue(post.mDownVotes) + 1;
-                          m.redraw();
-                        }
-                      }
-                    },
+                    disabled: voteDisabled,
+                    'aria-label': 'Downvote',
+                    'aria-pressed': String(voteState.confirmed === util.GXS_VOTE_DOWN),
+                    title: !voterId ? 'Select a voter identity first'
+                      : voteState.pending ? 'Saving vote…' : voteState.confirmed ? 'Vote recorded for this identity' : 'Downvote',
+                    onclick: (event) => castVote(event, util.GXS_VOTE_DOWN),
                   },
-                  [icon('arrow-down')]
+                  [voteState.pending === util.GXS_VOTE_DOWN ? icon('spinner', { spin: true }) : icon('arrow-down')]
                 ),
               ]),
             ]),
@@ -533,14 +556,15 @@ function openCommentsModal(item, msgId, forumId) {
  * Manages view mode (default: compact), search filtering, 25-item page pagination
  */
 function BoardView() {
-  let viewMode = 'compact';
+  let viewMode = preferences.read('rs.webui.boards.view-mode', 'compact', (mode) => ['compact', 'card'].includes(mode));
   let filterText = '';
   let currentPage = 1;
 
   return {
     view: (vnode) => {
       const {
-        items = [], forumId, onOpenComments, voterIdentities = [], voterId,
+          items = [], forumId, onOpenComments, voterIdentities = [], voterId, loading = false,
+          error, onretry,
         voterIdentitiesLoading, onVoterIdChange,
       } = vnode.attrs;
 
@@ -599,6 +623,7 @@ function BoardView() {
           viewMode,
           onViewModeChange: (newMode) => {
             viewMode = newMode;
+            preferences.write('rs.webui.boards.view-mode', viewMode);
             m.redraw();
           },
           itemCount: totalFiltered,
@@ -622,6 +647,11 @@ function BoardView() {
         }),
 
         // Board Grid (rendering paged slice of 25 items max)
+        loading && !items.length && m(widget.Loading, {
+          key: 'loading-node',
+          label: 'Loading posts…',
+        }),
+        !loading && error && m(widget.ListError, { key: 'error-node', message: error, onretry }),
         pagedItems.length > 0
           ? m(
               '.board-grid',
@@ -651,12 +681,12 @@ function BoardView() {
                 });
               })
             )
-          : m('.board-grid__empty', { key: 'empty-node' }, [
+          : (!loading || items.length > 0) && !error && m('.board-grid__empty', { key: 'empty-node' }, [
               icon('inbox', { class: 'board-grid__empty-icon' }),
               m('p.board-grid__empty-title', 'No items found'),
-              m('p.board-grid__empty-desc', filterText ? 'Try adjusting your search criteria.' : 'This board currently has no posts.'),
-            ]),
-      ]);
+               m('p.board-grid__empty-desc', filterText ? 'Try adjusting your search criteria.' : 'This board currently has no posts.'),
+             ]),
+      ].filter(Boolean));
     },
   };
 }

@@ -5,6 +5,7 @@ const util = require('mail/mail_util');
 const compose = require('mail/mail_compose');
 const icon = require('icon');
 const widget = require('widgets');
+const preferences = require('preferences');
 
 const Messages = {
   all: [],
@@ -209,7 +210,7 @@ const MailComponent = () => {
   let searchQuery = '';
   let filterUnreadOnly = false;
   let selectedTagFilter = '';
-  let viewMode = localStorage.getItem('rs_mail_view_mode') || 'cards';
+  let viewMode = preferences.read('rs_mail_view_mode', 'cards', (mode) => ['cards', 'table'].includes(mode));
   //  Cards fetch a body each (for the snippet): unpaginated, a large folder
   //  fired one getMessage per mail in one burst. Same page size as the table.
   const CARD_PAGE_SIZE = 50;
@@ -407,7 +408,7 @@ const MailComponent = () => {
                   ],
                   onSelect: (mode) => {
                     viewMode = mode;
-                    localStorage.setItem('rs_mail_view_mode', mode);
+                    preferences.write('rs_mail_view_mode', mode);
                     deselectMessage();
                   },
                 }),

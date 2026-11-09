@@ -150,7 +150,8 @@ function rsJsonApiRequest(
   headers = {},
   handleDeserialize = JSON.parse,
   handleSerialize = JSON.stringify,
-  config = null
+  config = null,
+  options = {}
 ) {
   headers['Accept'] = 'application/json';
   if (loginKey.isVerified) {
@@ -185,6 +186,7 @@ function rsJsonApiRequest(
       serialize: handleSerialize,
       headers,
       body: data,
+      timeout: options.timeout,
 
       xhr: config,
     })

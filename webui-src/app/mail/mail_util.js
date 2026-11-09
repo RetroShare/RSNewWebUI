@@ -8,6 +8,7 @@ const compose = require('mail/mail_compose');
 const renderIdentityTooltip = require('mail/mail_identity_tooltip');
 const icon = require('icon');
 const toast = require('toast');
+const preferences = require('preferences');
 
 // rsmail.h
 const RS_MSG_BOXMASK = 0x000f;
@@ -1061,11 +1062,12 @@ const MessageView = () => {
   };
 };
 
-//  `column: null` is the unsorted state -- newest first, the order the core
+//  An empty column is the unsorted state -- newest first, the order the core
 //  hands the list back in.
 const SortState = {
-  column: 'date',
-  direction: 'desc',
+  column: preferences.read('rs.webui.mail.sort-column', 'date',
+    (value) => ['', 'date', 'from', 'subject', 'attachments', 'spam', 'starred', 'tags'].includes(value)),
+  direction: preferences.read('rs.webui.mail.sort-direction', 'desc', (value) => ['asc', 'desc'].includes(value)),
 };
 
 //  Three clicks on one header: ascending, descending, off. Moving to another
@@ -1074,14 +1076,14 @@ function setSort(column) {
   if (SortState.column !== column) {
     SortState.column = column;
     SortState.direction = 'asc';
-    return;
-  }
-  if (SortState.direction === 'asc') {
+  } else if (SortState.direction === 'asc') {
     SortState.direction = 'desc';
-    return;
+  } else {
+    SortState.column = '';
+    SortState.direction = 'desc';
   }
-  SortState.column = null;
-  SortState.direction = 'desc';
+  preferences.write('rs.webui.mail.sort-column', SortState.column);
+  preferences.write('rs.webui.mail.sort-direction', SortState.direction);
 }
 
 function sortList(list) {

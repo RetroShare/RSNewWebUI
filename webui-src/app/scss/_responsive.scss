@@ -48,27 +48,53 @@
     .page-head__actions { flex: none; }
   }
 
-  .board-toolbar__view-toggle .segmented__item {
-    width: calc(var(--control) - var(--s1));
-    padding-inline: 0;
+  .board-toolbar__view-toggle.segmented .segmented__item:has(> .icon:first-child) {
+    width: var(--control);
+    min-width: var(--control);
+    padding: 0;
+    gap: 0;
+
+    > .icon { flex: none; width: var(--icon-action); height: var(--icon-action); }
   }
 
   .board-card--compact {
-    display: grid;
-    grid-template-columns: var(--group-logo) minmax(0, 1fr);
+    display: flex;
+    align-items: flex-start;
     gap: var(--s2);
+    padding: var(--s2);
+    margin-bottom: 0;
 
     .board-card__image-container {
-      grid-column: 1;
-      grid-row: 1 / span 3;
+      align-self: flex-start;
       width: var(--group-logo);
       height: var(--group-logo);
     }
 
-    .board-card__content { display: contents; }
+    .board-card__image { object-fit: cover; }
+
+    .board-card__content {
+      display: flex;
+      gap: var(--s1);
+    }
+
     .board-card__title,
-    .board-card__meta { grid-column: 2; margin: 0; }
-    .board-card__footer { grid-column: 2; flex-wrap: wrap; gap: var(--s1); }
+    .board-card__meta { margin: 0; }
+
+    .board-card__meta {
+      flex-direction: row;
+      flex-wrap: wrap;
+      column-gap: var(--s2);
+      row-gap: 0;
+      line-height: 1.5;
+      font-size: var(--t-label);
+    }
+
+    .board-card__author,
+    .board-card__date { white-space: nowrap; }
+
+    .board-card__date { font-size: var(--t-label); }
+
+    .board-card__footer { flex-wrap: wrap; gap: var(--s1); }
   }
 
   .forum-detail-head .page-head__actions { position: relative; }

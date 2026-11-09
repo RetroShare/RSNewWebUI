@@ -22,6 +22,8 @@ const Data = {
   DisplayBoards: {}, // boardID -> board info
   Posts: {}, // boardID, PostID -> {post, isSearched}
   Comments: {}, // threadID, msgID -> {Comment, showReplies}
+  loading: new Set(),
+  errors: {},
 };
 
 // Older Qt clients store board notes as rich HTML. Render them as readable,
@@ -45,6 +47,13 @@ function plainText(value) {
 }
 
 const BOARD_POST_BATCH_SIZE = 25;
+const BOARD_REQUEST_TIMEOUT_MS = 30000;
+
+function requestBoardContent(path, data) {
+  return rs.rsJsonApiRequest(path, data, undefined, true, {}, JSON.parse, JSON.stringify, null, {
+    timeout: BOARD_REQUEST_TIMEOUT_MS,
+  });
+}
 
 async function updateContent(content, boardid) {
   const requested = Array.isArray(content) ? content : [content];
@@ -53,7 +62,7 @@ async function updateContent(content, boardid) {
     .filter(Boolean);
   if (msgIds.length === 0) return false;
   try {
-    const res = await rs.rsJsonApiRequest('/rsPosted/getBoardContent', {
+    const res = await requestBoardContent('/rsPosted/getBoardContent', {
       boardId: boardid,
       contentsIds: msgIds,
     });
@@ -93,8 +102,12 @@ async function updateContent(content, boardid) {
       }
       return true;
     }
+    if (!res || res.status !== 200 || res.body?.retval === false) {
+      throw new Error('Could not load board posts. Please try again.');
+    }
   } catch (err) {
     console.warn('updateContent error:', err);
+    throw err;
   }
   return false;
 }
@@ -110,21 +123,22 @@ async function updateContentBatch(contentIds, boardid) {
     if (!loaded) {
       console.warn('Unable to load board content item', contentIds[0]);
     }
-    return;
+    return loaded;
   }
 
   const middle = Math.ceil(contentIds.length / 2);
-  await updateContentBatch(contentIds.slice(0, middle), boardid);
-  await updateContentBatch(contentIds.slice(middle), boardid);
+  const firstLoaded = await updateContentBatch(contentIds.slice(0, middle), boardid);
+  const secondLoaded = await updateContentBatch(contentIds.slice(middle), boardid);
+  return firstLoaded && secondLoaded;
 }
 
 const inFlightBoards = {};
 
-async function updateDisplayBoards(keyid, details) {
+async function updateDisplayBoards(keyid, details, retry = false) {
   if (!keyid) return Promise.resolve();
 
   // 1. Fast path: if posts for this board are already loaded in memory, render instantly and do not re-fetch
-  if (Data.DisplayBoards[keyid] && Data.Posts[keyid] && Object.keys(Data.Posts[keyid]).length > 0) {
+  if (!retry && Data.DisplayBoards[keyid] && Data.Posts[keyid] && Object.keys(Data.Posts[keyid]).length > 0) {
     m.redraw();
     return Promise.resolve();
   }
@@ -134,11 +148,14 @@ async function updateDisplayBoards(keyid, details) {
     return inFlightBoards[keyid];
   }
 
+  Data.loading.add(keyid);
+  delete Data.errors[keyid];
+  m.redraw();
   inFlightBoards[keyid] = (async () => {
     try {
       // Fetch board info metadata if missing
       if (!Data.DisplayBoards[keyid]) {
-        const res1 = await rs.rsJsonApiRequest('/rsPosted/getBoardsInfo', {
+        const res1 = await requestBoardContent('/rsPosted/getBoardsInfo', {
           boardsIds: [keyid],
         });
         if (res1 && res1.body && res1.body.boardsInfo && res1.body.boardsInfo.length > 0) {
@@ -159,6 +176,8 @@ async function updateDisplayBoards(keyid, details) {
             all: details,
           };
           m.redraw();
+        } else {
+          throw new Error('Could not load board details. Please try again.');
         }
       }
 
@@ -169,29 +188,35 @@ async function updateDisplayBoards(keyid, details) {
       // Load lightweight post metadata first, then fetch complete posts newest
       // first in page-sized batches. The first page can render without waiting
       // for every image and older post in a large board.
-      const summariesRes = await rs.rsJsonApiRequest('/rsPosted/getBoardPostSummaries', {
+      const summariesRes = await requestBoardContent('/rsPosted/getBoardPostSummaries', {
         boardId: keyid,
       });
       const summaries = summariesRes && summariesRes.body && summariesRes.body.retval
         && Array.isArray(summariesRes.body.summaries)
         ? summariesRes.body.summaries
         : null;
+      if (summariesRes.status === 0 || summariesRes.status >= 400 && ![404, 405].includes(summariesRes.status)) {
+        throw new Error('Could not load board posts. Please try again.');
+      }
 
       if (summaries) {
         summaries.sort((a, b) => Number((b.mPublishTs && b.mPublishTs.xint64) || b.mPublishTs || 0)
           - Number((a.mPublishTs && a.mPublishTs.xint64) || a.mPublishTs || 0));
         for (let i = 0; i < summaries.length; i += BOARD_POST_BATCH_SIZE) {
-          await updateContentBatch(summaries.slice(i, i + BOARD_POST_BATCH_SIZE), keyid);
+          const batch = summaries.slice(i, i + BOARD_POST_BATCH_SIZE)
+            .filter((summary) => !Data.Posts[keyid][summary.mMsgId]);
+          if (batch.length && !await updateContentBatch(batch, keyid)) {
+            Data.errors[keyid] = 'Some posts could not be loaded. Try again.';
+          }
         }
       } else {
         // Compatibility fallback for RetroShare cores which do not yet expose
         // getBoardPostSummaries.
-        const resAll = await rs.rsJsonApiRequest('/rsPosted/getBoardAllContent', {
+        const resAll = await requestBoardContent('/rsPosted/getBoardAllContent', {
           boardId: keyid,
         });
-        const posts = resAll && resAll.body && resAll.body.retval
-          ? (resAll.body.posts || resAll.body.postList || [])
-          : [];
+        if (!resAll?.body?.retval) throw new Error('Could not load board posts. Please try again.');
+        const posts = resAll.body.posts || resAll.body.postList || [];
         posts.forEach((post) => {
           const msgId = (post.mMeta && post.mMeta.mMsgId) || post.mMsgId;
           if (msgId) Data.Posts[keyid][msgId] = { post, isSearched: true };
@@ -200,8 +225,11 @@ async function updateDisplayBoards(keyid, details) {
       }
     } catch (err) {
       console.warn('updateDisplayBoards network error for board:', keyid, err);
+      Data.errors[keyid] = err.message || 'Could not load board posts. Please try again.';
     } finally {
       delete inFlightBoards[keyid];
+      Data.loading.delete(keyid);
+      m.redraw();
     }
   })();
 
